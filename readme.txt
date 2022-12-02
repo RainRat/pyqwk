@@ -12,3 +12,4 @@ It'll leave out messages marked as private. If you are an archivist, you could l
 
 Apparently there's a password protection option for messages. I've never heard of that until now. They'll be skipped.
 
+This was late night coding binge. probably has bugs. will accept pull requests.
