@@ -6,9 +6,17 @@ For data archivists that want to archive .QWK mail archives in a more readable f
 
 Exports the entire messages.dat to a more readable format without setting up a .QWK reader, which might not even have a function to export the entire file.
 
-.QWK archives are a ZIP file, which contains the messages in messages.dat, plus some index files. This program assumes the archive has already been unzipped, and acts only on the messages.dat. The indexes aren't needed, the only downside is that it doesn't have the names of the subboards the messages are from.
+.QWK archives are a ZIP file, which contains the messages in messages.dat, plus some index files. This program can take either the messages.dat or the .qwk file:
 
-Edit: I now unzip the .QWK file, if you point the command-line at it. I still only use messages.dat
+messages.dat: The indexes aren't needed, the only downside is that it doesn't have the names of the subboards the messages are from.
+
+.qwk file: It will use the CONTROL.DAT to retrieve the names of the conferences.
+
+Known issue: Some .qwk packets from this era use a ZIP compression method that modern Python doesn't know.
+  
+Workaround 1: Some archive utilities have an tool to repack archives into modern formats. Some even have a method to do it in bulk.
+
+Workaround 2: Unpack the archive and act on messages.dat
 
 For each message, the headers aren't exported in the same order they appear in messages.dat; I rearrange them to an order that might make more sense to a modern reader.
 

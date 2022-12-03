@@ -18,10 +18,28 @@ exportPrivate=args.private
 with open (args.file1, 'rb') as f:
     header=f.read(2)
 
+numlines=0
+boarddict={}
+
 if header ==b"PK":
+    messagesname=''
+    controlname=''
     with zipfile.ZipFile(args.file1) as myzip:
-        with myzip.open('messages.dat') as f:
+        file_list = myzip.namelist()
+        for file_name in file_list: #workaround: zipfile library is case sensitive. loop through case-insensitive and fine how they are capitalized 
+            if file_name.lower()=='messages.dat':
+                messagesname=file_name
+            if file_name.lower()=='control.dat':
+                controlname=file_name
+        with myzip.open(messagesname) as f:
             data=bytearray(f.read())
+        with myzip.open(controlname) as f:
+            controldata=f.read().splitlines()
+    numlines=int(controldata[10])
+
+    for i in range(0, numlines):
+        boarddict[int(controldata[i*2+11])]=controldata[i*2+12].decode('latin1')
+    print(boarddict)
 else:
     with open (args.file1, 'rb') as f:
         data=bytearray(f.read())
@@ -50,15 +68,24 @@ for i in range(0, len(data), 128):
             isPrivate=False
         else:
             sys.exit('invalid message type. corrupt?')
+
+        not_found_flag=False
+        try: #if the conference number is not in control.dat, or a control.dat was never loaded, return the conference id
+            conf_name = boarddict[confnum]
+        except KeyError:
+            conf_name = str(confnum)
+            not_found_flag=True
+
+        if verbose==True or not_found_flag==False:
+            messagebuffer+=('Conference: '+str(conf_name)+'\r\n')
         if verbose==True:
-            messagebuffer+=('Message number: '+msgnum.decode('latin1')+'                                     ')
+            messagebuffer+=('Message number: '+msgnum.decode('latin1')+'                    ')
         messagebuffer+=('Date: '+msgdate.decode('latin1')+' '+msgtime.decode('latin1')+'\r\n')
         messagebuffer+=('From: '+msgfrom.decode('latin1')+'\r\n')
         messagebuffer+=('To: '+msgto.decode('latin1')+'\r\n')
         messagebuffer+=('Subject: '+msgsubject.decode('latin1')+'\r\n')
         if verbose==True:
-            messagebuffer+=('Reference number: '+refnum.decode('latin1')+'                                  ')
-            messagebuffer+=('Conference number: '+str(confnum)+'\r\n')
+            messagebuffer+=('Reference number: '+refnum.decode('latin1')+'\r\n')
         messagebuffer+='\r\n'
         tempblocks=numblocks.decode('latin1').strip()
         intBlocks=int(tempblocks)-1
@@ -77,11 +104,3 @@ if args.file2 ==None:
 else:
     with open (args.file2, 'w', encoding='latin1') as f:
         f.write(fullmessagebuffer)
-
-        
-        
-
-
-            
-  
-
