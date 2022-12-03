@@ -4,7 +4,9 @@ Exports the entire messages.dat to a more readable format without setting up a .
 
 .QWK archives are a ZIP file, which contains the messages in messages.dat, plus some index files. This program assumes the archive has already been unzipped, and acts only on the messages.dat. The indexes aren't needed, the only downside is that it doesn't have the names of the subboards the messages are from.
 
-The headers aren't exported in the same order they appear in messages.dat; I rearrange them to an order that might make more sense to a modern reader.
+Edit: I now unzip the .QWK file, if you point the command-line at it. I still only use messages.dat
+
+For each message, the headers aren't exported in the same order they appear in messages.dat; I rearrange them to an order that might make more sense to a modern reader.
 
 It'll leave out message ids, which probably aren't useful to a modern reader, but use --verbose if you want them.
 
