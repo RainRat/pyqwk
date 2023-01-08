@@ -4,24 +4,17 @@ import zipfile
 import struct
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument('file1', help='the messages.dat filename, or the QWK packet', nargs='?', default='messages.dat')
 parser.add_argument('file2', help='the output filename. default is console', nargs='?')
 parser.add_argument('-v', '--verbose', help='verbose output. export message id fields that may not be relevant', action='store_true')
 parser.add_argument('-p', '--private', help='export messages marked private', action='store_true')
-
 args = parser.parse_args()
-
 verbose=args.verbose
 exportPrivate=args.private
 
-with open (args.file1, 'rb') as f:
-    header=f.read(2)
-
-numlines=0
 boarddict={}
-
-if header ==b"PK":
+if zipfile.is_zipfile(args.file1):
+    numlines=0
     messagesname=''
     controlname=''
     with zipfile.ZipFile(args.file1) as myzip:
@@ -36,7 +29,6 @@ if header ==b"PK":
         with myzip.open(controlname) as f:
             controldata=f.read().splitlines()
     numlines=int(controldata[10])
-
     for i in range(0, numlines):
         boarddict[int(controldata[i*2+11])]=controldata[i*2+12].decode('latin1')
     print(boarddict)
@@ -46,7 +38,6 @@ else:
         
 intBlocks=0
 fullmessagebuffer=''
-
 for i in range(0, len(data), 128):
     record=data[i:i+128]
     if i==0:
@@ -56,7 +47,6 @@ for i in range(0, len(data), 128):
     if intBlocks==0:
         messagebuffer='--------------------------------------------------------------------------------\r\n'
         status, msgnum, msgdate, msgtime, msgto, msgfrom, msgsubject, msgpassword, refnum, numblocks, msgflag, confnum, lognum, nettag = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
-        #print(status, msgnum, msgdate, msgtime, msgto, msgfrom, msgsubject, msgpassword, refnum, numblocks, msgflag, confnum, lognum, nettag)
         messageType=status.decode('latin1')
         isPassword=False
         isPrivate=True
