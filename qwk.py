@@ -3,7 +3,8 @@ import argparse
 import zipfile
 import struct
 import re
-
+import hashlib
+import os
 parser = argparse.ArgumentParser()
 parser.add_argument('file1', help='the messages.dat filename, or the QWK packet', nargs='?', default='messages.dat')
 parser.add_argument('file2', help='the output filename. default is console', nargs='?')
@@ -12,13 +13,19 @@ parser.add_argument('-p', '--private', help='export messages marked private', ac
 parser.add_argument('-n', '--noheader', help='leave out message header', action='store_true')
 parser.add_argument('-t', '--truncatesignatures', help='truncate at signatures (everything after a line that consists only of "---" or starts with " * ")', action='store_true')
 parser.add_argument('-c', '--cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
+parser.add_argument('-i', '--individualfiles', help='output individual files (file2 will be a treated as a directory)', action='store_true')
 args = parser.parse_args()
 verbose=args.verbose
 exportPrivate=args.private
 noHeader=args.noheader
 truncateSignatures=args.truncatesignatures
 cutQuoting=args.cutquoting
+individualFiles=args.individualfiles
 
+if individualFiles:
+    if not os.path.isdir(args.file2):
+        os.mkdir(args.file2)
+    
 boarddict={}
 if zipfile.is_zipfile(args.file1):
     numlines=0
@@ -97,19 +104,31 @@ for i in range(0, len(data), 128):
         if intBlocks==0:
             if (exportPrivate==True or isPrivate==False) and isPassword==False:
                 lines = messagebuffer.splitlines()
-                quotePattern = r'^\s*[A-Z]{0,2}>'
+                quotePattern = r'^\s*[A-Za-z]{0,3}>'
+                uuePattern = r'^begin\s\d{3}\s'
+
                 new_lines = []
-                for line in lines:
-                    if (line == "---" or line.startswith(" * ")) and truncateSignatures:
+                for j, line in enumerate (lines):
+                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line == "-- " or line.startswith("___ ") or re.match(uuePattern, line)) and truncateSignatures:
                         break
-                    if cutQuoting and re.match(quotePattern, line):
-                        continue
-                    new_lines.append(line)
-                fullmessagebuffer+='\r\n'.join(new_lines)+'\r\n'
+                    if cutQuoting:
+                        if re.match(quotePattern, line):
+                            continue
+                        elif re.match(quotePattern, lines[max(0, j-1)]) and re.match(quotePattern, lines[min(j+1, len(lines)-1)]):
+                            continue
+                    new_lines.append(line.strip('\r\n'))
+                tempBuffer='\r\n'.join(new_lines)+'\r\n'
+                encodedBuffer=tempBuffer.encode('latin1')
+                if individualFiles:
+                    with open(os.path.join(args.file2, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
+                        f.write(encodedBuffer)
+                else:
+                    fullmessagebuffer+=tempBuffer
 
 
-if args.file2 ==None:
-    print (fullmessagebuffer)
-else:
-    with open (args.file2, 'w', encoding='latin1') as f:
-        f.write(fullmessagebuffer)
+if not individualFiles:
+    if args.file2 ==None:
+        print (fullmessagebuffer)
+    else:
+        with open (args.file2, 'w', encoding='latin1') as f:
+            f.write(fullmessagebuffer)

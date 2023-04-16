@@ -43,6 +43,9 @@ Truncate each message at the signature (everything after a line that consists on
 - `--cutquoting` or `-c`
 Delete quoted text (that uses ">" as quoting character).
 
+- `--individualfiles` or `-i`
+Put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication)
+
 ## Known Issues
 
 - Some `.qwk` packets from this era use a ZIP compression method that modern Python doesn't know. To work around this issue:
@@ -54,7 +57,7 @@ Delete quoted text (that uses ">" as quoting character).
 
 - `cutquoting` is simplistic
   - Only knows quoting character `>`
-  - Can miss quoting that has been word wrapped, ie.
+  - Has been updated to catch quoting that has been word wrapped, but still might run into trouble. ie, this will be handled, but more complex cases might not.
 ```
 XX> This is actually a pretty long line that has been quoted and then word
 wrap
