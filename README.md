@@ -29,22 +29,22 @@ For each message, the headers aren't exported in the same order they appear in `
 ## Options
 
 - `--verbose` or `-v`
-pyqwk will leave out message IDs, which probably aren't useful to a modern reader, but use `--private` if you want them.
+If this is set, pyqwk will include message IDs, which probably aren't useful to a modern reader (default: off)
 
 - `--private` or `-p`
-pyqwk will also leave out messages marked as private. If you are an archivist, you could leave that as is to not include personal messages from people who kindly donated their `.qwk` packets. But if you're archiving your own, use `--private` to include them.
+If this is set, pyqwk will include messages marked as private. If you are an archivist, you may want to not include personal messages from people who kindly donated their qwk packets. But if you're archiving your own, use `--private` to include them. (default: off)
 
 - `--noheader` or `-n`
-Leave out the message header.
+If this is set, pyqwk will leave out the message header. (default: off, meaning message headers will be included)
 
 - `--truncatesignatures` or `-t`
-Truncate each message at the signature (everything after a line that consists only of "---" or starts with " * ")
+If this is set, pyqwk will truncate each message at the signature (everything after a line that consists only of "---" or starts with "___" and some others) (default: off)
 
 - `--cutquoting` or `-c`
-Delete quoted text (that uses ">" as quoting character).
+If this is set, pyqwk will delete quoted text (that uses ">" as quoting character). (default: off)
 
 - `--individualfiles` or `-i`
-Put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication)
+If this is set, pyqwk will put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication). (default: off)
 
 ## Known Issues
 
