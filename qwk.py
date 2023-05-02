@@ -25,6 +25,12 @@ individualFiles=args.individualfiles
 if individualFiles:
     if not os.path.isdir(args.file2):
         os.mkdir(args.file2)
+
+quoteHeaderPatterns = [r'.*(replied|\'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on)( in a message)? to ',
+                       r'^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally).* to ']
+
+quotePattern = r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\})'
+uuePattern = r'^begin\s\d{3}\s'
     
 boarddict={}
 if zipfile.is_zipfile(args.file1):
@@ -104,18 +110,25 @@ for i in range(0, len(data), 128):
         if intBlocks==0:
             if (exportPrivate==True or isPrivate==False) and isPassword==False:
                 lines = messagebuffer.splitlines()
-                quotePattern = r'^\s*[A-Za-z]{0,3}>'
-                uuePattern = r'^begin\s\d{3}\s'
 
                 new_lines = []
+                seenNonBlankLine=False
                 for j, line in enumerate (lines):
-                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line == "-- " or line.startswith("___ ") or re.match(uuePattern, line)) and truncateSignatures:
+                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line == "-- " or line.startswith("___ ") or line.startswith("... ") or line.startswith("~~~ ") or line == "-----BEGIN PGP SIGNATURE-----" or line == "___--BEGIN PGP SIGNATURE-----" or line.startswith(" *** ") or line.startswith(" \xfe ") or re.match(uuePattern, line)) and truncateSignatures:
                         break
+
                     if cutQuoting:
+                        if seenNonBlankLine==False:
+                            if any(re.match(pattern, line) for pattern in quoteHeaderPatterns):
+                                continue
                         if re.match(quotePattern, line):
                             continue
                         elif re.match(quotePattern, lines[max(0, j-1)]) and re.match(quotePattern, lines[min(j+1, len(lines)-1)]):
                             continue
+                    if seenNonBlankLine == False and line.strip()=='':
+                        continue
+                    else:
+                        seenNonBlankLine=True
                     new_lines.append(line.strip('\r\n'))
                 tempBuffer='\r\n'.join(new_lines)+'\r\n'
                 encodedBuffer=tempBuffer.encode('latin1')
