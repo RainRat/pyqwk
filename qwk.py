@@ -14,6 +14,7 @@ parser.add_argument('-n', '--noheader', help='leave out message header', action=
 parser.add_argument('-t', '--truncatesignatures', help='truncate at signatures (everything after a line that consists only of "---" or starts with " * ")', action='store_true')
 parser.add_argument('-c', '--cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
 parser.add_argument('-i', '--individualfiles', help='output individual files (file2 will be a treated as a directory)', action='store_true')
+parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently online uuencode)', action='store_true')
 args = parser.parse_args()
 verbose=args.verbose
 exportPrivate=args.private
@@ -21,17 +22,20 @@ noHeader=args.noheader
 truncateSignatures=args.truncatesignatures
 cutQuoting=args.cutquoting
 individualFiles=args.individualfiles
+binariesRemoval=args.binariesremoval
 
 if individualFiles:
     if not os.path.isdir(args.file2):
         os.mkdir(args.file2)
 
-quoteHeaderPatterns = [r'.*(replied|\'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on)( in a message)? to ',
-                       r'^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally).* to ']
+quoteHeaderPatterns = [r'.*(replied|\'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message)? to ',
+                       r'^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message).* to ']
 
 quotePattern = r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\})'
 uuePattern = r'^begin\s\d{3}\s'
-    
+uueDataPattern = r'^M[\x21-\x60]{60}$'
+uueLoosePattern = r'[\x21-\x4c][\x21-\x60]{4,60}$'
+
 boarddict={}
 if zipfile.is_zipfile(args.file1):
     numlines=0
@@ -114,7 +118,7 @@ for i in range(0, len(data), 128):
                 new_lines = []
                 seenNonBlankLine=False
                 for j, line in enumerate (lines):
-                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line == "-- " or line.startswith("___ ") or line.startswith("... ") or line.startswith("~~~ ") or line == "-----BEGIN PGP SIGNATURE-----" or line == "___--BEGIN PGP SIGNATURE-----" or line.startswith(" *** ") or line.startswith(" \xfe ") or re.match(uuePattern, line)) and truncateSignatures:
+                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line == "-- " or line.startswith("___ ") or line.startswith("... ") or line.startswith("~~~ ") or line == "-----BEGIN PGP SIGNATURE-----" or line == "___--BEGIN PGP SIGNATURE-----" or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ") or line.startswith(" \xfe ") or line.startswith("-+- ")) and truncateSignatures:
                         break
 
                     if cutQuoting:
@@ -125,11 +129,18 @@ for i in range(0, len(data), 128):
                             continue
                         elif re.match(quotePattern, lines[max(0, j-1)]) and re.match(quotePattern, lines[min(j+1, len(lines)-1)]):
                             continue
+                    if re.match(uueDataPattern, line) or re.match(uuePattern, line):
+                        continue
+                    if re.match(uueLoosePattern, line):
+                        prevLine=lines[max(0, j-1)]
+                        if re.match(uueDataPattern, prevLine) or re.match(uuePattern, prevLine):
+                            continue
                     if seenNonBlankLine == False and line.strip()=='':
                         continue
                     else:
                         seenNonBlankLine=True
                     new_lines.append(line.strip('\r\n'))
+
                 tempBuffer='\r\n'.join(new_lines)+'\r\n'
                 encodedBuffer=tempBuffer.encode('latin1')
                 if individualFiles:
