@@ -49,6 +49,9 @@ If this is set, pyqwk will delete binaries (currently only uuencode). (default: 
 - `--individualfiles` or `-i`
 If this is set, pyqwk will put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication). (default: off)
 
+- `--redactpii` or `-r`
+If this is set, pyqwk will redact PII (Personally Identifiable Information), currently only phone numbers and e-mails. (default: off)
+
 ## Known Issues
 
 - Some `.qwk` packets from this era use a ZIP compression method that modern Python doesn't know. To work around this issue:

@@ -14,7 +14,9 @@ parser.add_argument('-n', '--noheader', help='leave out message header', action=
 parser.add_argument('-t', '--truncatesignatures', help='truncate at signatures (everything after a line that consists only of "---" or starts with " * ")', action='store_true')
 parser.add_argument('-c', '--cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
 parser.add_argument('-i', '--individualfiles', help='output individual files (file2 will be a treated as a directory)', action='store_true')
-parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently online uuencode)', action='store_true')
+parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently only uuencode)', action='store_true')
+parser.add_argument('-r', '--redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
+
 args = parser.parse_args()
 verbose=args.verbose
 exportPrivate=args.private
@@ -23,18 +25,21 @@ truncateSignatures=args.truncatesignatures
 cutQuoting=args.cutquoting
 individualFiles=args.individualfiles
 binariesRemoval=args.binariesremoval
+redactPII=args.redactpii
 
 if individualFiles:
     if not os.path.isdir(args.file2):
         os.mkdir(args.file2)
 
-quoteHeaderPatterns = [r'.*(replied|\'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message)? to ',
-                       r'^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message).* to ']
+quoteHeaderPatterns = [r'.*(replied|\'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message| the following| this)? to ',
+                       r'^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message|In a message).* to ']
 
 quotePattern = r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\})'
 uuePattern = r'^begin\s\d{3}\s'
 uueDataPattern = r'^M[\x21-\x60]{60}$'
 uueLoosePattern = r'[\x21-\x4c][\x21-\x60]{4,60}$'
+emailPattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
+phonePattern = r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b'
 
 boarddict={}
 if zipfile.is_zipfile(args.file1):
@@ -118,7 +123,7 @@ for i in range(0, len(data), 128):
                 new_lines = []
                 seenNonBlankLine=False
                 for j, line in enumerate (lines):
-                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line == "-- " or line.startswith("___ ") or line.startswith("... ") or line.startswith("~~~ ") or line == "-----BEGIN PGP SIGNATURE-----" or line == "___--BEGIN PGP SIGNATURE-----" or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ") or line.startswith(" \xfe ") or line.startswith("-+- ")) and truncateSignatures:
+                    if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line.startswith("-- ") or line.startswith("___ ") or line.startswith("... ") or line.startswith("~~~ ") or line == "-----BEGIN PGP SIGNATURE-----" or line == "___--BEGIN PGP SIGNATURE-----" or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ") or line.startswith(" \xfe ") or line.startswith("-+- ")) and truncateSignatures:
                         break
 
                     if cutQuoting:
@@ -139,6 +144,9 @@ for i in range(0, len(data), 128):
                         continue
                     else:
                         seenNonBlankLine=True
+                    if redactPII:
+                        line= re.sub(emailPattern, '[EMAIL]', line)
+                        line= re.sub(phonePattern, '[PHONE]', line)
                     new_lines.append(line.strip('\r\n'))
 
                 tempBuffer='\r\n'.join(new_lines)+'\r\n'
