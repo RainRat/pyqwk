@@ -7,6 +7,9 @@ import hashlib
 import os
 import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def process_file(args):
     verbose=args.verbose
     exportPrivate=args.private
@@ -39,7 +42,8 @@ def process_file(args):
         try:
             with zipfile.ZipFile(args.file1) as myzip:
                 file_list = myzip.namelist()
-                for file_name in file_list: #workaround: zipfile library is case sensitive. loop through case-insensitive and find how they are capitalized 
+                for file_name in file_list: #workaround: zipfile library is case sensitive. loop through
+                                            #case-insensitive and find how they are capitalized 
                     if file_name.lower()=='messages.dat':
                         messagesname=file_name
                     if file_name.lower()=='control.dat':
@@ -72,7 +76,8 @@ def process_file(args):
                 sys.exit('not a messages.dat file')
             continue
         if intBlocks==0:
-            status, msgnum, msgdate, msgtime, msgto, msgfrom, msgsubject, msgpassword, refnum, numblocks, msgflag, confnum, lognum, nettag = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
+            status, msgnum, msgdate, msgtime, msgto, msgfrom, msgsubject, msgpassword, refnum, numblocks, \
+                    msgflag, confnum, lognum, nettag = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
             messageType=status.decode('latin1')
             isPassword=False
             isPrivate=True
@@ -86,7 +91,8 @@ def process_file(args):
                 sys.exit('invalid message type. corrupt?')
 
             not_found_flag=False
-            try: #if the conference number is not in control.dat, or a control.dat was never loaded, return the conference id
+            try: #if the conference number is not in control.dat, or a control.dat was never loaded, return the
+                 #conference id
                 conf_name = boarddict[confnum]
             except KeyError:
                 conf_name = str(confnum)
@@ -94,11 +100,11 @@ def process_file(args):
 
             messagebuffer=''
             if not noHeader:
-                messagebuffer+='--------------------------------------------------------------------------------\r\n'
+                messagebuffer+= ("-" * 80) + '\r\n'
                 if verbose==True or not_found_flag==False:
                     messagebuffer+=('Conference: '+str(conf_name)+'\r\n')
                 if verbose==True:
-                    messagebuffer+=('Message number: '+msgnum.decode('latin1')+'                    ')
+                    messagebuffer+=('Message number: '+msgnum.decode('latin1')+(' ' * 20))
                 messagebuffer+=('Date: '+msgdate.decode('latin1')+' '+msgtime.decode('latin1')+'\r\n')
                 messagebuffer+=('From: '+msgfrom.decode('latin1')+'\r\n')
                 messagebuffer+=('To: '+msgto.decode('latin1')+'\r\n')
@@ -121,7 +127,13 @@ def process_file(args):
                     new_lines = []
                     seenNonBlankLine=False
                     for j, line in enumerate (lines):
-                        if (line == "---" or line.startswith(" * ") or line.startswith("--- ")  or line=="___" or line == "--" or line.startswith("-- ") or line.startswith("___ ") or line.startswith("... ") or line.startswith("~~~ ") or line == "-----BEGIN PGP SIGNATURE-----" or line == "___--BEGIN PGP SIGNATURE-----" or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ") or line.startswith(" \xfe ") or line.startswith("-+- ")) and truncateSignatures:
+                        if (line == "---" or line.startswith(" * ") or line.startswith("--- ") or line=="___" \
+                                or line == "--" or line.startswith("-- ") or line.startswith("___ ") \
+                                or line.startswith("... ") or line.startswith("-+- ") \
+                                or line == "-----BEGIN PGP SIGNATURE-----" or line.startswith("~~~ ") \
+                                or line == "___--BEGIN PGP SIGNATURE-----" or line.startswith(" \xfe ") \
+                                or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ")) \
+                                and truncateSignatures:
                             break
 
                         if cutQuoting:
@@ -164,9 +176,6 @@ def process_file(args):
                 f.write(fullmessagebuffer)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-
     parser = argparse.ArgumentParser()
     parser.add_argument('file1', help='the messages.dat filename, or the QWK packet', nargs='?', default='messages.dat')
     parser.add_argument('file2', help='the output filename. default is console', nargs='?')
