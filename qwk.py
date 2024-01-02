@@ -10,19 +10,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def process_file(args):
-    verbose=args.verbose
-    exportPrivate=args.private
-    noHeader=args.noheader
-    truncateSignatures=args.truncatesignatures
-    cutQuoting=args.cutquoting
-    individualFiles=args.individualfiles
-    binariesRemoval=args.binariesremoval
-    redactPII=args.redactpii
+def process_file(file1, file2, verbose, private, noHeader, truncateSignatures, cutQuoting, individualFiles, binariesRemoval, redactPII):
 
     if individualFiles:
-        if not os.path.isdir(args.file2):
-            os.mkdir(args.file2)
+        if not os.path.isdir(file2):
+            os.mkdir(file2)
 
     quoteHeaderPatterns = [r'.*(replied|\'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message| the following| this)? to ',
                            r'^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message|In a message).* to ']
@@ -35,12 +27,12 @@ def process_file(args):
     phonePattern = r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b'
 
     boarddict={}
-    if zipfile.is_zipfile(args.file1):
+    if zipfile.is_zipfile(file1):
         numlines=0
         messagesname=''
         controlname=''
         try:
-            with zipfile.ZipFile(args.file1) as myzip:
+            with zipfile.ZipFile(file1) as myzip:
                 file_list = myzip.namelist()
                 for file_name in file_list: #workaround: zipfile library is case sensitive. loop through
                                             #case-insensitive and find how they are capitalized 
@@ -61,10 +53,10 @@ def process_file(args):
         print(boarddict)
     else:
         try:
-            with open(args.file1, 'rb') as f:
+            with open(file1, 'rb') as f:
                 file_data = bytearray(f.read())
         except IOError:
-            logger.error(f"Error reading {args.file1}")
+            logger.error(f"Error reading {file1}")
             sys.exit(1)
 
     intBlocks=0
@@ -91,8 +83,8 @@ def process_file(args):
                 sys.exit('invalid message type. corrupt?')
 
             not_found_flag=False
-            try: #if the conference number is not in control.dat, or a control.dat was never loaded, return the
-                 #conference id
+            try: #if the conference number is not in control.dat, or a control.dat was never loaded, return
+                 #the conference id
                 conf_name = boarddict[confnum]
             except KeyError:
                 conf_name = str(confnum)
@@ -135,21 +127,22 @@ def process_file(args):
                                 or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ")) \
                                 and truncateSignatures:
                             break
-
                         if cutQuoting:
                             if seenNonBlankLine==False:
                                 if any(re.match(pattern, line) for pattern in quoteHeaderPatterns):
                                     continue
                             if re.match(quotePattern, line):
                                 continue
-                            elif re.match(quotePattern, lines[max(0, j-1)]) and re.match(quotePattern, lines[min(j+1, len(lines)-1)]):
+                            elif re.match(quotePattern, lines[max(0, j-1)]) \
+                                    and re.match(quotePattern, lines[min(j+1, len(lines)-1)]):
                                 continue
-                        if re.match(uueDataPattern, line) or re.match(uuePattern, line):
-                            continue
-                        if re.match(uueLoosePattern, line):
-                            prevLine=lines[max(0, j-1)]
-                            if re.match(uueDataPattern, prevLine) or re.match(uuePattern, prevLine):
+                        if binariesRemoval:
+                            if re.match(uueDataPattern, line) or re.match(uuePattern, line):
                                 continue
+                            if re.match(uueLoosePattern, line):
+                                prevLine=lines[max(0, j-1)]
+                                if re.match(uueDataPattern, prevLine) or re.match(uuePattern, prevLine):
+                                    continue
                         if seenNonBlankLine == False and line.strip()=='':
                             continue
                         else:
@@ -162,17 +155,17 @@ def process_file(args):
                     tempBuffer='\r\n'.join(new_lines)+'\r\n'
                     encodedBuffer=tempBuffer.encode('latin1')
                     if individualFiles:
-                        with open(os.path.join(args.file2, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
+                        with open(os.path.join(file2, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
                             f.write(encodedBuffer)
                     else:
                         fullmessagebuffer+=tempBuffer
 
 
     if not individualFiles:
-        if args.file2 ==None:
+        if file2 ==None:
             print (fullmessagebuffer)
         else:
-            with open (args.file2, 'w', encoding='latin1') as f:
+            with open (file2, 'w', encoding='latin1') as f:
                 f.write(fullmessagebuffer)
 
 def main():
@@ -188,7 +181,8 @@ def main():
     parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently only uuencode)', action='store_true')
     parser.add_argument('-r', '--redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
     args = parser.parse_args()
-    process_file(args)
+    process_file(args.file1, args.file2, args.verbose, args.private, args.noheader, args.truncatesignatures, \
+            args.cutquoting, args.individualfiles, args.binariesremoval, args.redactpii)
 
 if __name__ == '__main__':
     main()
