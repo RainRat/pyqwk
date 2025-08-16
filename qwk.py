@@ -7,9 +7,6 @@ import hashlib
 import os
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 def process_file(file1, file2, verbose, private, noHeader, truncateSignatures, cutQuoting, individualFiles, binariesRemoval, redactPII):
 
     if individualFiles:
@@ -181,6 +178,10 @@ def main():
     parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently only uuencode)', action='store_true')
     parser.add_argument('-r', '--redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
     args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
     process_file(args.file1, args.file2, args.verbose, args.private, args.noheader, args.truncatesignatures, \
             args.cutquoting, args.individualfiles, args.binariesremoval, args.redactpii)
 
