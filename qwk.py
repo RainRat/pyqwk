@@ -20,6 +20,7 @@ def process_file(file1, file2, verbose, private, noHeader, truncateSignatures, c
     uuePattern = r'^begin\s\d{3}\s'
     uueDataPattern = r'^M[\x21-\x60]{60}$'
     uueLoosePattern = r'[\x21-\x4c][\x21-\x60]{4,60}$'
+    base64Pattern = r'^[A-Za-z0-9+/=]{60,}$'
     emailPattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
     phonePattern = r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b'
 
@@ -110,7 +111,7 @@ def process_file(file1, file2, verbose, private, noHeader, truncateSignatures, c
             messagebuffer+=temprecord
             intBlocks=intBlocks-1
             if intBlocks==0:
-                if (exportPrivate==True or isPrivate==False) and isPassword==False:
+                if (private==True or isPrivate==False) and isPassword==False:
                     lines = messagebuffer.splitlines()
 
                     new_lines = []
@@ -134,7 +135,9 @@ def process_file(file1, file2, verbose, private, noHeader, truncateSignatures, c
                                     and re.match(quotePattern, lines[min(j+1, len(lines)-1)]):
                                 continue
                         if binariesRemoval:
-                            if re.match(uueDataPattern, line) or re.match(uuePattern, line):
+                            if (re.match(base64Pattern, line)
+                                    or re.match(uueDataPattern, line)
+                                    or re.match(uuePattern, line)):
                                 continue
                             if re.match(uueLoosePattern, line):
                                 prevLine=lines[max(0, j-1)]
