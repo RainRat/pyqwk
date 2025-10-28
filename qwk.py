@@ -6,6 +6,8 @@ import re
 import hashlib
 import os
 import logging
+from collections import namedtuple
+from dataclasses import dataclass
 
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
@@ -22,6 +24,39 @@ UUE_LOOSE_PATTERN = r'[\x21-\x4c][\x21-\x60]{4,60}$'
 BASE64_PATTERN = r'^[A-Za-z0-9+/=]{60,}$'
 EMAIL_PATTERN = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
 PHONE_PATTERN = r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b'
+
+
+@dataclass
+class ProcessingSettings:
+    verbose: bool
+    private: bool
+    noHeader: bool
+    truncateSignatures: bool
+    cutQuoting: bool
+    individualFiles: bool
+    binariesRemoval: bool
+    redactPII: bool
+
+
+MessageHeader = namedtuple(
+    'MessageHeader',
+    [
+        'status',
+        'msgnum',
+        'msgdate',
+        'msgtime',
+        'msgto',
+        'msgfrom',
+        'msgsubject',
+        'msgpassword',
+        'refnum',
+        'numblocks',
+        'msgflag',
+        'confnum',
+        'lognum',
+        'nettag',
+    ],
+)
 
 
 class MessagesDatFormatError(Exception):
@@ -85,9 +120,9 @@ def parse_messages(file_data, boarddict, noHeader, verbose):
                 raise MessagesDatFormatError
             continue
         if intBlocks == 0:
-            (status, msgnum, msgdate, msgtime, msgto, msgfrom, msgsubject, msgpassword, refnum, numblocks,
-             msgflag, confnum, lognum, nettag) = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
-            messageType = status.decode('latin1')
+            header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
+            header = MessageHeader(*header_data)
+            messageType = header.status.decode('latin1')
             isPassword = False
             isPrivate = True
             if messageType in ['+', '*', '~', '`']:
@@ -101,9 +136,9 @@ def parse_messages(file_data, boarddict, noHeader, verbose):
 
             not_found_flag = False
             try:
-                conf_name = boarddict[confnum]
+                conf_name = boarddict[header.confnum]
             except KeyError:
-                conf_name = str(confnum)
+                conf_name = str(header.confnum)
                 not_found_flag = True
 
             messagebuffer = ''
@@ -112,15 +147,15 @@ def parse_messages(file_data, boarddict, noHeader, verbose):
                 if verbose is True or not_found_flag is False:
                     messagebuffer += ('Conference: ' + str(conf_name) + '\r\n')
                 if verbose is True:
-                    messagebuffer += ('Message number: ' + msgnum.decode('latin1') + (' ' * 20))
-                messagebuffer += ('Date: ' + msgdate.decode('latin1') + ' ' + msgtime.decode('latin1') + '\r\n')
-                messagebuffer += ('From: ' + msgfrom.decode('latin1') + '\r\n')
-                messagebuffer += ('To: ' + msgto.decode('latin1') + '\r\n')
-                messagebuffer += ('Subject: ' + msgsubject.decode('latin1') + '\r\n')
+                    messagebuffer += ('Message number: ' + header.msgnum.decode('latin1') + (' ' * 20))
+                messagebuffer += ('Date: ' + header.msgdate.decode('latin1') + ' ' + header.msgtime.decode('latin1') + '\r\n')
+                messagebuffer += ('From: ' + header.msgfrom.decode('latin1') + '\r\n')
+                messagebuffer += ('To: ' + header.msgto.decode('latin1') + '\r\n')
+                messagebuffer += ('Subject: ' + header.msgsubject.decode('latin1') + '\r\n')
                 if verbose is True:
-                    messagebuffer += ('Reference number: ' + refnum.decode('latin1') + '\r\n')
+                    messagebuffer += ('Reference number: ' + header.refnum.decode('latin1') + '\r\n')
                 messagebuffer += '\r\n'
-            tempblocks = numblocks.decode('latin1').strip()
+            tempblocks = header.numblocks.decode('latin1').strip()
             intBlocks = int(tempblocks) - 1
         else:
             temprecord = record.decode('latin1').replace('\xe3', '\r\n')
@@ -177,10 +212,9 @@ def process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemov
     return '\r\n'.join(new_lines) + '\r\n'
 
 
-def process_file(input_path, output_path, verbose, private, noHeader, truncateSignatures,
-                 cutQuoting, individualFiles, binariesRemoval, redactPII, logger):
+def process_file(input_path, output_path, settings: ProcessingSettings, logger):
 
-    if individualFiles:
+    if settings.individualFiles:
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
 
@@ -188,10 +222,21 @@ def process_file(input_path, output_path, verbose, private, noHeader, truncateSi
     fullmessagebuffer = ''
 
     try:
-        for messagebuffer, isPrivate, isPassword in parse_messages(file_data, boarddict, noHeader, verbose):
-            if (private is True or isPrivate is False) and isPassword is False:
-                processed_buffer = process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemoval, redactPII)
-                if individualFiles:
+        for messagebuffer, isPrivate, isPassword in parse_messages(
+            file_data,
+            boarddict,
+            settings.noHeader,
+            settings.verbose,
+        ):
+            if (settings.private is True or isPrivate is False) and isPassword is False:
+                processed_buffer = process_message(
+                    messagebuffer,
+                    settings.truncateSignatures,
+                    settings.cutQuoting,
+                    settings.binariesRemoval,
+                    settings.redactPII,
+                )
+                if settings.individualFiles:
                     encodedBuffer = processed_buffer.encode('latin1')
                     with open(os.path.join(output_path, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
                         f.write(encodedBuffer)
@@ -204,7 +249,7 @@ def process_file(input_path, output_path, verbose, private, noHeader, truncateSi
         logger.error(f"Error: Invalid message type '{error.message_type}'. File may be corrupt.")
         sys.exit(1)
 
-    if not individualFiles:
+    if not settings.individualFiles:
         if output_path is None:
             print(fullmessagebuffer)
         else:
@@ -229,8 +274,18 @@ def main():
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    process_file(args.input_path, args.output_path, args.verbose, args.private, args.noheader, args.truncatesignatures,
-            args.cutquoting, args.individualfiles, args.binariesremoval, args.redactpii, logger)
+    settings = ProcessingSettings(
+        verbose=args.verbose,
+        private=args.private,
+        noHeader=args.noheader,
+        truncateSignatures=args.truncatesignatures,
+        cutQuoting=args.cutquoting,
+        individualFiles=args.individualfiles,
+        binariesRemoval=args.binariesremoval,
+        redactPII=args.redactpii,
+    )
+
+    process_file(args.input_path, args.output_path, settings, logger)
 
 
 if __name__ == '__main__':
