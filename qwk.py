@@ -85,8 +85,9 @@ def load_data(input_path, logger):
                     if file_name.lower() == CONTROL_FILENAME:
                         controlname = file_name
                 if not messagesname:
-                    logger.error(f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}.")
-                    sys.exit(1)
+                    raise FileNotFoundError(
+                        f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}."
+                    )
                 with myzip.open(messagesname) as f:
                     file_data = bytearray(f.read())
                 if controlname:
@@ -95,16 +96,14 @@ def load_data(input_path, logger):
                     numlines = int(controldata[10])
                     for i in range(0, numlines):
                         boarddict[int(controldata[i * 2 + 11])] = controldata[i * 2 + 12].decode('latin1')
-        except zipfile.BadZipFile:
-            logger.error("Error: The provided file is not a valid zip file.")
-            sys.exit(1)
+        except zipfile.BadZipFile as error:
+            raise zipfile.BadZipFile("Error: The provided file is not a valid zip file.") from error
     else:
         try:
             with open(input_path, 'rb') as f:
                 file_data = bytearray(f.read())
-        except IOError:
-            logger.error(f"Error reading {input_path}")
-            sys.exit(1)
+        except IOError as error:
+            raise IOError(f"Error reading {input_path}") from error
     return file_data, boarddict
 
 
@@ -207,7 +206,7 @@ def process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemov
         if redactPII:
             line = re.sub(EMAIL_PATTERN, '[EMAIL]', line)
             line = re.sub(PHONE_PATTERN, '[PHONE]', line)
-        new_lines.append(line.strip('\r\n'))
+        new_lines.append(line)
 
     return '\r\n'.join(new_lines) + '\r\n'
 
@@ -215,39 +214,31 @@ def process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemov
 def process_file(input_path, output_path, settings: ProcessingSettings, logger):
 
     if settings.individualFiles:
-        if not os.path.isdir(output_path):
-            os.mkdir(output_path)
+        os.makedirs(output_path, exist_ok=True)
 
     file_data, boarddict = load_data(input_path, logger)
     fullmessagebuffer = ''
 
-    try:
-        for messagebuffer, isPrivate, isPassword in parse_messages(
-            file_data,
-            boarddict,
-            settings.noHeader,
-            settings.verbose,
-        ):
-            if (settings.private is True or isPrivate is False) and isPassword is False:
-                processed_buffer = process_message(
-                    messagebuffer,
-                    settings.truncateSignatures,
-                    settings.cutQuoting,
-                    settings.binariesRemoval,
-                    settings.redactPII,
-                )
-                if settings.individualFiles:
-                    encodedBuffer = processed_buffer.encode('latin1')
-                    with open(os.path.join(output_path, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
-                        f.write(encodedBuffer)
-                else:
-                    fullmessagebuffer += processed_buffer
-    except MessagesDatFormatError:
-        logger.error("Error: Input file is not a messages.dat file. Missing 'Produced ' header.")
-        sys.exit(1)
-    except InvalidMessageTypeError as error:
-        logger.error(f"Error: Invalid message type '{error.message_type}'. File may be corrupt.")
-        sys.exit(1)
+    for messagebuffer, isPrivate, isPassword in parse_messages(
+        file_data,
+        boarddict,
+        settings.noHeader,
+        settings.verbose,
+    ):
+        if (settings.private is True or isPrivate is False) and isPassword is False:
+            processed_buffer = process_message(
+                messagebuffer,
+                settings.truncateSignatures,
+                settings.cutQuoting,
+                settings.binariesRemoval,
+                settings.redactPII,
+            )
+            if settings.individualFiles:
+                encodedBuffer = processed_buffer.encode('latin1')
+                with open(os.path.join(output_path, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
+                    f.write(encodedBuffer)
+            else:
+                fullmessagebuffer += processed_buffer
 
     if not settings.individualFiles:
         if output_path is None:
@@ -269,9 +260,18 @@ def main():
     parser.add_argument('-i', '--individualfiles', help='output individual files (output_path will be treated as a directory)', action='store_true')
     parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently removes uuencoded and Base64-encoded blocks)', action='store_true')
     parser.add_argument('-r', '--redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
+    parser.add_argument(
+        '-l',
+        '--loglevel',
+        help='Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR)',
+        default='INFO',
+    )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO)
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f'Invalid log level: {args.loglevel}')
+    logging.basicConfig(level=numeric_level)
     logger = logging.getLogger(__name__)
 
     settings = ProcessingSettings(
@@ -285,7 +285,17 @@ def main():
         redactPII=args.redactpii,
     )
 
-    process_file(args.input_path, args.output_path, settings, logger)
+    try:
+        process_file(args.input_path, args.output_path, settings, logger)
+    except (
+        MessagesDatFormatError,
+        InvalidMessageTypeError,
+        FileNotFoundError,
+        zipfile.BadZipFile,
+        IOError,
+    ) as error:
+        logger.error(error)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
