@@ -7,7 +7,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import load_data, parse_messages, process_message, process_file
+from qwk import (
+    ProcessingSettings,
+    load_data,
+    parse_messages,
+    process_message,
+    process_file,
+)
 
 
 @pytest.fixture
@@ -30,6 +36,21 @@ def logger() -> logging.Logger:
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
+
+def _make_settings(**overrides) -> ProcessingSettings:
+    defaults = dict(
+        verbose=False,
+        private=False,
+        noHeader=False,
+        truncateSignatures=False,
+        cutQuoting=False,
+        individualFiles=False,
+        binariesRemoval=False,
+        redactPII=False,
+    )
+    defaults.update(overrides)
+    return ProcessingSettings(**defaults)
 
 
 def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
@@ -76,14 +97,7 @@ def test_process_file_writes_individual_files(
     process_file(
         str(baseline_path),
         str(output_dir),
-        verbose=False,
-        private=False,
-        noHeader=False,
-        truncateSignatures=False,
-        cutQuoting=False,
-        individualFiles=True,
-        binariesRemoval=False,
-        redactPII=False,
+        _make_settings(individualFiles=True),
         logger=logger,
     )
 
@@ -100,14 +114,7 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
     process_file(
         str(baseline_path),
         None,
-        verbose=False,
-        private=False,
-        noHeader=False,
-        truncateSignatures=False,
-        cutQuoting=False,
-        individualFiles=False,
-        binariesRemoval=False,
-        redactPII=False,
+        _make_settings(),
         logger=logger,
     )
 
