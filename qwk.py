@@ -6,12 +6,13 @@ import re
 import hashlib
 import os
 import logging
-from collections import namedtuple
 from dataclasses import dataclass
 
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
 CONTROL_FILENAME = 'control.dat'
+
+QWK_NEWLINE_CHAR = '\xe3'  # DOS CP437 newline character
 
 QUOTE_HEADER_PATTERNS = [
     re.compile(
@@ -63,25 +64,22 @@ class ProcessingSettings:
     redactPII: bool
 
 
-MessageHeader = namedtuple(
-    'MessageHeader',
-    [
-        'status',
-        'msgnum',
-        'msgdate',
-        'msgtime',
-        'msgto',
-        'msgfrom',
-        'msgsubject',
-        'msgpassword',
-        'refnum',
-        'numblocks',
-        'msgflag',
-        'confnum',
-        'lognum',
-        'nettag',
-    ],
-)
+@dataclass
+class MessageHeader:
+    status: bytes
+    msgnum: bytes
+    msgdate: bytes
+    msgtime: bytes
+    msgto: bytes
+    msgfrom: bytes
+    msgsubject: bytes
+    msgpassword: bytes
+    refnum: bytes
+    numblocks: bytes
+    msgflag: bytes
+    confnum: int
+    lognum: int
+    nettag: bytes
 
 
 class MessagesDatFormatError(Exception):
@@ -182,7 +180,7 @@ def parse_messages(file_data, boarddict, noHeader, verbose):
             tempblocks = header.numblocks.decode('latin1').strip()
             intBlocks = int(tempblocks) - 1
         else:
-            temprecord = record.decode('latin1').replace('\xe3', '\r\n')
+            temprecord = record.decode('latin1').replace(QWK_NEWLINE_CHAR, '\r\n')
             if intBlocks == 1:
                 temprecord = temprecord.rstrip() + '\r\n'
             messagebuffer += temprecord
@@ -276,7 +274,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_path', help='The messages.dat filename, or the QWK packet (default: messages.dat)', nargs='?', default='messages.dat')
     parser.add_argument('output_path', help='The output filename or directory. (default: print to console)', nargs='?')
-    parser.add_argument('-v', '--verbose', help='verbose output. export message id fields that may not be relevant', action='store_true')
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        help=(
+            'include additional header details such as conference information, '
+            'message numbers, and reference numbers'
+        ),
+        action='store_true',
+    )
     parser.add_argument('-p', '--private', help='export messages marked private', action='store_true')
     parser.add_argument('-n', '--noheader', help='leave out message header', action='store_true')
     parser.add_argument('-t', '--truncatesignatures', help='truncate at signatures (everything after a line that consists only of "---" or starts with " * ")', action='store_true')

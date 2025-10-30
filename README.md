@@ -29,7 +29,7 @@ For each message, the headers aren't exported in the same order they appear in `
 ## Options
 
 - `--verbose` or `-v`
-If this is set, pyqwk will include message IDs, which probably aren't useful to a modern reader (default: off)
+If this is set, pyqwk will include extra header details: conference information (even when the name can't be found), message numbers, and reference numbers. (default: off)
 
 - `--private` or `-p`
 If this is set, pyqwk will include messages marked as private. If you are an archivist, you may want to not include personal messages from people who kindly donated their qwk packets. But if you're archiving your own, use `--private` to include them. (default: off)
