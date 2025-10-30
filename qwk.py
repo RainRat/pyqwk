@@ -7,6 +7,7 @@ import hashlib
 import os
 import logging
 from dataclasses import dataclass
+from typing import Any, Dict, Iterator, Mapping, Optional, Tuple
 
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
@@ -52,6 +53,12 @@ SIGNATURE_PATTERNS_STARTSWITH = (
 )
 
 
+try:
+    from tqdm import tqdm as tqdm_factory  # type: ignore
+except ImportError:  # pragma: no cover - tqdm is optional
+    tqdm_factory = None  # type: ignore[assignment]
+
+
 @dataclass
 class ProcessingSettings:
     verbose: bool
@@ -62,6 +69,7 @@ class ProcessingSettings:
     individualFiles: bool
     binariesRemoval: bool
     redactPII: bool
+    quiet: bool = False
 
 
 @dataclass
@@ -94,8 +102,8 @@ class InvalidMessageTypeError(Exception):
         self.message_type = message_type
 
 
-def load_data(input_path, logger):
-    boarddict = {}
+def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[int, str]]:
+    boarddict: Dict[int, str] = {}
     if zipfile.is_zipfile(input_path):
         messagesname = ''
         controlname = ''
@@ -130,7 +138,29 @@ def load_data(input_path, logger):
     return file_data, boarddict
 
 
-def parse_messages(file_data, boarddict, noHeader, verbose):
+def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
+    header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
+    header = MessageHeader(*header_data)
+    message_type = header.status.decode('latin1')
+    is_password = False
+    is_private = True
+    if message_type in ['+', '*', '~', '`']:
+        pass
+    elif message_type in ['%', '^', '!', '#', '$']:
+        is_password = True
+    elif message_type in [' ', '-']:
+        is_private = False
+    else:
+        raise InvalidMessageTypeError(message_type)
+    return header, is_private, is_password
+
+
+def parse_messages(
+    file_data: bytearray,
+    boarddict: Mapping[int, str],
+    noHeader: bool,
+    verbose: bool,
+) -> Iterator[Tuple[str, bool, bool]]:
     intBlocks = 0
     messagebuffer = ''
     isPrivate = True
@@ -142,19 +172,7 @@ def parse_messages(file_data, boarddict, noHeader, verbose):
                 raise MessagesDatFormatError
             continue
         if intBlocks == 0:
-            header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
-            header = MessageHeader(*header_data)
-            messageType = header.status.decode('latin1')
-            isPassword = False
-            isPrivate = True
-            if messageType in ['+', '*', '~', '`']:
-                pass
-            elif messageType in ['%', '^', '!', '#', '$']:
-                isPassword = True
-            elif messageType in [' ', '-']:
-                isPrivate = False
-            else:
-                raise InvalidMessageTypeError(messageType)
+            header, isPrivate, isPassword = _parse_header_record(record)
 
             not_found_flag = False
             try:
@@ -189,7 +207,32 @@ def parse_messages(file_data, boarddict, noHeader, verbose):
                 yield messagebuffer, isPrivate, isPassword
 
 
-def process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemoval, redactPII):
+def count_messages(file_data: bytearray) -> int:
+    message_count = 0
+    intBlocks = 0
+    for i in range(0, len(file_data), BLOCK_SIZE):
+        record = file_data[i:i + BLOCK_SIZE]
+        if i == 0:
+            if record[0:9] != b'Produced ':
+                raise MessagesDatFormatError
+            continue
+        if intBlocks == 0:
+            header, _, _ = _parse_header_record(record)
+            tempblocks = header.numblocks.decode('latin1').strip()
+            intBlocks = int(tempblocks) - 1
+            message_count += 1
+        else:
+            intBlocks = intBlocks - 1
+    return message_count
+
+
+def process_message(
+    messagebuffer: str,
+    truncateSignatures: bool,
+    cutQuoting: bool,
+    binariesRemoval: bool,
+    redactPII: bool,
+) -> str:
     lines = messagebuffer.splitlines()
 
     new_lines = []
@@ -233,34 +276,65 @@ def process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemov
     return '\r\n'.join(new_lines) + '\r\n'
 
 
-def process_file(input_path, output_path, settings: ProcessingSettings, logger):
+def process_file(
+    input_path: str,
+    output_path: Optional[str],
+    settings: ProcessingSettings,
+    logger: logging.Logger,
+) -> None:
 
+    output_dir: Optional[str] = None
     if settings.individualFiles:
-        os.makedirs(output_path, exist_ok=True)
+        if output_path is None:
+            raise ValueError('An output path is required when using individual files.')
+        output_dir = output_path
+        os.makedirs(output_dir, exist_ok=True)
 
     file_data, boarddict = load_data(input_path, logger)
     fullmessagebuffer = ''
 
-    for messagebuffer, isPrivate, isPassword in parse_messages(
-        file_data,
-        boarddict,
-        settings.noHeader,
-        settings.verbose,
-    ):
-        if (settings.private is True or isPrivate is False) and isPassword is False:
-            processed_buffer = process_message(
-                messagebuffer,
-                settings.truncateSignatures,
-                settings.cutQuoting,
-                settings.binariesRemoval,
-                settings.redactPII,
+    progress_bar: Optional[Any] = None
+    if not settings.quiet:
+        if tqdm_factory is None:
+            logger.info('Install tqdm to enable progress reporting.')
+        else:
+            total_messages = count_messages(file_data)
+            progress_bar = tqdm_factory(
+                total=total_messages,
+                unit='msg',
+                desc='Processing messages',
             )
-            if settings.individualFiles:
-                encodedBuffer = processed_buffer.encode('latin1')
-                with open(os.path.join(output_path, hashlib.sha1(encodedBuffer).hexdigest()), 'wb') as f:
-                    f.write(encodedBuffer)
-            else:
-                fullmessagebuffer += processed_buffer
+
+    try:
+        for messagebuffer, isPrivate, isPassword in parse_messages(
+            file_data,
+            boarddict,
+            settings.noHeader,
+            settings.verbose,
+        ):
+            if progress_bar is not None:
+                progress_bar.update(1)
+            if (settings.private is True or isPrivate is False) and isPassword is False:
+                processed_buffer = process_message(
+                    messagebuffer,
+                    settings.truncateSignatures,
+                    settings.cutQuoting,
+                    settings.binariesRemoval,
+                    settings.redactPII,
+                )
+                if settings.individualFiles:
+                    encodedBuffer = processed_buffer.encode('latin1')
+                    assert output_dir is not None
+                    with open(
+                        os.path.join(output_dir, hashlib.sha1(encodedBuffer).hexdigest()),
+                        'wb',
+                    ) as f:
+                        f.write(encodedBuffer)
+                else:
+                    fullmessagebuffer += processed_buffer
+    finally:
+        if progress_bar is not None:
+            progress_bar.close()
 
     if not settings.individualFiles:
         if output_path is None:
@@ -290,6 +364,7 @@ def main():
     parser.add_argument('-i', '--individualfiles', help='output individual files (output_path will be treated as a directory)', action='store_true')
     parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently removes uuencoded and Base64-encoded blocks)', action='store_true')
     parser.add_argument('-r', '--redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
+    parser.add_argument('-q', '--quiet', help='suppress progress output', action='store_true')
     parser.add_argument(
         '-l',
         '--loglevel',
@@ -313,6 +388,7 @@ def main():
         individualFiles=args.individualfiles,
         binariesRemoval=args.binariesremoval,
         redactPII=args.redactpii,
+        quiet=args.quiet,
     )
 
     try:
