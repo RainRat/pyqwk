@@ -14,16 +14,41 @@ MESSAGES_FILENAME = 'messages.dat'
 CONTROL_FILENAME = 'control.dat'
 
 QUOTE_HEADER_PATTERNS = [
-    r".*(replied|'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message| the following| this)? to ",
-    r"^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message|In a message).* to "
+    re.compile(
+        r".*(replied|'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message| the following| this)? to "
+    ),
+    re.compile(
+        r"^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message|In a message).* to "
+    ),
 ]
-QUOTE_PATTERN = r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\})'
-UUE_PATTERN = r'^begin\s\d{3}\s'
-UUE_DATA_PATTERN = r'^M[\x21-\x60]{60}$'
-UUE_LOOSE_PATTERN = r'[\x21-\x4c][\x21-\x60]{4,60}$'
-BASE64_PATTERN = r'^[A-Za-z0-9+/=]{60,}$'
-EMAIL_PATTERN = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
-PHONE_PATTERN = r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b'
+RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\})')
+RE_UUE_PATTERN = re.compile(r'^begin\s\d{3}\s')
+RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
+RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
+RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
+RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
+RE_PHONE_PATTERN = re.compile(r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b')
+
+SIGNATURE_PATTERNS_EXACT = {
+    "---",
+    "___",
+    "--",
+    "-----BEGIN PGP SIGNATURE-----",
+    "___--BEGIN PGP SIGNATURE-----",
+    "-----BEGIN GPG SIGNATURE-----",
+}
+
+SIGNATURE_PATTERNS_STARTSWITH = (
+    " * ",
+    "--- ",
+    "-- ",
+    "___ ",
+    "... ",
+    "-+- ",
+    "~~~ ",
+    " \xfe ",
+    " *** ",
+)
 
 
 @dataclass
@@ -173,39 +198,38 @@ def process_message(messagebuffer, truncateSignatures, cutQuoting, binariesRemov
     seenNonBlankLine = False
     for j, line in enumerate(lines):
         if truncateSignatures and (
-                line == "---" or line.startswith(" * ") or line.startswith("--- ") or line == "___"
-                or line == "--" or line.startswith("-- ") or line.startswith("___ ")
-                or line.startswith("... ") or line.startswith("-+- ")
-                or line == "-----BEGIN PGP SIGNATURE-----" or line.startswith("~~~ ")
-                or line == "___--BEGIN PGP SIGNATURE-----" or line.startswith(" \xfe ")
-                or line == "-----BEGIN GPG SIGNATURE-----" or line.startswith(" *** ")):
+            line in SIGNATURE_PATTERNS_EXACT
+            or any(line.startswith(prefix) for prefix in SIGNATURE_PATTERNS_STARTSWITH)
+        ):
             break
         if cutQuoting:
             if seenNonBlankLine is False:
-                if any(re.match(pattern, line) for pattern in QUOTE_HEADER_PATTERNS):
+                if any(pattern.match(line) for pattern in QUOTE_HEADER_PATTERNS):
                     continue
-            if re.match(QUOTE_PATTERN, line):
+            if RE_QUOTE_PATTERN.match(line):
                 continue
             elif j > 0 and j < (len(lines) - 1) \
-                    and re.match(QUOTE_PATTERN, lines[j - 1]) \
-                    and re.match(QUOTE_PATTERN, lines[j + 1]):
+                    and RE_QUOTE_PATTERN.match(lines[j - 1]) \
+                    and RE_QUOTE_PATTERN.match(lines[j + 1]):
                 continue
         if binariesRemoval:
-            if (re.match(BASE64_PATTERN, line)
-                    or re.match(UUE_DATA_PATTERN, line)
-                    or re.match(UUE_PATTERN, line)):
+            if (
+                RE_BASE64_PATTERN.match(line)
+                or RE_UUE_DATA_PATTERN.match(line)
+                or RE_UUE_PATTERN.match(line)
+            ):
                 continue
-            if re.match(UUE_LOOSE_PATTERN, line):
+            if RE_UUE_LOOSE_PATTERN.match(line):
                 prevLine = lines[max(0, j - 1)]
-                if re.match(UUE_DATA_PATTERN, prevLine) or re.match(UUE_PATTERN, prevLine):
+                if RE_UUE_DATA_PATTERN.match(prevLine) or RE_UUE_PATTERN.match(prevLine):
                     continue
         if seenNonBlankLine is False and line.strip() == '':
             continue
         else:
             seenNonBlankLine = True
         if redactPII:
-            line = re.sub(EMAIL_PATTERN, '[EMAIL]', line)
-            line = re.sub(PHONE_PATTERN, '[PHONE]', line)
+            line = RE_EMAIL_PATTERN.sub('[EMAIL]', line)
+            line = RE_PHONE_PATTERN.sub('[PHONE]', line)
         new_lines.append(line)
 
     return '\r\n'.join(new_lines) + '\r\n'
