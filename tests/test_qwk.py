@@ -26,6 +26,11 @@ def expected_output_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages_expected.txt"
 
 
+@pytest.fixture
+def testdata_dir() -> Path:
+    return Path(__file__).resolve().parents[1] / "testdata"
+
+
 def _read_expected(path: Path) -> str:
     text = path.read_text(encoding="latin1")
     return text.replace("\n", "\r\n")
@@ -122,3 +127,48 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
     expected_message = _read_expected(expected_output_path)
     assert captured.out == expected_message + "\n"
     assert captured.err == ""
+
+
+@pytest.mark.parametrize(
+    "archive_name, expected_boarddict",
+    [
+        (
+            "test1_qwk.zip",
+            {
+                1: "General Mess",
+                2: "FidoNet NetM",
+                3: "Net140.Tech",
+                4: "Pnw.Tech",
+                5: "Stoon.Sysop",
+            },
+        ),
+        (
+            "test2_qwk.zip",
+            {
+                1: "General Mess",
+                2: "FidoNet NetM",
+                3: "Net140.Tech",
+                4: "Pnw.Tech",
+                5: "Stoon.Sysop",
+            },
+        ),
+    ],
+)
+def test_load_data_reads_all_conferences_from_control_dat(
+    archive_name: str, expected_boarddict: dict[int, str], testdata_dir: Path, logger: logging.Logger
+) -> None:
+    file_data, boarddict = load_data(str(testdata_dir / archive_name), logger)
+
+    assert isinstance(file_data, bytearray)
+    assert boarddict == expected_boarddict
+
+
+def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
+    file_data, boarddict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
+
+    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False))
+
+    assert len(messages) == 2
+    assert {is_private for _, is_private, _ in messages} == {False}
+    assert {is_password for _, _, is_password in messages} == {False}
+    assert all("Conference: Net140.Tech" in message for message, _, _ in messages)
