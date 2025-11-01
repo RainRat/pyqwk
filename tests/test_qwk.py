@@ -9,6 +9,9 @@ sys.path.insert(0, str(ROOT))
 
 from qwk import (
     ProcessingSettings,
+    ParsedMessage,
+    ProcessedMessage,
+    _order_messages_by_thread,
     load_data,
     parse_messages,
     process_message,
@@ -51,6 +54,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         truncateSignatures=False,
         cutQuoting=False,
         individualFiles=False,
+        threaded=False,
         binariesRemoval=False,
         redactPII=False,
     )
@@ -67,7 +71,15 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False))
     expected_message = _read_expected(expected_output_path)
 
-    assert messages == [(expected_message, False, False)]
+    assert len(messages) == 1
+    message = messages[0]
+    assert isinstance(message, ParsedMessage)
+    assert message.text == expected_message
+    assert message.is_private is False
+    assert message.is_password is False
+    assert message.msgnum == 28
+    assert message.refnum is None
+    assert message.confnum == 3
 
 
 def test_process_message_transforms_content() -> None:
@@ -129,6 +141,30 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
     assert captured.err == ""
 
 
+def test_order_messages_by_thread_groups_children() -> None:
+    messages = [
+        ProcessedMessage("child-before-parent\r\n", msgnum=2, refnum=1, confnum=1),
+        ProcessedMessage("root-one\r\n", msgnum=1, refnum=None, confnum=1),
+        ProcessedMessage("nested-child\r\n", msgnum=3, refnum=2, confnum=1),
+        ProcessedMessage("orphan\r\n", msgnum=4, refnum=99, confnum=1),
+        ProcessedMessage("root-two\r\n", msgnum=5, refnum=None, confnum=1),
+        ProcessedMessage("conf-two-root\r\n", msgnum=6, refnum=None, confnum=2),
+        ProcessedMessage("conf-two-child\r\n", msgnum=7, refnum=6, confnum=2),
+    ]
+
+    ordered = _order_messages_by_thread(messages)
+
+    assert [message.text.strip() for message in ordered] == [
+        "root-one",
+        "child-before-parent",
+        "nested-child",
+        "orphan",
+        "root-two",
+        "conf-two-root",
+        "conf-two-child",
+    ]
+
+
 @pytest.mark.parametrize(
     "archive_name, expected_boarddict",
     [
@@ -169,6 +205,6 @@ def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logg
     messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False))
 
     assert len(messages) == 2
-    assert {is_private for _, is_private, _ in messages} == {False}
-    assert {is_password for _, _, is_password in messages} == {False}
-    assert all("Conference: Net140.Tech" in message for message, _, _ in messages)
+    assert {message.is_private for message in messages} == {False}
+    assert {message.is_password for message in messages} == {False}
+    assert all("Conference: Net140.Tech" in message.text for message in messages)
