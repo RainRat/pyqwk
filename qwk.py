@@ -6,8 +6,9 @@ import re
 import hashlib
 import os
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Tuple
 
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
@@ -67,9 +68,27 @@ class ProcessingSettings:
     truncateSignatures: bool
     cutQuoting: bool
     individualFiles: bool
+    threaded: bool
     binariesRemoval: bool
     redactPII: bool
     quiet: bool = False
+
+
+class ParsedMessage(NamedTuple):
+    text: str
+    is_private: bool
+    is_password: bool
+    msgnum: Optional[int]
+    refnum: Optional[int]
+    confnum: int
+
+
+@dataclass
+class ProcessedMessage:
+    text: str
+    msgnum: Optional[int]
+    refnum: Optional[int]
+    confnum: int
 
 
 @dataclass
@@ -166,11 +185,14 @@ def parse_messages(
     boarddict: Mapping[int, str],
     noHeader: bool,
     verbose: bool,
-) -> Iterator[Tuple[str, bool, bool]]:
+) -> Iterator[ParsedMessage]:
     intBlocks = 0
     messagebuffer = ''
     isPrivate = True
     isPassword = False
+    current_msgnum: Optional[int] = None
+    current_refnum: Optional[int] = None
+    current_confnum = 0
     for i in range(0, len(file_data), BLOCK_SIZE):
         record = file_data[i:i + BLOCK_SIZE]
         if i == 0:
@@ -179,6 +201,17 @@ def parse_messages(
             continue
         if intBlocks == 0:
             header, isPrivate, isPassword = _parse_header_record(record)
+
+            msgnum_text = header.msgnum.decode('latin1').strip()
+            current_msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
+
+            refnum_text = header.refnum.decode('latin1').strip()
+            if refnum_text.isdigit():
+                current_refnum = int(refnum_text) or None
+            else:
+                current_refnum = None
+
+            current_confnum = header.confnum
 
             not_found_flag = False
             try:
@@ -210,7 +243,14 @@ def parse_messages(
             messagebuffer += temprecord
             intBlocks = intBlocks - 1
             if intBlocks == 0:
-                yield messagebuffer, isPrivate, isPassword
+                yield ParsedMessage(
+                    messagebuffer,
+                    isPrivate,
+                    isPassword,
+                    current_msgnum,
+                    current_refnum,
+                    current_confnum,
+                )
 
 
 def count_messages(file_data: bytearray) -> int:
@@ -297,7 +337,7 @@ def process_file(
         os.makedirs(output_dir, exist_ok=True)
 
     file_data, boarddict = load_data(input_path, logger)
-    fullmessagebuffer = ''
+    collected_messages: List[ProcessedMessage] = []
 
     progress_bar: Optional[Any] = None
     if not settings.quiet:
@@ -312,7 +352,7 @@ def process_file(
             )
 
     try:
-        for messagebuffer, isPrivate, isPassword in parse_messages(
+        for parsed_message in parse_messages(
             file_data,
             boarddict,
             settings.noHeader,
@@ -320,9 +360,9 @@ def process_file(
         ):
             if progress_bar is not None:
                 progress_bar.update(1)
-            if (settings.private is True or isPrivate is False) and isPassword is False:
+            if (settings.private is True or parsed_message.is_private is False) and parsed_message.is_password is False:
                 processed_buffer = process_message(
-                    messagebuffer,
+                    parsed_message.text,
                     settings.truncateSignatures,
                     settings.cutQuoting,
                     settings.binariesRemoval,
@@ -337,12 +377,26 @@ def process_file(
                     ) as f:
                         f.write(encodedBuffer)
                 else:
-                    fullmessagebuffer += processed_buffer
+                    collected_messages.append(
+                        ProcessedMessage(
+                            text=processed_buffer,
+                            msgnum=parsed_message.msgnum,
+                            refnum=parsed_message.refnum,
+                            confnum=parsed_message.confnum,
+                        )
+                    )
     finally:
         if progress_bar is not None:
             progress_bar.close()
 
     if not settings.individualFiles:
+        if settings.threaded:
+            ordered_messages = _order_messages_by_thread(collected_messages)
+        else:
+            ordered_messages = collected_messages
+
+        fullmessagebuffer = ''.join(message.text for message in ordered_messages)
+
         if output_path is None:
             print(fullmessagebuffer)
         else:
@@ -368,6 +422,7 @@ def main():
     parser.add_argument('-t', '--truncatesignatures', help='truncate at signatures (everything after a line that consists only of "---" or starts with " * ")', action='store_true')
     parser.add_argument('-c', '--cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
     parser.add_argument('-i', '--individualfiles', help='output individual files (output_path will be treated as a directory)', action='store_true')
+    parser.add_argument('-T', '--threaded', help='group messages by thread when exporting', action='store_true')
     parser.add_argument('-b', '--binariesremoval', help='delete binaries (currently removes uuencoded and Base64-encoded blocks)', action='store_true')
     parser.add_argument('-r', '--redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
     parser.add_argument('-q', '--quiet', help='suppress progress output', action='store_true')
@@ -392,6 +447,7 @@ def main():
         truncateSignatures=args.truncatesignatures,
         cutQuoting=args.cutquoting,
         individualFiles=args.individualfiles,
+        threaded=args.threaded,
         binariesRemoval=args.binariesremoval,
         redactPII=args.redactpii,
         quiet=args.quiet,
@@ -408,6 +464,50 @@ def main():
     ) as error:
         logger.error(error)
         sys.exit(1)
+
+
+def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[ProcessedMessage]:
+    if not messages:
+        return []
+
+    index_by_key: Dict[Tuple[int, int], int] = {}
+    children: Dict[int, List[int]] = defaultdict(list)
+
+    for index, message in enumerate(messages):
+        if message.msgnum is not None:
+            index_by_key[(message.confnum, message.msgnum)] = index
+            children.setdefault(index, [])
+
+    attached = [False] * len(messages)
+    for index, message in enumerate(messages):
+        if message.refnum is None:
+            continue
+        parent_index = index_by_key.get((message.confnum, message.refnum))
+        if parent_index is None or parent_index == index:
+            continue
+        children[parent_index].append(index)
+        attached[index] = True
+
+    ordered_indices: List[int] = []
+    visited: set[int] = set()
+
+    def visit(idx: int) -> None:
+        if idx in visited:
+            return
+        visited.add(idx)
+        ordered_indices.append(idx)
+        for child_idx in children.get(idx, []):
+            visit(child_idx)
+
+    for idx, is_attached in enumerate(attached):
+        if not is_attached:
+            visit(idx)
+
+    for idx in range(len(messages)):
+        if idx not in visited:
+            visit(idx)
+
+    return [messages[idx] for idx in ordered_indices]
 
 
 if __name__ == '__main__':
