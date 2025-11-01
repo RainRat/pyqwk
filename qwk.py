@@ -124,9 +124,15 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
                 if controlname:
                     with myzip.open(controlname) as f:
                         controldata = f.read().splitlines()
-                    numlines = int(controldata[10])
-                    for i in range(0, numlines):
-                        boarddict[int(controldata[i * 2 + 11])] = controldata[i * 2 + 12].decode('latin1')
+                    num_conferences = int(controldata[10]) + 1
+                    for i in range(num_conferences):
+                        index = 11 + i * 2
+                        try:
+                            conf_number = int(controldata[index])
+                            conf_name = controldata[index + 1].decode('latin1')
+                        except IndexError as error:
+                            raise MessagesDatFormatError from error
+                        boarddict[conf_number] = conf_name
         except zipfile.BadZipFile as error:
             raise zipfile.BadZipFile("Error: The provided file is not a valid zip file.") from error
     else:
