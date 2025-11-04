@@ -110,6 +110,31 @@ def test_process_message_transforms_content() -> None:
     )
 
 
+def test_process_message_removes_yenc_binaries() -> None:
+    message = (
+        "Intro line\r\n"
+        "=ybegin line=128 size=12345 name=test.zip\r\n"
+        "yEnc encoded data\r\n"
+        "=ypart begin=1 end=1024\r\n"
+        "more yEnc data\r\n"
+        "=yend size=12345 crc32=12345678\r\n"
+        "Another line\r\n"
+    )
+
+    processed = process_message(
+        message,
+        truncateSignatures=False,
+        cutQuoting=False,
+        binariesRemoval=True,
+        redactPII=False,
+    )
+
+    assert processed == (
+        "Intro line\r\n"
+        "Another line\r\n"
+    )
+
+
 def test_process_file_writes_individual_files(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
