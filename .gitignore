@@ -1,2 +1,3 @@
 *.qwk
 /messages.dat
+__pycache__/
