@@ -6,8 +6,11 @@ import re
 import hashlib
 import os
 import logging
+import json
+from xml.dom import minidom
+import xml.etree.ElementTree as ET
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Tuple
 
 BLOCK_SIZE = 128
@@ -71,16 +74,19 @@ class ProcessingSettings:
     threaded: bool
     binariesRemoval: bool
     redactPII: bool
+    format: str
     quiet: bool = False
 
 
-class ParsedMessage(NamedTuple):
+@dataclass
+class ParsedMessage:
     text: str
     is_private: bool
     is_password: bool
     msgnum: Optional[int]
     refnum: Optional[int]
     confnum: int
+    header: 'MessageHeader'
 
 
 @dataclass
@@ -89,6 +95,7 @@ class ProcessedMessage:
     msgnum: Optional[int]
     refnum: Optional[int]
     confnum: int
+    header: 'MessageHeader'
 
 
 @dataclass
@@ -107,6 +114,16 @@ class MessageHeader:
     confnum: int
     lognum: int
     nettag: bytes
+
+    def _to_dict(self):
+        result = {}
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if isinstance(value, bytes):
+                result[field.name] = value.decode('latin1').strip()
+            else:
+                result[field.name] = value
+        return result
 
 
 class MessagesDatFormatError(Exception):
@@ -244,12 +261,13 @@ def parse_messages(
             intBlocks = intBlocks - 1
             if intBlocks == 0:
                 yield ParsedMessage(
-                    messagebuffer,
-                    isPrivate,
-                    isPassword,
-                    current_msgnum,
-                    current_refnum,
-                    current_confnum,
+                    text=messagebuffer,
+                    is_private=isPrivate,
+                    is_password=isPassword,
+                    msgnum=current_msgnum,
+                    refnum=current_refnum,
+                    confnum=current_confnum,
+                    header=header,
                 )
 
 
@@ -363,6 +381,7 @@ def process_file(
                             msgnum=parsed_message.msgnum,
                             refnum=parsed_message.refnum,
                             confnum=parsed_message.confnum,
+                            header=parsed_message.header,
                         )
                     )
     finally:
@@ -375,13 +394,63 @@ def process_file(
         else:
             ordered_messages = collected_messages
 
-        fullmessagebuffer = ''.join(message.text for message in ordered_messages)
-
-        if output_path is None:
-            print(fullmessagebuffer)
+        if settings.format == 'json':
+            _export_json(ordered_messages, output_path)
+        elif settings.format == 'xml':
+            _export_xml(ordered_messages, output_path)
         else:
-            with open(output_path, 'w', encoding='latin1') as f:
-                f.write(fullmessagebuffer)
+            fullmessagebuffer = ''.join(message.text for message in ordered_messages)
+
+            if output_path is None:
+                print(fullmessagebuffer)
+            else:
+                with open(output_path, 'w', encoding='latin1') as f:
+                    f.write(fullmessagebuffer)
+
+
+def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
+    output_data = []
+    for message in messages:
+        output_data.append(
+            {
+                'header': message.header._to_dict(),
+                'text': message.text,
+            }
+        )
+    output_json = json.dumps(output_data, indent=4)
+    if output_path is None:
+        print(output_json)
+    else:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(output_json)
+
+
+def _sanitize_xml_string(s: str) -> str:
+    return re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]', '', s)
+
+
+def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
+    root = ET.Element('messages')
+    for message in messages:
+        msg_element = ET.SubElement(root, 'message')
+        header_element = ET.SubElement(msg_element, 'header')
+        header_data = message.header._to_dict()
+        for key, value in header_data.items():
+            child = ET.SubElement(header_element, key)
+            child.text = _sanitize_xml_string(str(value))
+
+        text_element = ET.SubElement(msg_element, 'text')
+        text_element.text = _sanitize_xml_string(message.text)
+
+    rough_string = ET.tostring(root, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    pretty_xml = reparsed.toprettyxml(indent='  ')
+
+    if output_path is None:
+        print(pretty_xml)
+    else:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(pretty_xml)
 
 
 def main():
@@ -412,6 +481,12 @@ def main():
         help='Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR)',
         default='INFO',
     )
+    parser.add_argument(
+        '--format',
+        help='Set the output format (text, json, xml)',
+        default='text',
+        choices=['text', 'json', 'xml'],
+    )
     args = parser.parse_args()
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -431,6 +506,7 @@ def main():
         binariesRemoval=args.binariesremoval,
         redactPII=args.redactpii,
         quiet=args.quiet,
+        format=args.format,
     )
 
     try:

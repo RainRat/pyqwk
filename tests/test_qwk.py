@@ -1,5 +1,6 @@
 import logging
 import sys
+import json
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from qwk import (
     ProcessingSettings,
     ParsedMessage,
     ProcessedMessage,
+    MessageHeader,
     _order_messages_by_thread,
     load_data,
     parse_messages,
@@ -57,6 +59,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         threaded=False,
         binariesRemoval=False,
         redactPII=False,
+        format="text",
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -142,14 +145,30 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
 
 
 def test_order_messages_by_thread_groups_children() -> None:
+    header = MessageHeader(
+        status=b'',
+        msgnum=b'',
+        msgdate=b'',
+        msgtime=b'',
+        msgto=b'',
+        msgfrom=b'',
+        msgsubject=b'',
+        msgpassword=b'',
+        refnum=b'',
+        numblocks=b'',
+        msgflag=b'',
+        confnum=0,
+        lognum=0,
+        nettag=b'',
+    )
     messages = [
-        ProcessedMessage("child-before-parent\r\n", msgnum=2, refnum=1, confnum=1),
-        ProcessedMessage("root-one\r\n", msgnum=1, refnum=None, confnum=1),
-        ProcessedMessage("nested-child\r\n", msgnum=3, refnum=2, confnum=1),
-        ProcessedMessage("orphan\r\n", msgnum=4, refnum=99, confnum=1),
-        ProcessedMessage("root-two\r\n", msgnum=5, refnum=None, confnum=1),
-        ProcessedMessage("conf-two-root\r\n", msgnum=6, refnum=None, confnum=2),
-        ProcessedMessage("conf-two-child\r\n", msgnum=7, refnum=6, confnum=2),
+        ProcessedMessage("child-before-parent\r\n", msgnum=2, refnum=1, confnum=1, header=header),
+        ProcessedMessage("root-one\r\n", msgnum=1, refnum=None, confnum=1, header=header),
+        ProcessedMessage("nested-child\r\n", msgnum=3, refnum=2, confnum=1, header=header),
+        ProcessedMessage("orphan\r\n", msgnum=4, refnum=99, confnum=1, header=header),
+        ProcessedMessage("root-two\r\n", msgnum=5, refnum=None, confnum=1, header=header),
+        ProcessedMessage("conf-two-root\r\n", msgnum=6, refnum=None, confnum=2, header=header),
+        ProcessedMessage("conf-two-child\r\n", msgnum=7, refnum=6, confnum=2, header=header),
     ]
 
     ordered = _order_messages_by_thread(messages)
@@ -208,3 +227,49 @@ def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logg
     assert {message.is_private for message in messages} == {False}
     assert {message.is_password for message in messages} == {False}
     assert all("Conference: Net140.Tech" in message.text for message in messages)
+
+
+def test_process_file_writes_json(
+    tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
+) -> None:
+    output_path = tmp_path / "messages.json"
+    process_file(
+        str(baseline_path),
+        str(output_path),
+        _make_settings(format="json"),
+        logger=logger,
+    )
+
+    with output_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert isinstance(data, list)
+    assert len(data) == 1
+    message = data[0]
+    assert "header" in message
+    assert "text" in message
+    expected_message = _read_expected(expected_output_path)
+    assert message["text"] == expected_message
+    assert message["header"]["msgnum"] == "28"
+
+
+def test_process_file_writes_xml(
+    tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
+) -> None:
+    output_path = tmp_path / "messages.xml"
+    process_file(
+        str(baseline_path),
+        str(output_path),
+        _make_settings(format="xml"),
+        logger=logger,
+    )
+
+    with output_path.open("r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert '<messages>' in content
+    assert '<message>' in content
+    assert '<header>' in content
+    assert '<msgnum>28' in content
+    expected_message = _read_expected(expected_output_path)
+    assert expected_message.replace('\r\n', '\n') in content
