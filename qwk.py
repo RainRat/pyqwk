@@ -30,7 +30,7 @@ RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
 RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
 RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
 RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
-RE_PHONE_PATTERN = re.compile(r'\b(?:\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})\b')
+RE_PHONE_PATTERN = re.compile(r'\b(?:\+\d{1,3}[-\.\s]?)?(?:\(\d{1,4}\)[-\.\s]?)?\d{1,4}[-\.\s]?\d{1,4}[-\.\s]?\d{1,9}\b')
 
 SIGNATURE_PATTERNS_EXACT = {
     "---",
@@ -286,7 +286,7 @@ def process_message(
     for j, line in enumerate(lines):
         if truncateSignatures and (
             line in SIGNATURE_PATTERNS_EXACT
-            or any(line.startswith(prefix) for prefix in SIGNATURE_PATTERNS_STARTSWITH)
+            or line.startswith(SIGNATURE_PATTERNS_STARTSWITH)
         ):
             break
         if cutQuoting:
@@ -419,7 +419,7 @@ def main():
     )
     parser.add_argument('-p', '--private', help='export messages marked private', action='store_true')
     parser.add_argument('-n', '--noheader', help='leave out message header', action='store_true')
-    parser.add_argument('-t', '--truncatesignatures', help='truncate at signatures (everything after a line that consists only of "---" or starts with " * ")', action='store_true')
+    parser.add_argument('-t', '--truncatesignatures', help='truncate at common signature lines (e.g., "---", " * ")', action='store_true')
     parser.add_argument('-c', '--cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
     parser.add_argument('-i', '--individualfiles', help='output individual files (output_path will be treated as a directory)', action='store_true')
     parser.add_argument('-T', '--threaded', help='group messages by thread when exporting', action='store_true')

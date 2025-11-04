@@ -38,7 +38,7 @@ If this is set, pyqwk will include messages marked as private. If you are an arc
 If this is set, pyqwk will leave out the message header. (default: off, meaning message headers will be included)
 
 - `--truncatesignatures` or `-t`
-If this is set, pyqwk will truncate each message at the signature. Truncation happens when a line either exactly matches one of `"---"`, `"___"`, `"--"`, `"-----BEGIN PGP SIGNATURE-----"`, `"___--BEGIN PGP SIGNATURE-----"`, or `"-----BEGIN GPG SIGNATURE-----"`, or starts with one of `" * "`, `"--- "`, `"-- "`, `"___ "`, `"... "`, `"-+- "`, `"~~~ "`, `" \xfe "`, or `" *** "`. (default: off)
+If this is set, pyqwk will truncate each message at the signature. Truncation happens at common signature separators. See the `SIGNATURE_PATTERNS_EXACT` and `SIGNATURE_PATTERNS_STARTSWITH` variables in `qwk.py` for the complete list. (default: off)
 
 - `--cutquoting` or `-c`
 If this is set, pyqwk will delete quoted text (that uses ">" as quoting character). (default: off)
