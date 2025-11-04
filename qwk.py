@@ -32,6 +32,7 @@ RE_UUE_PATTERN = re.compile(r'^begin\s\d{3}\s')
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
 RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
 RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
+RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
 RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
 RE_PHONE_PATTERN = re.compile(r'\b(?:\+\d{1,3}[-\.\s]?)?(?:\(\d{1,4}\)[-\.\s]?)?\d{1,4}[-\.\s]?\d{1,4}[-\.\s]?\d{1,9}\b')
 
@@ -282,6 +283,7 @@ def process_message(
 
     new_lines = []
     seenNonBlankLine = False
+    in_yenc_block = False
     for j, line in enumerate(lines):
         if truncateSignatures and (
             line in SIGNATURE_PATTERNS_EXACT
@@ -299,6 +301,16 @@ def process_message(
                     and RE_QUOTE_PATTERN.match(lines[j + 1]):
                 continue
         if binariesRemoval:
+            is_yenc_marker = RE_YENC_PATTERN.match(line)
+
+            if is_yenc_marker and line.startswith('=ybegin'):
+                in_yenc_block = True
+
+            if in_yenc_block or is_yenc_marker:
+                if is_yenc_marker and line.startswith('=yend'):
+                    in_yenc_block = False
+                continue
+
             if (
                 RE_BASE64_PATTERN.match(line)
                 or RE_UUE_DATA_PATTERN.match(line)
