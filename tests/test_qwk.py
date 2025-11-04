@@ -68,7 +68,7 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert isinstance(file_data, bytearray)
     assert boarddict == {}
 
-    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False))
+    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False, progress_bar=None))
     expected_message = _read_expected(expected_output_path)
 
     assert len(messages) == 1
@@ -202,7 +202,7 @@ def test_load_data_reads_all_conferences_from_control_dat(
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
     file_data, boarddict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
 
-    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False))
+    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False, progress_bar=None))
 
     assert len(messages) == 2
     assert {message.is_private for message in messages} == {False}

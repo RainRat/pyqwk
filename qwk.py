@@ -155,11 +155,8 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
         except zipfile.BadZipFile as error:
             raise zipfile.BadZipFile("Error: The provided file is not a valid zip file.") from error
     else:
-        try:
-            with open(input_path, 'rb') as f:
-                file_data = bytearray(f.read())
-        except IOError as error:
-            raise IOError(f"Error reading {input_path}") from error
+        with open(input_path, 'rb') as f:
+            file_data = bytearray(f.read())
     return file_data, boarddict
 
 
@@ -185,6 +182,7 @@ def parse_messages(
     boarddict: Mapping[int, str],
     noHeader: bool,
     verbose: bool,
+    progress_bar: Optional[Any],
 ) -> Iterator[ParsedMessage]:
     intBlocks = 0
     messagebuffer = ''
@@ -195,6 +193,8 @@ def parse_messages(
     current_confnum = 0
     for i in range(0, len(file_data), BLOCK_SIZE):
         record = file_data[i:i + BLOCK_SIZE]
+        if progress_bar is not None:
+            progress_bar.update(len(record))
         if i == 0:
             if record[0:9] != b'Produced ':
                 raise MessagesDatFormatError
@@ -251,25 +251,6 @@ def parse_messages(
                     current_refnum,
                     current_confnum,
                 )
-
-
-def count_messages(file_data: bytearray) -> int:
-    message_count = 0
-    intBlocks = 0
-    for i in range(0, len(file_data), BLOCK_SIZE):
-        record = file_data[i:i + BLOCK_SIZE]
-        if i == 0:
-            if record[0:9] != b'Produced ':
-                raise MessagesDatFormatError
-            continue
-        if intBlocks == 0:
-            header, _, _ = _parse_header_record(record)
-            tempblocks = header.numblocks.decode('latin1').strip()
-            intBlocks = int(tempblocks) - 1
-            message_count += 1
-        else:
-            intBlocks = intBlocks - 1
-    return message_count
 
 
 def process_message(
@@ -344,10 +325,10 @@ def process_file(
         if tqdm_factory is None:
             logger.info('Install tqdm to enable progress reporting.')
         else:
-            total_messages = count_messages(file_data)
             progress_bar = tqdm_factory(
-                total=total_messages,
-                unit='msg',
+                total=len(file_data),
+                unit='B',
+                unit_scale=True,
                 desc='Processing messages',
             )
 
@@ -357,9 +338,8 @@ def process_file(
             boarddict,
             settings.noHeader,
             settings.verbose,
+            progress_bar,
         ):
-            if progress_bar is not None:
-                progress_bar.update(1)
             if (settings.private is True or parsed_message.is_private is False) and parsed_message.is_password is False:
                 processed_buffer = process_message(
                     parsed_message.text,
@@ -491,21 +471,26 @@ def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[Processe
     ordered_indices: List[int] = []
     visited: set[int] = set()
 
-    def visit(idx: int) -> None:
+    def visit(idx: int, path: set[int]) -> None:
+        if idx in path:
+            return
         if idx in visited:
             return
         visited.add(idx)
         ordered_indices.append(idx)
+
+        path.add(idx)
         for child_idx in children.get(idx, []):
-            visit(child_idx)
+            visit(child_idx, path)
+        path.remove(idx)
 
     for idx, is_attached in enumerate(attached):
         if not is_attached:
-            visit(idx)
+            visit(idx, set())
 
     for idx in range(len(messages)):
         if idx not in visited:
-            visit(idx)
+            visit(idx, set())
 
     return [messages[idx] for idx in ordered_indices]
 
