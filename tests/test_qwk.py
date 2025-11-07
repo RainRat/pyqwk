@@ -14,6 +14,7 @@ from qwk import (
     ParsedMessage,
     ProcessedMessage,
     MessageHeader,
+    _format_message_header,
     _order_messages_by_thread,
     load_data,
     parse_messages,
@@ -72,13 +73,16 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert isinstance(file_data, bytearray)
     assert board_dict == {}
 
-    messages = list(parse_messages(file_data, board_dict, no_header=False, verbose=False, progress_bar=None))
+    messages = list(parse_messages(file_data, progress_bar=None))
     expected_message = _read_expected(expected_output_path)
+    expected_body = expected_message.split('\r\n\r\n', 1)[1]
 
     assert len(messages) == 1
     message = messages[0]
     assert isinstance(message, ParsedMessage)
-    assert message.text == expected_message
+    assert message.text == expected_body
+    header_text = _format_message_header(message.header, board_dict, verbose=False)
+    assert header_text + message.text == expected_message
     assert message.is_private is False
     assert message.is_password is False
     assert message.msgnum == 28
@@ -291,12 +295,17 @@ def test_load_data_reads_all_conferences_from_control_dat(
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
     file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
 
-    messages = list(parse_messages(file_data, board_dict, no_header=False, verbose=False, progress_bar=None))
+    messages = list(parse_messages(file_data, progress_bar=None))
 
     assert len(messages) == 2
     assert {message.is_private for message in messages} == {False}
     assert {message.is_password for message in messages} == {False}
-    assert all("Conference: Net140.Tech" in message.text for message in messages)
+    assert all(
+        "Conference: Net140.Tech"
+        in _format_message_header(message.header, board_dict, verbose=False)
+        for message in messages
+    )
+    assert all("Conference:" not in message.text for message in messages)
 
 
 def test_process_file_writes_json(

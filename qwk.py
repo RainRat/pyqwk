@@ -203,9 +203,6 @@ def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
 
 def parse_messages(
     file_data: bytearray,
-    board_dict: Mapping[int, str],
-    no_header: bool,
-    verbose: bool,
     progress_bar: Optional[Any],
 ) -> Iterator[ParsedMessage]:
     blocks_remaining = 0
@@ -237,27 +234,7 @@ def parse_messages(
 
             current_confnum = header.confnum
 
-            not_found_flag = False
-            try:
-                conf_name = board_dict[header.confnum]
-            except KeyError:
-                conf_name = str(header.confnum)
-                not_found_flag = True
-
             message_buffer = ''
-            if not no_header:
-                message_buffer += ("-" * 80) + '\r\n'
-                if verbose is True or not_found_flag is False:
-                    message_buffer += ('Conference: ' + str(conf_name) + '\r\n')
-                if verbose is True:
-                    message_buffer += ('Message number: ' + header.msgnum.decode('latin1') + (' ' * 20))
-                message_buffer += ('Date: ' + header.msgdate.decode('latin1') + ' ' + header.msgtime.decode('latin1') + '\r\n')
-                message_buffer += ('From: ' + header.msgfrom.decode('latin1') + '\r\n')
-                message_buffer += ('To: ' + header.msgto.decode('latin1') + '\r\n')
-                message_buffer += ('Subject: ' + header.msgsubject.decode('latin1') + '\r\n')
-                if verbose is True:
-                    message_buffer += ('Reference number: ' + header.refnum.decode('latin1') + '\r\n')
-                message_buffer += '\r\n'
             temp_blocks = header.numblocks.decode('latin1').strip()
             blocks_remaining = int(temp_blocks) - 1
         else:
@@ -276,6 +253,44 @@ def parse_messages(
                     confnum=current_confnum,
                     header=header,
                 )
+
+
+def _format_message_header(
+    header: MessageHeader,
+    boarddict: Mapping[int, str],
+    verbose: bool,
+) -> str:
+    not_found_flag = False
+    try:
+        conf_name = boarddict[header.confnum]
+    except KeyError:
+        conf_name = str(header.confnum)
+        not_found_flag = True
+
+    header_parts: List[str] = []
+    header_parts.append(("-" * 80) + "\r\n")
+    if verbose or not not_found_flag:
+        header_parts.append("Conference: " + str(conf_name) + "\r\n")
+    if verbose:
+        header_parts.append(
+            "Message number: " + header.msgnum.decode("latin1") + (" " * 20)
+        )
+    header_parts.append(
+        "Date: "
+        + header.msgdate.decode("latin1")
+        + " "
+        + header.msgtime.decode("latin1")
+        + "\r\n"
+    )
+    header_parts.append("From: " + header.msgfrom.decode("latin1") + "\r\n")
+    header_parts.append("To: " + header.msgto.decode("latin1") + "\r\n")
+    header_parts.append("Subject: " + header.msgsubject.decode("latin1") + "\r\n")
+    if verbose:
+        header_parts.append(
+            "Reference number: " + header.refnum.decode("latin1") + "\r\n"
+        )
+    header_parts.append("\r\n")
+    return "".join(header_parts)
 
 
 def process_message(
@@ -371,9 +386,6 @@ def process_file(
     try:
         for parsed_message in parse_messages(
             file_data,
-            board_dict,
-            settings.no_header,
-            settings.verbose,
             progress_bar,
         ):
             if (settings.private is True or parsed_message.is_private is False) and parsed_message.is_password is False:
@@ -384,6 +396,20 @@ def process_file(
                     settings.binaries_removal,
                     settings.redact_pii,
                 )
+                if not settings.no_header:
+                    leading_newlines = 0
+                    text_prefix = parsed_message.text
+                    while text_prefix.startswith('\r\n'):
+                        leading_newlines += 1
+                        text_prefix = text_prefix[2:]
+                    if leading_newlines and not processed_buffer.startswith('\r\n'):
+                        processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+                    header_text = _format_message_header(
+                        parsed_message.header,
+                        board_dict,
+                        settings.verbose,
+                    )
+                    processed_buffer = header_text + processed_buffer
                 if settings.individual_files:
                     encoded_buffer = processed_buffer.encode('latin1')
                     assert output_dir is not None
