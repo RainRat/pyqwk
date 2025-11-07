@@ -68,13 +68,13 @@ except ImportError:  # pragma: no cover - tqdm is optional
 class ProcessingSettings:
     verbose: bool
     private: bool
-    noHeader: bool
-    truncateSignatures: bool
-    cutQuoting: bool
-    individualFiles: bool
+    no_header: bool
+    truncate_signatures: bool
+    cut_quoting: bool
+    individual_files: bool
     threaded: bool
-    binariesRemoval: bool
-    redactPII: bool
+    binaries_removal: bool
+    redact_pii: bool
     format: str
     quiet: bool = False
 
@@ -144,36 +144,36 @@ class InvalidMessageTypeError(Exception):
 
 
 def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[int, str]]:
-    boarddict: Dict[int, str] = {}
+    board_dict: Dict[int, str] = {}
     if zipfile.is_zipfile(input_path):
-        messagesname = ''
-        controlname = ''
+        messages_name = ''
+        control_name = ''
         try:
             with zipfile.ZipFile(input_path) as myzip:
                 file_list = myzip.namelist()
                 for file_name in file_list:
                     if file_name.lower() == MESSAGES_FILENAME:
-                        messagesname = file_name
+                        messages_name = file_name
                     if file_name.lower() == CONTROL_FILENAME:
-                        controlname = file_name
-                if not messagesname:
+                        control_name = file_name
+                if not messages_name:
                     raise FileNotFoundError(
                         f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}."
                     )
-                with myzip.open(messagesname) as f:
+                with myzip.open(messages_name) as f:
                     file_data = bytearray(f.read())
-                if controlname:
-                    with myzip.open(controlname) as f:
-                        controldata = f.read().splitlines()
-                    num_conferences = int(controldata[10]) + 1
+                if control_name:
+                    with myzip.open(control_name) as f:
+                        control_data = f.read().splitlines()
+                    num_conferences = int(control_data[10]) + 1
                     for i in range(num_conferences):
                         index = 11 + i * 2
                         try:
-                            conf_number = int(controldata[index])
-                            conf_name = controldata[index + 1].decode('latin1')
+                            conf_number = int(control_data[index])
+                            conf_name = control_data[index + 1].decode('latin1')
                         except IndexError as error:
                             raise ControlDatFormatError from error
-                        boarddict[conf_number] = conf_name
+                        board_dict[conf_number] = conf_name
                 else:
                     logger.warning("CONTROL.DAT not found, conference names will not be available.")
         except zipfile.BadZipFile as error:
@@ -181,7 +181,7 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
     else:
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())
-    return file_data, boarddict
+    return file_data, board_dict
 
 
 def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
@@ -203,15 +203,15 @@ def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
 
 def parse_messages(
     file_data: bytearray,
-    boarddict: Mapping[int, str],
-    noHeader: bool,
+    board_dict: Mapping[int, str],
+    no_header: bool,
     verbose: bool,
     progress_bar: Optional[Any],
 ) -> Iterator[ParsedMessage]:
-    intBlocks = 0
-    messagebuffer = ''
-    isPrivate = True
-    isPassword = False
+    blocks_remaining = 0
+    message_buffer = ''
+    is_private = True
+    is_password = False
     current_msgnum: Optional[int] = None
     current_refnum: Optional[int] = None
     current_confnum = 0
@@ -223,8 +223,8 @@ def parse_messages(
             if record[0:9] != b'Produced ':
                 raise MessagesDatFormatError
             continue
-        if intBlocks == 0:
-            header, isPrivate, isPassword = _parse_header_record(record)
+        if blocks_remaining == 0:
+            header, is_private, is_password = _parse_header_record(record)
 
             msgnum_text = header.msgnum.decode('latin1').strip()
             current_msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
@@ -239,38 +239,38 @@ def parse_messages(
 
             not_found_flag = False
             try:
-                conf_name = boarddict[header.confnum]
+                conf_name = board_dict[header.confnum]
             except KeyError:
                 conf_name = str(header.confnum)
                 not_found_flag = True
 
-            messagebuffer = ''
-            if not noHeader:
-                messagebuffer += ("-" * 80) + '\r\n'
+            message_buffer = ''
+            if not no_header:
+                message_buffer += ("-" * 80) + '\r\n'
                 if verbose is True or not_found_flag is False:
-                    messagebuffer += ('Conference: ' + str(conf_name) + '\r\n')
+                    message_buffer += ('Conference: ' + str(conf_name) + '\r\n')
                 if verbose is True:
-                    messagebuffer += ('Message number: ' + header.msgnum.decode('latin1') + (' ' * 20))
-                messagebuffer += ('Date: ' + header.msgdate.decode('latin1') + ' ' + header.msgtime.decode('latin1') + '\r\n')
-                messagebuffer += ('From: ' + header.msgfrom.decode('latin1') + '\r\n')
-                messagebuffer += ('To: ' + header.msgto.decode('latin1') + '\r\n')
-                messagebuffer += ('Subject: ' + header.msgsubject.decode('latin1') + '\r\n')
+                    message_buffer += ('Message number: ' + header.msgnum.decode('latin1') + (' ' * 20))
+                message_buffer += ('Date: ' + header.msgdate.decode('latin1') + ' ' + header.msgtime.decode('latin1') + '\r\n')
+                message_buffer += ('From: ' + header.msgfrom.decode('latin1') + '\r\n')
+                message_buffer += ('To: ' + header.msgto.decode('latin1') + '\r\n')
+                message_buffer += ('Subject: ' + header.msgsubject.decode('latin1') + '\r\n')
                 if verbose is True:
-                    messagebuffer += ('Reference number: ' + header.refnum.decode('latin1') + '\r\n')
-                messagebuffer += '\r\n'
-            tempblocks = header.numblocks.decode('latin1').strip()
-            intBlocks = int(tempblocks) - 1
+                    message_buffer += ('Reference number: ' + header.refnum.decode('latin1') + '\r\n')
+                message_buffer += '\r\n'
+            temp_blocks = header.numblocks.decode('latin1').strip()
+            blocks_remaining = int(temp_blocks) - 1
         else:
-            temprecord = record.decode('latin1').replace(QWK_NEWLINE_CHAR, '\r\n')
-            if intBlocks == 1:
-                temprecord = temprecord.rstrip() + '\r\n'
-            messagebuffer += temprecord
-            intBlocks = intBlocks - 1
-            if intBlocks == 0:
+            temp_record = record.decode('latin1').replace(QWK_NEWLINE_CHAR, '\r\n')
+            if blocks_remaining == 1:
+                temp_record = temp_record.rstrip() + '\r\n'
+            message_buffer += temp_record
+            blocks_remaining = blocks_remaining - 1
+            if blocks_remaining == 0:
                 yield ParsedMessage(
-                    text=messagebuffer,
-                    is_private=isPrivate,
-                    is_password=isPassword,
+                    text=message_buffer,
+                    is_private=is_private,
+                    is_password=is_password,
                     msgnum=current_msgnum,
                     refnum=current_refnum,
                     confnum=current_confnum,
@@ -279,25 +279,25 @@ def parse_messages(
 
 
 def process_message(
-    messagebuffer: str,
-    truncateSignatures: bool,
-    cutQuoting: bool,
-    binariesRemoval: bool,
-    redactPII: bool,
+    message_buffer: str,
+    truncate_signatures: bool,
+    cut_quoting: bool,
+    binaries_removal: bool,
+    redact_pii: bool,
 ) -> str:
-    lines = messagebuffer.splitlines()
+    lines = message_buffer.splitlines()
 
     new_lines = []
-    seenNonBlankLine = False
+    seen_non_blank_line = False
     in_yenc_block = False
     for j, line in enumerate(lines):
-        if truncateSignatures and (
+        if truncate_signatures and (
             line in SIGNATURE_PATTERNS_EXACT
             or line.startswith(SIGNATURE_PATTERNS_STARTSWITH)
         ):
             break
-        if cutQuoting:
-            if seenNonBlankLine is False:
+        if cut_quoting:
+            if not seen_non_blank_line:
                 if any(pattern.match(line) for pattern in QUOTE_HEADER_PATTERNS):
                     continue
             if RE_QUOTE_PATTERN.match(line):
@@ -306,7 +306,7 @@ def process_message(
                     and RE_QUOTE_PATTERN.match(lines[j - 1]) \
                     and RE_QUOTE_PATTERN.match(lines[j + 1]):
                 continue
-        if binariesRemoval:
+        if binaries_removal:
             is_yenc_marker = RE_YENC_PATTERN.match(line)
 
             if is_yenc_marker and line.startswith('=ybegin'):
@@ -324,14 +324,14 @@ def process_message(
             ):
                 continue
             if RE_UUE_LOOSE_PATTERN.match(line):
-                prevLine = lines[max(0, j - 1)]
-                if RE_UUE_DATA_PATTERN.match(prevLine) or RE_UUE_PATTERN.match(prevLine):
+                prev_line = lines[max(0, j - 1)]
+                if RE_UUE_DATA_PATTERN.match(prev_line) or RE_UUE_PATTERN.match(prev_line):
                     continue
-        if seenNonBlankLine is False and line.strip() == '':
+        if not seen_non_blank_line and not line.strip():
             continue
-        else:
-            seenNonBlankLine = True
-        if redactPII:
+
+        seen_non_blank_line = True
+        if redact_pii:
             line = RE_EMAIL_PATTERN.sub('[EMAIL]', line)
             line = RE_PHONE_PATTERN.sub('[PHONE]', line)
         new_lines.append(line)
@@ -347,13 +347,13 @@ def process_file(
 ) -> None:
 
     output_dir: Optional[str] = None
-    if settings.individualFiles:
+    if settings.individual_files:
         if output_path is None:
             raise ValueError('An output path is required when using individual files.')
         output_dir = output_path
         os.makedirs(output_dir, exist_ok=True)
 
-    file_data, boarddict = load_data(input_path, logger)
+    file_data, board_dict = load_data(input_path, logger)
     collected_messages: List[ProcessedMessage] = []
 
     progress_bar: Optional[Any] = None
@@ -371,27 +371,27 @@ def process_file(
     try:
         for parsed_message in parse_messages(
             file_data,
-            boarddict,
-            settings.noHeader,
+            board_dict,
+            settings.no_header,
             settings.verbose,
             progress_bar,
         ):
             if (settings.private is True or parsed_message.is_private is False) and parsed_message.is_password is False:
                 processed_buffer = process_message(
                     parsed_message.text,
-                    settings.truncateSignatures,
-                    settings.cutQuoting,
-                    settings.binariesRemoval,
-                    settings.redactPII,
+                    settings.truncate_signatures,
+                    settings.cut_quoting,
+                    settings.binaries_removal,
+                    settings.redact_pii,
                 )
-                if settings.individualFiles:
-                    encodedBuffer = processed_buffer.encode('latin1')
+                if settings.individual_files:
+                    encoded_buffer = processed_buffer.encode('latin1')
                     assert output_dir is not None
                     with open(
-                        os.path.join(output_dir, hashlib.sha1(encodedBuffer).hexdigest()),
+                        os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
                         'wb',
                     ) as f:
-                        f.write(encodedBuffer)
+                        f.write(encoded_buffer)
                 else:
                     collected_messages.append(
                         ProcessedMessage(
@@ -406,7 +406,7 @@ def process_file(
         if progress_bar is not None:
             progress_bar.close()
 
-    if not settings.individualFiles:
+    if not settings.individual_files:
         if settings.threaded:
             ordered_messages = _order_messages_by_thread(collected_messages)
         else:
@@ -417,13 +417,13 @@ def process_file(
         elif settings.format == 'xml':
             _export_xml(ordered_messages, output_path)
         else:
-            fullmessagebuffer = ''.join(message.text for message in ordered_messages)
+            full_message_buffer = ''.join(message.text for message in ordered_messages)
 
             if output_path is None:
-                print(fullmessagebuffer)
+                print(full_message_buffer)
             else:
                 with open(output_path, 'w', encoding='latin1') as f:
-                    f.write(fullmessagebuffer)
+                    f.write(full_message_buffer)
 
 
 def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
@@ -544,13 +544,13 @@ def main():
     settings = ProcessingSettings(
         verbose=args.verbose,
         private=args.private,
-        noHeader=args.noheader,
-        truncateSignatures=args.truncatesignatures,
-        cutQuoting=args.cutquoting,
-        individualFiles=args.individualfiles,
+        no_header=args.noheader,
+        truncate_signatures=args.truncatesignatures,
+        cut_quoting=args.cutquoting,
+        individual_files=args.individualfiles,
         threaded=args.threaded,
-        binariesRemoval=args.binariesremoval,
-        redactPII=args.redactpii,
+        binaries_removal=args.binariesremoval,
+        redact_pii=args.redactpii,
         quiet=args.quiet,
         format=args.format,
     )
