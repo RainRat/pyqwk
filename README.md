@@ -71,12 +71,7 @@ If this is set, pyqwk will redact PII (Personally Identifiable Information), cur
 
 - `cutquoting` is simplistic
   - Recognizes quoted lines that start with common characters such as `>`, `|`, `}`, or `\xb3` (a DOS box-drawing character), but may not match every quoting style.
-  - Has been updated to catch quoting that has been word wrapped, but still might run into trouble. ie, this will be handled, but more complex cases might not.
-```
-XX> This is actually a pretty long line that has been quoted and then word
-wrap
-XX> has made "wrap" not recognized as part of a quote.
-```
+  - Has been updated to catch quoting that has been word wrapped (i.e., a line not starting with '>' but surrounded by lines that do).
 
 ## Contributing
 

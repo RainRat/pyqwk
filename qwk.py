@@ -66,6 +66,7 @@ except ImportError:  # pragma: no cover - tqdm is optional
 
 @dataclass
 class ProcessingSettings:
+    """Settings for processing QWK files."""
     verbose: bool
     private: bool
     no_header: bool
@@ -81,6 +82,7 @@ class ProcessingSettings:
 
 @dataclass
 class ParsedMessage:
+    """A message parsed from a QWK file."""
     text: str
     is_private: bool
     is_password: bool
@@ -92,6 +94,7 @@ class ParsedMessage:
 
 @dataclass
 class ProcessedMessage:
+    """A message that has been processed."""
     text: str
     msgnum: Optional[int]
     refnum: Optional[int]
@@ -101,6 +104,7 @@ class ProcessedMessage:
 
 @dataclass
 class MessageHeader:
+    """The header of a message."""
     status: bytes
     msgnum: bytes
     msgdate: bytes
@@ -117,6 +121,11 @@ class MessageHeader:
     nettag: bytes
 
     def _to_dict(self):
+        """Converts the header to a dictionary.
+
+        Returns:
+            A dictionary representation of the header.
+        """
         result = {}
         for field in fields(self):
             value = getattr(self, field.name)
@@ -144,6 +153,15 @@ class InvalidMessageTypeError(Exception):
 
 
 def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[int, str]]:
+    """Loads data from a QWK file.
+
+    Args:
+        input_path: The path to the QWK file.
+        logger: The logger to use.
+
+    Returns:
+        A tuple containing the file data and a dictionary of board names.
+    """
     board_dict: Dict[int, str] = {}
     if zipfile.is_zipfile(input_path):
         messages_name = ''
@@ -185,6 +203,16 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
 
 
 def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
+    """Parses a message header record.
+
+    Args:
+        record: The record to parse.
+
+    Returns:
+        A tuple containing the message header, a boolean indicating if the
+        message is private, and a boolean indicating if the message is
+        password protected.
+    """
     header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
     header = MessageHeader(*header_data)
     message_type = header.status.decode('latin1')
@@ -205,6 +233,15 @@ def parse_messages(
     file_data: bytearray,
     progress_bar: Optional[Any],
 ) -> Iterator[ParsedMessage]:
+    """Parses messages from a QWK file.
+
+    Args:
+        file_data: The file data to parse.
+        progress_bar: The progress bar to use.
+
+    Yields:
+        The parsed messages.
+    """
     blocks_remaining = 0
     message_buffer = ''
     is_private = True
@@ -260,6 +297,16 @@ def _format_message_header(
     boarddict: Mapping[int, str],
     verbose: bool,
 ) -> str:
+    """Formats a message header.
+
+    Args:
+        header: The message header to format.
+        boarddict: A dictionary of board names.
+        verbose: Whether to include verbose output.
+
+    Returns:
+        The formatted message header.
+    """
     not_found_flag = False
     try:
         conf_name = boarddict[header.confnum]
@@ -300,6 +347,18 @@ def process_message(
     binaries_removal: bool,
     redact_pii: bool,
 ) -> str:
+    """Processes a message.
+
+    Args:
+        message_buffer: The message to process.
+        truncate_signatures: Whether to truncate signatures.
+        cut_quoting: Whether to cut quoting.
+        binaries_removal: Whether to remove binaries.
+        redact_pii: Whether to redact PII.
+
+    Returns:
+        The processed message.
+    """
     lines = message_buffer.splitlines()
 
     new_lines = []
@@ -360,6 +419,14 @@ def process_file(
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> None:
+    """Processes a QWK file.
+
+    Args:
+        input_path: The path to the QWK file.
+        output_path: The path to the output file.
+        settings: The processing settings.
+        logger: The logger to use.
+    """
 
     output_dir: Optional[str] = None
     if settings.individual_files:
@@ -453,6 +520,12 @@ def process_file(
 
 
 def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
+    """Exports messages to JSON.
+
+    Args:
+        messages: The messages to export.
+        output_path: The path to the output file.
+    """
     output_data = []
     for message in messages:
         output_data.append(
@@ -470,10 +543,24 @@ def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -
 
 
 def _sanitize_xml_string(s: str) -> str:
+    """Sanitizes a string for XML.
+
+    Args:
+        s: The string to sanitize.
+
+    Returns:
+        The sanitized string.
+    """
     return re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]', '', s)
 
 
 def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
+    """Exports messages to XML.
+
+    Args:
+        messages: The messages to export.
+        output_path: The path to the output file.
+    """
     root = ET.Element('messages')
     for message in messages:
         msg_element = ET.SubElement(root, 'message')
@@ -503,6 +590,14 @@ def process_multiple_files(
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> None:
+    """Processes multiple QWK files.
+
+    Args:
+        input_paths: The paths to the QWK files.
+        output_dir: The path to the output directory.
+        settings: The processing settings.
+        logger: The logger to use.
+    """
     os.makedirs(output_dir, exist_ok=True)
     for input_path in input_paths:
         try:
@@ -526,6 +621,7 @@ def process_multiple_files(
 
 
 def main():
+    """The main function."""
     parser = argparse.ArgumentParser()
     parser.add_argument('input_paths', help='One or more QWK packets or messages.dat files to process.', nargs='+')
     parser.add_argument('output_path', help='The output filename or directory. Required for multiple input files. (default: print to console for single file)', nargs='?')
@@ -602,6 +698,36 @@ def main():
 
 
 def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[ProcessedMessage]:
+    """Orders messages by thread.
+
+    This algorithm constructs a forest of message threads from a flat list of
+    messages. Each message has a unique message number (`msgnum`) and an
+    optional reference number (`refnum`) pointing to its parent.
+
+    The algorithm performs the following steps:
+
+    1.  **Index Messages:** It first creates a mapping from a message's
+        conference and message number to its index in the input list. This
+        allows for efficient lookup of parent messages.
+
+    2.  **Build Child Mappings:** It then iterates through the messages, and for
+        each message with a `refnum`, it finds the parent's index and records
+        the current message as a child of the parent. Messages without a
+        `refnum` are considered roots of new threads.
+
+    3.  **Topological Sort (DFS):** Finally, it performs a topological sort
+        using a depth-first search (DFS) traversal. It starts from the root
+        messages (those that are not children of any other message) and
+        recursively visits their children, adding them to the final ordered
+        list. This ensures that a message always appears before its replies.
+        A `visited` set is used to prevent cycles and redundant processing.
+
+    Args:
+        messages: The messages to order.
+
+    Returns:
+        The ordered messages.
+    """
     if not messages:
         return []
 
