@@ -33,13 +33,18 @@ def expected_output_path() -> Path:
 
 
 @pytest.fixture
+def expected_raw_output_path() -> Path:
+    return Path(__file__).resolve().parents[1] / "testdata" / "messages_expected_raw.txt"
+
+
+@pytest.fixture
 def testdata_dir() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata"
 
 
 def _read_expected(path: Path) -> str:
     text = path.read_text(encoding="latin1")
-    return text.replace("\n", "\r\n")
+    return text.replace("\n", "\r\n").rstrip('\r\n')
 
 
 @pytest.fixture
@@ -66,14 +71,14 @@ def _make_settings(**overrides) -> ProcessingSettings:
     return ProcessingSettings(**defaults)
 
 
-def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
+def test_parse_messages_matches_baseline(baseline_path: Path, expected_raw_output_path: Path, logger: logging.Logger) -> None:
     file_data, board_dict = load_data(str(baseline_path), logger)
 
     assert isinstance(file_data, bytearray)
     assert board_dict == {}
 
-    messages = list(parse_messages(file_data, board_dict, no_header=False, verbose=False, progress_bar=None))
-    expected_message = _read_expected(expected_output_path)
+    messages = list(parse_messages(file_data, board_dict, verbose=False, progress_bar=None))
+    expected_message = _read_expected(expected_raw_output_path)
 
     assert len(messages) == 1
     message = messages[0]
@@ -210,7 +215,7 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
 
     captured = capsys.readouterr()
     expected_message = _read_expected(expected_output_path)
-    assert captured.out == expected_message + "\n"
+    assert captured.out == expected_message + "\r\n"
     assert captured.err == ""
 
 
@@ -291,12 +296,12 @@ def test_load_data_reads_all_conferences_from_control_dat(
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
     file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
 
-    messages = list(parse_messages(file_data, board_dict, no_header=False, verbose=False, progress_bar=None))
+    messages = list(parse_messages(file_data, board_dict, verbose=False, progress_bar=None))
 
     assert len(messages) == 2
     assert {message.is_private for message in messages} == {False}
     assert {message.is_password for message in messages} == {False}
-    assert all("Conference: Net140.Tech" in message.text for message in messages)
+    assert all("Conference: Net140.Tech" not in message.text for message in messages)
 
 
 def test_process_file_writes_json(
