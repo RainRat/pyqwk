@@ -300,6 +300,44 @@ def test_process_file_writes_xml(
     assert expected_message.replace('\r\n', '\n') in content
 
 
+def test_process_file_writes_xml_with_special_characters(
+    tmp_path, logger: logging.Logger
+) -> None:
+    from qwk import _export_xml
+    header = MessageHeader(
+        status=b' ',
+        msgnum=b'1',
+        msgdate=b'01-01-90',
+        msgtime=b'12:00',
+        msgto=b'All',
+        msgfrom=b'Test User',
+        msgsubject=b'<test>&subject',
+        msgpassword=b'',
+        refnum=b'0',
+        numblocks=b'1',
+        msgflag=b' ',
+        confnum=1,
+        lognum=1,
+        nettag=b'',
+    )
+    message = ProcessedMessage(
+        text="This is a test message with < & > special characters.",
+        msgnum=1,
+        refnum=0,
+        confnum=1,
+        header=header
+    )
+
+    output_path = tmp_path / "test.xml"
+    _export_xml([message], str(output_path))
+
+    with open(output_path, "r") as f:
+        content = f.read()
+
+    assert "&lt;test&gt;&amp;subject" in content
+    assert "This is a test message with &lt; &amp; &gt; special characters." in content
+
+
 def test_process_multiple_files_creates_multiple_outputs(
     tmp_path, testdata_dir: Path, logger: logging.Logger
 ) -> None:
