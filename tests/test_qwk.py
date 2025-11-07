@@ -298,3 +298,27 @@ def test_process_file_writes_xml(
     assert '<msgnum>28' in content
     expected_message = _read_expected(expected_output_path)
     assert expected_message.replace('\r\n', '\n') in content
+
+
+def test_process_multiple_files_creates_multiple_outputs(
+    tmp_path, testdata_dir: Path, logger: logging.Logger
+) -> None:
+    output_dir = tmp_path / "messages"
+    input_paths = [
+        str(testdata_dir / "test1_qwk.zip"),
+        str(testdata_dir / "test2_qwk.zip"),
+    ]
+
+    from qwk import process_multiple_files
+
+    process_multiple_files(
+        input_paths,
+        str(output_dir),
+        _make_settings(),
+        logger=logger,
+    )
+
+    files = sorted(list(output_dir.iterdir()))
+    assert len(files) == 2
+    assert files[0].name == "test1_qwk.txt"
+    assert files[1].name == "test2_qwk.txt"

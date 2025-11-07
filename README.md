@@ -24,6 +24,14 @@ or
 python qwk.py my_archive.qwk
 ```
 
+### Batch Processing
+
+You can process multiple files at once by providing a list of input files and an output directory. The output files will be named after the input files, with the extension changed to `.txt`, `.json`, or `.xml` depending on the selected format.
+
+```
+python qwk.py *.qwk output/
+```
+
 For each message, the headers aren't exported in the same order they appear in `messages.dat`; they are rearranged to an order that might make more sense to a modern reader. 
 
 ## Options

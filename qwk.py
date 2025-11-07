@@ -465,10 +465,38 @@ def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) ->
             f.write(pretty_xml)
 
 
+def process_multiple_files(
+    input_paths: List[str],
+    output_dir: str,
+    settings: ProcessingSettings,
+    logger: logging.Logger,
+) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    for input_path in input_paths:
+        try:
+            output_filename = os.path.splitext(os.path.basename(input_path))[0]
+            if settings.format == 'json':
+                output_filename += '.json'
+            elif settings.format == 'xml':
+                output_filename += '.xml'
+            else:
+                output_filename += '.txt'
+            output_path = os.path.join(output_dir, output_filename)
+            process_file(input_path, output_path, settings, logger)
+        except (
+            MessagesDatFormatError,
+            InvalidMessageTypeError,
+            FileNotFoundError,
+            zipfile.BadZipFile,
+            IOError,
+        ) as error:
+            logger.error("Error processing file %s: %s", input_path, error)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_path', help='The messages.dat filename, or the QWK packet (default: messages.dat)', nargs='?', default='messages.dat')
-    parser.add_argument('output_path', help='The output filename or directory. (default: print to console)', nargs='?')
+    parser.add_argument('input_paths', help='One or more QWK packets or messages.dat files to process.', nargs='+')
+    parser.add_argument('output_path', help='The output filename or directory. Required for multiple input files. (default: print to console for single file)', nargs='?')
     parser.add_argument(
         '-v',
         '--verbose',
@@ -521,17 +549,23 @@ def main():
         format=args.format,
     )
 
-    try:
-        process_file(args.input_path, args.output_path, settings, logger)
-    except (
-        MessagesDatFormatError,
-        InvalidMessageTypeError,
-        FileNotFoundError,
-        zipfile.BadZipFile,
-        IOError,
-    ) as error:
-        logger.error(error)
-        sys.exit(1)
+    if len(args.input_paths) > 1:
+        if not args.output_path:
+            logger.error("Output directory is required when processing multiple files.")
+            sys.exit(1)
+        process_multiple_files(args.input_paths, args.output_path, settings, logger)
+    else:
+        try:
+            process_file(args.input_paths[0], args.output_path, settings, logger)
+        except (
+            MessagesDatFormatError,
+            InvalidMessageTypeError,
+            FileNotFoundError,
+            zipfile.BadZipFile,
+            IOError,
+        ) as error:
+            logger.error(error)
+            sys.exit(1)
 
 
 def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[ProcessedMessage]:
