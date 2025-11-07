@@ -131,6 +131,10 @@ class MessagesDatFormatError(Exception):
     """Raised when the input file is not a valid messages.dat file."""
 
 
+class ControlDatFormatError(Exception):
+    """Raised when the control.dat file is not a valid format."""
+
+
 class InvalidMessageTypeError(Exception):
     """Raised when an unexpected message type is encountered."""
 
@@ -168,8 +172,10 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
                             conf_number = int(controldata[index])
                             conf_name = controldata[index + 1].decode('latin1')
                         except IndexError as error:
-                            raise MessagesDatFormatError from error
+                            raise ControlDatFormatError from error
                         boarddict[conf_number] = conf_name
+                else:
+                    logger.warning("CONTROL.DAT not found, conference names will not be available.")
         except zipfile.BadZipFile as error:
             raise zipfile.BadZipFile("Error: The provided file is not a valid zip file.") from error
     else:
@@ -559,6 +565,7 @@ def main():
             process_file(args.input_paths[0], args.output_path, settings, logger)
         except (
             MessagesDatFormatError,
+            ControlDatFormatError,
             InvalidMessageTypeError,
             FileNotFoundError,
             zipfile.BadZipFile,

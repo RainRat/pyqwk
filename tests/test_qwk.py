@@ -1,6 +1,7 @@
 import logging
 import sys
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -360,3 +361,20 @@ def test_process_multiple_files_creates_multiple_outputs(
     assert len(files) == 2
     assert files[0].name == "test1_qwk.txt"
     assert files[1].name == "test2_qwk.txt"
+
+
+def test_load_data_logs_warning_if_control_dat_is_missing(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, testdata_dir: Path
+) -> None:
+    # Create a zip file without CONTROL.DAT
+    zip_path = tmp_path / "no_control.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.write(testdata_dir / "messages.dat", "MESSAGES.DAT")
+
+    logger = logging.getLogger("pyqwk.tests")
+    logger.addHandler(logging.StreamHandler())  # Make sure logs are captured
+
+    with caplog.at_level(logging.WARNING):
+        load_data(str(zip_path), logger)
+
+    assert "CONTROL.DAT not found" in caplog.text
