@@ -53,13 +53,13 @@ def _make_settings(**overrides) -> ProcessingSettings:
     defaults = dict(
         verbose=False,
         private=False,
-        noHeader=False,
-        truncateSignatures=False,
-        cutQuoting=False,
-        individualFiles=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
         threaded=False,
-        binariesRemoval=False,
-        redactPII=False,
+        binaries_removal=False,
+        redact_pii=False,
         format="text",
     )
     defaults.update(overrides)
@@ -67,12 +67,12 @@ def _make_settings(**overrides) -> ProcessingSettings:
 
 
 def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
-    file_data, boarddict = load_data(str(baseline_path), logger)
+    file_data, board_dict = load_data(str(baseline_path), logger)
 
     assert isinstance(file_data, bytearray)
-    assert boarddict == {}
+    assert board_dict == {}
 
-    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False, progress_bar=None))
+    messages = list(parse_messages(file_data, board_dict, no_header=False, verbose=False, progress_bar=None))
     expected_message = _read_expected(expected_output_path)
 
     assert len(messages) == 1
@@ -98,10 +98,10 @@ def test_process_message_transforms_content() -> None:
 
     processed = process_message(
         message,
-        truncateSignatures=True,
-        cutQuoting=True,
-        binariesRemoval=False,
-        redactPII=True,
+        truncate_signatures=True,
+        cut_quoting=True,
+        binaries_removal=False,
+        redact_pii=True,
     )
 
     assert processed == (
@@ -124,10 +124,10 @@ def test_process_message_removes_yenc_binaries() -> None:
 
     processed = process_message(
         message,
-        truncateSignatures=False,
-        cutQuoting=False,
-        binariesRemoval=True,
-        redactPII=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=True,
+        redact_pii=False,
     )
 
     assert processed == (
@@ -146,10 +146,10 @@ def test_process_message_removes_base64_binaries() -> None:
 
     processed = process_message(
         message,
-        truncateSignatures=False,
-        cutQuoting=False,
-        binariesRemoval=True,
-        redactPII=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=True,
+        redact_pii=False,
     )
 
     assert processed == (
@@ -168,10 +168,10 @@ def test_process_message_removes_uue_binaries() -> None:
 
     processed = process_message(
         message,
-        truncateSignatures=False,
-        cutQuoting=False,
-        binariesRemoval=True,
-        redactPII=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=True,
+        redact_pii=False,
     )
 
     assert processed == (
@@ -187,7 +187,7 @@ def test_process_file_writes_individual_files(
     process_file(
         str(baseline_path),
         str(output_dir),
-        _make_settings(individualFiles=True),
+        _make_settings(individual_files=True),
         logger=logger,
     )
 
@@ -289,9 +289,9 @@ def test_load_data_reads_all_conferences_from_control_dat(
 
 
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
-    file_data, boarddict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
+    file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
 
-    messages = list(parse_messages(file_data, boarddict, noHeader=False, verbose=False, progress_bar=None))
+    messages = list(parse_messages(file_data, board_dict, no_header=False, verbose=False, progress_bar=None))
 
     assert len(messages) == 2
     assert {message.is_private for message in messages} == {False}
