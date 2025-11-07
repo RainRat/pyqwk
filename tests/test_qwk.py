@@ -136,6 +136,50 @@ def test_process_message_removes_yenc_binaries() -> None:
     )
 
 
+def test_process_message_removes_base64_binaries() -> None:
+    message = (
+        "Intro line\r\n"
+        "VGhpcyBpcyBhIHRlc3QgbWVzc2FnZSB3aXRoIGEgbG9uZyBtdWx0aS1saW5lIEJhc2U2NCBibG9jaw0K"
+        "aW4gdGhlIG1pZGRsZS4NCg==\r\n"
+        "Another line\r\n"
+    )
+
+    processed = process_message(
+        message,
+        truncateSignatures=False,
+        cutQuoting=False,
+        binariesRemoval=True,
+        redactPII=False,
+    )
+
+    assert processed == (
+        "Intro line\r\n"
+        "Another line\r\n"
+    )
+
+
+def test_process_message_removes_uue_binaries() -> None:
+    message = (
+        "Intro line\r\n"
+        "begin 644 test.txt\r\n"
+        "M" + ("A" * 60) + "\r\n"
+        "Another line\r\n"
+    )
+
+    processed = process_message(
+        message,
+        truncateSignatures=False,
+        cutQuoting=False,
+        binariesRemoval=True,
+        redactPII=False,
+    )
+
+    assert processed == (
+        "Intro line\r\n"
+        "Another line\r\n"
+    )
+
+
 def test_process_file_writes_individual_files(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
