@@ -14,6 +14,7 @@ from qwk import (
     ParsedMessage,
     ProcessedMessage,
     MessageHeader,
+    ControlDatFormatError,
     _format_message_header,
     _order_messages_by_thread,
     load_data,
@@ -258,6 +259,36 @@ def test_order_messages_by_thread_groups_children() -> None:
     ]
 
 
+def test_order_messages_by_thread_logs_circular_reference(caplog: pytest.LogCaptureFixture) -> None:
+    header = MessageHeader(
+        status=b'',
+        msgnum=b'',
+        msgdate=b'',
+        msgtime=b'',
+        msgto=b'',
+        msgfrom=b'',
+        msgsubject=b'',
+        msgpassword=b'',
+        refnum=b'',
+        numblocks=b'',
+        msgflag=b'',
+        confnum=0,
+        lognum=0,
+        nettag=b'',
+    )
+    messages = [
+        ProcessedMessage("first\r\n", msgnum=1, refnum=3, confnum=1, header=header),
+        ProcessedMessage("second\r\n", msgnum=2, refnum=1, confnum=1, header=header),
+        ProcessedMessage("third\r\n", msgnum=3, refnum=2, confnum=1, header=header),
+    ]
+
+    with caplog.at_level(logging.WARNING, logger="qwk"):
+        ordered = _order_messages_by_thread(messages)
+
+    assert [message.msgnum for message in ordered] == [1, 2, 3]
+    assert "Circular reference detected" in caplog.text
+
+
 @pytest.mark.parametrize(
     "archive_name, expected_boarddict",
     [
@@ -290,6 +321,36 @@ def test_load_data_reads_all_conferences_from_control_dat(
 
     assert isinstance(file_data, bytearray)
     assert boarddict == expected_boarddict
+
+
+def test_load_data_raises_for_invalid_conference_number(
+    tmp_path: Path, testdata_dir: Path, logger: logging.Logger
+) -> None:
+    zip_path = tmp_path / "invalid_control.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.write(testdata_dir / "messages.dat", "MESSAGES.DAT")
+        control_lines = [
+            b"Benden Weyr, Pern, Sagittarius Sector",
+            b"",
+            b"(306) 382-5746",
+            b"Ken Read",
+            b"0 ,Benden",
+            b"09-04-1994,19:25:58",
+            b"CHRIS STUBBS",
+            b"",
+            b"0",
+            b"0",
+            b"0",
+            b"NOT_A_NUMBER",
+            b"Test Conference",
+        ]
+        control_content = b"\r\n".join(control_lines) + b"\r\n"
+        zf.writestr("CONTROL.DAT", control_content)
+
+    with pytest.raises(ControlDatFormatError) as exc_info:
+        load_data(str(zip_path), logger)
+
+    assert "Invalid conference number" in str(exc_info.value)
 
 
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:

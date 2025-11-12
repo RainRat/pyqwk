@@ -52,7 +52,7 @@ If this is set, pyqwk will truncate each message at the signature. Truncation ha
 If this is set, pyqwk will delete quoted text (that uses ">" as quoting character). (default: off)
 
 - `--binariesremoval` or `-b`
-If this is set, pyqwk will delete binaries (currently removes uuencoded and Base64-encoded blocks). (default: off)
+If this is set, pyqwk will delete binaries (currently removes uuencoded, Base64-encoded, and yEnc blocks). (default: off)
 
 - `--individualfiles` or `-i`
 If this is set, pyqwk will put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication). (default: off)

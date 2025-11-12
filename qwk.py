@@ -169,10 +169,19 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
                     for i in range(num_conferences):
                         index = 11 + i * 2
                         try:
-                            conf_number = int(control_data[index])
-                            conf_name = control_data[index + 1].decode('latin1')
+                            conf_number_raw = control_data[index]
+                            conf_name_raw = control_data[index + 1]
                         except IndexError as error:
-                            raise ControlDatFormatError from error
+                            raise ControlDatFormatError(
+                                "CONTROL.DAT is truncated; missing conference entries."
+                            ) from error
+                        try:
+                            conf_number = int(conf_number_raw)
+                        except ValueError as error:
+                            raise ControlDatFormatError(
+                                f"Invalid conference number in CONTROL.DAT: {conf_number_raw!r}"
+                            ) from error
+                        conf_name = conf_name_raw.decode('latin1')
                         board_dict[conf_number] = conf_name
                 else:
                     logger.warning("CONTROL.DAT not found, conference names will not be available.")
@@ -228,7 +237,9 @@ def parse_messages(
 
             refnum_text = header.refnum.decode('latin1').strip()
             if refnum_text.isdigit():
-                current_refnum = int(refnum_text) or None
+                current_refnum = int(refnum_text)
+                if current_refnum == 0:
+                    current_refnum = None
             else:
                 current_refnum = None
 
@@ -605,6 +616,7 @@ def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[Processe
     if not messages:
         return []
 
+    logger = logging.getLogger(__name__)
     index_by_key: Dict[Tuple[int, int], int] = {}
     children: Dict[int, List[int]] = defaultdict(list)
 
@@ -626,8 +638,18 @@ def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[Processe
     ordered_indices: List[int] = []
     visited: set[int] = set()
 
+    cycle_reported: set[int] = set()
+
     def visit(idx: int, path: set[int]) -> None:
         if idx in path:
+            if idx not in cycle_reported:
+                message = messages[idx]
+                logger.warning(
+                    "Circular reference detected while threading messages (conf %s, msgnum %s).",
+                    message.confnum,
+                    message.msgnum if message.msgnum is not None else "unknown",
+                )
+                cycle_reported.add(idx)
             return
         if idx in visited:
             return
