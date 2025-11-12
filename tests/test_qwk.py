@@ -63,6 +63,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         binaries_removal=False,
         redact_pii=False,
         format="text",
+        output_target="auto",
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -203,6 +204,23 @@ def test_process_file_writes_individual_files(
         content = f.read().decode("latin1")
     expected_message = _read_expected(expected_output_path)
     assert content == expected_message
+
+
+def test_process_file_requires_directory_for_individual_files(
+    tmp_path, baseline_path: Path, logger: logging.Logger
+) -> None:
+    invalid_output = tmp_path / "not_a_directory.txt"
+    invalid_output.write_text("content", encoding="utf-8")
+
+    with pytest.raises(ValueError) as exc_info:
+        process_file(
+            str(baseline_path),
+            str(invalid_output),
+            _make_settings(individual_files=True),
+            logger=logger,
+        )
+
+    assert "directory" in str(exc_info.value)
 
 
 def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
