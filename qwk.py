@@ -7,7 +7,6 @@ import hashlib
 import os
 import logging
 import json
-from xml.dom import minidom
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass, fields
@@ -77,6 +76,7 @@ class ProcessingSettings:
     redact_pii: bool
     format: str
     quiet: bool = False
+    output_target: str = 'auto'
 
 
 @dataclass
@@ -373,11 +373,24 @@ def process_file(
 ) -> None:
 
     output_dir: Optional[str] = None
+    output_mode = 'file' if settings.individual_files else settings.output_target
+    if output_mode == 'auto':
+        output_mode = 'file' if output_path is not None else 'stdout'
+
     if settings.individual_files:
         if output_path is None:
             raise ValueError('An output path is required when using individual files.')
+        if os.path.exists(output_path) and not os.path.isdir(output_path):
+            raise ValueError('The output path must be a directory when using individual files.')
         output_dir = output_path
         os.makedirs(output_dir, exist_ok=True)
+    else:
+        if output_mode == 'file' and output_path is None:
+            raise ValueError('An output path is required when output is set to file.')
+        if output_mode == 'stdout' and output_path is not None:
+            raise ValueError('An output path cannot be provided when output is set to stdout.')
+
+    resolved_output_path: Optional[str] = None if output_mode == 'stdout' else output_path
 
     file_data, board_dict = load_data(input_path, logger)
     collected_messages: List[ProcessedMessage] = []
@@ -450,16 +463,16 @@ def process_file(
             ordered_messages = collected_messages
 
         if settings.format == 'json':
-            _export_json(ordered_messages, output_path)
+            _export_json(ordered_messages, resolved_output_path)
         elif settings.format == 'xml':
-            _export_xml(ordered_messages, output_path)
+            _export_xml(ordered_messages, resolved_output_path)
         else:
             full_message_buffer = ''.join(message.text for message in ordered_messages)
 
-            if output_path is None:
-                print(full_message_buffer)
+            if resolved_output_path is None:
+                sys.stdout.write(full_message_buffer + '\n')
             else:
-                with open(output_path, 'w', encoding='latin1') as f:
+                with open(resolved_output_path, 'w', encoding='latin1') as f:
                     f.write(full_message_buffer)
 
 
@@ -474,7 +487,7 @@ def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -
         )
     output_json = json.dumps(output_data, indent=4)
     if output_path is None:
-        print(output_json)
+        sys.stdout.write(output_json + '\n')
     else:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(output_json)
@@ -497,15 +510,15 @@ def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) ->
         text_element = ET.SubElement(msg_element, 'text')
         text_element.text = _sanitize_xml_string(message.text)
 
-    rough_string = ET.tostring(root, 'utf-8')
-    reparsed = minidom.parseString(rough_string)
-    pretty_xml = reparsed.toprettyxml(indent='  ')
+    ET.indent(root, space='  ')
+    xml_bytes = ET.tostring(root, encoding='utf-8')
+    xml_text = xml_bytes.decode('utf-8')
 
     if output_path is None:
-        print(pretty_xml)
+        sys.stdout.write(xml_text + '\n')
     else:
         with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(pretty_xml)
+            f.write(xml_text)
 
 
 def process_multiple_files(
@@ -570,6 +583,12 @@ def main():
         default='text',
         choices=['text', 'json', 'xml'],
     )
+    parser.add_argument(
+        '-o',
+        '--output',
+        help='Select the output destination for single-file processing',
+        choices=['stdout', 'file'],
+    )
     args = parser.parse_args()
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -577,6 +596,27 @@ def main():
         raise ValueError(f'Invalid log level: {args.loglevel}')
     logging.basicConfig(level=numeric_level)
     logger = logging.getLogger(__name__)
+
+    if len(args.input_paths) > 1:
+        if args.output and args.output != 'file':
+            logger.error('Output must be set to "file" when processing multiple inputs.')
+            sys.exit(1)
+        if not args.output_path:
+            logger.error('Output directory is required when processing multiple files.')
+            sys.exit(1)
+        output_target = 'file'
+    else:
+        if args.output is None:
+            output_target = 'file' if args.output_path else 'stdout'
+        else:
+            output_target = args.output
+
+        if output_target == 'file' and not args.output_path:
+            logger.error('An output path is required when --output file is specified.')
+            sys.exit(1)
+        if output_target == 'stdout' and args.output_path:
+            logger.error('Do not provide an output path when --output stdout is specified.')
+            sys.exit(1)
 
     settings = ProcessingSettings(
         verbose=args.verbose,
@@ -590,12 +630,10 @@ def main():
         redact_pii=args.redactpii,
         quiet=args.quiet,
         format=args.format,
+        output_target=output_target,
     )
 
     if len(args.input_paths) > 1:
-        if not args.output_path:
-            logger.error("Output directory is required when processing multiple files.")
-            sys.exit(1)
         process_multiple_files(args.input_paths, args.output_path, settings, logger)
     else:
         try:
