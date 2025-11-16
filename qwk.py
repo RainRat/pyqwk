@@ -87,7 +87,7 @@ class ParsedMessage:
     msgnum: Optional[int]
     refnum: Optional[int]
     confnum: int
-    header: 'MessageHeader'
+    header: "MessageHeader"
 
 
 @dataclass
@@ -96,28 +96,28 @@ class ProcessedMessage:
     msgnum: Optional[int]
     refnum: Optional[int]
     confnum: int
-    header: 'MessageHeader'
+    header: "MessageHeader"
 
 
 @dataclass
 class MessageHeader:
     status: bytes
-    msgnum: bytes
+    msgnum: Optional[bytes]
     msgdate: bytes
     msgtime: bytes
     msgto: bytes
     msgfrom: bytes
     msgsubject: bytes
     msgpassword: bytes
-    refnum: bytes
+    refnum: Optional[bytes]
     numblocks: bytes
     msgflag: bytes
     confnum: int
     lognum: int
     nettag: bytes
 
-    def _to_dict(self):
-        result = {}
+    def _to_dict(self) -> Dict[str, Any]:
+        result: Dict[str, Any] = {}
         for field in fields(self):
             value = getattr(self, field.name)
             if isinstance(value, bytes):
@@ -214,6 +214,19 @@ def parse_messages(
     file_data: bytearray,
     progress_bar: Optional[Any],
 ) -> Iterator[ParsedMessage]:
+    """Parse a QWK messages.dat payload into message objects.
+
+    Args:
+        file_data: Raw bytes from a messages.dat file.
+        progress_bar: Optional tqdm-compatible progress reporter to update as blocks are read.
+
+    Yields:
+        ParsedMessage instances containing the message body, header, and metadata flags.
+
+    Raises:
+        MessagesDatFormatError: If the payload does not start with a valid messages.dat header.
+        InvalidMessageTypeError: If a message header encodes an unknown message type.
+    """
     blocks_remaining = 0
     message_buffer = ''
     is_private = True
@@ -232,10 +245,12 @@ def parse_messages(
         if blocks_remaining == 0:
             header, is_private, is_password = _parse_header_record(record)
 
-            msgnum_text = header.msgnum.decode('latin1').strip()
+            msgnum_bytes = header.msgnum or b''
+            msgnum_text = msgnum_bytes.decode('latin1').strip()
             current_msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
 
-            refnum_text = header.refnum.decode('latin1').strip()
+            refnum_bytes = header.refnum or b''
+            refnum_text = refnum_bytes.decode('latin1').strip()
             if refnum_text.isdigit():
                 current_refnum = int(refnum_text)
                 if current_refnum == 0:
@@ -271,6 +286,16 @@ def _format_message_header(
     boarddict: Mapping[int, str],
     verbose: bool,
 ) -> str:
+    """Render a message header into readable text.
+
+    Args:
+        header: Parsed header information for the message.
+        boarddict: Mapping of conference numbers to human-readable names.
+        verbose: Whether to include extra metadata such as message numbers and reference numbers.
+
+    Returns:
+        The formatted header text with DOS-style newlines appended.
+    """
     not_found_flag = False
     try:
         conf_name = boarddict[header.confnum]
@@ -284,7 +309,7 @@ def _format_message_header(
         header_parts.append("Conference: " + str(conf_name) + "\r\n")
     if verbose:
         header_parts.append(
-            "Message number: " + header.msgnum.decode("latin1") + (" " * 20)
+            "Message number: " + (header.msgnum or b"").decode("latin1") + (" " * 20)
         )
     header_parts.append(
         "Date: "
@@ -298,7 +323,7 @@ def _format_message_header(
     header_parts.append("Subject: " + header.msgsubject.decode("latin1") + "\r\n")
     if verbose:
         header_parts.append(
-            "Reference number: " + header.refnum.decode("latin1") + "\r\n"
+            "Reference number: " + (header.refnum or b"").decode("latin1") + "\r\n"
         )
     header_parts.append("\r\n")
     return "".join(header_parts)
@@ -311,6 +336,18 @@ def process_message(
     binaries_removal: bool,
     redact_pii: bool,
 ) -> str:
+    """Transform a raw message body according to processing settings.
+
+    Args:
+        message_buffer: The original message text with DOS-style newlines.
+        truncate_signatures: Whether to stop output at common signature separators.
+        cut_quoting: Whether to remove quoted text and quote headers.
+        binaries_removal: Whether to strip uuencoded, Base64, and yEnc payloads.
+        redact_pii: Whether to redact email addresses and phone numbers.
+
+    Returns:
+        The processed message text with transformations applied.
+    """
     lines = message_buffer.splitlines()
 
     new_lines = []
@@ -651,6 +688,19 @@ def main():
 
 
 def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[ProcessedMessage]:
+    """Order processed messages so that threads are grouped together.
+
+    Messages are rearranged so that parent messages appear before children and
+    warnings are emitted for circular references.
+
+    Args:
+        messages: Messages that have already been processed and may contain
+            reference links to other messages in the same conference.
+
+    Returns:
+        Messages ordered to reflect reply relationships while preserving
+        unattached messages.
+    """
     if not messages:
         return []
 

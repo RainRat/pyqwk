@@ -1,3 +1,4 @@
+import argparse
 import logging
 import sys
 import json
@@ -21,6 +22,7 @@ from qwk import (
     parse_messages,
     process_message,
     process_file,
+    main,
 )
 
 
@@ -67,6 +69,28 @@ def _make_settings(**overrides) -> ProcessingSettings:
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
+
+
+def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
+    base = dict(
+        input_paths=[],
+        output_path=None,
+        verbose=False,
+        private=False,
+        noheader=False,
+        truncatesignatures=False,
+        cutquoting=False,
+        individualfiles=False,
+        threaded=False,
+        binariesremoval=False,
+        redactpii=False,
+        quiet=False,
+        format="text",
+        output=None,
+        loglevel="INFO",
+    )
+    base.update(overrides)
+    return argparse.Namespace(**base)
 
 
 def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
@@ -510,3 +534,85 @@ def test_load_data_logs_warning_if_control_dat_is_missing(
         load_data(str(zip_path), logger)
 
     assert "CONTROL.DAT not found" in caplog.text
+
+
+def test_cli_requires_output_path_when_output_file(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], baseline_path: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    namespace = _make_cli_namespace(input_paths=[str(baseline_path)], output="file")
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    with pytest.raises(SystemExit):
+        main()
+
+    stderr = capsys.readouterr().err
+    assert "An output path is required when --output file is specified." in stderr
+
+
+def test_cli_rejects_output_path_for_stdout(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], baseline_path: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    namespace = _make_cli_namespace(
+        input_paths=[str(baseline_path)],
+        output_path="output.txt",
+        output="stdout",
+    )
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    with pytest.raises(SystemExit):
+        main()
+
+    stderr = capsys.readouterr().err
+    assert "Do not provide an output path when --output stdout is specified." in stderr
+
+
+def test_cli_rejects_invalid_log_level(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path
+) -> None:
+    namespace = _make_cli_namespace(input_paths=[str(baseline_path)], loglevel="NOPE")
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    with pytest.raises(ValueError):
+        main()
+
+
+def test_cli_reports_missing_file(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    missing_path = tmp_path / "missing.dat"
+    logging.basicConfig(level=logging.ERROR, force=True)
+    namespace = _make_cli_namespace(input_paths=[str(missing_path)])
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    with pytest.raises(SystemExit):
+        main()
+
+    stderr = capsys.readouterr().err
+    assert "No such file or directory" in stderr
+
+
+def test_cli_handles_mixed_batch_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+    baseline_path: Path,
+) -> None:
+    output_dir = tmp_path / "output"
+    missing_path = tmp_path / "missing.dat"
+    logging.basicConfig(level=logging.ERROR, force=True)
+    namespace = _make_cli_namespace(
+        input_paths=[str(baseline_path), str(missing_path)],
+        output_path=str(output_dir),
+        output="file",
+    )
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    main()
+
+    stderr = capsys.readouterr().err
+    assert str(missing_path) in stderr
+
+    expected_output = output_dir / "messages.txt"
+    assert expected_output.exists()

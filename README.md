@@ -60,6 +60,64 @@ If this is set, pyqwk will put each individual message in its own file according
 - `--redactpii` or `-r`
 If this is set, pyqwk will redact PII (Personally Identifiable Information), currently only phone numbers and e-mails. (default: off)
 
+## JSON and XML output formats
+
+When `--format json` or `--format xml` is selected, pyqwk emits structured representations of each processed message. The `header` section mirrors the fields from `messages.dat`, and missing numeric fields such as `msgnum` or `refnum` appear as empty strings.
+
+### JSON example
+
+```json
+[
+    {
+        "header": {
+            "status": "+",
+            "msgnum": "28",
+            "msgdate": "10-04-94",
+            "msgtime": "11:15",
+            "msgto": "ALL",
+            "msgfrom": "DIVER",
+            "msgsubject": "NET/MESSAGE COORDINATION",
+            "msgpassword": "",
+            "refnum": "",
+            "numblocks": "1",
+            "msgflag": " ",
+            "confnum": 3,
+            "lognum": 0,
+            "nettag": ""
+        },
+        "text": "<message body with \r\n newlines>"
+    }
+]
+```
+
+### XML example
+
+```xml
+<messages>
+  <message>
+    <header>
+      <status>+</status>
+      <msgnum>28</msgnum>
+      <msgdate>10-04-94</msgdate>
+      <msgtime>11:15</msgtime>
+      <msgto>ALL</msgto>
+      <msgfrom>DIVER</msgfrom>
+      <msgsubject>NET/MESSAGE COORDINATION</msgsubject>
+      <msgpassword />
+      <refnum />
+      <numblocks>1</numblocks>
+      <msgflag> </msgflag>
+      <confnum>3</confnum>
+      <lognum>0</lognum>
+      <nettag />
+    </header>
+    <text>&lt;message body with \r\n newlines&gt;</text>
+  </message>
+</messages>
+```
+
+In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`, while `text` contains the processed body with DOS-style newlines preserved.
+
 ## Known Issues
 
 - Some `.qwk` packets from this era use a ZIP compression method that modern Python doesn't know. To work around this issue:
