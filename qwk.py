@@ -10,6 +10,7 @@ import json
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass, fields
+from contextlib import contextmanager
 from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Tuple
 
 BLOCK_SIZE = 128
@@ -55,12 +56,6 @@ SIGNATURE_PATTERNS_STARTSWITH = (
     " \xfe ",
     " *** ",
 )
-
-
-try:
-    from tqdm import tqdm as tqdm_factory  # type: ignore
-except ImportError:  # pragma: no cover - tqdm is optional
-    tqdm_factory = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -172,8 +167,10 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
                             conf_number_raw = control_data[index]
                             conf_name_raw = control_data[index + 1]
                         except IndexError as error:
+                            available_entries = max((len(control_data) - 11) // 2, 0)
                             raise ControlDatFormatError(
-                                "CONTROL.DAT is truncated; missing conference entries."
+                                "CONTROL.DAT is truncated; missing conference entry "
+                                f"{i} (expected {num_conferences} entries, found {available_entries})."
                             ) from error
                         try:
                             conf_number = int(conf_number_raw)
@@ -432,19 +429,38 @@ def process_file(
     file_data, board_dict = load_data(input_path, logger)
     collected_messages: List[ProcessedMessage] = []
 
-    progress_bar: Optional[Any] = None
-    if not settings.quiet:
-        if tqdm_factory is None:
+    if settings.quiet:
+        @contextmanager
+        def progress_context() -> Iterator[Optional[Any]]:
+            yield None
+    else:
+        try:
+            from tqdm import tqdm  # type: ignore
+        except ImportError:  # pragma: no cover - tqdm is optional
             logger.info('Install tqdm to enable progress reporting.')
-        else:
-            progress_bar = tqdm_factory(
-                total=len(file_data),
-                unit='B',
-                unit_scale=True,
-                desc='Processing messages',
-            )
 
-    try:
+            @contextmanager
+            def progress_context() -> Iterator[Optional[Any]]:
+                class _NullProgress:
+                    def update(self, *_: object, **__: object) -> None:
+                        return None
+
+                    def close(self) -> None:
+                        return None
+
+                yield _NullProgress()
+        else:
+            @contextmanager
+            def progress_context() -> Iterator[Optional[Any]]:
+                with tqdm(
+                    total=len(file_data),
+                    unit='B',
+                    unit_scale=True,
+                    desc='Processing messages',
+                ) as progress_bar:
+                    yield progress_bar
+
+    with progress_context() as progress_bar:
         for parsed_message in parse_messages(
             file_data,
             progress_bar,
@@ -489,9 +505,6 @@ def process_file(
                             header=parsed_message.header,
                         )
                     )
-    finally:
-        if progress_bar is not None:
-            progress_bar.close()
 
     if not settings.individual_files:
         if settings.threaded:
@@ -589,7 +602,18 @@ def process_multiple_files(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_paths', help='One or more QWK packets or messages.dat files to process.', nargs='+')
-    parser.add_argument('output_path', help='The output filename or directory. Required for multiple input files. (default: print to console for single file)', nargs='?')
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument(
+        '-o',
+        '--output',
+        dest='output_path',
+        help='The output filename or directory. Required for multiple input files. (default: print to console for single file)',
+    )
+    output_group.add_argument(
+        '--stdout',
+        action='store_true',
+        help='Print output to stdout rather than writing to a file.',
+    )
     parser.add_argument(
         '-v',
         '--verbose',
@@ -620,12 +644,6 @@ def main():
         default='text',
         choices=['text', 'json', 'xml'],
     )
-    parser.add_argument(
-        '-o',
-        '--output',
-        help='Select the output destination for single-file processing',
-        choices=['stdout', 'file'],
-    )
     args = parser.parse_args()
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -634,26 +652,21 @@ def main():
     logging.basicConfig(level=numeric_level)
     logger = logging.getLogger(__name__)
 
-    if len(args.input_paths) > 1:
-        if args.output and args.output != 'file':
-            logger.error('Output must be set to "file" when processing multiple inputs.')
-            sys.exit(1)
-        if not args.output_path:
-            logger.error('Output directory is required when processing multiple files.')
-            sys.exit(1)
+    input_paths = args.input_paths
+    output_path = args.output_path
+
+    if not output_path and not args.stdout and len(input_paths) > 1:
+        output_path = input_paths[-1]
+        input_paths = input_paths[:-1]
+
+    if len(input_paths) > 1:
+        if not output_path:
+            parser.error('Output directory is required when processing multiple files.')
+        if args.stdout:
+            parser.error('Output directory is required when processing multiple files.')
         output_target = 'file'
     else:
-        if args.output is None:
-            output_target = 'file' if args.output_path else 'stdout'
-        else:
-            output_target = args.output
-
-        if output_target == 'file' and not args.output_path:
-            logger.error('An output path is required when --output file is specified.')
-            sys.exit(1)
-        if output_target == 'stdout' and args.output_path:
-            logger.error('Do not provide an output path when --output stdout is specified.')
-            sys.exit(1)
+        output_target = 'stdout' if args.stdout or not output_path else 'file'
 
     settings = ProcessingSettings(
         verbose=args.verbose,
@@ -670,11 +683,11 @@ def main():
         output_target=output_target,
     )
 
-    if len(args.input_paths) > 1:
-        process_multiple_files(args.input_paths, args.output_path, settings, logger)
+    if len(input_paths) > 1:
+        process_multiple_files(input_paths, output_path, settings, logger)
     else:
         try:
-            process_file(args.input_paths[0], args.output_path, settings, logger)
+            process_file(input_paths[0], output_path, settings, logger)
         except (
             MessagesDatFormatError,
             ControlDatFormatError,

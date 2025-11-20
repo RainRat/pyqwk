@@ -75,6 +75,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
     base = dict(
         input_paths=[],
         output_path=None,
+        stdout=False,
         verbose=False,
         private=False,
         noheader=False,
@@ -86,7 +87,6 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         redactpii=False,
         quiet=False,
         format="text",
-        output=None,
         loglevel="INFO",
     )
     base.update(overrides)
@@ -395,6 +395,39 @@ def test_load_data_raises_for_invalid_conference_number(
     assert "Invalid conference number" in str(exc_info.value)
 
 
+def test_load_data_reports_truncated_control_dat(
+    tmp_path: Path, testdata_dir: Path, logger: logging.Logger
+) -> None:
+    zip_path = tmp_path / "truncated_control.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.write(testdata_dir / "messages.dat", "MESSAGES.DAT")
+        control_lines = [
+            b"Benden Weyr, Pern, Sagittarius Sector",
+            b"",
+            b"(306) 382-5746",
+            b"Ken Read",
+            b"0 ,Benden",
+            b"09-04-1994,19:25:58",
+            b"CHRIS STUBBS",
+            b"",
+            b"0",
+            b"0",
+            b"1",
+            b"1",
+            b"Test Conference",
+        ]
+        control_content = b"\r\n".join(control_lines) + b"\r\n"
+        zf.writestr("CONTROL.DAT", control_content)
+
+    with pytest.raises(ControlDatFormatError) as exc_info:
+        load_data(str(zip_path), logger)
+
+    message = str(exc_info.value)
+    assert "missing conference entry 1" in message
+    assert "expected 2 entries" in message
+    assert "found 1" in message
+
+
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
     file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
 
@@ -536,36 +569,77 @@ def test_load_data_logs_warning_if_control_dat_is_missing(
     assert "CONTROL.DAT not found" in caplog.text
 
 
-def test_cli_requires_output_path_when_output_file(
+def test_cli_rejects_stdout_with_output_path(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], baseline_path: Path
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
-    namespace = _make_cli_namespace(input_paths=[str(baseline_path)], output="file")
-    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
-
-    with pytest.raises(SystemExit):
-        main()
-
-    stderr = capsys.readouterr().err
-    assert "An output path is required when --output file is specified." in stderr
-
-
-def test_cli_rejects_output_path_for_stdout(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], baseline_path: Path
-) -> None:
-    logging.basicConfig(level=logging.ERROR, force=True)
-    namespace = _make_cli_namespace(
-        input_paths=[str(baseline_path)],
-        output_path="output.txt",
-        output="stdout",
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", str(baseline_path), "-o", "output.txt", "--stdout"],
     )
-    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
 
     with pytest.raises(SystemExit):
         main()
 
     stderr = capsys.readouterr().err
-    assert "Do not provide an output path when --output stdout is specified." in stderr
+    assert "not allowed with argument -o/--output" in stderr
+
+
+def test_cli_requires_output_directory_for_multiple_inputs(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], testdata_dir: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", str(testdata_dir / "test1_qwk.zip"), str(testdata_dir / "test2_qwk.zip"), "--stdout"],
+    )
+
+    with pytest.raises(SystemExit):
+        main()
+
+    stderr = capsys.readouterr().err
+    assert "Output directory is required when processing multiple files." in stderr
+
+
+def test_cli_allows_positional_output_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, expected_output_path: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    output_path = tmp_path / "output.txt"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", str(baseline_path), str(output_path)],
+    )
+
+    main()
+
+    assert output_path.exists()
+    assert output_path.read_text(encoding="latin1") == expected_output_path.read_text(encoding="latin1")
+
+
+def test_cli_allows_positional_output_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, testdata_dir: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    output_dir = tmp_path / "output"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prog",
+            str(testdata_dir / "test1_qwk.zip"),
+            str(testdata_dir / "test2_qwk.zip"),
+            str(output_dir),
+        ],
+    )
+
+    main()
+
+    assert (output_dir / "test1_qwk.txt").exists()
+    assert (output_dir / "test2_qwk.txt").exists()
 
 
 def test_cli_rejects_invalid_log_level(
@@ -605,7 +679,6 @@ def test_cli_handles_mixed_batch_inputs(
     namespace = _make_cli_namespace(
         input_paths=[str(baseline_path), str(missing_path)],
         output_path=str(output_dir),
-        output="file",
     )
     monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
 
