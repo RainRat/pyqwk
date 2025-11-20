@@ -111,7 +111,8 @@ class MessageHeader:
     lognum: int
     nettag: bytes
 
-    def _to_dict(self) -> Dict[str, Any]:
+    @property
+    def as_dict(self) -> Dict[str, Any]:
         result: Dict[str, Any] = {}
         for field in fields(self):
             value = getattr(self, field.name)
@@ -507,10 +508,11 @@ def process_file(
                     )
 
     if not settings.individual_files:
-        if settings.threaded:
-            ordered_messages = _order_messages_by_thread(collected_messages)
-        else:
-            ordered_messages = collected_messages
+        ordered_messages = (
+            _order_messages_by_thread(collected_messages)
+            if settings.threaded
+            else collected_messages
+        )
 
         if settings.format == 'json':
             _export_json(ordered_messages, resolved_output_path)
@@ -531,7 +533,7 @@ def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -
     for message in messages:
         output_data.append(
             {
-                'header': message.header._to_dict(),
+                'header': message.header.as_dict,
                 'text': message.text,
             }
         )
@@ -552,7 +554,7 @@ def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) ->
     for message in messages:
         msg_element = ET.SubElement(root, 'message')
         header_element = ET.SubElement(msg_element, 'header')
-        header_data = message.header._to_dict()
+        header_data = message.header.as_dict
         for key, value in header_data.items():
             child = ET.SubElement(header_element, key)
             child.text = _sanitize_xml_string(str(value))
@@ -741,34 +743,48 @@ def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[Processe
 
     cycle_reported: set[int] = set()
 
-    def visit(idx: int, path: set[int]) -> None:
-        if idx in path:
-            if idx not in cycle_reported:
-                message = messages[idx]
-                logger.warning(
-                    "Circular reference detected while threading messages (conf %s, msgnum %s).",
-                    message.confnum,
-                    message.msgnum if message.msgnum is not None else "unknown",
-                )
-                cycle_reported.add(idx)
-            return
-        if idx in visited:
-            return
-        visited.add(idx)
-        ordered_indices.append(idx)
+    def visit_iterative(start_idx: int) -> None:
+        stack: List[Tuple[int, Iterator[int], set[int]]] = []
+        stack.append((start_idx, iter(children.get(start_idx, [])), {start_idx}))
 
-        path.add(idx)
-        for child_idx in children.get(idx, []):
-            visit(child_idx, path)
-        path.remove(idx)
+        while stack:
+            idx, child_iter, path = stack[-1]
+
+            if idx not in visited:
+                visited.add(idx)
+                ordered_indices.append(idx)
+
+            try:
+                child_idx = next(child_iter)
+            except StopIteration:
+                stack.pop()
+                continue
+
+            if child_idx in path:
+                if child_idx not in cycle_reported:
+                    message = messages[child_idx]
+                    logger.warning(
+                        "Circular reference detected while threading messages (conf %s, msgnum %s).",
+                        message.confnum,
+                        message.msgnum if message.msgnum is not None else "unknown",
+                    )
+                    cycle_reported.add(child_idx)
+                continue
+
+            if child_idx in visited:
+                continue
+
+            new_path = set(path)
+            new_path.add(child_idx)
+            stack.append((child_idx, iter(children.get(child_idx, [])), new_path))
 
     for idx, is_attached in enumerate(attached):
         if not is_attached:
-            visit(idx, set())
+            visit_iterative(idx)
 
     for idx in range(len(messages)):
         if idx not in visited:
-            visit(idx, set())
+            visit_iterative(idx)
 
     return [messages[idx] for idx in ordered_indices]
 

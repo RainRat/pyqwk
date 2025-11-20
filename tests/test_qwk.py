@@ -10,6 +10,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import qwk
+
 from qwk import (
     ProcessingSettings,
     ParsedMessage,
@@ -466,6 +468,71 @@ def test_process_file_writes_json(
     expected_message = _read_expected(expected_output_path)
     assert message["text"] == expected_message
     assert message["header"]["msgnum"] == "28"
+
+
+def test_process_file_preserves_thread_order_in_json(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
+) -> None:
+    header = MessageHeader(
+        status=b" ",
+        msgnum=b"1",
+        msgdate=b"",
+        msgtime=b"",
+        msgto=b"",
+        msgfrom=b"",
+        msgsubject=b"",
+        msgpassword=b"",
+        refnum=b"",
+        numblocks=b"",
+        msgflag=b"",
+        confnum=1,
+        lognum=1,
+        nettag=b"",
+    )
+
+    parsed_messages = [
+        ParsedMessage(
+            text="child",
+            is_private=False,
+            is_password=False,
+            msgnum=2,
+            refnum=1,
+            confnum=1,
+            header=header,
+        ),
+        ParsedMessage(
+            text="parent",
+            is_private=False,
+            is_password=False,
+            msgnum=1,
+            refnum=None,
+            confnum=1,
+            header=header,
+        ),
+    ]
+
+    def fake_load_data(path: str, logger_param: logging.Logger) -> tuple[bytearray, dict[int, str]]:
+        return bytearray(), {}
+
+    def fake_parse_messages(file_data: bytearray, progress_bar: object):
+        yield from parsed_messages
+
+    monkeypatch.setattr(qwk, "load_data", fake_load_data)
+    monkeypatch.setattr(qwk, "parse_messages", fake_parse_messages)
+
+    output_path = tmp_path / "threaded.json"
+
+    process_file(
+        "ignored.dat",
+        str(output_path),
+        _make_settings(threaded=True, format="json", no_header=True),
+        logger=logger,
+    )
+
+    with output_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert [message["text"] for message in data] == ["parent\r\n", "child\r\n"]
 
 
 def test_process_file_writes_xml(
