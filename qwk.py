@@ -12,7 +12,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, fields
 from contextlib import contextmanager
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
@@ -534,21 +534,27 @@ def process_file(
             else collected_messages
         )
 
-        if settings.format == 'json':
-            _export_json(ordered_messages, resolved_output_path)
-        elif settings.format == 'xml':
-            _export_xml(ordered_messages, resolved_output_path)
-        else:
-            full_message_buffer = ''.join(message.text for message in ordered_messages)
+        writers: dict[str, Callable[[list[ProcessedMessage], str | None], None]] = {
+            'json': _write_json,
+            'xml': _write_xml,
+            'text': _write_text,
+        }
 
-            if resolved_output_path is None:
-                sys.stdout.write(full_message_buffer + '\n')
-            else:
-                with open(resolved_output_path, 'w', encoding='latin1') as f:
-                    f.write(full_message_buffer)
+        writer = writers.get(settings.format, _write_text)
+        writer(ordered_messages, resolved_output_path)
 
 
-def _export_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
+def _write_text(messages: list[ProcessedMessage], output_path: str | None) -> None:
+    full_message_buffer = ''.join(message.text for message in messages)
+
+    if output_path is None:
+        sys.stdout.write(full_message_buffer + '\n')
+    else:
+        with open(output_path, 'w', encoding='latin1') as f:
+            f.write(full_message_buffer)
+
+
+def _write_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
     output_data = []
     for message in messages:
         output_data.append(
@@ -558,18 +564,14 @@ def _export_json(messages: list[ProcessedMessage], output_path: str | None) -> N
             }
         )
     output_json = json.dumps(output_data, indent=4)
-    if output_path is None:
-        sys.stdout.write(output_json + '\n')
-    else:
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(output_json)
+    _write_text_output(output_json, output_path, encoding='utf-8')
 
 
 def _sanitize_xml_string(s: str) -> str:
     return re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]', '', s)
 
 
-def _export_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
+def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
     root = ET.Element('messages')
     for message in messages:
         msg_element = ET.SubElement(root, 'message')
@@ -586,11 +588,23 @@ def _export_xml(messages: list[ProcessedMessage], output_path: str | None) -> No
     xml_bytes = ET.tostring(root, encoding='utf-8')
     xml_text = xml_bytes.decode('utf-8')
 
+    _write_text_output(xml_text, output_path, encoding='utf-8')
+
+
+def _export_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
+    _write_json(messages, output_path)
+
+
+def _export_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
+    _write_xml(messages, output_path)
+
+
+def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
     if output_path is None:
-        sys.stdout.write(xml_text + '\n')
+        sys.stdout.write(content + '\n')
     else:
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(xml_text)
+        with open(output_path, 'w', encoding=encoding) as f:
+            f.write(content)
 
 
 def process_multiple_files(
