@@ -652,14 +652,21 @@ def main():
     logging.basicConfig(level=numeric_level)
     logger = logging.getLogger(__name__)
 
-    if len(args.input_paths) > 1:
-        if not args.output_path:
+    input_paths = args.input_paths
+    output_path = args.output_path
+
+    if not output_path and not args.stdout and len(input_paths) > 1:
+        output_path = input_paths[-1]
+        input_paths = input_paths[:-1]
+
+    if len(input_paths) > 1:
+        if not output_path:
             parser.error('Output directory is required when processing multiple files.')
         if args.stdout:
             parser.error('Output directory is required when processing multiple files.')
         output_target = 'file'
     else:
-        output_target = 'stdout' if args.stdout or not args.output_path else 'file'
+        output_target = 'stdout' if args.stdout or not output_path else 'file'
 
     settings = ProcessingSettings(
         verbose=args.verbose,
@@ -676,11 +683,11 @@ def main():
         output_target=output_target,
     )
 
-    if len(args.input_paths) > 1:
-        process_multiple_files(args.input_paths, args.output_path, settings, logger)
+    if len(input_paths) > 1:
+        process_multiple_files(input_paths, output_path, settings, logger)
     else:
         try:
-            process_file(args.input_paths[0], args.output_path, settings, logger)
+            process_file(input_paths[0], output_path, settings, logger)
         except (
             MessagesDatFormatError,
             ControlDatFormatError,

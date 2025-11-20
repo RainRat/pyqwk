@@ -603,6 +603,45 @@ def test_cli_requires_output_directory_for_multiple_inputs(
     assert "Output directory is required when processing multiple files." in stderr
 
 
+def test_cli_allows_positional_output_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, expected_output_path: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    output_path = tmp_path / "output.txt"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", str(baseline_path), str(output_path)],
+    )
+
+    main()
+
+    assert output_path.exists()
+    assert output_path.read_text(encoding="latin1") == expected_output_path.read_text(encoding="latin1")
+
+
+def test_cli_allows_positional_output_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, testdata_dir: Path
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    output_dir = tmp_path / "output"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prog",
+            str(testdata_dir / "test1_qwk.zip"),
+            str(testdata_dir / "test2_qwk.zip"),
+            str(output_dir),
+        ],
+    )
+
+    main()
+
+    assert (output_dir / "test1_qwk.txt").exists()
+    assert (output_dir / "test2_qwk.txt").exists()
+
+
 def test_cli_rejects_invalid_log_level(
     monkeypatch: pytest.MonkeyPatch, baseline_path: Path
 ) -> None:
