@@ -14,6 +14,8 @@ from dataclasses import dataclass, fields
 from contextlib import contextmanager
 from typing import Any, Callable, Protocol
 
+__version__ = "0.1.0"
+
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
 CONTROL_FILENAME = 'control.dat'
@@ -635,7 +637,7 @@ def process_multiple_files(
             logger.error("Error processing file %s: %s", input_path, error)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('input_paths', help='One or more QWK packets or messages.dat files to process.', nargs='+')
     output_group = parser.add_mutually_exclusive_group()
@@ -679,6 +681,12 @@ def main():
         help='Set the output format (text, json, xml)',
         default='text',
         choices=['text', 'json', 'xml'],
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f"%(prog)s {__version__}",
+        help='Show the version number and exit.',
     )
     args = parser.parse_args()
 
