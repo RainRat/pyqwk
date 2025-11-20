@@ -166,47 +166,25 @@ def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[
     if zipfile.is_zipfile(input_path):
         messages_name = ''
         control_name = ''
-        try:
-            with zipfile.ZipFile(input_path) as myzip:
-                file_list = myzip.namelist()
-                for file_name in file_list:
-                    if file_name.lower() == MESSAGES_FILENAME:
-                        messages_name = file_name
-                    if file_name.lower() == CONTROL_FILENAME:
-                        control_name = file_name
-                if not messages_name:
-                    raise FileNotFoundError(
-                        f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}."
-                    )
-                with myzip.open(messages_name) as f:
-                    file_data = bytearray(f.read())
-                if control_name:
-                    with myzip.open(control_name) as f:
-                        control_data = f.read().splitlines()
-                    num_conferences = int(control_data[10]) + 1
-                    for i in range(num_conferences):
-                        index = 11 + i * 2
-                        try:
-                            conf_number_raw = control_data[index]
-                            conf_name_raw = control_data[index + 1]
-                        except IndexError as error:
-                            available_entries = max((len(control_data) - 11) // 2, 0)
-                            raise ControlDatFormatError(
-                                "CONTROL.DAT is truncated; missing conference entry "
-                                f"{i} (expected {num_conferences} entries, found {available_entries})."
-                            ) from error
-                        try:
-                            conf_number = int(conf_number_raw)
-                        except ValueError as error:
-                            raise ControlDatFormatError(
-                                f"Invalid conference number in CONTROL.DAT: {conf_number_raw!r}"
-                            ) from error
-                        conf_name = conf_name_raw.decode('latin1')
-                        board_dict[conf_number] = conf_name
-                else:
-                    logger.warning("CONTROL.DAT not found, conference names will not be available.")
-        except zipfile.BadZipFile as error:
-            raise zipfile.BadZipFile("Error: The provided file is not a valid zip file.") from error
+        with zipfile.ZipFile(input_path) as myzip:
+            file_list = myzip.namelist()
+            for file_name in file_list:
+                if file_name.lower() == MESSAGES_FILENAME:
+                    messages_name = file_name
+                if file_name.lower() == CONTROL_FILENAME:
+                    control_name = file_name
+            if not messages_name:
+                raise FileNotFoundError(
+                    f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}."
+                )
+            with myzip.open(messages_name) as f:
+                file_data = bytearray(f.read())
+            if control_name:
+                with myzip.open(control_name) as f:
+                    control_data = f.read().splitlines()
+                board_dict = _parse_control_dat(control_data)
+            else:
+                logger.warning("CONTROL.DAT not found, conference names will not be available.")
     else:
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())
@@ -228,6 +206,32 @@ def _parse_header_record(record: bytes) -> tuple[MessageHeader, bool, bool]:
     else:
         raise InvalidMessageTypeError(message_type)
     return header, is_private, is_password
+
+
+def _parse_control_dat(control_data: list[bytes]) -> dict[int, str]:
+    board_dict: dict[int, str] = {}
+    num_conferences = int(control_data[10]) + 1
+    for i in range(num_conferences):
+        index = 11 + i * 2
+        try:
+            conf_number_raw = control_data[index]
+            conf_name_raw = control_data[index + 1]
+        except IndexError as error:
+            available_entries = max((len(control_data) - 11) // 2, 0)
+            raise ControlDatFormatError(
+                "CONTROL.DAT is truncated; missing conference entry "
+                f"{i} (expected {num_conferences} entries, found {available_entries})."
+            ) from error
+        try:
+            conf_number = int(conf_number_raw)
+        except ValueError as error:
+            raise ControlDatFormatError(
+                f"Invalid conference number in CONTROL.DAT: {conf_number_raw!r}"
+            ) from error
+        conf_name = conf_name_raw.decode('latin1')
+        board_dict[conf_number] = conf_name
+
+    return board_dict
 
 
 def parse_messages(
@@ -435,17 +439,16 @@ def process_file(
         output_mode = 'file' if output_path is not None else 'stdout'
 
     if settings.individual_files:
-        if output_path is None:
-            raise ValueError('An output path is required when using individual files.')
-        if os.path.exists(output_path) and not os.path.isdir(output_path):
-            raise ValueError('The output path must be a directory when using individual files.')
+        assert output_path is not None, 'An output path is required when using individual files.'
+        if os.path.exists(output_path):
+            assert os.path.isdir(output_path), 'The output path must be a directory when using individual files.'
         output_dir = output_path
         os.makedirs(output_dir, exist_ok=True)
     else:
-        if output_mode == 'file' and output_path is None:
-            raise ValueError('An output path is required when output is set to file.')
-        if output_mode == 'stdout' and output_path is not None:
-            raise ValueError('An output path cannot be provided when output is set to stdout.')
+        if output_mode == 'file':
+            assert output_path is not None, 'An output path is required when output is set to file.'
+        if output_mode == 'stdout':
+            assert output_path is None, 'An output path cannot be provided when output is set to stdout.'
 
     resolved_output_path: str | None = None if output_mode == 'stdout' else output_path
 
@@ -548,12 +551,7 @@ def process_file(
 
 def _write_text(messages: list[ProcessedMessage], output_path: str | None) -> None:
     full_message_buffer = ''.join(message.text for message in messages)
-
-    if output_path is None:
-        sys.stdout.write(full_message_buffer + '\n')
-    else:
-        with open(output_path, 'w', encoding='latin1') as f:
-            f.write(full_message_buffer)
+    _write_text_output(full_message_buffer, output_path, encoding='latin1')
 
 
 def _write_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
@@ -591,14 +589,6 @@ def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> Non
     xml_text = xml_bytes.decode('utf-8')
 
     _write_text_output(xml_text, output_path, encoding='utf-8')
-
-
-def _export_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
-    _write_json(messages, output_path)
-
-
-def _export_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
-    _write_xml(messages, output_path)
 
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
@@ -703,7 +693,13 @@ def main() -> None:
         output_path = input_paths[-1]
         input_paths = input_paths[:-1]
 
-    if len(input_paths) > 1:
+    if args.individualfiles:
+        if output_path is None:
+            parser.error('Output directory is required when writing individual files.')
+        if os.path.exists(output_path) and not os.path.isdir(output_path):
+            parser.error('Output path must be a directory when writing individual files.')
+        output_target = 'file'
+    elif len(input_paths) > 1:
         if not output_path:
             parser.error('Output directory is required when processing multiple files.')
         if args.stdout:
