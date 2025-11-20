@@ -238,7 +238,7 @@ def test_process_file_requires_directory_for_individual_files(
     invalid_output = tmp_path / "not_a_directory.txt"
     invalid_output.write_text("content", encoding="utf-8")
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(AssertionError) as exc_info:
         process_file(
             str(baseline_path),
             str(invalid_output),
@@ -560,7 +560,7 @@ def test_process_file_writes_xml(
 def test_process_file_writes_xml_with_special_characters(
     tmp_path, logger: logging.Logger
 ) -> None:
-    from qwk import _export_xml
+    from qwk import _write_xml
     header = MessageHeader(
         status=b' ',
         msgnum=b'1',
@@ -586,7 +586,7 @@ def test_process_file_writes_xml_with_special_characters(
     )
 
     output_path = tmp_path / "test.xml"
-    _export_xml([message], str(output_path))
+    _write_xml([message], str(output_path))
 
     with open(output_path, "r") as f:
         content = f.read()
