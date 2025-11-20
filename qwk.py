@@ -9,9 +9,10 @@ import logging
 import json
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, fields
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Tuple
+from typing import Any, Protocol
 
 BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
@@ -58,6 +59,11 @@ SIGNATURE_PATTERNS_STARTSWITH = (
 )
 
 
+class ProgressBar(Protocol):
+    def update(self, __n: int, /) -> None:
+        """Advance the progress by ``__n`` units."""
+
+
 @dataclass
 class ProcessingSettings:
     verbose: bool
@@ -79,8 +85,8 @@ class ParsedMessage:
     text: str
     is_private: bool
     is_password: bool
-    msgnum: Optional[int]
-    refnum: Optional[int]
+    msgnum: int | None
+    refnum: int | None
     confnum: int
     header: "MessageHeader"
 
@@ -88,8 +94,8 @@ class ParsedMessage:
 @dataclass
 class ProcessedMessage:
     text: str
-    msgnum: Optional[int]
-    refnum: Optional[int]
+    msgnum: int | None
+    refnum: int | None
     confnum: int
     header: "MessageHeader"
 
@@ -97,14 +103,14 @@ class ProcessedMessage:
 @dataclass
 class MessageHeader:
     status: bytes
-    msgnum: Optional[bytes]
+    msgnum: bytes | None
     msgdate: bytes
     msgtime: bytes
     msgto: bytes
     msgfrom: bytes
     msgsubject: bytes
     msgpassword: bytes
-    refnum: Optional[bytes]
+    refnum: bytes | None
     numblocks: bytes
     msgflag: bytes
     confnum: int
@@ -112,8 +118,8 @@ class MessageHeader:
     nettag: bytes
 
     @property
-    def as_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {}
+    def as_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {}
         for field in fields(self):
             value = getattr(self, field.name)
             if isinstance(value, bytes):
@@ -139,8 +145,22 @@ class InvalidMessageTypeError(Exception):
         self.message_type = message_type
 
 
-def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[int, str]]:
-    board_dict: Dict[int, str] = {}
+def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[int, str]]:
+    """Load message and conference metadata from a QWK packet or raw file.
+
+    Args:
+        input_path: Path to either a ``messages.dat`` file or a QWK archive containing
+            that file (and optionally ``CONTROL.DAT``).
+        logger: Logger used to report warnings when optional metadata is missing.
+
+    Returns:
+        A tuple ``(file_data, board_dict)`` where ``file_data`` is a mutable
+        ``bytearray`` containing the full contents of ``messages.dat`` and
+        ``board_dict`` maps conference numbers to their names parsed from
+        ``CONTROL.DAT``. If ``CONTROL.DAT`` is not present, the mapping will be empty
+        and conference identifiers will remain numeric.
+    """
+    board_dict: dict[int, str] = {}
     if zipfile.is_zipfile(input_path):
         messages_name = ''
         control_name = ''
@@ -191,7 +211,7 @@ def load_data(input_path: str, logger: logging.Logger) -> Tuple[bytearray, Dict[
     return file_data, board_dict
 
 
-def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
+def _parse_header_record(record: bytes) -> tuple[MessageHeader, bool, bool]:
     header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
     header = MessageHeader(*header_data)
     message_type = header.status.decode('latin1')
@@ -210,7 +230,7 @@ def _parse_header_record(record: bytes) -> Tuple[MessageHeader, bool, bool]:
 
 def parse_messages(
     file_data: bytearray,
-    progress_bar: Optional[Any],
+    progress_bar: ProgressBar | None,
 ) -> Iterator[ParsedMessage]:
     """Parse a QWK messages.dat payload into message objects.
 
@@ -229,8 +249,8 @@ def parse_messages(
     message_buffer = ''
     is_private = True
     is_password = False
-    current_msgnum: Optional[int] = None
-    current_refnum: Optional[int] = None
+    current_msgnum: int | None = None
+    current_refnum: int | None = None
     current_confnum = 0
     for i in range(0, len(file_data), BLOCK_SIZE):
         record = file_data[i:i + BLOCK_SIZE]
@@ -301,7 +321,7 @@ def _format_message_header(
         conf_name = str(header.confnum)
         not_found_flag = True
 
-    header_parts: List[str] = []
+    header_parts: list[str] = []
     header_parts.append(("-" * 80) + "\r\n")
     if verbose or not not_found_flag:
         header_parts.append("Conference: " + str(conf_name) + "\r\n")
@@ -402,12 +422,12 @@ def process_message(
 
 def process_file(
     input_path: str,
-    output_path: Optional[str],
+    output_path: str | None,
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> None:
 
-    output_dir: Optional[str] = None
+    output_dir: str | None = None
     output_mode = 'file' if settings.individual_files else settings.output_target
     if output_mode == 'auto':
         output_mode = 'file' if output_path is not None else 'stdout'
@@ -425,14 +445,14 @@ def process_file(
         if output_mode == 'stdout' and output_path is not None:
             raise ValueError('An output path cannot be provided when output is set to stdout.')
 
-    resolved_output_path: Optional[str] = None if output_mode == 'stdout' else output_path
+    resolved_output_path: str | None = None if output_mode == 'stdout' else output_path
 
     file_data, board_dict = load_data(input_path, logger)
-    collected_messages: List[ProcessedMessage] = []
+    collected_messages: list[ProcessedMessage] = []
 
     if settings.quiet:
         @contextmanager
-        def progress_context() -> Iterator[Optional[Any]]:
+        def progress_context() -> Iterator[ProgressBar | None]:
             yield None
     else:
         try:
@@ -441,7 +461,7 @@ def process_file(
             logger.info('Install tqdm to enable progress reporting.')
 
             @contextmanager
-            def progress_context() -> Iterator[Optional[Any]]:
+            def progress_context() -> Iterator[ProgressBar]:
                 class _NullProgress:
                     def update(self, *_: object, **__: object) -> None:
                         return None
@@ -452,7 +472,7 @@ def process_file(
                 yield _NullProgress()
         else:
             @contextmanager
-            def progress_context() -> Iterator[Optional[Any]]:
+            def progress_context() -> Iterator[ProgressBar]:
                 with tqdm(
                     total=len(file_data),
                     unit='B',
@@ -528,7 +548,7 @@ def process_file(
                     f.write(full_message_buffer)
 
 
-def _export_json(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
+def _export_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
     output_data = []
     for message in messages:
         output_data.append(
@@ -549,7 +569,7 @@ def _sanitize_xml_string(s: str) -> str:
     return re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]', '', s)
 
 
-def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) -> None:
+def _export_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
     root = ET.Element('messages')
     for message in messages:
         msg_element = ET.SubElement(root, 'message')
@@ -574,7 +594,7 @@ def _export_xml(messages: List[ProcessedMessage], output_path: Optional[str]) ->
 
 
 def process_multiple_files(
-    input_paths: List[str],
+    input_paths: list[str],
     output_dir: str,
     settings: ProcessingSettings,
     logger: logging.Logger,
@@ -702,7 +722,7 @@ def main():
             sys.exit(1)
 
 
-def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[ProcessedMessage]:
+def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[ProcessedMessage]:
     """Order processed messages so that threads are grouped together.
 
     Messages are rearranged so that parent messages appear before children and
@@ -720,8 +740,8 @@ def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[Processe
         return []
 
     logger = logging.getLogger(__name__)
-    index_by_key: Dict[Tuple[int, int], int] = {}
-    children: Dict[int, List[int]] = defaultdict(list)
+    index_by_key: dict[tuple[int, int], int] = {}
+    children: dict[int, list[int]] = defaultdict(list)
 
     for index, message in enumerate(messages):
         if message.msgnum is not None:
@@ -738,13 +758,13 @@ def _order_messages_by_thread(messages: List[ProcessedMessage]) -> List[Processe
         children[parent_index].append(index)
         attached[index] = True
 
-    ordered_indices: List[int] = []
+    ordered_indices: list[int] = []
     visited: set[int] = set()
 
     cycle_reported: set[int] = set()
 
     def visit_iterative(start_idx: int) -> None:
-        stack: List[Tuple[int, Iterator[int], set[int]]] = []
+        stack: list[tuple[int, Iterator[int], set[int]]] = []
         stack.append((start_idx, iter(children.get(start_idx, [])), {start_idx}))
 
         while stack:
