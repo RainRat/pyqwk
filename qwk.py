@@ -116,30 +116,27 @@ class ProcessedMessage:
 
 @dataclass
 class MessageHeader:
-    status: bytes
-    msgnum: bytes | None
-    msgdate: bytes
-    msgtime: bytes
-    msgto: bytes
-    msgfrom: bytes
-    msgsubject: bytes
-    msgpassword: bytes
-    refnum: bytes | None
-    numblocks: bytes
-    msgflag: bytes
+    status: str
+    msgnum: int | None
+    msgdate: str
+    msgtime: str
+    msgto: str
+    msgfrom: str
+    msgsubject: str
+    msgpassword: str
+    refnum: int | None
+    numblocks: int | None
+    msgflag: str
     confnum: int
     lognum: int
-    nettag: bytes
+    nettag: str
 
     @property
     def as_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for field in fields(self):
             value = getattr(self, field.name)
-            if isinstance(value, bytes):
-                result[field.name] = value.decode('latin1').strip()
-            else:
-                result[field.name] = value
+            result[field.name] = "" if value is None else value
         return result
 
 
@@ -213,8 +210,68 @@ def _parse_header_record(record: bytes) -> tuple[MessageHeader, bool, bool]:
         raise MessagesDatFormatError(
             "messages.dat header record has invalid size or format."
         ) from error
-    header = MessageHeader(*header_data)
-    message_type = header.status.decode('latin1')
+    (
+        status,
+        raw_msgnum,
+        raw_msgdate,
+        raw_msgtime,
+        raw_msgto,
+        raw_msgfrom,
+        raw_msgsubject,
+        raw_msgpassword,
+        raw_refnum,
+        raw_numblocks,
+        msgflag,
+        confnum,
+        lognum,
+        nettag,
+    ) = header_data
+
+    def _parse_char(value: bytes) -> str:
+        return value.decode('latin1')
+
+    def _parse_text(value: bytes) -> str:
+        return value.decode('latin1').strip()
+
+    def _parse_padded_text(value: bytes) -> str:
+        return value.decode('latin1')
+
+    def _parse_optional_int(value: bytes, *, treat_zero_as_none: bool = False) -> int | None:
+        text = _parse_text(value)
+        if not text.isdigit():
+            return None
+        result = int(text)
+        if treat_zero_as_none and result == 0:
+            return None
+        return result
+
+    msgnum = _parse_optional_int(raw_msgnum)
+    refnum = _parse_optional_int(raw_refnum, treat_zero_as_none=True)
+    numblocks_text = _parse_text(raw_numblocks)
+    try:
+        numblocks = int(numblocks_text)
+    except ValueError:
+        numblocks = None
+
+    header = MessageHeader(
+        status=_parse_char(status),
+        msgnum=msgnum,
+        msgdate=_parse_text(raw_msgdate),
+        msgtime=_parse_text(raw_msgtime),
+        msgto=_parse_padded_text(raw_msgto),
+        msgfrom=_parse_padded_text(raw_msgfrom),
+        msgsubject=_parse_padded_text(raw_msgsubject),
+        msgpassword=_parse_text(raw_msgpassword),
+        refnum=refnum,
+        numblocks=numblocks,
+        msgflag=_parse_char(msgflag),
+        confnum=confnum,
+        lognum=lognum,
+        nettag=_parse_char(nettag),
+    )
+
+    header._numblocks_raw = numblocks_text  # type: ignore[attr-defined]
+    message_type = header.status
     is_password = False
     is_private = True
     if message_type in ['+', '*', '~', '`']:
@@ -290,30 +347,19 @@ def parse_messages(
             continue
         if blocks_remaining == 0:
             header, is_private, is_password = _parse_header_record(record)
-
-            msgnum_bytes = header.msgnum or b''
-            msgnum_text = msgnum_bytes.decode('latin1').strip()
-            current_msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
-
-            refnum_bytes = header.refnum or b''
-            refnum_text = refnum_bytes.decode('latin1').strip()
-            if refnum_text.isdigit():
-                current_refnum = int(refnum_text)
-                if current_refnum == 0:
-                    current_refnum = None
-            else:
-                current_refnum = None
-
+            current_msgnum = header.msgnum
+            current_refnum = header.refnum
             current_confnum = header.confnum
 
             message_buffer = ''
-            temp_blocks = header.numblocks.decode('latin1').strip()
             try:
-                blocks_remaining = int(temp_blocks) - 1
+                if header.numblocks is None:
+                    raise ValueError
+                blocks_remaining = header.numblocks - 1
             except ValueError:
                 logging.warning(
                     "Invalid block count '%s' in message header at offset %s; skipping message.",
-                    temp_blocks,
+                    getattr(header, '_numblocks_raw', header.numblocks),
                     i,
                 )
                 blocks_remaining = 0
@@ -343,7 +389,7 @@ def parse_messages(
 
 def _format_message_header(
     header: MessageHeader,
-    boarddict: Mapping[int, str],
+    board_dict: Mapping[int, str],
     verbose: bool,
 ) -> str:
     """Render a message header into readable text.
@@ -358,7 +404,7 @@ def _format_message_header(
     """
     not_found_flag = False
     try:
-        conf_name = boarddict[header.confnum]
+        conf_name = board_dict[header.confnum]
     except KeyError:
         conf_name = str(header.confnum)
         not_found_flag = True
@@ -368,23 +414,17 @@ def _format_message_header(
     if verbose or not not_found_flag:
         header_parts.append("Conference: " + str(conf_name) + "\r\n")
     if verbose:
-        header_parts.append(
-            "Message number: " + (header.msgnum or b"").decode("latin1") + (" " * 20)
-        )
+        message_number = str(header.msgnum) if header.msgnum is not None else ""
+        header_parts.append("Message number: " + message_number + (" " * 20))
     header_parts.append(
-        "Date: "
-        + header.msgdate.decode("latin1")
-        + " "
-        + header.msgtime.decode("latin1")
-        + "\r\n"
+        "Date: " + header.msgdate + " " + header.msgtime + "\r\n"
     )
-    header_parts.append("From: " + header.msgfrom.decode("latin1") + "\r\n")
-    header_parts.append("To: " + header.msgto.decode("latin1") + "\r\n")
-    header_parts.append("Subject: " + header.msgsubject.decode("latin1") + "\r\n")
+    header_parts.append("From: " + header.msgfrom + "\r\n")
+    header_parts.append("To: " + header.msgto + "\r\n")
+    header_parts.append("Subject: " + header.msgsubject + "\r\n")
     if verbose:
-        header_parts.append(
-            "Reference number: " + (header.refnum or b"").decode("latin1") + "\r\n"
-        )
+        reference_number = str(header.refnum) if header.refnum is not None else ""
+        header_parts.append("Reference number: " + reference_number + "\r\n")
     header_parts.append("\r\n")
     return "".join(header_parts)
 
@@ -462,14 +502,9 @@ def process_message(
     return '\r\n'.join(new_lines) + '\r\n'
 
 
-def process_file(
-    input_path: str,
-    output_path: str | None,
-    settings: ProcessingSettings,
-    logger: logging.Logger,
-) -> None:
-
-    output_dir: str | None = None
+def _resolve_output_mode(
+    settings: ProcessingSettings, output_path: str | None
+) -> tuple[str, str | None]:
     output_mode = 'file' if settings.individual_files else settings.output_target
     if output_mode == 'auto':
         output_mode = 'file' if output_path is not None else 'stdout'
@@ -477,17 +512,34 @@ def process_file(
     if settings.individual_files:
         assert output_path is not None, 'An output path is required when using individual files.'
         if os.path.exists(output_path):
-            assert os.path.isdir(output_path), 'The output path must be a directory when using individual files.'
-        output_dir = output_path
-        os.makedirs(output_dir, exist_ok=True)
+            assert (
+                os.path.isdir(output_path)
+            ), 'The output path must be a directory when using individual files.'
+        resolved_output_path: str | None = output_path
     else:
         if output_mode == 'file':
             assert output_path is not None, 'An output path is required when output is set to file.'
         if output_mode == 'stdout':
             assert output_path is None, 'An output path cannot be provided when output is set to stdout.'
+        resolved_output_path = None if output_mode == 'stdout' else output_path
 
-    resolved_output_path: str | None = None if output_mode == 'stdout' else output_path
+    return output_mode, resolved_output_path
 
+
+def process_file(
+    input_path: str,
+    output_path: str | None,
+    settings: ProcessingSettings,
+    logger: logging.Logger,
+) -> None:
+
+    output_mode, resolved_output_path = _resolve_output_mode(settings, output_path)
+
+    output_dir: str | None = None
+    if settings.individual_files:
+        assert resolved_output_path is not None
+        output_dir = resolved_output_path
+        os.makedirs(output_dir, exist_ok=True)
     file_data, board_dict = load_data(input_path, logger)
     collected_messages: list[ProcessedMessage] = []
 
