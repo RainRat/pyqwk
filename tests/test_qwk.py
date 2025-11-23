@@ -1,5 +1,6 @@
 import argparse
 import logging
+import struct
 import sys
 import json
 import zipfile
@@ -18,6 +19,8 @@ from qwk import (
     ProcessedMessage,
     MessageHeader,
     ControlDatFormatError,
+    InvalidMessageTypeError,
+    _parse_header_record,
     _format_message_header,
     _order_messages_by_thread,
     load_data,
@@ -117,6 +120,68 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert message.msgnum == 28
     assert message.refnum is None
     assert message.confnum == 3
+
+
+def test_parse_header_record_status_flags() -> None:
+    def build_header(status: bytes) -> bytes:
+        return struct.pack(
+            '<c7s8s5s25s25s25s12s8s6scHHc',
+            status,
+            b"0000001",
+            b"19941005",
+            b"12345",
+            b"recipient".ljust(25, b' '),
+            b"sender".ljust(25, b' '),
+            b"subject".ljust(25, b' '),
+            b"password".ljust(12, b' '),
+            b"refnum".ljust(8, b' '),
+            b"000100".ljust(6, b' '),
+            b' ',
+            1,
+            2,
+            b' ',
+        )
+
+    for status in [b'+', b'*', b'~', b'`']:
+        _, is_private, is_password = _parse_header_record(build_header(status))
+        assert is_private is True
+        assert is_password is False
+
+    for status in [b'%', b'^', b'!', b'#', b'$']:
+        _, is_private, is_password = _parse_header_record(build_header(status))
+        assert is_private is True
+        assert is_password is True
+
+    for status in [b' ', b'-']:
+        _, is_private, is_password = _parse_header_record(build_header(status))
+        assert is_private is False
+        assert is_password is False
+
+
+def test_parse_header_record_invalid_status_raises() -> None:
+    def build_header(status: bytes) -> bytes:
+        return struct.pack(
+            '<c7s8s5s25s25s25s12s8s6scHHc',
+            status,
+            b"0000001",
+            b"19941005",
+            b"12345",
+            b"recipient".ljust(25, b' '),
+            b"sender".ljust(25, b' '),
+            b"subject".ljust(25, b' '),
+            b"password".ljust(12, b' '),
+            b"refnum".ljust(8, b' '),
+            b"000100".ljust(6, b' '),
+            b' ',
+            1,
+            2,
+            b' ',
+        )
+
+    with pytest.raises(InvalidMessageTypeError) as exc_info:
+        _parse_header_record(build_header(b'X'))
+
+    assert exc_info.value.message_type == 'X'
 
 
 def test_invalid_messages_dat_reports_clear_error(
@@ -358,6 +423,39 @@ def test_order_messages_by_thread_groups_children() -> None:
         "root-two",
         "conf-two-root",
         "conf-two-child",
+    ]
+
+
+def test_order_messages_by_thread_handles_missing_parent() -> None:
+    header = MessageHeader(
+        status=b'',
+        msgnum=b'',
+        msgdate=b'',
+        msgtime=b'',
+        msgto=b'',
+        msgfrom=b'',
+        msgsubject=b'',
+        msgpassword=b'',
+        refnum=b'',
+        numblocks=b'',
+        msgflag=b'',
+        confnum=0,
+        lognum=0,
+        nettag=b'',
+    )
+
+    messages = [
+        ProcessedMessage("root\r\n", msgnum=1, refnum=None, confnum=1, header=header),
+        ProcessedMessage("orphan-missing-parent\r\n", msgnum=3, refnum=99, confnum=1, header=header),
+        ProcessedMessage("child-of-root\r\n", msgnum=2, refnum=1, confnum=1, header=header),
+    ]
+
+    ordered = _order_messages_by_thread(messages)
+
+    assert [message.text.strip() for message in ordered] == [
+        "root",
+        "child-of-root",
+        "orphan-missing-parent",
     ]
 
 
