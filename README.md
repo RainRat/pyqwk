@@ -49,7 +49,7 @@ If this is set, pyqwk will leave out the message header. (default: off, meaning 
 If this is set, pyqwk will truncate each message at the signature. Truncation happens at common signature separators. See the `SIGNATURE_PATTERNS_EXACT` and `SIGNATURE_PATTERNS_STARTSWITH` variables in `qwk.py` for the complete list. (default: off)
 
 - `--cutquoting` or `-c`
-If this is set, pyqwk will delete quoted text (that uses ">" as quoting character). (default: off)
+If this is set, pyqwk will delete quoted text using common prefixes and quoting characters (such as `>`, `|`, `}`, or the DOS box character `\xb3`). See `RE_QUOTE_PATTERN` and `QUOTE_HEADER_PATTERNS` in `qwk.py` for the exact detection rules. (default: off)
 
 - `--binariesremoval` or `-b`
 If this is set, pyqwk will delete binaries (currently removes uuencoded, Base64-encoded, and yEnc blocks). (default: off)
@@ -80,7 +80,7 @@ When `--format json` or `--format xml` is selected, pyqwk emits structured repre
             "msgpassword": "",
             "refnum": "",
             "numblocks": "1",
-            "msgflag": " ",
+            "msgflag": "",
             "confnum": 3,
             "lognum": 0,
             "nettag": ""
@@ -106,7 +106,7 @@ When `--format json` or `--format xml` is selected, pyqwk emits structured repre
       <msgpassword />
       <refnum />
       <numblocks>1</numblocks>
-      <msgflag> </msgflag>
+      <msgflag />
       <confnum>3</confnum>
       <lognum>0</lognum>
       <nettag />
@@ -117,6 +117,8 @@ When `--format json` or `--format xml` is selected, pyqwk emits structured repre
 ```
 
 In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`, while `text` contains the processed body with DOS-style newlines preserved.
+
+Note: In the current version, when message headers are included (`--noheader` is not set), the formatted header is still present inside the `text` field. The structured `header` section is authoritative for the header values.
 
 ## Known Issues
 

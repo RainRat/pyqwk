@@ -24,6 +24,7 @@ from qwk import (
     parse_messages,
     process_message,
     process_file,
+    _sanitize_xml_string,
     main,
 )
 
@@ -141,6 +142,35 @@ def test_process_message_transforms_content() -> None:
         "Another line\r\n"
         "Contact: [EMAIL] or [PHONE]\r\n"
     )
+
+
+def test_process_message_preserves_dates_when_redacting() -> None:
+    message = "On 1994-10-05, call 555-123-4567.\r\n"
+
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=True,
+    )
+
+    assert "1994-10-05" in processed
+    assert "[PHONE]" in processed
+
+
+def test_process_message_redacts_local_numbers() -> None:
+    message = "Local contact: 555-1234 or 555 6789.\r\n"
+
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=True,
+    )
+
+    assert processed == "Local contact: [PHONE] or [PHONE].\r\n"
 
 
 def test_process_message_removes_yenc_binaries() -> None:
@@ -593,6 +623,18 @@ def test_process_file_writes_xml_with_special_characters(
 
     assert "&lt;test&gt;&amp;subject" in content
     assert "This is a test message with &lt; &amp; &gt; special characters." in content
+
+
+def test_sanitize_xml_string_preserves_whitespace_and_drops_invalid() -> None:
+    raw_text = "Line1\tLine2\nLine3\r\n\x1b[31mRed\x00"
+
+    sanitized = _sanitize_xml_string(raw_text)
+
+    assert "\t" in sanitized
+    assert "\n" in sanitized
+    assert "\r" in sanitized
+    assert "\x1b" not in sanitized
+    assert "\x00" not in sanitized
 
 
 def test_process_multiple_files_creates_multiple_outputs(
