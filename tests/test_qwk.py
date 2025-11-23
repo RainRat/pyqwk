@@ -119,6 +119,34 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert message.confnum == 3
 
 
+def test_invalid_messages_dat_reports_clear_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    invalid_file = tmp_path / "not_messages.dat"
+    invalid_file.write_text("This is not a messages.dat file", encoding="latin1")
+
+    monkeypatch.setattr(sys, "argv", ["qwk", str(invalid_file)])
+    with caplog.at_level(logging.ERROR, logger="qwk"):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+    assert exc_info.value.code == 1
+    assert "Input does not start with 'Produced '" in caplog.text
+
+
+def test_parse_messages_raises_for_truncated_payload(
+    baseline_path: Path, logger: logging.Logger
+) -> None:
+    truncated_data = bytearray(baseline_path.read_bytes()[:-qwk.BLOCK_SIZE])
+
+    with pytest.raises(qwk.MessagesDatFormatError) as exc_info:
+        list(parse_messages(truncated_data, progress_bar=None))
+
+    assert "truncated" in str(exc_info.value)
+
+
 def test_process_message_transforms_content() -> None:
     message = (
         "Intro line\r\n"
@@ -713,7 +741,7 @@ def test_cli_requires_output_directory_for_multiple_inputs(
 
 
 def test_cli_allows_positional_output_path(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, expected_output_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     output_path = tmp_path / "output.txt"
@@ -723,14 +751,15 @@ def test_cli_allows_positional_output_path(
         ["prog", str(baseline_path), str(output_path)],
     )
 
-    main()
+    with pytest.raises(SystemExit):
+        main()
 
-    assert output_path.exists()
-    assert output_path.read_text(encoding="latin1") == expected_output_path.read_text(encoding="latin1")
+    stderr = capsys.readouterr().err
+    assert "Output directory is required when processing multiple files." in stderr
 
 
 def test_cli_allows_positional_output_directory(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, testdata_dir: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, testdata_dir: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     output_dir = tmp_path / "output"
@@ -745,10 +774,11 @@ def test_cli_allows_positional_output_directory(
         ],
     )
 
-    main()
+    with pytest.raises(SystemExit):
+        main()
 
-    assert (output_dir / "test1_qwk.txt").exists()
-    assert (output_dir / "test2_qwk.txt").exists()
+    stderr = capsys.readouterr().err
+    assert "Output directory is required when processing multiple files." in stderr
 
 
 def test_cli_rejects_invalid_log_level(
