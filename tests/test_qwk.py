@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import qwk
+import html
 
 from qwk import (
     ProcessingSettings,
@@ -28,6 +29,7 @@ from qwk import (
     process_message,
     process_file,
     _sanitize_xml_string,
+    _write_html,
     main,
 )
 
@@ -713,6 +715,25 @@ def test_process_file_writes_xml(
     assert expected_message.replace('\r\n', '\n') in content
 
 
+def test_process_file_writes_html(
+    tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
+) -> None:
+    output_path = tmp_path / "messages.html"
+    process_file(
+        str(baseline_path),
+        str(output_path),
+        _make_settings(format="html"),
+        logger=logger,
+    )
+
+    content = output_path.read_text(encoding="utf-8")
+
+    assert "<!DOCTYPE html>" in content
+    assert "<pre>" in content
+    escaped_expected = html.escape(_read_expected(expected_output_path).replace("\r\n", "\n"))
+    assert escaped_expected in content
+
+
 def test_process_file_writes_xml_with_special_characters(
     tmp_path, logger: logging.Logger
 ) -> None:
@@ -749,6 +770,40 @@ def test_process_file_writes_xml_with_special_characters(
 
     assert "&lt;test&gt;&amp;subject" in content
     assert "This is a test message with &lt; &amp; &gt; special characters." in content
+
+
+def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
+    header = MessageHeader(
+        status=' ',
+        msgnum=1,
+        msgdate='01-01-90',
+        msgtime='12:00',
+        msgto='All',
+        msgfrom='Test User',
+        msgsubject='',
+        msgpassword='',
+        refnum=None,
+        numblocks=1,
+        msgflag=' ',
+        confnum=1,
+        lognum=1,
+        nettag='',
+    )
+    message = ProcessedMessage(
+        text="<b>Hello & welcome></b>",
+        msgnum=1,
+        refnum=0,
+        confnum=1,
+        header=header,
+    )
+
+    output_path = tmp_path / "test.html"
+    _write_html([message], str(output_path))
+
+    content = output_path.read_text(encoding="utf-8")
+
+    assert "<div class=\"message\">" in content
+    assert "&lt;b&gt;Hello &amp; welcome&gt;&lt;/b&gt;" in content
 
 
 def test_sanitize_xml_string_preserves_whitespace_and_drops_invalid() -> None:
