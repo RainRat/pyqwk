@@ -159,6 +159,20 @@ def test_process_message_preserves_dates_when_redacting() -> None:
     assert "[PHONE]" in processed
 
 
+def test_process_message_redacts_local_numbers() -> None:
+    message = "Local contact: 555-1234 or 555 6789.\r\n"
+
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=True,
+    )
+
+    assert processed == "Local contact: [PHONE] or [PHONE].\r\n"
+
+
 def test_process_message_removes_yenc_binaries() -> None:
     message = (
         "Intro line\r\n"
