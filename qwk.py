@@ -7,6 +7,7 @@ import hashlib
 import os
 import logging
 import json
+import html
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from collections.abc import Iterator, Mapping
@@ -630,6 +631,7 @@ def process_file(
         writers: dict[str, Callable[[list[ProcessedMessage], str | None], None]] = {
             'json': _write_json,
             'xml': _write_xml,
+            'html': _write_html,
             'text': _write_text,
         }
 
@@ -682,6 +684,31 @@ def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> Non
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
+def _write_html(messages: list[ProcessedMessage], output_path: str | None) -> None:
+    html_parts = [
+        '<!DOCTYPE html>',
+        '<html lang="en">',
+        '<head>',
+        '<meta charset="utf-8" />',
+        '<title>QWK Messages</title>',
+        '</head>',
+        '<body>',
+    ]
+
+    for message in messages:
+        escaped_text = html.escape(message.text.replace('\r\n', '\n'))
+        html_parts.append('<div class="message">')
+        html_parts.append('<pre>')
+        html_parts.append(escaped_text)
+        html_parts.append('</pre>')
+        html_parts.append('</div>')
+
+    html_parts.append('</body>')
+    html_parts.append('</html>')
+
+    _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
+
+
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
     if output_path is None:
         sys.stdout.write(content + '\n')
@@ -704,6 +731,8 @@ def process_multiple_files(
                 output_filename += '.json'
             elif settings.format == 'xml':
                 output_filename += '.xml'
+            elif settings.format == 'html':
+                output_filename += '.html'
             else:
                 output_filename += '.txt'
             output_path = os.path.join(output_dir, output_filename)
@@ -759,9 +788,9 @@ def main() -> None:
     )
     parser.add_argument(
         '--format',
-        help='Set the output format (text, json, xml)',
+        help='Set the output format (text, json, xml, html)',
         default='text',
-        choices=['text', 'json', 'xml'],
+        choices=['text', 'json', 'xml', 'html'],
     )
     parser.add_argument(
         '--version',
