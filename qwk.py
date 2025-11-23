@@ -37,7 +37,15 @@ RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
 RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
 RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
 RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
-RE_PHONE_PATTERN = re.compile(r'\b(?:\+\d{1,3}[-\.\s]?)?(?:\(\d{1,4}\)[-\.\s]?)?\d{1,4}[-\.\s]?\d{1,4}[-\.\s]?\d{1,9}\b')
+RE_PHONE_PATTERN = re.compile(
+    r'\b'
+    r'(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)'
+    r'(?=(?:\D*\d){7,})'
+    r'(?:\+\d{1,3}[-\.\s]?)?'
+    r'(?:\(\d{2,4}\)|\d{2,4})'
+    r'[-\.\s]?\d{3,4}(?:[-\.\s]?\d{3,4})+'
+    r'\b'
+)
 
 SIGNATURE_PATTERNS_EXACT = {
     "---",
@@ -567,8 +575,11 @@ def _write_json(messages: list[ProcessedMessage], output_path: str | None) -> No
     _write_text_output(output_json, output_path, encoding='utf-8')
 
 
+XML_INVALID_CHAR_PATTERN = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
+
+
 def _sanitize_xml_string(s: str) -> str:
-    return re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]', '', s)
+    return XML_INVALID_CHAR_PATTERN.sub('', s)
 
 
 def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
