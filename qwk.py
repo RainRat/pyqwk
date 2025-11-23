@@ -146,6 +146,9 @@ class MessageHeader:
 class MessagesDatFormatError(Exception):
     """Raised when the input file is not a valid messages.dat file."""
 
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(message or "Invalid messages.dat format.")
+
 
 class ControlDatFormatError(Exception):
     """Raised when the control.dat file is not a valid format."""
@@ -204,7 +207,12 @@ def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[
 
 
 def _parse_header_record(record: bytes) -> tuple[MessageHeader, bool, bool]:
-    header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
+    try:
+        header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
+    except (struct.error, ValueError) as error:
+        raise MessagesDatFormatError(
+            "messages.dat header record has invalid size or format."
+        ) from error
     header = MessageHeader(*header_data)
     message_type = header.status.decode('latin1')
     is_password = False
@@ -276,7 +284,9 @@ def parse_messages(
             progress_bar.update(len(record))
         if i == 0:
             if record[0:9] != b'Produced ':
-                raise MessagesDatFormatError
+                raise MessagesDatFormatError(
+                    "Input does not start with 'Produced ' header; not a messages.dat file."
+                )
             continue
         if blocks_remaining == 0:
             header, is_private, is_password = _parse_header_record(record)
@@ -298,7 +308,16 @@ def parse_messages(
 
             message_buffer = ''
             temp_blocks = header.numblocks.decode('latin1').strip()
-            blocks_remaining = int(temp_blocks) - 1
+            try:
+                blocks_remaining = int(temp_blocks) - 1
+            except ValueError:
+                logging.warning(
+                    "Invalid block count '%s' in message header at offset %s; skipping message.",
+                    temp_blocks,
+                    i,
+                )
+                blocks_remaining = 0
+                continue
         else:
             temp_record = record.decode('latin1').replace(QWK_NEWLINE_CHAR, '\r\n')
             if blocks_remaining == 1:
@@ -315,6 +334,11 @@ def parse_messages(
                     confnum=current_confnum,
                     header=header,
                 )
+
+    if blocks_remaining != 0:
+        raise MessagesDatFormatError(
+            "messages.dat is truncated; expected more blocks for current message."
+        )
 
 
 def _format_message_header(
@@ -703,10 +727,6 @@ def main() -> None:
 
     input_paths = args.input_paths
     output_path = args.output_path
-
-    if not output_path and not args.stdout and len(input_paths) > 1:
-        output_path = input_paths[-1]
-        input_paths = input_paths[:-1]
 
     if args.individualfiles:
         if output_path is None:
