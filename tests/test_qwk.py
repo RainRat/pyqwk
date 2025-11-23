@@ -388,20 +388,20 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
 
 def test_order_messages_by_thread_groups_children() -> None:
     header = MessageHeader(
-        status=b'',
-        msgnum=b'',
-        msgdate=b'',
-        msgtime=b'',
-        msgto=b'',
-        msgfrom=b'',
-        msgsubject=b'',
-        msgpassword=b'',
-        refnum=b'',
-        numblocks=b'',
-        msgflag=b'',
+        status="",
+        msgnum=None,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=None,
+        msgflag="",
         confnum=0,
         lognum=0,
-        nettag=b'',
+        nettag="",
     )
     messages = [
         ProcessedMessage("child-before-parent\r\n", msgnum=2, refnum=1, confnum=1, header=header),
@@ -428,20 +428,20 @@ def test_order_messages_by_thread_groups_children() -> None:
 
 def test_order_messages_by_thread_handles_missing_parent() -> None:
     header = MessageHeader(
-        status=b'',
-        msgnum=b'',
-        msgdate=b'',
-        msgtime=b'',
-        msgto=b'',
-        msgfrom=b'',
-        msgsubject=b'',
-        msgpassword=b'',
-        refnum=b'',
-        numblocks=b'',
-        msgflag=b'',
+        status="",
+        msgnum=None,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=None,
+        msgflag="",
         confnum=0,
         lognum=0,
-        nettag=b'',
+        nettag="",
     )
 
     messages = [
@@ -461,20 +461,20 @@ def test_order_messages_by_thread_handles_missing_parent() -> None:
 
 def test_order_messages_by_thread_logs_circular_reference(caplog: pytest.LogCaptureFixture) -> None:
     header = MessageHeader(
-        status=b'',
-        msgnum=b'',
-        msgdate=b'',
-        msgtime=b'',
-        msgto=b'',
-        msgfrom=b'',
-        msgsubject=b'',
-        msgpassword=b'',
-        refnum=b'',
-        numblocks=b'',
-        msgflag=b'',
+        status="",
+        msgnum=None,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=None,
+        msgflag="",
         confnum=0,
         lognum=0,
-        nettag=b'',
+        nettag="",
     )
     messages = [
         ProcessedMessage("first\r\n", msgnum=1, refnum=3, confnum=1, header=header),
@@ -623,27 +623,27 @@ def test_process_file_writes_json(
     assert "text" in message
     expected_message = _read_expected(expected_output_path)
     assert message["text"] == expected_message
-    assert message["header"]["msgnum"] == "28"
+    assert message["header"]["msgnum"] == 28
 
 
 def test_process_file_preserves_thread_order_in_json(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
 ) -> None:
     header = MessageHeader(
-        status=b" ",
-        msgnum=b"1",
-        msgdate=b"",
-        msgtime=b"",
-        msgto=b"",
-        msgfrom=b"",
-        msgsubject=b"",
-        msgpassword=b"",
-        refnum=b"",
-        numblocks=b"",
-        msgflag=b"",
+        status=" ",
+        msgnum=1,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=None,
+        msgflag="",
         confnum=1,
         lognum=1,
-        nettag=b"",
+        nettag="",
     )
 
     parsed_messages = [
@@ -718,20 +718,20 @@ def test_process_file_writes_xml_with_special_characters(
 ) -> None:
     from qwk import _write_xml
     header = MessageHeader(
-        status=b' ',
-        msgnum=b'1',
-        msgdate=b'01-01-90',
-        msgtime=b'12:00',
-        msgto=b'All',
-        msgfrom=b'Test User',
-        msgsubject=b'<test>&subject',
-        msgpassword=b'',
-        refnum=b'0',
-        numblocks=b'1',
-        msgflag=b' ',
+        status=' ',
+        msgnum=1,
+        msgdate='01-01-90',
+        msgtime='12:00',
+        msgto='All',
+        msgfrom='Test User',
+        msgsubject='<test>&subject',
+        msgpassword='',
+        refnum=None,
+        numblocks=1,
+        msgflag=' ',
         confnum=1,
         lognum=1,
-        nettag=b'',
+        nettag='',
     )
     message = ProcessedMessage(
         text="This is a test message with < & > special characters.",
