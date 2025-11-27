@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, fields
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Any, Callable, Protocol
 
 __version__ = "0.1.0"
@@ -527,6 +527,48 @@ def _resolve_output_mode(
     return output_mode, resolved_output_path
 
 
+class _NullProgress:
+    """A dummy progress bar that does nothing."""
+
+    def update(self, *_: object, **__: object) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+    def __enter__(self) -> "_NullProgress":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        pass
+
+
+def _create_progress_bar(total: int, quiet: bool) -> Any:
+    """Create a progress bar instance or a null context.
+
+    Args:
+        total: Total number of units (bytes).
+        quiet: If True, suppress progress output.
+
+    Returns:
+        A context manager that yields a ProgressBar or None.
+    """
+    if quiet:
+        return nullcontext()
+
+    try:
+        from tqdm import tqdm  # type: ignore
+        return tqdm(
+            total=total,
+            unit='B',
+            unit_scale=True,
+            desc='Processing messages',
+        )
+    except ImportError:  # pragma: no cover - tqdm is optional
+        logging.getLogger(__name__).info('Install tqdm to enable progress reporting.')
+        return _NullProgress()
+
+
 def process_file(
     input_path: str,
     output_path: str | None,
@@ -544,38 +586,7 @@ def process_file(
     file_data, board_dict = load_data(input_path, logger)
     collected_messages: list[ProcessedMessage] = []
 
-    if settings.quiet:
-        @contextmanager
-        def progress_context() -> Iterator[ProgressBar | None]:
-            yield None
-    else:
-        try:
-            from tqdm import tqdm  # type: ignore
-        except ImportError:  # pragma: no cover - tqdm is optional
-            logger.info('Install tqdm to enable progress reporting.')
-
-            @contextmanager
-            def progress_context() -> Iterator[ProgressBar]:
-                class _NullProgress:
-                    def update(self, *_: object, **__: object) -> None:
-                        return None
-
-                    def close(self) -> None:
-                        return None
-
-                yield _NullProgress()
-        else:
-            @contextmanager
-            def progress_context() -> Iterator[ProgressBar]:
-                with tqdm(
-                    total=len(file_data),
-                    unit='B',
-                    unit_scale=True,
-                    desc='Processing messages',
-                ) as progress_bar:
-                    yield progress_bar
-
-    with progress_context() as progress_bar:
+    with _create_progress_bar(len(file_data), settings.quiet) as progress_bar:
         for parsed_message in parse_messages(
             file_data,
             progress_bar,
