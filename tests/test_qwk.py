@@ -989,10 +989,39 @@ def test_cli_handles_mixed_batch_inputs(
     )
     monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
 
-    main()
+    with pytest.raises(SystemExit) as exc:
+        main()
+
+    assert exc.value.code == 1
 
     stderr = capsys.readouterr().err
     assert str(missing_path) in stderr
 
     expected_output = output_dir / "messages.txt"
     assert expected_output.exists()
+
+
+def test_cli_batch_success(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+    testdata_dir: Path,
+) -> None:
+    output_dir = tmp_path / "output"
+    input_paths = [
+        str(testdata_dir / "test1_qwk.zip"),
+        str(testdata_dir / "test2_qwk.zip"),
+    ]
+    logging.basicConfig(level=logging.ERROR, force=True)
+    namespace = _make_cli_namespace(
+        input_paths=input_paths,
+        output_path=str(output_dir),
+    )
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    main()
+
+    files = sorted(list(output_dir.iterdir()))
+    assert len(files) == 2
+    assert files[0].name == "test1_qwk.txt"
+    assert files[1].name == "test2_qwk.txt"

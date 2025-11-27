@@ -737,8 +737,9 @@ def process_multiple_files(
     output_dir: str,
     settings: ProcessingSettings,
     logger: logging.Logger,
-) -> None:
+) -> bool:
     os.makedirs(output_dir, exist_ok=True)
+    had_errors = False
     for input_path in input_paths:
         try:
             output_filename = os.path.splitext(os.path.basename(input_path))[0]
@@ -760,6 +761,8 @@ def process_multiple_files(
             IOError,
         ) as error:
             logger.error("Error processing file %s: %s", input_path, error)
+            had_errors = True
+    return had_errors
 
 
 def main() -> None:
@@ -855,7 +858,9 @@ def main() -> None:
     )
 
     if len(input_paths) > 1:
-        process_multiple_files(input_paths, output_path, settings, logger)
+        had_errors = process_multiple_files(input_paths, output_path, settings, logger)
+        if had_errors:
+            sys.exit(1)
     else:
         try:
             process_file(input_paths[0], output_path, settings, logger)
