@@ -2,6 +2,8 @@
 
 pyqwk is a .qwk reader in Python that exports .QWK mail archives to a more readable format, without requiring the use of a .QWK reader. This is useful for data archivists who want to archive .QWK mail archives in a more readable format. .QWK archives were popular back in the Fidonet and BBS days and people may want to archive them now.
 
+If installed (e.g., via `pip install .`), the tool is available as the `qwk` command. Alternatively, you can run the script directly using `python qwk.py`.
+
 ## Usage
 
 pyqwk exports the entire `messages.dat` file to a more readable format. It can take either the `messages.dat` file or the `.qwk` file:
@@ -26,10 +28,10 @@ python qwk.py my_archive.qwk
 
 ### Batch Processing
 
-You can process multiple files at once by providing a list of input files and an output directory. The output files will be named after the input files, with the extension changed to `.txt`, `.json`, or `.xml` depending on the selected format.
+You can process multiple files at once by providing a list of input files. When processing multiple files, you **must** specify an output directory using `-o` (or `--output`). Printing to stdout (`--stdout`) is not allowed in batch mode. The output files will be named after the input files, with the extension changed to `.txt`, `.json`, `.xml`, or `.html` depending on the selected format.
 
 ```
-python qwk.py *.qwk output/
+python qwk.py *.qwk -o output/
 ```
 
 For each message, the headers aren't exported in the same order they appear in `messages.dat`; they are rearranged to an order that might make more sense to a modern reader. 
@@ -116,9 +118,11 @@ When `--format json` or `--format xml` is selected, pyqwk emits structured repre
 </messages>
 ```
 
-In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`, while `text` contains the processed body with DOS-style newlines preserved.
+In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`.
 
-Note: In the current version, when message headers are included (`--noheader` is not set), the formatted header is still present inside the `text` field. The structured `header` section is authoritative for the header values.
+The `text` field contains the processed message body. By default (when `--noheader` is **not** set), the `text` field includes the formatted header followed by the body. If `--noheader` is passed, the `text` field will contain the body only.
+
+The structured `header` section is authoritative for the header values.
 
 ## Known Issues
 
