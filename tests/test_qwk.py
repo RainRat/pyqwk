@@ -729,9 +729,21 @@ def test_process_file_writes_html(
     content = output_path.read_text(encoding="utf-8")
 
     assert "<!DOCTYPE html>" in content
-    assert "<pre>" in content
-    escaped_expected = html.escape(_read_expected(expected_output_path).replace("\r\n", "\n"))
-    assert escaped_expected in content
+    assert '<div class="message">' in content
+    assert '<div class="header">' in content
+    assert '<pre class="body">' in content
+
+    # Header fields
+    assert "<strong>From:</strong> GammaO #571 @0*1" in content
+    assert "<strong>To:</strong> All" in content
+    assert "<strong>Subject:</strong> New User" in content
+
+    # Body content (should be separate from header)
+    assert "Hello this is my first day" in content
+
+    # Ensure ASCII header is NOT in the body (by checking for the separator line)
+    # The separator line is heavily used in ASCII header but shouldn't be in HTML body for this message
+    assert "-" * 80 not in content
 
 
 def test_process_file_writes_xml_with_special_characters(
@@ -780,7 +792,7 @@ def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
         msgtime='12:00',
         msgto='All',
         msgfrom='Test User',
-        msgsubject='',
+        msgsubject='Test Subject',
         msgpassword='',
         refnum=None,
         numblocks=1,
@@ -802,7 +814,10 @@ def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
 
     content = output_path.read_text(encoding="utf-8")
 
-    assert "<div class=\"message\">" in content
+    assert '<div class="message">' in content
+    assert '<div class="header">' in content
+    assert '<pre class="body">' in content
+    assert "<strong>Subject:</strong> Test Subject" in content
     assert "&lt;b&gt;Hello &amp; welcome&gt;&lt;/b&gt;" in content
 
 

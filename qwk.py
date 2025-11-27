@@ -588,7 +588,7 @@ def process_file(
                     settings.binaries_removal,
                     settings.redact_pii,
                 )
-                if not settings.no_header:
+                if not settings.no_header and settings.format != 'html':
                     leading_newlines = 0
                     text_prefix = parsed_message.text
                     while text_prefix.startswith('\r\n'):
@@ -696,9 +696,24 @@ def _write_html(messages: list[ProcessedMessage], output_path: str | None) -> No
     ]
 
     for message in messages:
-        escaped_text = html.escape(message.text.replace('\r\n', '\n'))
         html_parts.append('<div class="message">')
-        html_parts.append('<pre>')
+
+        # Header
+        header = message.header
+        html_parts.append('<div class="header">')
+        html_parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
+        html_parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
+        html_parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
+        html_parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
+        # Conference number is always present as an int
+        html_parts.append(f'<div><strong>Conference:</strong> {header.confnum}</div>')
+        if header.msgnum is not None:
+            html_parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
+        html_parts.append('</div>')
+
+        # Body
+        escaped_text = html.escape(message.text.replace('\r\n', '\n'))
+        html_parts.append('<pre class="body">')
         html_parts.append(escaped_text)
         html_parts.append('</pre>')
         html_parts.append('</div>')

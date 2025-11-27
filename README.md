@@ -124,6 +124,15 @@ The `text` field contains the processed message body. By default (when `--nohead
 
 The structured `header` section is authoritative for the header values.
 
+## HTML output format
+
+When `--format html` is selected, pyqwk generates an HTML file suitable for browsing. Each message is wrapped in a `<div class="message">`, containing:
+
+- A `<div class="header">` with structured fields for Date, From, To, Subject, and optionally Conference and Message Number.
+- A `<pre class="body">` block containing the escaped message text.
+
+Unlike JSON and XML, the message body in HTML output does not include the ASCII header text, preventing duplication.
+
 ## Known Issues
 
 - Some `.qwk` packets from this era use a ZIP compression method that modern Python doesn't know. To work around this issue:
