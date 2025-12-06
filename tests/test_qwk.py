@@ -21,8 +21,6 @@ from qwk import (
     MessageHeader,
     ControlDatFormatError,
     InvalidMessageTypeError,
-    _parse_header_record,
-    _format_message_header,
     _order_messages_by_thread,
     load_data,
     parse_messages,
@@ -73,7 +71,8 @@ def _make_settings(**overrides) -> ProcessingSettings:
         binaries_removal=False,
         redact_pii=False,
         format="text",
-        output_target="auto",
+        output_mode="stdout",
+        output_path=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -115,7 +114,7 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     message = messages[0]
     assert isinstance(message, ParsedMessage)
     assert message.text == expected_body
-    header_text = _format_message_header(message.header, board_dict, verbose=False)
+    header_text = message.header.format_text(board_dict, verbose=False)
     assert header_text + message.text == expected_message
     assert message.is_private is False
     assert message.is_password is False
@@ -145,17 +144,17 @@ def test_parse_header_record_status_flags() -> None:
         )
 
     for status in [b'+', b'*', b'~', b'`']:
-        _, is_private, is_password = _parse_header_record(build_header(status))
+        _, is_private, is_password = MessageHeader.from_bytes(build_header(status))
         assert is_private is True
         assert is_password is False
 
     for status in [b'%', b'^', b'!', b'#', b'$']:
-        _, is_private, is_password = _parse_header_record(build_header(status))
+        _, is_private, is_password = MessageHeader.from_bytes(build_header(status))
         assert is_private is True
         assert is_password is True
 
     for status in [b' ', b'-']:
-        _, is_private, is_password = _parse_header_record(build_header(status))
+        _, is_private, is_password = MessageHeader.from_bytes(build_header(status))
         assert is_private is False
         assert is_password is False
 
@@ -181,7 +180,7 @@ def test_parse_header_record_invalid_status_raises() -> None:
         )
 
     with pytest.raises(InvalidMessageTypeError) as exc_info:
-        _parse_header_record(build_header(b'X'))
+        MessageHeader.from_bytes(build_header(b'X'))
 
     assert exc_info.value.message_type == 'X'
 
@@ -343,8 +342,11 @@ def test_process_file_writes_individual_files(
     output_dir = tmp_path / "messages"
     process_file(
         str(baseline_path),
-        str(output_dir),
-        _make_settings(individual_files=True),
+        _make_settings(
+            individual_files=True,
+            output_mode="file",
+            output_path=str(output_dir),
+        ),
         logger=logger,
     )
 
@@ -363,11 +365,14 @@ def test_process_file_requires_directory_for_individual_files(
     invalid_output = tmp_path / "not_a_directory.txt"
     invalid_output.write_text("content", encoding="utf-8")
 
-    with pytest.raises(AssertionError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         process_file(
             str(baseline_path),
-            str(invalid_output),
-            _make_settings(individual_files=True),
+            _make_settings(
+                individual_files=True,
+                output_mode="file",
+                output_path=str(invalid_output),
+            ),
             logger=logger,
         )
 
@@ -377,7 +382,6 @@ def test_process_file_requires_directory_for_individual_files(
 def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
     process_file(
         str(baseline_path),
-        None,
         _make_settings(),
         logger=logger,
     )
@@ -598,7 +602,7 @@ def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logg
     assert {message.is_password for message in messages} == {False}
     assert all(
         "Conference: Net140.Tech"
-        in _format_message_header(message.header, board_dict, verbose=False)
+        in message.header.format_text(board_dict, verbose=False)
         for message in messages
     )
     assert all("Conference:" not in message.text for message in messages)
@@ -610,8 +614,7 @@ def test_process_file_writes_json(
     output_path = tmp_path / "messages.json"
     process_file(
         str(baseline_path),
-        str(output_path),
-        _make_settings(format="json"),
+        _make_settings(format="json", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -682,8 +685,13 @@ def test_process_file_preserves_thread_order_in_json(
 
     process_file(
         "ignored.dat",
-        str(output_path),
-        _make_settings(threaded=True, format="json", no_header=True),
+        _make_settings(
+            threaded=True,
+            format="json",
+            no_header=True,
+            output_mode="file",
+            output_path=str(output_path),
+        ),
         logger=logger,
     )
 
@@ -699,8 +707,7 @@ def test_process_file_writes_xml(
     output_path = tmp_path / "messages.xml"
     process_file(
         str(baseline_path),
-        str(output_path),
-        _make_settings(format="xml"),
+        _make_settings(format="xml", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -721,8 +728,7 @@ def test_process_file_writes_html(
     output_path = tmp_path / "messages.html"
     process_file(
         str(baseline_path),
-        str(output_path),
-        _make_settings(format="html"),
+        _make_settings(format="html", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
