@@ -74,6 +74,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         separator="auto",
         output_mode="stdout",
         output_path=None,
+        encoding="latin1",
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -97,18 +98,19 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         format="text",
         separator="auto",
         loglevel="INFO",
+        encoding="cp437",
     )
     base.update(overrides)
     return argparse.Namespace(**base)
 
 
 def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
-    file_data, board_dict = load_data(str(baseline_path), logger)
+    file_data, board_dict = load_data(str(baseline_path), logger, encoding='latin1')
 
     assert isinstance(file_data, bytearray)
     assert board_dict == {}
 
-    messages = list(parse_messages(file_data, progress_bar=None))
+    messages = list(parse_messages(file_data, progress_bar=None, encoding='latin1'))
     expected_message = _read_expected(expected_output_path)
     expected_body = expected_message.split('\r\n\r\n', 1)[1]
 
@@ -356,7 +358,7 @@ def test_process_file_writes_individual_files(
     assert len(files) == 1
 
     with files[0].open("rb") as f:
-        content = f.read().decode("latin1")
+        content = f.read().decode("utf-8")
     expected_message = _read_expected(expected_output_path)
     # Individual files should NOT have the leading separator (dashes)
     separator = ("-" * 80) + "\r\n"
@@ -527,7 +529,7 @@ def test_order_messages_by_thread_logs_circular_reference(caplog: pytest.LogCapt
 def test_load_data_reads_all_conferences_from_control_dat(
     archive_name: str, expected_boarddict: dict[int, str], testdata_dir: Path, logger: logging.Logger
 ) -> None:
-    file_data, boarddict = load_data(str(testdata_dir / archive_name), logger)
+    file_data, boarddict = load_data(str(testdata_dir / archive_name), logger, encoding='latin1')
 
     assert isinstance(file_data, bytearray)
     assert boarddict == expected_boarddict
@@ -561,7 +563,8 @@ def test_load_data_skips_invalid_conference_number(
         zf.writestr("CONTROL.DAT", control_content)
 
     with caplog.at_level(logging.WARNING):
-        _, board_dict = load_data(str(zip_path), logger)
+        _, board_dict = load_data(str(zip_path), logger, encoding='latin1')
+        _, board_dict = load_data(str(zip_path), logger, encoding='latin1')
 
     assert "Invalid conference number" in caplog.text
     # The entry should be skipped, so board_dict should be empty (since there was only 1 entry and it was invalid)
@@ -605,9 +608,9 @@ def test_load_data_warns_truncated_control_dat(
 
 
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
-    file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger)
+    file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger, encoding='latin1')
 
-    messages = list(parse_messages(file_data, progress_bar=None))
+    messages = list(parse_messages(file_data, progress_bar=None, encoding='latin1'))
 
     assert len(messages) == 2
     assert {message.is_private for message in messages} == {False}
@@ -684,10 +687,10 @@ def test_process_file_preserves_thread_order_in_json(
         ),
     ]
 
-    def fake_load_data(path: str, logger_param: logging.Logger) -> tuple[bytearray, dict[int, str]]:
+    def fake_load_data(path: str, logger_param: logging.Logger, encoding: str = 'cp437') -> tuple[bytearray, dict[int, str]]:
         return bytearray(), {}
 
-    def fake_parse_messages(file_data: bytearray, progress_bar: object):
+    def fake_parse_messages(file_data: bytearray, progress_bar: object, encoding: str = 'cp437'):
         yield from parsed_messages
 
     monkeypatch.setattr(qwk, "load_data", fake_load_data)
@@ -887,7 +890,7 @@ def test_load_data_logs_warning_if_control_dat_is_missing(
     logger.addHandler(logging.StreamHandler())  # Make sure logs are captured
 
     with caplog.at_level(logging.WARNING):
-        load_data(str(zip_path), logger)
+        load_data(str(zip_path), logger, encoding='latin1')
 
     assert "CONTROL.DAT not found" in caplog.text
 

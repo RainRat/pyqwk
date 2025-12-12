@@ -21,8 +21,6 @@ BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
 CONTROL_FILENAME = 'control.dat'
 
-QWK_NEWLINE_CHAR = '\xe3'  # DOS CP437 newline character
-
 QUOTE_HEADER_PATTERNS = [
     re.compile(
         r".*(replied|'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message| the following| this)? to "
@@ -126,6 +124,7 @@ class ProcessingSettings:
     separator: str
     output_mode: str
     output_path: str | None
+    encoding: str
     quiet: bool = False
 
 
@@ -181,7 +180,7 @@ class MessageHeader:
         return result
 
     @classmethod
-    def from_bytes(cls, record: bytes) -> tuple["MessageHeader", bool, bool]:
+    def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> tuple["MessageHeader", bool, bool]:
         try:
             header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
         except (struct.error, ValueError) as error:
@@ -206,17 +205,17 @@ class MessageHeader:
             nettag,
         ) = header_data
 
-        msgnum_text = raw_msgnum.decode('latin1').strip()
+        msgnum_text = raw_msgnum.decode(encoding).strip()
         msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
 
-        msgdate = raw_msgdate.decode('latin1').strip()
-        msgtime = raw_msgtime.decode('latin1').strip()
-        msgto = raw_msgto.decode('latin1')
-        msgfrom = raw_msgfrom.decode('latin1')
-        msgsubject = raw_msgsubject.decode('latin1')
-        msgpassword = raw_msgpassword.decode('latin1').strip()
+        msgdate = raw_msgdate.decode(encoding).strip()
+        msgtime = raw_msgtime.decode(encoding).strip()
+        msgto = raw_msgto.decode(encoding)
+        msgfrom = raw_msgfrom.decode(encoding)
+        msgsubject = raw_msgsubject.decode(encoding)
+        msgpassword = raw_msgpassword.decode(encoding).strip()
 
-        refnum_text = raw_refnum.decode('latin1').strip()
+        refnum_text = raw_refnum.decode(encoding).strip()
         refnum: int | None
         if refnum_text.isdigit():
             refnum_value = int(refnum_text)
@@ -224,14 +223,14 @@ class MessageHeader:
         else:
             refnum = None
 
-        numblocks_text = raw_numblocks.decode('latin1').strip()
+        numblocks_text = raw_numblocks.decode(encoding).strip()
         try:
             numblocks = int(numblocks_text)
         except ValueError:
             numblocks = None
 
         header = cls(
-            status=status.decode('latin1'),
+            status=status.decode(encoding),
             msgnum=msgnum,
             msgdate=msgdate,
             msgtime=msgtime,
@@ -241,10 +240,10 @@ class MessageHeader:
             msgpassword=msgpassword,
             refnum=refnum,
             numblocks=numblocks,
-            msgflag=msgflag.decode('latin1'),
+            msgflag=msgflag.decode(encoding),
             confnum=confnum,
             lognum=lognum,
-            nettag=nettag.decode('latin1'),
+            nettag=nettag.decode(encoding),
         )
 
         header._numblocks_raw = numblocks_text  # type: ignore[attr-defined]
@@ -325,13 +324,16 @@ class InvalidMessageTypeError(Exception):
         self.message_type = message_type
 
 
-def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[int, str]]:
+def load_data(
+    input_path: str, logger: logging.Logger, encoding: str = 'cp437'
+) -> tuple[bytearray, dict[int, str]]:
     """Load message and conference metadata from a QWK packet or raw file.
 
     Args:
         input_path: Path to either a ``messages.dat`` file or a QWK archive containing
             that file (and optionally ``CONTROL.DAT``).
         logger: Logger used to report warnings when optional metadata is missing.
+        encoding: Character encoding to use when decoding metadata.
 
     Returns:
         A tuple ``(file_data, board_dict)`` where ``file_data`` is a mutable
@@ -360,7 +362,7 @@ def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[
             if control_name:
                 with myzip.open(control_name) as f:
                     control_data = f.read().splitlines()
-                board_dict = _parse_control_dat(control_data, logger)
+                board_dict = _parse_control_dat(control_data, logger, encoding)
             else:
                 logger.warning("CONTROL.DAT not found, conference names will not be available.")
     else:
@@ -370,7 +372,9 @@ def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[
 
 
 def _parse_control_dat(
-    control_data: list[bytes], logger: logging.Logger | None = None
+    control_data: list[bytes],
+    logger: logging.Logger | None = None,
+    encoding: str = 'cp437',
 ) -> dict[int, str]:
     if logger is None:
         logger = logging.getLogger(__name__)
@@ -411,7 +415,7 @@ def _parse_control_dat(
                 conf_number_raw,
             )
             continue
-        conf_name = conf_name_raw.decode('latin1')
+        conf_name = conf_name_raw.decode(encoding)
         board_dict[conf_number] = conf_name
 
     return board_dict
@@ -420,12 +424,14 @@ def _parse_control_dat(
 def parse_messages(
     file_data: bytearray,
     progress_bar: ProgressBar | None,
+    encoding: str = 'cp437',
 ) -> Iterator[ParsedMessage]:
     """Parse a QWK messages.dat payload into message objects.
 
     Args:
         file_data: Raw bytes from a messages.dat file.
         progress_bar: Optional tqdm-compatible progress reporter to update as blocks are read.
+        encoding: Character encoding to use when decoding messages.
 
     Yields:
         ParsedMessage instances containing the message body, header, and metadata flags.
@@ -456,7 +462,7 @@ def parse_messages(
         if progress_bar is not None:
             progress_bar.update(len(record))
         if blocks_remaining == 0:
-            header, is_private, is_password = MessageHeader.from_bytes(record)
+            header, is_private, is_password = MessageHeader.from_bytes(record, encoding)
             current_msgnum = header.msgnum
             current_refnum = header.refnum
             current_confnum = header.confnum
@@ -475,7 +481,7 @@ def parse_messages(
                 blocks_remaining = 0
                 continue
         else:
-            temp_record = record.decode('latin1').replace(QWK_NEWLINE_CHAR, '\r\n')
+            temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
             if blocks_remaining == 1:
                 temp_record = temp_record.rstrip() + '\r\n'
             message_buffer += temp_record
@@ -628,7 +634,7 @@ def process_file(
         if os.path.exists(output_dir) and not os.path.isdir(output_dir):
             raise ValueError('The output path must be a directory when using individual files.')
         os.makedirs(output_dir, exist_ok=True)
-    file_data, board_dict = load_data(input_path, logger)
+    file_data, board_dict = load_data(input_path, logger, settings.encoding)
     collected_messages: list[ProcessedMessage] = []
 
     separator_mode = settings.separator
@@ -643,6 +649,7 @@ def process_file(
         for parsed_message in parse_messages(
             file_data,
             progress_bar,
+            settings.encoding,
         ):
             if (settings.private is True or parsed_message.is_private is False) and parsed_message.is_password is False:
                 processed_buffer = process_message(
@@ -672,7 +679,7 @@ def process_file(
                     processed_buffer = separator_str + processed_buffer
 
                 if settings.individual_files:
-                    encoded_buffer = processed_buffer.encode('latin1')
+                    encoded_buffer = processed_buffer.encode('utf-8')
                     assert output_dir is not None
                     with open(
                         os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
@@ -829,7 +836,7 @@ def _write_text(messages: list[ProcessedMessage], output_path: str | None) -> No
             text = "".join(indented_lines)
         parts.append(text)
 
-    _write_text_output("".join(parts), output_path, encoding='latin1')
+    _write_text_output("".join(parts), output_path, encoding='utf-8')
 
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
@@ -924,6 +931,11 @@ def main() -> None:
         help='Separator style between messages (auto, none, dashes, blank)',
     )
     parser.add_argument(
+        '--encoding',
+        help='Character encoding of the input file (default: cp437)',
+        default='cp437',
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f"%(prog)s {__version__}",
@@ -977,6 +989,7 @@ def main() -> None:
         separator=args.separator,
         output_mode=output_mode,
         output_path=resolved_output_path,
+        encoding=args.encoding,
     )
 
     if len(input_paths) > 1:
