@@ -138,6 +138,9 @@ class ParsedMessage:
     refnum: int | None
     confnum: int
     header: "MessageHeader"
+    depth: int = 0
+    thread_id: str | None = None
+    parent_msgnum: int | None = None
 
 
 @dataclass
@@ -147,6 +150,9 @@ class ProcessedMessage:
     refnum: int | None
     confnum: int
     header: "MessageHeader"
+    depth: int = 0
+    thread_id: str | None = None
+    parent_msgnum: int | None = None
 
 
 @dataclass
@@ -673,33 +679,24 @@ def process_file(
             'json': _write_json,
             'xml': _write_xml,
             'html': _write_html,
-            'text': lambda msgs, path: _write_text_output(
-                ''.join(message.text for message in msgs),
-                path,
-                encoding='latin1',
-            ),
+            'text': _write_text,
         }
 
-        writer = writers.get(
-            settings.format,
-            lambda msgs, path: _write_text_output(
-                ''.join(message.text for message in msgs),
-                path,
-                encoding='latin1',
-            ),
-        )
+        writer = writers.get(settings.format, _write_text)
         writer(ordered_messages, resolved_output_path)
 
 
 def _write_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
     output_data = []
     for message in messages:
-        output_data.append(
-            {
-                'header': message.header.as_dict,
-                'text': message.text,
-            }
-        )
+        msg_dict = {
+            'header': message.header.as_dict,
+            'text': message.text,
+            'depth': message.depth,
+            'thread_id': message.thread_id,
+            'parent_msgnum': message.parent_msgnum,
+        }
+        output_data.append(msg_dict)
     output_json = json.dumps(output_data, indent=4)
     _write_text_output(output_json, output_path, encoding='utf-8')
 
@@ -715,6 +712,14 @@ def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> Non
     root = ET.Element('messages')
     for message in messages:
         msg_element = ET.SubElement(root, 'message')
+
+        if message.depth > 0:
+            ET.SubElement(msg_element, 'depth').text = str(message.depth)
+        if message.thread_id:
+            ET.SubElement(msg_element, 'thread_id').text = str(message.thread_id)
+        if message.parent_msgnum is not None:
+            ET.SubElement(msg_element, 'parent_msgnum').text = str(message.parent_msgnum)
+
         header_element = ET.SubElement(msg_element, 'header')
         header_data = message.header.as_dict
         for key, value in header_data.items():
@@ -738,11 +743,26 @@ def _write_html(messages: list[ProcessedMessage], output_path: str | None) -> No
         '<head>',
         '<meta charset="utf-8" />',
         '<title>QWK Messages</title>',
+        '<style>',
+        '.reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }',
+        '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',
+        '.header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }',
+        '.body { white-space: pre-wrap; font-family: monospace; }',
+        '</style>',
         '</head>',
         '<body>',
     ]
 
+    current_depth = 0
+
     for message in messages:
+        while current_depth < message.depth:
+            html_parts.append('<div class="reply">')
+            current_depth += 1
+        while current_depth > message.depth:
+            html_parts.append('</div>')
+            current_depth -= 1
+
         html_parts.append('<div class="message">')
 
         # Header
@@ -765,10 +785,29 @@ def _write_html(messages: list[ProcessedMessage], output_path: str | None) -> No
         html_parts.append('</pre>')
         html_parts.append('</div>')
 
+    while current_depth > 0:
+        html_parts.append('</div>')
+        current_depth -= 1
+
     html_parts.append('</body>')
     html_parts.append('</html>')
 
     _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
+
+
+def _write_text(messages: list[ProcessedMessage], output_path: str | None) -> None:
+    """Write messages to text format with indentation for threads."""
+    parts = []
+    for message in messages:
+        text = message.text
+        if message.depth > 0:
+            indent = "  " * message.depth
+            lines = text.splitlines(keepends=True)
+            indented_lines = [indent + line for line in lines]
+            text = "".join(indented_lines)
+        parts.append(text)
+
+    _write_text_output("".join(parts), output_path, encoding='latin1')
 
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
@@ -931,6 +970,17 @@ def main() -> None:
             sys.exit(1)
 
 
+def _normalize_subject(subject: str) -> str:
+    """Normalize subject line for threading by removing prefixes."""
+    s = subject.strip()
+    while True:
+        m = re.match(r'^(?:re|fw|fwd)[:\[\s]', s, re.IGNORECASE)
+        if not m:
+            break
+        s = re.sub(r'^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*', '', s, flags=re.IGNORECASE)
+    return s.strip().lower()
+
+
 def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[ProcessedMessage]:
     """Order processed messages so that threads are grouped together.
 
@@ -950,72 +1000,123 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
 
     logger = logging.getLogger(__name__)
     index_by_key: dict[tuple[int, int], int] = {}
+    index_by_subject: dict[tuple[int, str], list[int]] = defaultdict(list)
     children: dict[int, list[int]] = defaultdict(list)
+    roots: list[int] = []
 
+    # 1. Indexing
     for index, message in enumerate(messages):
         if message.msgnum is not None:
             index_by_key[(message.confnum, message.msgnum)] = index
-            children.setdefault(index, [])
 
-    attached = [False] * len(messages)
+        subj = _normalize_subject(message.header.msgsubject)
+        if subj:
+            index_by_subject[(message.confnum, subj)].append(index)
+
+    # 2. Identify Parents
+    parent_map: dict[int, int] = {}
+
     for index, message in enumerate(messages):
-        if message.refnum is None:
-            continue
-        parent_index = index_by_key.get((message.confnum, message.refnum))
-        if parent_index is None or parent_index == index:
-            continue
-        children[parent_index].append(index)
-        attached[index] = True
+        parent_index: int | None = None
 
-    ordered_indices: list[int] = []
+        # Try explicit refnum
+        if message.refnum:
+            parent_index = index_by_key.get((message.confnum, message.refnum))
+
+            if parent_index is None:
+                logger.warning(
+                    "Message %s references missing or external message %s (conf %s).",
+                    message.msgnum,
+                    message.refnum,
+                    message.confnum,
+                )
+
+        # Fallback: Subject matching
+        if parent_index is None:
+            subj = _normalize_subject(message.header.msgsubject)
+            if subj:
+                candidates = index_by_subject.get((message.confnum, subj), [])
+                # Prefer candidates that appear before this message
+                preceding = [i for i in candidates if i < index]
+                if preceding:
+                    parent_index = preceding[-1]
+
+        if parent_index is not None and parent_index != index:
+            children[parent_index].append(index)
+            parent_map[index] = parent_index
+        else:
+            roots.append(index)
+
+    # 3. Traversal
+    ordered_messages: list[ProcessedMessage] = []
     visited: set[int] = set()
-
     cycle_reported: set[int] = set()
 
     def visit_iterative(start_idx: int) -> None:
-        stack: list[tuple[int, Iterator[int], set[int]]] = []
-        stack.append((start_idx, iter(children.get(start_idx, [])), {start_idx}))
+        if start_idx in visited:
+            return
+
+        # Determine thread_id for this tree
+        start_msg = messages[start_idx]
+        thread_root_id = str(start_msg.msgnum) if start_msg.msgnum is not None else f"idx_{start_idx}"
+
+        # Stack: (idx, depth, thread_id, children_iterator)
+        stack: list[tuple[int, int, str, Iterator[int]]] = []
+        path: set[int] = set()
+
+        def enter_node(idx: int, depth: int, thread_id: str) -> None:
+            visited.add(idx)
+            path.add(idx)
+
+            original_msg = messages[idx]
+            parent_msgnum = None
+            if idx in parent_map:
+                parent_idx = parent_map[idx]
+                parent_msgnum = messages[parent_idx].msgnum
+
+            new_msg = replace(
+                original_msg,
+                depth=depth,
+                thread_id=thread_id,
+                parent_msgnum=parent_msgnum
+            )
+            ordered_messages.append(new_msg)
+            stack.append((idx, depth, thread_id, iter(children.get(idx, []))))
+
+        enter_node(start_idx, 0, thread_root_id)
 
         while stack:
-            idx, child_iter, path = stack[-1]
-
-            if idx not in visited:
-                visited.add(idx)
-                ordered_indices.append(idx)
+            parent_idx, depth, thread_id, children_iter = stack[-1]
 
             try:
-                child_idx = next(child_iter)
+                child_idx = next(children_iter)
             except StopIteration:
                 stack.pop()
+                path.remove(parent_idx)
                 continue
 
             if child_idx in path:
                 if child_idx not in cycle_reported:
-                    message = messages[child_idx]
+                    child_msg = messages[child_idx]
                     logger.warning(
-                        "Circular reference detected while threading messages (conf %s, msgnum %s).",
-                        message.confnum,
-                        message.msgnum if message.msgnum is not None else "unknown",
+                        "Circular reference detected (conf %s, msgnum %s).",
+                        child_msg.confnum,
+                        child_msg.msgnum,
                     )
                     cycle_reported.add(child_idx)
                 continue
 
-            if child_idx in visited:
-                continue
+            if child_idx not in visited:
+                enter_node(child_idx, depth + 1, thread_id)
 
-            new_path = set(path)
-            new_path.add(child_idx)
-            stack.append((child_idx, iter(children.get(child_idx, [])), new_path))
-
-    for idx, is_attached in enumerate(attached):
-        if not is_attached:
-            visit_iterative(idx)
+    for root_idx in roots:
+        visit_iterative(root_idx)
 
     for idx in range(len(messages)):
         if idx not in visited:
             visit_iterative(idx)
 
-    return [messages[idx] for idx in ordered_indices]
+    return ordered_messages
 
 
 if __name__ == '__main__':
