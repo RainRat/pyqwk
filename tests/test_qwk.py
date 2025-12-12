@@ -642,7 +642,10 @@ def test_process_file_writes_json(
     assert "header" in message
     assert "text" in message
     expected_message = _read_expected(expected_output_path)
-    assert message["text"] == expected_message
+    # Structured output should NOT contain the separator line
+    separator = ("-" * 80) + "\r\n"
+    assert separator not in message["text"]
+    assert message["text"] == expected_message.replace(separator, "", 1)
     assert message["header"]["msgnum"] == 28
 
 
@@ -734,7 +737,11 @@ def test_process_file_writes_xml(
     assert '<header>' in content
     assert '<msgnum>28' in content
     expected_message = _read_expected(expected_output_path)
-    assert expected_message.replace('\r\n', '\n') in content
+    # Structured output should NOT contain the separator line
+    separator = ("-" * 80) + "\r\n"
+    expected_content = expected_message.replace(separator, "", 1).replace('\r\n', '\n')
+    assert expected_content in content
+    assert ("-" * 80) not in content
 
 
 def test_process_file_writes_html(
@@ -1089,19 +1096,57 @@ def test_cli_rejects_threaded_with_individual_files(
     assert "Threading is not compatible with individual files output." in stderr
 
 
-def test_cli_rejects_noheader_with_structured_formats(
-    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, capsys: pytest.CaptureFixture[str]
+def test_cli_allows_noheader_with_structured_formats(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, tmp_path: Path
 ) -> None:
-    logging.basicConfig(level=logging.ERROR, force=True)
+    logging.basicConfig(level=logging.INFO, force=True)
     for fmt in ["json", "xml", "html"]:
+        output_path = tmp_path / f"output.{fmt}"
         monkeypatch.setattr(
             sys,
             "argv",
-            ["prog", str(baseline_path), "--noheader", "--format", fmt],
+            ["prog", str(baseline_path), "--noheader", "--format", fmt, "-o", str(output_path)],
         )
+        # Should not raise SystemExit
+        main()
+        assert output_path.exists()
 
-        with pytest.raises(SystemExit):
-            main()
+def test_json_noheader_removes_header_text(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+) -> None:
+    output_path = tmp_path / "messages.json"
+    process_file(
+        str(baseline_path),
+        _make_settings(format="json", no_header=True, output_mode="file", output_path=str(output_path)),
+        logger=logger,
+    )
 
-        stderr = capsys.readouterr().err
-        assert f"The --noheader option is not compatible with --format {fmt}" in stderr
+    with output_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    message = data[0]
+    # Should not contain "Subject:" which is part of the formatted header
+    assert "Subject:" not in message["text"]
+    assert ("-" * 80) not in message["text"]
+
+def test_xml_noheader_removes_header_text(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+) -> None:
+    output_path = tmp_path / "messages.xml"
+    process_file(
+        str(baseline_path),
+        _make_settings(format="xml", no_header=True, output_mode="file", output_path=str(output_path)),
+        logger=logger,
+    )
+
+    with output_path.open("r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Should not contain "Subject:" which is part of the formatted header in the text field
+    # But note: <Subject> tag is in the header structure, but we check the text field specifically?
+    # The text field is inside <text>...</text>
+    import xml.etree.ElementTree as ET
+    root = ET.fromstring(content)
+    text_content = root.find('message/text').text
+    assert "Subject:" not in text_content
+    assert ("-" * 80) not in text_content
