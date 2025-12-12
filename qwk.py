@@ -123,6 +123,7 @@ class ProcessingSettings:
     binaries_removal: bool
     redact_pii: bool
     format: str
+    separator: str
     output_mode: str
     output_path: str | None
     quiet: bool = False
@@ -255,12 +256,18 @@ class MessageHeader:
 
         return header, is_private, is_password
 
-    def format_text(self, board_dict: Mapping[int, str], verbose: bool) -> str:
+    def format_text(
+        self,
+        board_dict: Mapping[int, str],
+        verbose: bool,
+        include_separator: bool = True,
+    ) -> str:
         """Render a message header into readable text.
 
         Args:
             board_dict: Mapping of conference numbers to human-readable names.
             verbose: Whether to include extra metadata such as message numbers and reference numbers.
+            include_separator: Whether to prepend the message separator line.
 
         Returns:
             The formatted header text with DOS-style newlines appended.
@@ -273,7 +280,8 @@ class MessageHeader:
             not_found_flag = True
 
         header_parts: list[str] = []
-        header_parts.append(("-" * 80) + "\r\n")
+        if include_separator:
+            header_parts.append(("-" * 80) + "\r\n")
         if verbose or not not_found_flag:
             header_parts.append("Conference: " + str(conf_name) + "\r\n")
         if verbose:
@@ -556,6 +564,16 @@ def _create_progress_bar(total: int, quiet: bool) -> Any:
         return _NullProgress()
 
 
+def _render_message_separator(separator_mode: str) -> str:
+    if separator_mode == 'dashes':
+        return ("-" * 80) + "\r\n"
+    elif separator_mode == 'blank':
+        return "\r\n"
+    elif separator_mode == 'none':
+        return ""
+    return ""
+
+
 def process_file(
     input_path: str,
     settings: ProcessingSettings,
@@ -585,6 +603,14 @@ def process_file(
     file_data, board_dict = load_data(input_path, logger)
     collected_messages: list[ProcessedMessage] = []
 
+    separator_mode = settings.separator
+    if separator_mode == 'auto':
+        if settings.individual_files:
+            separator_mode = 'none'
+        else:
+            separator_mode = 'dashes'
+    separator_str = _render_message_separator(separator_mode)
+
     with _create_progress_bar(len(file_data), settings.quiet) as progress_bar:
         for parsed_message in parse_messages(
             file_data,
@@ -609,8 +635,14 @@ def process_file(
                     header_text = parsed_message.header.format_text(
                         board_dict,
                         settings.verbose,
+                        include_separator=False,
                     )
                     processed_buffer = header_text + processed_buffer
+
+                # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
+                if settings.format == 'text' or (not settings.no_header and settings.format != 'html'):
+                    processed_buffer = separator_str + processed_buffer
+
                 if settings.individual_files:
                     encoded_buffer = processed_buffer.encode('latin1')
                     assert output_dir is not None
@@ -825,6 +857,12 @@ def main() -> None:
         choices=['text', 'json', 'xml', 'html'],
     )
     parser.add_argument(
+        '--separator',
+        choices=['auto', 'none', 'dashes', 'blank'],
+        default='auto',
+        help='Separator style between messages (auto, none, dashes, blank)',
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f"%(prog)s {__version__}",
@@ -869,6 +907,7 @@ def main() -> None:
         redact_pii=args.redactpii,
         quiet=args.quiet,
         format=args.format,
+        separator=args.separator,
         output_mode=output_mode,
         output_path=resolved_output_path,
     )

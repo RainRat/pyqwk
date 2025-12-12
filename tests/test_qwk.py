@@ -71,6 +71,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         binaries_removal=False,
         redact_pii=False,
         format="text",
+        separator="auto",
         output_mode="stdout",
         output_path=None,
     )
@@ -94,6 +95,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         redactpii=False,
         quiet=False,
         format="text",
+        separator="auto",
         loglevel="INFO",
     )
     base.update(overrides)
@@ -356,7 +358,9 @@ def test_process_file_writes_individual_files(
     with files[0].open("rb") as f:
         content = f.read().decode("latin1")
     expected_message = _read_expected(expected_output_path)
-    assert content == expected_message
+    # Individual files should NOT have the leading separator (dashes)
+    separator = ("-" * 80) + "\r\n"
+    assert content == expected_message.replace(separator, "", 1)
 
 
 def test_process_file_requires_directory_for_individual_files(
@@ -1026,3 +1030,31 @@ def test_cli_batch_success(
     assert len(files) == 2
     assert files[0].name == "test1_qwk.txt"
     assert files[1].name == "test2_qwk.txt"
+
+def test_process_file_noheader_combined_has_separator(
+    capsys: pytest.CaptureFixture[str], baseline_path: Path, logger: logging.Logger
+) -> None:
+    process_file(
+        str(baseline_path),
+        _make_settings(no_header=True),
+        logger=logger,
+    )
+
+    captured = capsys.readouterr()
+    # Should contain dashes separator even though no header
+    assert ("-" * 80) in captured.out
+    # Should not contain "Subject:" (header field)
+    assert "Subject:" not in captured.out
+
+
+def test_process_file_separator_blank(
+    capsys: pytest.CaptureFixture[str], baseline_path: Path, logger: logging.Logger
+) -> None:
+    process_file(
+        str(baseline_path),
+        _make_settings(separator="blank"),
+        logger=logger,
+    )
+
+    captured = capsys.readouterr()
+    assert ("-" * 80) not in captured.out
