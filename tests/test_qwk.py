@@ -880,21 +880,16 @@ def test_load_data_logs_warning_if_control_dat_is_missing(
     assert "CONTROL.DAT not found" in caplog.text
 
 
-def test_cli_rejects_stdout_with_output_path(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], baseline_path: Path
-) -> None:
-    logging.basicConfig(level=logging.ERROR, force=True)
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        ["prog", str(baseline_path), "-o", "output.txt", "--stdout"],
+def test_process_message_preserves_leading_whitespace() -> None:
+    message = "   Indented line\r\nNormal line"
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=False,
     )
-
-    with pytest.raises(SystemExit):
-        main()
-
-    stderr = capsys.readouterr().err
-    assert "not allowed with argument -o/--output" in stderr
+    assert processed == "   Indented line\r\nNormal line\r\n"
 
 
 def test_cli_requires_output_directory_for_multiple_inputs(
@@ -904,7 +899,7 @@ def test_cli_requires_output_directory_for_multiple_inputs(
     monkeypatch.setattr(
         sys,
         "argv",
-        ["prog", str(testdata_dir / "test1_qwk.zip"), str(testdata_dir / "test2_qwk.zip"), "--stdout"],
+        ["prog", str(testdata_dir / "test1_qwk.zip"), str(testdata_dir / "test2_qwk.zip")],
     )
 
     with pytest.raises(SystemExit):

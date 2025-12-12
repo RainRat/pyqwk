@@ -28,7 +28,7 @@ python qwk.py my_archive.qwk
 
 ### Batch Processing
 
-You can process multiple files at once by providing a list of input files. When processing multiple files, you **must** specify an output directory using `-o` (or `--output`). Printing to stdout (`--stdout`) is not allowed in batch mode. The output files will be named after the input files, with the extension changed to `.txt`, `.json`, `.xml`, or `.html` depending on the selected format.
+You can process multiple files at once by providing a list of input files. When processing multiple files, you **must** specify an output directory using `-o` (or `--output`). The output files will be named after the input files, with the extension changed to `.txt`, `.json`, `.xml`, or `.html` depending on the selected format.
 
 ```
 python qwk.py *.qwk -o output/

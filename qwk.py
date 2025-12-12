@@ -480,7 +480,7 @@ def process_message(
     Returns:
         The processed message text with transformations applied.
     """
-    message_buffer = message_buffer.lstrip()
+    message_buffer = message_buffer.lstrip('\r\n').rstrip()
     lines = message_buffer.splitlines()
 
     new_lines = []
@@ -788,17 +788,11 @@ def process_multiple_files(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('input_paths', help='One or more QWK packets or messages.dat files to process.', nargs='+')
-    output_group = parser.add_mutually_exclusive_group()
-    output_group.add_argument(
+    parser.add_argument(
         '-o',
         '--output',
         dest='output_path',
-        help='The output filename or directory. Required for multiple input files. (default: print to console for single file)',
-    )
-    output_group.add_argument(
-        '--stdout',
-        action='store_true',
-        help='Print output to stdout rather than writing to a file.',
+        help='Output path (file or directory). If omitted, prints to console (single input only).',
     )
     parser.add_argument(
         '-v',
@@ -857,13 +851,11 @@ def main() -> None:
     elif len(input_paths) > 1:
         if not output_path:
             parser.error('Output directory is required when processing multiple files.')
-        if args.stdout:
-            parser.error('Output directory is required when processing multiple files.')
         output_mode = 'file'
         resolved_output_path = output_path
     else:
-        output_mode = 'stdout' if args.stdout or not output_path else 'file'
-        resolved_output_path = None if output_mode == 'stdout' else output_path
+        output_mode = 'stdout' if not output_path else 'file'
+        resolved_output_path = output_path
 
     settings = ProcessingSettings(
         verbose=args.verbose,
