@@ -913,11 +913,12 @@ def test_cli_requires_output_directory_for_multiple_inputs(
     assert "Output directory is required when processing multiple files." in stderr
 
 
-def test_cli_allows_positional_output_path(
+def test_cli_treats_multiple_positional_args_as_inputs(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     output_path = tmp_path / "output.txt"
+    # This simulates passing two files: baseline_path and output.txt (as a second input)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -931,11 +932,12 @@ def test_cli_allows_positional_output_path(
     assert "Output directory is required when processing multiple files." in stderr
 
 
-def test_cli_allows_positional_output_directory(
+def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, testdata_dir: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     output_dir = tmp_path / "output"
+    # This simulates passing three inputs, the last one being the intended output dir but treated as input
     monkeypatch.setattr(
         sys,
         "argv",
@@ -1058,3 +1060,37 @@ def test_process_file_separator_blank(
 
     captured = capsys.readouterr()
     assert ("-" * 80) not in captured.out
+
+def test_cli_rejects_threaded_with_individual_files(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", str(baseline_path), "--threaded", "--individual-files", "-o", "outdir"],
+    )
+
+    with pytest.raises(SystemExit):
+        main()
+
+    stderr = capsys.readouterr().err
+    assert "Threading is not compatible with individual files output." in stderr
+
+
+def test_cli_rejects_noheader_with_structured_formats(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    logging.basicConfig(level=logging.ERROR, force=True)
+    for fmt in ["json", "xml", "html"]:
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["prog", str(baseline_path), "--noheader", "--format", fmt],
+        )
+
+        with pytest.raises(SystemExit):
+            main()
+
+        stderr = capsys.readouterr().err
+        assert f"The --noheader option is not compatible with --format {fmt}" in stderr

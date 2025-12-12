@@ -47,19 +47,19 @@ If this is set, pyqwk will include messages marked as private. If you are an arc
 - `--noheader` or `-n`
 If this is set, pyqwk will leave out the message header. (default: off, meaning message headers will be included)
 
-- `--truncatesignatures` or `-t`
+- `--truncate-signatures` or `-t`
 If this is set, pyqwk will truncate each message at the signature. Truncation happens at common signature separators. See the `SIGNATURE_PATTERNS_EXACT` and `SIGNATURE_PATTERNS_STARTSWITH` variables in `qwk.py` for the complete list. (default: off)
 
-- `--cutquoting` or `-c`
+- `--cut-quoting` or `-c`
 If this is set, pyqwk will delete quoted text using common prefixes and quoting characters (such as `>`, `|`, `}`, or the DOS box character `\xb3`). See `RE_QUOTE_PATTERN` and `QUOTE_HEADER_PATTERNS` in `qwk.py` for the exact detection rules. (default: off)
 
-- `--binariesremoval` or `-b`
+- `--binaries-removal` or `-b`
 If this is set, pyqwk will delete binaries (currently removes uuencoded, Base64-encoded, and yEnc blocks). (default: off)
 
-- `--individualfiles` or `-i`
+- `--individual-files` or `-i`
 If this is set, pyqwk will put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication). (default: off)
 
-- `--redactpii` or `-r`
+- `--redact-pii` or `-r`
 If this is set, pyqwk will redact PII (Personally Identifiable Information), currently only phone numbers and e-mails. (default: off)
 
 ## JSON and XML output formats
@@ -120,7 +120,7 @@ When `--format json` or `--format xml` is selected, pyqwk emits structured repre
 
 In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`.
 
-The `text` field contains the processed message body. By default (when `--noheader` is **not** set), the `text` field includes the formatted header followed by the body. If `--noheader` is passed, the `text` field will contain the body only.
+The `text` field contains the processed message body. It includes the formatted header followed by the body.
 
 The structured `header` section is authoritative for the header values.
 
