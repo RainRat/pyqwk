@@ -909,6 +909,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if args.threaded and args.individualfiles:
+        parser.error("Threading is not compatible with individual files output.")
+
+    if args.noheader and args.format in ('json', 'xml', 'html'):
+        parser.error(f"The --noheader option is not compatible with --format {args.format} as these formats provide structured headers.")
+
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {args.loglevel}')
