@@ -533,8 +533,11 @@ def test_load_data_reads_all_conferences_from_control_dat(
     assert boarddict == expected_boarddict
 
 
-def test_load_data_raises_for_invalid_conference_number(
-    tmp_path: Path, testdata_dir: Path, logger: logging.Logger
+def test_load_data_skips_invalid_conference_number(
+    tmp_path: Path,
+    testdata_dir: Path,
+    logger: logging.Logger,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     zip_path = tmp_path / "invalid_control.zip"
     with zipfile.ZipFile(zip_path, "w") as zf:
@@ -557,14 +560,19 @@ def test_load_data_raises_for_invalid_conference_number(
         control_content = b"\r\n".join(control_lines) + b"\r\n"
         zf.writestr("CONTROL.DAT", control_content)
 
-    with pytest.raises(ControlDatFormatError) as exc_info:
-        load_data(str(zip_path), logger)
+    with caplog.at_level(logging.WARNING):
+        _, board_dict = load_data(str(zip_path), logger)
 
-    assert "Invalid conference number" in str(exc_info.value)
+    assert "Invalid conference number" in caplog.text
+    # The entry should be skipped, so board_dict should be empty (since there was only 1 entry and it was invalid)
+    assert board_dict == {}
 
 
-def test_load_data_reports_truncated_control_dat(
-    tmp_path: Path, testdata_dir: Path, logger: logging.Logger
+def test_load_data_warns_truncated_control_dat(
+    tmp_path: Path,
+    testdata_dir: Path,
+    logger: logging.Logger,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     zip_path = tmp_path / "truncated_control.zip"
     with zipfile.ZipFile(zip_path, "w") as zf:
@@ -587,13 +595,13 @@ def test_load_data_reports_truncated_control_dat(
         control_content = b"\r\n".join(control_lines) + b"\r\n"
         zf.writestr("CONTROL.DAT", control_content)
 
-    with pytest.raises(ControlDatFormatError) as exc_info:
-        load_data(str(zip_path), logger)
+    with caplog.at_level(logging.WARNING):
+        _, board_dict = load_data(str(zip_path), logger)
 
-    message = str(exc_info.value)
-    assert "missing conference entry 1" in message
-    assert "expected 2 entries" in message
-    assert "found 1" in message
+    assert "CONTROL.DAT is truncated" in caplog.text
+    # Should have parsed the first conference (1: Test Conference)
+    assert 1 in board_dict
+    assert board_dict[1] == "Test Conference"
 
 
 def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:

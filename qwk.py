@@ -360,7 +360,7 @@ def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[
             if control_name:
                 with myzip.open(control_name) as f:
                     control_data = f.read().splitlines()
-                board_dict = _parse_control_dat(control_data)
+                board_dict = _parse_control_dat(control_data, logger)
             else:
                 logger.warning("CONTROL.DAT not found, conference names will not be available.")
     else:
@@ -369,26 +369,48 @@ def load_data(input_path: str, logger: logging.Logger) -> tuple[bytearray, dict[
     return file_data, board_dict
 
 
-def _parse_control_dat(control_data: list[bytes]) -> dict[int, str]:
+def _parse_control_dat(
+    control_data: list[bytes], logger: logging.Logger | None = None
+) -> dict[int, str]:
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    if len(control_data) < 11:
+        raise ControlDatFormatError(
+            "CONTROL.DAT is too short; header information missing."
+        )
+
+    try:
+        num_conferences = int(control_data[10]) + 1
+    except ValueError as error:
+        raise ControlDatFormatError(
+            f"Invalid conference count in CONTROL.DAT: {control_data[10]!r}"
+        ) from error
+
     board_dict: dict[int, str] = {}
-    num_conferences = int(control_data[10]) + 1
     for i in range(num_conferences):
         index = 11 + i * 2
         try:
             conf_number_raw = control_data[index]
             conf_name_raw = control_data[index + 1]
-        except IndexError as error:
+        except IndexError:
             available_entries = max((len(control_data) - 11) // 2, 0)
-            raise ControlDatFormatError(
-                "CONTROL.DAT is truncated; missing conference entry "
-                f"{i} (expected {num_conferences} entries, found {available_entries})."
-            ) from error
+            logger.warning(
+                "CONTROL.DAT is truncated; missing conference entry %d "
+                "(expected %d entries, found %d).",
+                i,
+                num_conferences,
+                available_entries,
+            )
+            break
         try:
             conf_number = int(conf_number_raw)
-        except ValueError as error:
-            raise ControlDatFormatError(
-                f"Invalid conference number in CONTROL.DAT: {conf_number_raw!r}"
-            ) from error
+        except ValueError:
+            logger.warning(
+                "Invalid conference number in CONTROL.DAT: %r; skipping entry.",
+                conf_number_raw,
+            )
+            continue
         conf_name = conf_name_raw.decode('latin1')
         board_dict[conf_number] = conf_name
 
