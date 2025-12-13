@@ -556,22 +556,6 @@ def process_message(
     return '\r\n'.join(new_lines) + '\r\n'
 
 
-class _NullProgress:
-    """A dummy progress bar that does nothing."""
-
-    def update(self, *_: object, **__: object) -> None:
-        pass
-
-    def close(self) -> None:
-        pass
-
-    def __enter__(self) -> "_NullProgress":
-        return self
-
-    def __exit__(self, *_: object) -> None:
-        pass
-
-
 def _create_progress_bar(total: int, quiet: bool) -> Any:
     """Create a progress bar instance or a null context.
 
@@ -595,7 +579,7 @@ def _create_progress_bar(total: int, quiet: bool) -> Any:
         )
     except ImportError:  # pragma: no cover - tqdm is optional
         logging.getLogger(__name__).info('Install tqdm to enable progress reporting.')
-        return _NullProgress()
+        return nullcontext()
 
 
 def _render_message_separator(separator_mode: str) -> str:
