@@ -679,7 +679,11 @@ def process_file(
                     processed_buffer = separator_str + processed_buffer
 
                 if settings.individual_files:
-                    encoded_buffer = processed_buffer.encode('utf-8')
+                    target_encoding = 'utf-8'
+                    if settings.format == 'text':
+                        target_encoding = settings.encoding
+
+                    encoded_buffer = processed_buffer.encode(target_encoding)
                     assert output_dir is not None
                     with open(
                         os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
@@ -704,7 +708,7 @@ def process_file(
             else collected_messages
         )
 
-        writers: dict[str, Callable[[list[ProcessedMessage], str | None], None]] = {
+        writers: dict[str, Callable[[list[ProcessedMessage], str | None, str], None]] = {
             'json': _write_json,
             'xml': _write_xml,
             'html': _write_html,
@@ -712,10 +716,15 @@ def process_file(
         }
 
         writer = writers.get(settings.format, _write_text)
-        writer(ordered_messages, resolved_output_path)
+        output_encoding = 'utf-8'
+        if settings.format == 'text':
+            output_encoding = settings.encoding
+        writer(ordered_messages, resolved_output_path, output_encoding)
 
 
-def _write_json(messages: list[ProcessedMessage], output_path: str | None) -> None:
+def _write_json(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
     output_data = []
     for message in messages:
         msg_dict = {
@@ -737,7 +746,9 @@ def _sanitize_xml_string(s: str) -> str:
     return XML_INVALID_CHAR_PATTERN.sub('', s)
 
 
-def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> None:
+def _write_xml(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
     root = ET.Element('messages')
     for message in messages:
         msg_element = ET.SubElement(root, 'message')
@@ -765,7 +776,9 @@ def _write_xml(messages: list[ProcessedMessage], output_path: str | None) -> Non
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
-def _write_html(messages: list[ProcessedMessage], output_path: str | None) -> None:
+def _write_html(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
     html_parts = [
         '<!DOCTYPE html>',
         '<html lang="en">',
@@ -824,7 +837,9 @@ def _write_html(messages: list[ProcessedMessage], output_path: str | None) -> No
     _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
 
 
-def _write_text(messages: list[ProcessedMessage], output_path: str | None) -> None:
+def _write_text(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
     """Write messages to text format with indentation for threads."""
     parts = []
     for message in messages:
@@ -836,7 +851,7 @@ def _write_text(messages: list[ProcessedMessage], output_path: str | None) -> No
             text = "".join(indented_lines)
         parts.append(text)
 
-    _write_text_output("".join(parts), output_path, encoding='utf-8')
+    _write_text_output("".join(parts), output_path, encoding=encoding)
 
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
@@ -1062,7 +1077,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
             parent_index = index_by_key.get((message.confnum, message.refnum))
 
             if parent_index is None:
-                logger.warning(
+                logger.debug(
                     "Message %s references missing or external message %s (conf %s).",
                     message.msgnum,
                     message.refnum,

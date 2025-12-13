@@ -1150,3 +1150,48 @@ def test_xml_noheader_removes_header_text(
     text_content = root.find('message/text').text
     assert "Subject:" not in text_content
     assert ("-" * 80) not in text_content
+
+def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, logger: logging.Logger) -> None:
+    header = MessageHeader(
+        status=" ", msgnum=1, msgdate="", msgtime="", msgto="", msgfrom="",
+        msgsubject="", msgpassword="", refnum=None, numblocks=None, msgflag="",
+        confnum=1, lognum=1, nettag="",
+    )
+
+    # 'é' is 0x82 in CP437, 0xC3 0xA9 in UTF-8
+    text_content = "Resumé\r\n"
+
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), {}
+
+    def fake_parse_messages(*args, **kwargs):
+        yield ParsedMessage(
+            text=text_content,
+            is_private=False,
+            is_password=False,
+            msgnum=1,
+            refnum=None,
+            confnum=1,
+            header=header
+        )
+
+    monkeypatch.setattr(qwk, "load_data", fake_load_data)
+    monkeypatch.setattr(qwk, "parse_messages", fake_parse_messages)
+
+    output_path = tmp_path / "output.txt"
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437"
+    )
+
+    process_file("dummy.qwk", settings, logger)
+
+    with open(output_path, "rb") as f:
+        content = f.read()
+
+    expected_bytes_cp437 = b"Resum\x82\r\n"
+
+    assert content == expected_bytes_cp437
