@@ -146,3 +146,13 @@ def test_xml_metadata():
         content = mock_write.call_args[0][0]
         assert "<depth>1</depth>" in content
         assert "<thread_id>thread1</thread_id>" in content
+
+def test_threading_warning_is_suppressed(caplog: pytest.LogCaptureFixture):
+    msgs = [
+        make_msg(2, 1, "Orphan Child"),
+    ]
+
+    with caplog.at_level(logging.WARNING, logger="qwk"):
+        _order_messages_by_thread(msgs)
+
+    assert "references missing or external message" not in caplog.text
