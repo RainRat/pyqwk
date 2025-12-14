@@ -1195,3 +1195,34 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
     expected_bytes_cp437 = b"Resum\x82\r\n"
 
     assert content == expected_bytes_cp437
+
+def test_parse_messages_recovers_from_invalid_numblocks() -> None:
+    # Block 0: QWK Header
+    qwk_header = b'Produced ' + b'\x00' * (128 - 9)
+
+    # Header 1: numblocks=0 (Invalid)
+    header1 = struct.pack(
+        '<c7s8s5s25s25s25s12s8s6scHHc',
+        b' ', b"1".ljust(7, b' '), b"010190", b"0000", b"To".ljust(25, b' '), b"From".ljust(25, b' '), b"Subj1".ljust(25, b' '), b"".ljust(12, b' '), b"0".ljust(8, b' '),
+        b"0".ljust(6, b' '), # numblocks=0
+        b' ', 1, 1, b' '
+    )
+
+    # Header 2: numblocks=2 (1 body block) - Valid
+    header2 = struct.pack(
+        '<c7s8s5s25s25s25s12s8s6scHHc',
+        b' ', b"2".ljust(7, b' '), b"010190", b"0000", b"To".ljust(25, b' '), b"From".ljust(25, b' '), b"Subj2".ljust(25, b' '), b"".ljust(12, b' '), b"0".ljust(8, b' '),
+        b"2".ljust(6, b' '), # numblocks=2
+        b' ', 1, 2, b' '
+    )
+
+    body2 = b"Hello world".ljust(128, b' ')
+
+    data = bytearray(qwk_header + header1 + header2 + body2)
+
+    messages = list(parse_messages(data, progress_bar=None))
+
+    # Should skip first message (invalid) and parse second message.
+    assert len(messages) == 1
+    assert messages[0].msgnum == 2
+    assert messages[0].header.msgsubject.strip() == "Subj2"

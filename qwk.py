@@ -469,7 +469,7 @@ def parse_messages(
 
             message_buffer = ''
             try:
-                if header.numblocks is None:
+                if header.numblocks is None or header.numblocks < 1:
                     raise ValueError
                 blocks_remaining = header.numblocks - 1
             except ValueError:
