@@ -394,7 +394,7 @@ def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_out
 
     captured = capsys.readouterr()
     expected_message = _read_expected(expected_output_path)
-    assert captured.out == expected_message + "\n"
+    assert captured.out == expected_message
     assert captured.err == ""
 
 
