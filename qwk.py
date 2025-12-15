@@ -840,7 +840,9 @@ def _write_text(
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
     if output_path is None:
-        sys.stdout.write(content + '\n')
+        if not content.endswith('\n'):
+            content += '\n'
+        sys.stdout.write(content)
     else:
         with open(output_path, 'w', encoding=encoding) as f:
             f.write(content)
