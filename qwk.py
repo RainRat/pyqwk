@@ -29,7 +29,7 @@ QUOTE_HEADER_PATTERNS = [
         r"^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message|In a message).* to "
     ),
 ]
-RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\})')
+RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s\d{3}\s')
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
 RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
@@ -68,6 +68,7 @@ SIGNATURE_PATTERNS_STARTSWITH = (
     "-+- ",
     "~~~ ",
     " \xfe ",
+    " ■ ",
     " *** ",
 )
 
