@@ -468,11 +468,7 @@ def parse_messages(
             current_confnum = header.confnum
 
             message_buffer = ''
-            try:
-                if header.numblocks is None or header.numblocks < 1:
-                    raise ValueError
-                blocks_remaining = header.numblocks - 1
-            except ValueError:
+            if header.numblocks is None or header.numblocks < 1:
                 logging.warning(
                     "Invalid block count '%s' in message header at offset %s; skipping message.",
                     getattr(header, '_numblocks_raw', header.numblocks),
@@ -480,6 +476,8 @@ def parse_messages(
                 )
                 blocks_remaining = 0
                 continue
+
+            blocks_remaining = header.numblocks - 1
         else:
             temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
             if blocks_remaining == 1:
