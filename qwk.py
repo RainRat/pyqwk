@@ -1012,7 +1012,7 @@ def _normalize_subject(subject: str) -> str:
     """Normalize subject line for threading by removing prefixes."""
     s = subject.strip()
     while True:
-        m = re.match(r'^(?:re|fw|fwd)[:\[\s]', s, re.IGNORECASE)
+        m = re.match(r'^(?:re|fw|fwd)[:\[\s-]', s, re.IGNORECASE)
         if not m:
             break
         s = re.sub(r'^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*', '', s, flags=re.IGNORECASE)

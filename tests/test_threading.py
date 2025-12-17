@@ -16,6 +16,7 @@ from qwk import (
     _write_html,
     _write_json,
     _write_xml,
+    _normalize_subject,
 )
 from unittest.mock import patch, mock_open
 
@@ -156,3 +157,35 @@ def test_threading_warning_is_suppressed(caplog: pytest.LogCaptureFixture):
         _order_messages_by_thread(msgs)
 
     assert "references missing or external message" not in caplog.text
+
+
+def test_normalize_subject_variants():
+    assert _normalize_subject("Re: Subject") == "subject"
+    assert _normalize_subject("RE: Subject") == "subject"
+    assert _normalize_subject("Fw: Subject") == "subject"
+    assert _normalize_subject("FWD: Subject") == "subject"
+
+    assert _normalize_subject("Re: Re: Subject") == "subject"
+    assert _normalize_subject("Re: Fwd: Subject") == "subject"
+
+    assert _normalize_subject("Re[2]: Subject") == "subject"
+    assert _normalize_subject("Re: [123] Subject") == "[123] subject"
+
+    assert _normalize_subject("  Re : Subject  ") == "subject"
+
+    assert _normalize_subject("Re- Subject") == "subject"
+    assert _normalize_subject("Re-Subject") == "subject"
+
+
+def test_threading_with_skipped_generations():
+    msgs = [
+        make_msg(1, 0, "Original Topic"),
+        make_msg(3, 1, "Re: Re: Original Topic"),
+    ]
+    msgs[1].refnum = None
+
+    ordered = _order_messages_by_thread(msgs)
+
+    m3 = next(m for m in ordered if m.msgnum == 3)
+    assert m3.parent_msgnum == 1
+    assert m3.depth == 1
