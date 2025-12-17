@@ -1095,3 +1095,21 @@ def test_parse_messages_recovers_from_invalid_numblocks() -> None:
     assert len(messages) == 1
     assert messages[0].msgnum == 2
     assert messages[0].header.msgsubject.strip() == "Subj2"
+
+def test_process_multiple_files_handles_controldat_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
+) -> None:
+    def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+        if "bad" in input_path:
+            raise ControlDatFormatError("Bad control.dat")
+
+    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+
+    input_paths = ["bad.zip", "good.zip"]
+    output_dir = tmp_path / "output"
+    settings = _make_settings()
+
+    # Should not raise exception
+    had_errors = qwk.process_multiple_files(input_paths, str(output_dir), settings, logger)
+
+    assert had_errors is True
