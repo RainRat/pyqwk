@@ -875,6 +875,7 @@ def process_multiple_files(
             process_file(input_path, per_file_settings, logger)
         except (
             MessagesDatFormatError,
+            ControlDatFormatError,
             InvalidMessageTypeError,
             FileNotFoundError,
             zipfile.BadZipFile,
