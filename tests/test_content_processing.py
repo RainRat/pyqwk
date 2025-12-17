@@ -212,3 +212,28 @@ def test_process_message_handles_uue_loose_pattern() -> None:
     # _is_binary_line returns True as long as loose matches if previous matched.
     # "end" does NOT match loose pattern (len 3). So it should stop skipping.
     assert processed == "Intro\r\nend\r\n"
+
+
+def test_process_message_redacts_complex_phone_formats() -> None:
+    message = (
+        "(555) 123-4567\r\n"
+        "+61-5-555-1234\r\n"
+        "Call me at 555-1234\r\n"
+        "123-456-7890\r\n"
+    )
+
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=True,
+    )
+
+    expected = (
+        "[PHONE]\r\n"
+        "[PHONE]\r\n"
+        "Call me at [PHONE]\r\n"
+        "[PHONE]\r\n"
+    )
+    assert processed == expected
