@@ -37,12 +37,12 @@ RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
 RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
 RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
 RE_PHONE_PATTERN = re.compile(
-    r'\b'
+    r'(?<!\w)'
     r'(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)'
     r'(?=(?:\D*\d){7,})'
     r'(?:'
     r'(?:\+\d{1,3}[-\.\s]?)?'
-    r'(?:\(\d{2,4}\)|\d{2,4})'
+    r'(?:\(\d{1,4}\)|\d{1,4})'
     r'[-\.\s]?\d{3,4}(?:[-\.\s]?\d{3,4})+'
     r'|'
     r'\d{3}[-\.\s]?\d{4}'
