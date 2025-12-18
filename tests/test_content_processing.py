@@ -211,7 +211,37 @@ def test_process_message_handles_uue_loose_pattern() -> None:
     # The current implementation might be strict about what terminates UUE.
     # _is_binary_line returns True as long as loose matches if previous matched.
     # "end" does NOT match loose pattern (len 3). So it should stop skipping.
-    assert processed == "Intro\r\nend\r\n"
+    # Updated: State-based processing removes "end" line as part of UUE block.
+    assert processed == "Intro\r\n"
+
+def test_process_message_removes_consecutive_loose_uue_lines() -> None:
+    # Use '!' which is valid in UUE (33) but not in standard Base64.
+    # strict line: starts with 'M' (77), followed by '!'s.
+    # loose lines: start with '!' (33), followed by '!'s.
+
+    line_strict = "M" + ("!" * 60)
+    line_loose_1 = ("!" * 60)
+    line_loose_2 = ("!" * 60)
+
+    message = (
+        "Intro\r\n"
+        "begin 644 test.txt\r\n"
+        f"{line_strict}\r\n"
+        f"{line_loose_1}\r\n"
+        f"{line_loose_2}\r\n"
+        "end\r\n"
+    )
+
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=True,
+        redact_pii=False,
+    )
+
+    # We expect all UUE lines to be removed.
+    assert processed == "Intro\r\n"
 
 
 def test_process_message_redacts_complex_phone_formats() -> None:
