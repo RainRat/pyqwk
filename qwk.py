@@ -74,35 +74,47 @@ SIGNATURE_PATTERNS_STARTSWITH = (
 
 
 def _is_binary_line(
-    line: str, previous_line: str | None, in_yenc_block: bool
-) -> tuple[bool, bool]:
+    line: str,
+    previous_line: str | None,
+    in_yenc_block: bool,
+    in_uue_block: bool,
+) -> tuple[bool, bool, bool]:
     """Detect whether a line is part of a binary payload.
 
-    Returns a tuple ``(should_skip, in_yenc_block)`` indicating whether the
-    caller should exclude the line from output and the updated yEnc block state.
+    Returns a tuple ``(should_skip, in_yenc_block, in_uue_block)`` indicating whether the
+    caller should exclude the line from output and the updated binary block states.
     """
     is_yenc_marker = RE_YENC_PATTERN.match(line)
 
     if is_yenc_marker and line.startswith('=ybegin'):
-        return True, True
+        return True, True, in_uue_block
 
     if in_yenc_block or is_yenc_marker:
         if is_yenc_marker and line.startswith('=yend'):
-            return True, False
-        return True, True
+            return True, False, in_uue_block
+        return True, True, in_uue_block
 
-    if (
-        RE_BASE64_PATTERN.match(line)
-        or RE_UUE_DATA_PATTERN.match(line)
-        or RE_UUE_PATTERN.match(line)
-    ):
-        return True, in_yenc_block
+    if RE_BASE64_PATTERN.match(line):
+        return True, in_yenc_block, in_uue_block
 
-    if previous_line and RE_UUE_LOOSE_PATTERN.match(line):
-        if RE_UUE_DATA_PATTERN.match(previous_line) or RE_UUE_PATTERN.match(previous_line):
-            return True, in_yenc_block
+    if RE_UUE_DATA_PATTERN.match(line) or RE_UUE_PATTERN.match(line):
+        return True, in_yenc_block, True
 
-    return False, in_yenc_block
+    if RE_UUE_LOOSE_PATTERN.match(line):
+        if in_uue_block:
+            return True, in_yenc_block, True
+        if previous_line and (
+            RE_UUE_DATA_PATTERN.match(previous_line)
+            or RE_UUE_PATTERN.match(previous_line)
+        ):
+            return True, in_yenc_block, True
+
+    if in_uue_block:
+        if line.strip() == 'end':
+            return True, in_yenc_block, False
+        return False, in_yenc_block, False
+
+    return False, in_yenc_block, False
 
 
 class ProgressBar(Protocol):
@@ -526,6 +538,7 @@ def process_message(
 
     new_lines = []
     in_yenc_block = False
+    in_uue_block = False
     previous_line: str | None = None
     for j, line in enumerate(lines):
         if truncate_signatures and (
@@ -541,7 +554,9 @@ def process_message(
                 and RE_QUOTE_PATTERN.match(lines[j + 1]):
                 continue
         if binaries_removal:
-            should_skip, in_yenc_block = _is_binary_line(line, previous_line, in_yenc_block)
+            should_skip, in_yenc_block, in_uue_block = _is_binary_line(
+                line, previous_line, in_yenc_block, in_uue_block
+            )
             if should_skip:
                 previous_line = line
                 continue
