@@ -596,16 +596,6 @@ def _create_progress_bar(total: int, quiet: bool) -> Any:
         return nullcontext()
 
 
-def _render_message_separator(separator_mode: str) -> str:
-    if separator_mode == 'dashes':
-        return ("-" * 80) + "\r\n"
-    elif separator_mode == 'blank':
-        return "\r\n"
-    elif separator_mode == 'none':
-        return ""
-    return ""
-
-
 def process_file(
     input_path: str,
     settings: ProcessingSettings,
@@ -641,7 +631,11 @@ def process_file(
             separator_mode = 'none'
         else:
             separator_mode = 'dashes'
-    separator_str = _render_message_separator(separator_mode)
+    separator_str = ""
+    if separator_mode == 'dashes':
+        separator_str = ("-" * 80) + "\r\n"
+    elif separator_mode == 'blank':
+        separator_str = "\r\n"
 
     with _create_progress_bar(len(file_data), settings.quiet) as progress_bar:
         for parsed_message in parse_messages(
