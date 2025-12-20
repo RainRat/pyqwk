@@ -1,73 +1,91 @@
 # pyqwk
 
-pyqwk is a .qwk reader in Python that exports .QWK mail archives to a more readable format, without requiring the use of a .QWK reader. This is useful for data archivists who want to archive .QWK mail archives in a more readable format. .QWK archives were popular back in the Fidonet and BBS days and people may want to archive them now.
+pyqwk is a Python tool that converts `.QWK` mail archives into readable formats (Text, HTML, JSON, XML). It is designed for archivists and enthusiasts who want to preserve or read messages from the Fidonet and BBS era.
 
-If installed (e.g., via `pip install .`), the tool is available as the `qwk` command. Alternatively, you can run the script directly using `python qwk.py`.
+## Installation
+
+You can run `pyqwk` as a standalone script or install it as a command-line tool.
+
+**Prerequisites:** Python 3.10 or higher.
+
+### Option 1: Run Script Directly
+Download `qwk.py` and run it directly:
+```bash
+python qwk.py [arguments]
+```
+*Note: This script uses standard libraries, but `tqdm` can be installed for a progress bar.*
+
+### Option 2: Install via Pip
+Install the package to use the `qwk` command:
+```bash
+pip install .
+```
+Then run:
+```bash
+qwk [arguments]
+```
 
 ## Usage
 
-pyqwk exports the entire `messages.dat` file to a more readable format. It can take either the `messages.dat` file or the `.qwk` file:
+pyqwk can process:
+*   **`.qwk` files:** ZIP archives containing message and control data. This is the preferred format as it includes conference names.
+*   **`messages.dat` files:** Raw message data. Conference names will not be available (numbers only).
 
-- `messages.dat`: The indexes aren't needed, but the only downside is that it doesn't have the names of the subboards the messages are from.
-- `.qwk` file: It will use the `CONTROL.DAT` file to retrieve the names of the conferences.
+### Basic Usage
 
-To use pyqwk, follow these steps:
-
-1. Just put qwk.py where you want to run it from. The struct, zipfile, and argparse libraries that it uses are all included in standard python.
-2. Run pyqwk with the path to either the `messages.dat` file or the `.qwk` file. For example:
-
-```
-python qwk.py messages.dat
+Print the content of a QWK file to the screen:
+```bash
+python qwk.py archive.qwk
 ```
 
-or
-
-```
-python qwk.py my_archive.qwk
+Save the output to a file:
+```bash
+python qwk.py archive.qwk -o output.txt
 ```
 
 ### Batch Processing
 
-You can process multiple files at once by providing a list of input files. When processing multiple files, you **must** specify an output directory using `-o` (or `--output`). The output files will be named after the input files, with the extension changed to `.txt`, `.json`, `.xml`, or `.html` depending on the selected format.
-
+To process multiple files, provide a list of inputs and specify an output directory with `-o`:
+```bash
+python qwk.py *.qwk -o output_directory/
 ```
-python qwk.py *.qwk -o output/
-```
-
-For each message, the headers aren't exported in the same order they appear in `messages.dat`; they are rearranged to an order that might make more sense to a modern reader. 
+Output files will use the input filename with the appropriate extension (e.g., `.txt`, `.json`, `.html`).
 
 ## Options
 
-- `--verbose` or `-v`
-If this is set, pyqwk will include extra header details: conference information (even when the name can't be found), message numbers, and reference numbers. (default: off)
+| Option | Description |
+| :--- | :--- |
+| `-o`, `--output` | Output path (file or directory). Defaults to stdout for single files. |
+| `--format` | Output format: `text` (default), `html`, `json`, `xml`. |
+| `-v`, `--verbose` | Include detailed headers (message numbers, references, conference info). |
+| `-p`, `--private` | Include private messages (default: excluded). |
+| `-n`, `--noheader` | Exclude the formatted header from the message body. |
+| `-T`, `--threaded` | Group messages by thread (replies follow parents). |
+| `-t`, `--truncate-signatures` | Cut off content at common signature markers (e.g., `---`). |
+| `-c`, `--cut-quoting` | Remove quoted text (lines starting with `>`, `|`, etc.). |
+| `-b`, `--binaries-removal` | Remove binary blocks (uuencoded, Base64, yEnc). |
+| `-r`, `--redact-pii` | Redact email addresses and phone numbers. |
+| `-i`, `--individual-files` | Save each message as a separate file using its hash as the filename. |
+| `--encoding` | Input character encoding (default: `cp437`). |
 
-- `--private` or `-p`
-If this is set, pyqwk will include messages marked as private. If you are an archivist, you may want to not include personal messages from people who kindly donated their qwk packets. But if you're archiving your own, use `--private` to include them. (default: off)
+## Output Formats
 
-- `--noheader` or `-n`
-If this is set, pyqwk will leave out the message header. (default: off, meaning message headers will be included)
+### Text (Default)
+A plain text format where headers are rearranged for readability.
+*   **Threaded Mode:** Indents replies by 2 spaces per level.
 
-- `--truncate-signatures` or `-t`
-If this is set, pyqwk will truncate each message at the signature. Truncation happens at common signature separators. See the `SIGNATURE_PATTERNS_EXACT` and `SIGNATURE_PATTERNS_STARTSWITH` variables in `qwk.py` for the complete list. (default: off)
+### HTML
+Generates a browsable web page.
+*   **Structure:** Messages are wrapped in `<div class="message">`.
+*   **Threaded Mode:** Replies are nested within `<div class="reply">` elements.
+```bash
+python qwk.py archive.qwk --format html -o output.html
+```
 
-- `--cut-quoting` or `-c`
-If this is set, pyqwk will delete quoted text using common prefixes and quoting characters (such as `>`, `|`, `}`, or the DOS box character `\xb3`). See `RE_QUOTE_PATTERN` and `QUOTE_HEADER_PATTERNS` in `qwk.py` for the exact detection rules. (default: off)
+### JSON and XML
+Generates structured data for automated processing.
 
-- `--binaries-removal` or `-b`
-If this is set, pyqwk will delete binaries (currently removes uuencoded, Base64-encoded, and yEnc blocks). (default: off)
-
-- `--individual-files` or `-i`
-If this is set, pyqwk will put each individual message in its own file according to its SHA1 hash (if you have contributions of qwk packets from multiple people, avoids duplication). (default: off)
-
-- `--redact-pii` or `-r`
-If this is set, pyqwk will redact PII (Personally Identifiable Information), currently only phone numbers and e-mails. (default: off)
-
-## JSON and XML output formats
-
-When `--format json` or `--format xml` is selected, pyqwk emits structured representations of each processed message. The `header` section mirrors the fields from `messages.dat`, and missing numeric fields such as `msgnum` or `refnum` appear as empty strings.
-
-### JSON example
-
+**JSON Example:**
 ```json
 [
     {
@@ -87,70 +105,42 @@ When `--format json` or `--format xml` is selected, pyqwk emits structured repre
             "lognum": 0,
             "nettag": ""
         },
-        "text": "<message body with \r\n newlines>"
+        "text": "<message body>",
+        "depth": 0,
+        "thread_id": "28",
+        "parent_msgnum": null
     }
 ]
 ```
 
-### XML example
-
+**XML Example:**
 ```xml
 <messages>
   <message>
+    <depth>0</depth>
+    <thread_id>28</thread_id>
     <header>
       <status>+</status>
       <msgnum>28</msgnum>
-      <msgdate>10-04-94</msgdate>
-      <msgtime>11:15</msgtime>
-      <msgto>ALL</msgto>
-      <msgfrom>DIVER</msgfrom>
-      <msgsubject>NET/MESSAGE COORDINATION</msgsubject>
-      <msgpassword />
-      <refnum />
-      <numblocks>1</numblocks>
-      <msgflag />
-      <confnum>3</confnum>
-      <lognum>0</lognum>
-      <nettag />
+      ...
     </header>
-    <text>&lt;message body with \r\n newlines&gt;</text>
+    <text>&lt;message body&gt;</text>
   </message>
 </messages>
 ```
 
 In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`.
 
-The `text` field contains the processed message body. It includes the formatted header followed by the body.
-
-The structured `header` section is authoritative for the header values.
-
-## HTML output format
-
-When `--format html` is selected, pyqwk generates an HTML file suitable for browsing. Each message is wrapped in a `<div class="message">`, containing:
-
-- A `<div class="header">` with structured fields for Date, From, To, Subject, and optionally Conference and Message Number.
-- A `<pre class="body">` block containing the escaped message text.
-
-Unlike JSON and XML, the message body in HTML output does not include the ASCII header text, preventing duplication.
-
 ## Known Issues
 
-- Some `.qwk` packets from this era use a ZIP compression method that modern Python doesn't know. To work around this issue:
-
-  - Some archive utilities have a tool to repack archives into modern formats. Some even have a method to do it in bulk.
-  - Unpack the archive and act on `messages.dat`.
-
-- Apparently, there's a password protection option for messages, but pyqwk skips those messages. 
-
-- `cutquoting` is simplistic
-  - Recognizes quoted lines that start with common characters such as `>`, `|`, `}`, or `\xb3` (a DOS box-drawing character), but may not match every quoting style.
-  - Has been updated to catch quoting that has been word wrapped, but still might run into trouble. ie, this will be handled, but more complex cases might not.
-```
-XX> This is actually a pretty long line that has been quoted and then word
-wrap
-XX> has made "wrap" not recognized as part of a quote.
-```
+*   **Compression:** Some older `.qwk` packets use ZIP compression methods not supported by Python's `zipfile` library.
+    *   *Workaround:* Unzip the archive manually and process the `messages.dat` file directly.
+*   **Password Protection:** Messages marked as password-protected are currently skipped.
+*   **Quoting detection:** The `--cut-quoting` feature uses common prefixes (like `>`) but may miss complex or word-wrapped quotes.
 
 ## Contributing
 
-Pull requests are accepted.
+Pull requests are welcome! Please ensure you run tests before submitting:
+```bash
+pytest
+```
