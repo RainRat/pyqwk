@@ -218,17 +218,21 @@ class MessageHeader:
             nettag,
         ) = header_data
 
-        msgnum_text = raw_msgnum.decode(encoding).strip()
+        def decode_clean(b: bytes, strip_whitespace: bool = True) -> str:
+            s = b.decode(encoding).split('\x00')[0]
+            return s.strip() if strip_whitespace else s
+
+        msgnum_text = decode_clean(raw_msgnum)
         msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
 
-        msgdate = raw_msgdate.decode(encoding).strip()
-        msgtime = raw_msgtime.decode(encoding).strip()
-        msgto = raw_msgto.decode(encoding)
-        msgfrom = raw_msgfrom.decode(encoding)
-        msgsubject = raw_msgsubject.decode(encoding)
-        msgpassword = raw_msgpassword.decode(encoding).strip()
+        msgdate = decode_clean(raw_msgdate)
+        msgtime = decode_clean(raw_msgtime)
+        msgto = decode_clean(raw_msgto, strip_whitespace=False)
+        msgfrom = decode_clean(raw_msgfrom, strip_whitespace=False)
+        msgsubject = decode_clean(raw_msgsubject, strip_whitespace=False)
+        msgpassword = decode_clean(raw_msgpassword)
 
-        refnum_text = raw_refnum.decode(encoding).strip()
+        refnum_text = decode_clean(raw_refnum)
         refnum: int | None
         if refnum_text.isdigit():
             refnum_value = int(refnum_text)
@@ -236,7 +240,7 @@ class MessageHeader:
         else:
             refnum = None
 
-        numblocks_text = raw_numblocks.decode(encoding).strip()
+        numblocks_text = decode_clean(raw_numblocks)
         try:
             numblocks = int(numblocks_text)
         except ValueError:
