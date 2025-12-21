@@ -67,6 +67,10 @@ Output files will use the input filename with the appropriate extension (e.g., `
 | `-r`, `--redact-pii` | Redact email addresses and phone numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file using its hash as the filename. |
 | `--encoding` | Input character encoding (default: `cp437`). |
+| `--separator` | Control how messages are separated in text output (`auto`, `none`, `dashes`, `blank`). |
+| `-q`, `--quiet` | Suppress the progress bar. |
+| `-l`, `--loglevel` | Set the logging level (e.g., `DEBUG`, `INFO`). |
+| `--version` | Show the version number. |
 
 ## Output Formats
 
