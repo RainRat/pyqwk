@@ -551,8 +551,6 @@ def test_process_file_preserves_thread_order_in_json(
     parsed_messages = [
         ParsedMessage(
             text="child",
-            is_private=False,
-            is_password=False,
             msgnum=2,
             refnum=1,
             confnum=1,
@@ -560,8 +558,6 @@ def test_process_file_preserves_thread_order_in_json(
         ),
         ParsedMessage(
             text="parent",
-            is_private=False,
-            is_password=False,
             msgnum=1,
             refnum=None,
             confnum=1,
@@ -1047,8 +1043,6 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
     def fake_parse_messages(*args, **kwargs):
         yield ParsedMessage(
             text=text_content,
-            is_private=False,
-            is_password=False,
             msgnum=1,
             refnum=None,
             confnum=1,
