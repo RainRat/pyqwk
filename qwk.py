@@ -144,8 +144,6 @@ class ProcessingSettings:
 @dataclass
 class ParsedMessage:
     text: str
-    is_private: bool
-    is_password: bool
     msgnum: int | None
     refnum: int | None
     confnum: int
@@ -153,6 +151,14 @@ class ParsedMessage:
     depth: int = 0
     thread_id: str | None = None
     parent_msgnum: int | None = None
+
+    @property
+    def is_private(self) -> bool:
+        return self.header.is_private
+
+    @property
+    def is_password(self) -> bool:
+        return self.header.is_password
 
 
 @dataclass
@@ -183,6 +189,14 @@ class MessageHeader:
     confnum: int
     lognum: int
     nettag: str
+
+    @property
+    def is_private(self) -> bool:
+        return self.status not in (' ', '-')
+
+    @property
+    def is_password(self) -> bool:
+        return self.status in ('%', '^', '!', '#', '$')
 
     @property
     def as_dict(self) -> dict[str, Any]:
@@ -265,18 +279,12 @@ class MessageHeader:
 
         header._numblocks_raw = numblocks_text  # type: ignore[attr-defined]
         message_type = header.status
-        is_password = False
-        is_private = True
-        if message_type in ['+', '*', '~', '`']:
-            pass
-        elif message_type in ['%', '^', '!', '#', '$']:
-            is_password = True
-        elif message_type in [' ', '-']:
-            is_private = False
-        else:
+
+        valid_status_chars = {'+', '*', '~', '`', '%', '^', '!', '#', '$', ' ', '-'}
+        if message_type not in valid_status_chars:
             raise InvalidMessageTypeError(message_type)
 
-        return header, is_private, is_password
+        return header, header.is_private, header.is_password
 
     def format_text(
         self,
@@ -459,8 +467,6 @@ def parse_messages(
     """
     blocks_remaining = 0
     message_buffer = ''
-    is_private = True
-    is_password = False
     current_msgnum: int | None = None
     current_refnum: int | None = None
     current_confnum = 0
@@ -479,7 +485,7 @@ def parse_messages(
         if progress_bar is not None:
             progress_bar.update(len(record))
         if blocks_remaining == 0:
-            header, is_private, is_password = MessageHeader.from_bytes(record, encoding)
+            header, _, _ = MessageHeader.from_bytes(record, encoding)
             current_msgnum = header.msgnum
             current_refnum = header.refnum
             current_confnum = header.confnum
@@ -504,8 +510,6 @@ def parse_messages(
             if blocks_remaining == 0 and header is not None:
                 yield ParsedMessage(
                     text=message_buffer,
-                    is_private=is_private,
-                    is_password=is_password,
                     msgnum=current_msgnum,
                     refnum=current_refnum,
                     confnum=current_confnum,
