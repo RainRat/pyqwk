@@ -738,10 +738,6 @@ def _write_json(
 XML_INVALID_CHAR_PATTERN = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
 
 
-def _sanitize_xml_string(s: str) -> str:
-    return XML_INVALID_CHAR_PATTERN.sub('', s)
-
-
 def _write_xml(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
@@ -760,10 +756,10 @@ def _write_xml(
         header_data = message.header.as_dict
         for key, value in header_data.items():
             child = ET.SubElement(header_element, key)
-            child.text = _sanitize_xml_string(str(value))
+            child.text = XML_INVALID_CHAR_PATTERN.sub('', str(value))
 
         text_element = ET.SubElement(msg_element, 'text')
-        text_element.text = _sanitize_xml_string(message.text)
+        text_element.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
 
     ET.indent(root, space='  ')
     xml_bytes = ET.tostring(root, encoding='utf-8')

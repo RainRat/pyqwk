@@ -26,7 +26,7 @@ from qwk import (
     parse_messages,
     process_message,
     process_file,
-    _sanitize_xml_string,
+    _write_xml,
     _write_html,
     main,
 )
@@ -728,16 +728,27 @@ def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
     assert "&lt;b&gt;Hello &amp; welcome&gt;&lt;/b&gt;" in content
 
 
-def test_sanitize_xml_string_preserves_whitespace_and_drops_invalid() -> None:
-    raw_text = "Line1\tLine2\nLine3\r\n\x1b[31mRed\x00"
+def test_xml_output_sanitizes_invalid_chars(tmp_path: Path) -> None:
+    header = MessageHeader(
+        status=' ', msgnum=1, msgdate='', msgtime='', msgto='', msgfrom='',
+        msgsubject='Subject\x00Invalid', msgpassword='', refnum=None, numblocks=1,
+        msgflag=' ', confnum=1, lognum=1, nettag=''
+    )
+    # \x1b is ESC, invalid in XML 1.0
+    text = "Valid text\x1bInvalid"
+    message = ProcessedMessage(
+        text=text, msgnum=1, refnum=None, confnum=1, header=header
+    )
 
-    sanitized = _sanitize_xml_string(raw_text)
+    output_path = tmp_path / "sanitized.xml"
+    _write_xml([message], str(output_path))
 
-    assert "\t" in sanitized
-    assert "\n" in sanitized
-    assert "\r" in sanitized
-    assert "\x1b" not in sanitized
-    assert "\x00" not in sanitized
+    content = output_path.read_text(encoding="utf-8")
+
+    assert "Valid text" in content
+    assert "Invalid" in content # The word "Invalid"
+    assert "\x1b" not in content
+    assert "\x00" not in content
 
 
 def test_process_multiple_files_creates_multiple_outputs(
