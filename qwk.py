@@ -921,9 +921,9 @@ def main() -> None:
     parser.add_argument('-n', '--noheader', help='leave out message header', action='store_true')
     parser.add_argument('-t', '--truncate-signatures', dest='truncatesignatures', help='truncate at common signature lines (e.g., "---", " * ")', action='store_true')
     parser.add_argument('-c', '--cut-quoting', dest='cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
-    parser.add_argument('-i', '--individual-files', dest='individualfiles', help='output individual files (output_path will be treated as a directory)', action='store_true')
-    parser.add_argument('-T', '--threaded', help='group messages by thread when exporting', action='store_true')
-    parser.add_argument('-b', '--binaries-removal', dest='binariesremoval', help='delete binaries (currently removes uuencoded and Base64-encoded blocks)', action='store_true')
+    parser.add_argument('-i', '--individual-files', dest='individualfiles', help='output individual files (incompatible with --threaded)', action='store_true')
+    parser.add_argument('-T', '--threaded', help='group messages by thread when exporting (incompatible with --individual-files)', action='store_true')
+    parser.add_argument('-b', '--binaries-removal', dest='binariesremoval', help='delete binaries (removes uuencoded, Base64, and yEnc blocks)', action='store_true')
     parser.add_argument('-r', '--redact-pii', dest='redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
     parser.add_argument('-q', '--quiet', help='suppress progress output', action='store_true')
     parser.add_argument(
