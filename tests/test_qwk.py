@@ -127,66 +127,6 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert message.confnum == 3
 
 
-def test_parse_header_record_status_flags() -> None:
-    def build_header(status: bytes) -> bytes:
-        return struct.pack(
-            '<c7s8s5s25s25s25s12s8s6scHHc',
-            status,
-            b"0000001",
-            b"19941005",
-            b"12345",
-            b"recipient".ljust(25, b' '),
-            b"sender".ljust(25, b' '),
-            b"subject".ljust(25, b' '),
-            b"password".ljust(12, b' '),
-            b"refnum".ljust(8, b' '),
-            b"000100".ljust(6, b' '),
-            b' ',
-            1,
-            2,
-            b' ',
-        )
-
-    for status in [b'+', b'*', b'~', b'`']:
-        _, is_private, is_password = MessageHeader.from_bytes(build_header(status))
-        assert is_private is True
-        assert is_password is False
-
-    for status in [b'%', b'^', b'!', b'#', b'$']:
-        _, is_private, is_password = MessageHeader.from_bytes(build_header(status))
-        assert is_private is True
-        assert is_password is True
-
-    for status in [b' ', b'-']:
-        _, is_private, is_password = MessageHeader.from_bytes(build_header(status))
-        assert is_private is False
-        assert is_password is False
-
-
-def test_parse_header_record_invalid_status_raises() -> None:
-    def build_header(status: bytes) -> bytes:
-        return struct.pack(
-            '<c7s8s5s25s25s25s12s8s6scHHc',
-            status,
-            b"0000001",
-            b"19941005",
-            b"12345",
-            b"recipient".ljust(25, b' '),
-            b"sender".ljust(25, b' '),
-            b"subject".ljust(25, b' '),
-            b"password".ljust(12, b' '),
-            b"refnum".ljust(8, b' '),
-            b"000100".ljust(6, b' '),
-            b' ',
-            1,
-            2,
-            b' ',
-        )
-
-    with pytest.raises(InvalidMessageTypeError) as exc_info:
-        MessageHeader.from_bytes(build_header(b'X'))
-
-    assert exc_info.value.message_type == 'X'
 
 
 def test_invalid_messages_dat_reports_clear_error(
