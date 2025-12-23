@@ -8,14 +8,14 @@ You can run `pyqwk` as a standalone script or install it as a command-line tool.
 
 **Prerequisites:** Python 3.10 or higher.
 
-### Option 1: Run Script Directly
+### Run as a Script
 Download `qwk.py` and run it directly:
 ```bash
 python qwk.py [arguments]
 ```
 *Note: This script uses standard libraries, but `tqdm` can be installed for a progress bar.*
 
-### Option 2: Install via Pip
+### Install via Pip
 Install the package to use the `qwk` command:
 ```bash
 pip install .
@@ -60,12 +60,12 @@ Output files will use the input filename with the appropriate extension (e.g., `
 | `-v`, `--verbose` | Include detailed headers (message numbers, references, conference info). |
 | `-p`, `--private` | Include private messages (default: excluded). |
 | `-n`, `--noheader` | Exclude the formatted header from the message body. |
-| `-T`, `--threaded` | Group messages by thread (replies follow parents). |
+| `-T`, `--threaded` | Group messages by thread (replies follow parents). **Incompatible with `-i`.** |
 | `-t`, `--truncate-signatures` | Cut off content at common signature markers (e.g., `---`). |
 | `-c`, `--cut-quoting` | Remove quoted text (lines starting with `>`, `|`, etc.). |
 | `-b`, `--binaries-removal` | Remove binary blocks (uuencoded, Base64, yEnc). |
 | `-r`, `--redact-pii` | Redact email addresses and phone numbers. |
-| `-i`, `--individual-files` | Save each message as a separate file using its hash as the filename. |
+| `-i`, `--individual-files` | Save each message as a separate file using its hash as the filename. **Incompatible with `-T`.** |
 | `--encoding` | Input character encoding (default: `cp437`). |
 | `--separator` | Control how messages are separated in text output (`auto`, `none`, `dashes`, `blank`). |
 | `-q`, `--quiet` | Suppress the progress bar. |
@@ -135,11 +135,12 @@ Generates structured data for automated processing.
 
 In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`.
 
-## Known Issues
+## Limitations & Troubleshooting
 
+*   **Threading vs. Individual Files:** You cannot use `--threaded` (`-T`) and `--individual-files` (`-i`) together. The tool will show an error if you try to combine them.
+*   **Password Protection:** For security and privacy, password-protected messages are always skipped.
 *   **Compression:** Some older `.qwk` packets use ZIP compression methods not supported by Python's `zipfile` library.
     *   *Workaround:* Unzip the archive manually and process the `messages.dat` file directly.
-*   **Password Protection:** Messages marked as password-protected are currently skipped.
 *   **Quoting detection:** The `--cut-quoting` feature uses common prefixes (like `>`) but may miss complex or word-wrapped quotes.
 
 ## Contributing
