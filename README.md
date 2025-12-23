@@ -4,26 +4,33 @@ pyqwk is a Python tool that converts `.QWK` mail archives into readable formats 
 
 ## Installation
 
-You can run `pyqwk` as a standalone script or install it as a command-line tool.
+You can use `pyqwk` in two ways: running the script directly or installing it as a tool.
 
-**Prerequisites:** Python 3.10 or higher.
+**Requirements:** Python 3.10 or newer.
 
-### Run as a Script
-Download `qwk.py` and run it directly:
-```bash
-python qwk.py [arguments]
-```
-*Note: This script uses standard libraries, but `tqdm` can be installed for a progress bar.*
+### Option 1: Run Without Installing (Simplest)
+1.  Download the `qwk.py` file.
+2.  Open your terminal or command prompt.
+3.  Run the script:
+    ```bash
+    python qwk.py [arguments]
+    ```
 
-### Install via Pip
-Install the package to use the `qwk` command:
-```bash
-pip install .
-```
-Then run:
-```bash
-qwk [arguments]
-```
+*Tip: If you want a progress bar, install the optional `tqdm` library: `pip install tqdm`.*
+
+### Option 2: Install as a Command
+If you want to use the `qwk` command from anywhere:
+
+1.  Clone this repository or download the source code.
+2.  Open your terminal in the `pyqwk` folder.
+3.  Install the tool:
+    ```bash
+    pip install .
+    ```
+4.  Run it using the `qwk` command:
+    ```bash
+    qwk [arguments]
+    ```
 
 ## Usage
 
@@ -33,12 +40,15 @@ pyqwk can process:
 
 ### Basic Usage
 
-Print the content of a QWK file to the screen:
+**Print to screen:**
+Read a QWK file and show it in the terminal:
 ```bash
 python qwk.py archive.qwk
 ```
+*(If you installed the tool, replace `python qwk.py` with `qwk`)*
 
-Save the output to a file:
+**Save to file:**
+Convert an archive and save the result:
 ```bash
 python qwk.py archive.qwk -o output.txt
 ```
