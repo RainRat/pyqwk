@@ -161,16 +161,8 @@ class ParsedMessage:
         return self.header.is_password
 
 
-@dataclass
-class ProcessedMessage:
-    text: str
-    msgnum: int | None
-    refnum: int | None
-    confnum: int
-    header: "MessageHeader"
-    depth: int = 0
-    thread_id: str | None = None
-    parent_msgnum: int | None = None
+# Aliases for backward compatibility
+ProcessedMessage = ParsedMessage
 
 
 @dataclass
@@ -631,7 +623,7 @@ def process_file(
             raise ValueError('The output path must be a directory when using individual files.')
         os.makedirs(output_dir, exist_ok=True)
     file_data, board_dict = load_data(input_path, logger, settings.encoding)
-    collected_messages: list[ProcessedMessage] = []
+    collected_messages: list[ParsedMessage] = []
 
     separator_mode = settings.separator
     if separator_mode == 'auto':
@@ -692,12 +684,9 @@ def process_file(
                         f.write(encoded_buffer)
                 else:
                     collected_messages.append(
-                        ProcessedMessage(
+                        replace(
+                            parsed_message,
                             text=processed_buffer,
-                            msgnum=parsed_message.msgnum,
-                            refnum=parsed_message.refnum,
-                            confnum=parsed_message.confnum,
-                            header=parsed_message.header,
                         )
                     )
 
