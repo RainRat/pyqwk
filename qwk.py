@@ -592,7 +592,9 @@ def _create_progress_bar(total: int, quiet: bool) -> Any:
             desc='Processing messages',
         )
     except ImportError:  # pragma: no cover - tqdm is optional
-        logging.getLogger(__name__).info('Install tqdm to enable progress reporting.')
+        if not getattr(_create_progress_bar, "_logged_missing_tqdm", False):
+            logging.getLogger(__name__).info('Install tqdm to enable progress reporting.')
+            setattr(_create_progress_bar, "_logged_missing_tqdm", True)
         return nullcontext()
 
 
