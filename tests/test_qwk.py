@@ -120,8 +120,8 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert message.text == expected_body
     header_text = message.header.format_text(board_dict, verbose=False)
     assert header_text + message.text == expected_message
-    assert message.is_private is False
-    assert message.is_password is False
+    assert message.header.is_private is False
+    assert message.header.is_password is False
     assert message.msgnum == 28
     assert message.refnum is None
     assert message.confnum == 3
@@ -432,8 +432,8 @@ def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logg
     messages = list(parse_messages(file_data, progress_bar=None, encoding='latin1'))
 
     assert len(messages) == 2
-    assert {message.is_private for message in messages} == {False}
-    assert {message.is_password for message in messages} == {False}
+    assert {message.header.is_private for message in messages} == {False}
+    assert {message.header.is_password for message in messages} == {False}
     assert all(
         "Conference: Net140.Tech"
         in message.header.format_text(board_dict, verbose=False)

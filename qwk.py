@@ -152,13 +152,6 @@ class ParsedMessage:
     thread_id: str | None = None
     parent_msgnum: int | None = None
 
-    @property
-    def is_private(self) -> bool:
-        return self.header.is_private
-
-    @property
-    def is_password(self) -> bool:
-        return self.header.is_password
 
 
 # Aliases for backward compatibility
@@ -645,7 +638,10 @@ def process_file(
             progress_bar,
             settings.encoding,
         ):
-            if (settings.private is True or parsed_message.is_private is False) and parsed_message.is_password is False:
+            if (
+                (settings.private is True or parsed_message.header.is_private is False)
+                and parsed_message.header.is_password is False
+            ):
                 processed_buffer = process_message(
                     parsed_message.text,
                     settings.truncate_signatures,
