@@ -892,40 +892,39 @@ def process_multiple_files(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_paths', help='One or more QWK packets or messages.dat files to process.', nargs='+')
+    parser.add_argument('input_paths', help='The QWK archive files or messages.dat files you want to read.', nargs='+')
     parser.add_argument(
         '-o',
         '--output',
         dest='output_path',
-        help='Output path (file or directory). If omitted, prints to console (single input only).',
+        help='Where to save the results (filename or folder). Defaults to showing on screen.',
     )
     parser.add_argument(
         '-v',
         '--verbose',
         help=(
-            'include additional header details such as conference information, '
-            'message numbers, and reference numbers'
+            'Show extra details like conference names and message numbers.'
         ),
         action='store_true',
     )
-    parser.add_argument('-p', '--private', help='export messages marked private', action='store_true')
-    parser.add_argument('-n', '--noheader', help='leave out message header', action='store_true')
-    parser.add_argument('-t', '--truncate-signatures', dest='truncatesignatures', help='truncate at common signature lines (e.g., "---", " * ")', action='store_true')
-    parser.add_argument('-c', '--cut-quoting', dest='cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
-    parser.add_argument('-i', '--individual-files', dest='individualfiles', help='output individual files (incompatible with --threaded)', action='store_true')
-    parser.add_argument('-T', '--threaded', help='group messages by thread when exporting (incompatible with --individual-files)', action='store_true')
-    parser.add_argument('-b', '--binaries-removal', dest='binariesremoval', help='delete binaries (removes uuencoded, Base64, and yEnc blocks)', action='store_true')
-    parser.add_argument('-r', '--redact-pii', dest='redactpii', help='redact PII (currently e-mail addresses and phone numbers)', action='store_true')
-    parser.add_argument('-q', '--quiet', help='suppress progress output', action='store_true')
+    parser.add_argument('-p', '--private', help="Include messages marked as 'Private'.", action='store_true')
+    parser.add_argument('-n', '--noheader', help='Do not include the message info (header) in the body text.', action='store_true')
+    parser.add_argument('-t', '--truncate-signatures', dest='truncatesignatures', help="Stop reading when a common signature (like '---') is found.", action='store_true')
+    parser.add_argument('-c', '--cut-quoting', dest='cutquoting', help="Remove text quoted from previous messages (lines starting with '>').", action='store_true')
+    parser.add_argument('-i', '--individual-files', dest='individualfiles', help='Save each message as its own separate file. (Cannot use with --threaded).', action='store_true')
+    parser.add_argument('-T', '--threaded', help='Group replies with their original messages. (Cannot use with --individual-files).', action='store_true')
+    parser.add_argument('-b', '--binaries-removal', dest='binariesremoval', help='Remove binary data attachments (like images or programs).', action='store_true')
+    parser.add_argument('-r', '--redact-pii', dest='redactpii', help='Hide personal info like email addresses and phone numbers.', action='store_true')
+    parser.add_argument('-q', '--quiet', help='Do not show the progress bar.', action='store_true')
     parser.add_argument(
         '-l',
         '--loglevel',
-        help='Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR)',
+        help='Control how much technical detail to display (DEBUG, INFO, WARNING, ERROR).',
         default='INFO',
     )
     parser.add_argument(
         '--format',
-        help='Set the output format (text, json, xml, html)',
+        help='Choose the output format: text, json, xml, or html.',
         default='text',
         choices=['text', 'json', 'xml', 'html'],
     )
@@ -933,7 +932,7 @@ def main() -> None:
         '--separator',
         choices=['auto', 'none', 'dashes', 'blank'],
         default='auto',
-        help='Separator style between messages (auto, none, dashes, blank)',
+        help='Choose how to separate messages in the output.',
     )
     parser.add_argument(
         '--encoding',
