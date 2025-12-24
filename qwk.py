@@ -910,6 +910,11 @@ def main() -> None:
     )
     parser.add_argument('-p', '--private', help='export messages marked private', action='store_true')
     parser.add_argument('-n', '--noheader', help='leave out message header', action='store_true')
+    parser.add_argument(
+        '--clean',
+        help='enable all content cleaning options (-t, -c, -b)',
+        action='store_true'
+    )
     parser.add_argument('-t', '--truncate-signatures', dest='truncatesignatures', help='truncate at common signature lines (e.g., "---", " * ")', action='store_true')
     parser.add_argument('-c', '--cut-quoting', dest='cutquoting', help='delete quoted text (that uses ">" as quoting character)', action='store_true')
     parser.add_argument('-i', '--individual-files', dest='individualfiles', help='output individual files (incompatible with --threaded)', action='store_true')
@@ -980,11 +985,11 @@ def main() -> None:
         verbose=args.verbose,
         private=args.private,
         no_header=args.noheader,
-        truncate_signatures=args.truncatesignatures,
-        cut_quoting=args.cutquoting,
+        truncate_signatures=args.truncatesignatures or args.clean,
+        cut_quoting=args.cutquoting or args.clean,
         individual_files=args.individualfiles,
         threaded=args.threaded,
-        binaries_removal=args.binariesremoval,
+        binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
         quiet=args.quiet,
         format=args.format,
