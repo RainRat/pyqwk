@@ -63,7 +63,7 @@ class TestMessageHeaderParsing:
             refnum=b'456\x00\x00\x00\x00\x00'
         )
 
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
 
         # Should parse number correctly
         assert header.msgnum == 123
@@ -92,59 +92,59 @@ class TestMessageHeaderParsing:
     def test_refnum_parsing(self):
         # "0" should be None
         record = build_header_bytes(refnum=b"0".ljust(8, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.refnum is None
 
         # "000" should be None
         record = build_header_bytes(refnum=b"000".ljust(8, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.refnum is None
 
         # "123" should be 123
         record = build_header_bytes(refnum=b"123".ljust(8, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.refnum == 123
 
         # "garbage" should be None
         record = build_header_bytes(refnum=b"garbage".ljust(8, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.refnum is None
 
     def test_numblocks_parsing(self):
         # Valid integer
         record = build_header_bytes(numblocks=b"5".ljust(6, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.numblocks == 5
         assert header._numblocks_raw == "5"
 
         # Invalid integer -> None
         record = build_header_bytes(numblocks=b"NaN".ljust(6, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.numblocks is None
         assert header._numblocks_raw == "NaN"
 
     def test_msgnum_parsing_invalid(self):
         # Invalid integer -> None
         record = build_header_bytes(msgnum=b"NaN".ljust(7, b' '))
-        header, _, _ = MessageHeader.from_bytes(record)
+        header = MessageHeader.from_bytes(record)
         assert header.msgnum is None
 
     def test_status_flags_parsing(self) -> None:
         """Verify that status bytes correctly map to private/password flags."""
         for status in [b'+', b'*', b'~', b'`']:
-            _, is_private, is_password = MessageHeader.from_bytes(build_header_bytes(status=status))
-            assert is_private is True
-            assert is_password is False
+            header = MessageHeader.from_bytes(build_header_bytes(status=status))
+            assert header.is_private is True
+            assert header.is_password is False
 
         for status in [b'%', b'^', b'!', b'#', b'$']:
-            _, is_private, is_password = MessageHeader.from_bytes(build_header_bytes(status=status))
-            assert is_private is True
-            assert is_password is True
+            header = MessageHeader.from_bytes(build_header_bytes(status=status))
+            assert header.is_private is True
+            assert header.is_password is True
 
         for status in [b' ', b'-']:
-            _, is_private, is_password = MessageHeader.from_bytes(build_header_bytes(status=status))
-            assert is_private is False
-            assert is_password is False
+            header = MessageHeader.from_bytes(build_header_bytes(status=status))
+            assert header.is_private is False
+            assert header.is_password is False
 
     def test_invalid_status_raises(self) -> None:
         with pytest.raises(InvalidMessageTypeError) as exc_info:
