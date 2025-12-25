@@ -11,9 +11,9 @@ from qwk import ProcessedMessage, MessageHeader
 
 @pytest.fixture
 def message_factory():
-    def _make_msg(msgnum, refnum, subject, confnum=1, text="Body\n"):
+    def _make_msg(msgnum, refnum, subject, confnum=1, text="Body\n", status=" "):
         header = MessageHeader(
-            status=" ",
+            status=status,
             msgnum=msgnum,
             msgdate="",
             msgtime="",
