@@ -911,6 +911,7 @@ def main() -> None:
     parser.add_argument('-T', '--threaded', help='Group replies with their original messages. (Cannot use with --individual-files).', action='store_true')
     parser.add_argument('-b', '--binaries-removal', dest='binariesremoval', help='Remove binary data attachments (like images or programs).', action='store_true')
     parser.add_argument('-r', '--redact-pii', dest='redactpii', help='Hide personal info like email addresses and phone numbers.', action='store_true')
+    parser.add_argument('--clean', help='Enable all content cleaning options: truncate signatures, cut quoting, and remove binaries.', action='store_true')
     parser.add_argument('-q', '--quiet', help='Do not show the progress bar.', action='store_true')
     parser.add_argument(
         '-l',
@@ -975,11 +976,11 @@ def main() -> None:
         verbose=args.verbose,
         private=args.private,
         no_header=args.noheader,
-        truncate_signatures=args.truncatesignatures,
-        cut_quoting=args.cutquoting,
+        truncate_signatures=args.truncatesignatures or args.clean,
+        cut_quoting=args.cutquoting or args.clean,
         individual_files=args.individualfiles,
         threaded=args.threaded,
-        binaries_removal=args.binariesremoval,
+        binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
         quiet=args.quiet,
         format=args.format,
