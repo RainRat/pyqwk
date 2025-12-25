@@ -99,6 +99,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         separator="auto",
         loglevel="INFO",
         encoding="cp437",
+        clean=False,
     )
     base.update(overrides)
     return argparse.Namespace(**base)
@@ -1058,3 +1059,57 @@ def test_process_multiple_files_handles_controldat_error(
     had_errors = qwk.process_multiple_files(input_paths, str(output_dir), settings, logger)
 
     assert had_errors is True
+
+
+def test_clean_argument_sets_cleaning_flags(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path
+) -> None:
+    # Test that --clean sets truncatesignatures, cutquoting, and binariesremoval to True
+    namespace = _make_cli_namespace(
+        input_paths=[str(baseline_path)],
+        clean=True
+    )
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    # Mock process_file to check settings
+    captured_settings = []
+    def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+        captured_settings.append(settings)
+
+    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+
+    main()
+
+    assert len(captured_settings) == 1
+    settings = captured_settings[0]
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is True
+    assert settings.binaries_removal is True
+
+
+def test_clean_argument_does_not_override_existing_flags_negatively(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path
+) -> None:
+    # Verify that if clean is False, flags can still be set individually
+    namespace = _make_cli_namespace(
+        input_paths=[str(baseline_path)],
+        clean=False,
+        truncatesignatures=True,
+        cutquoting=False,
+        binariesremoval=True
+    )
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    captured_settings = []
+    def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+        captured_settings.append(settings)
+
+    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+
+    main()
+
+    assert len(captured_settings) == 1
+    settings = captured_settings[0]
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is False
+    assert settings.binaries_removal is True
