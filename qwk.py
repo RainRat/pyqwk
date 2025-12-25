@@ -192,7 +192,7 @@ class MessageHeader:
         return result
 
     @classmethod
-    def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> tuple["MessageHeader", bool, bool]:
+    def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> "MessageHeader":
         try:
             header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
         except (struct.error, ValueError) as error:
@@ -269,7 +269,7 @@ class MessageHeader:
         if message_type not in valid_status_chars:
             raise InvalidMessageTypeError(message_type)
 
-        return header, header.is_private, header.is_password
+        return header
 
     def format_text(
         self,
@@ -470,7 +470,7 @@ def parse_messages(
         if progress_bar is not None:
             progress_bar.update(len(record))
         if blocks_remaining == 0:
-            header, _, _ = MessageHeader.from_bytes(record, encoding)
+            header = MessageHeader.from_bytes(record, encoding)
             current_msgnum = header.msgnum
             current_refnum = header.refnum
             current_confnum = header.confnum
