@@ -94,6 +94,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         threaded=False,
         binariesremoval=False,
         redactpii=False,
+        clean=False,
         quiet=False,
         format="text",
         separator="auto",
@@ -1058,3 +1059,28 @@ def test_process_multiple_files_handles_controldat_error(
     had_errors = qwk.process_multiple_files(input_paths, str(output_dir), settings, logger)
 
     assert had_errors is True
+
+def test_clean_flag_activates_cleaning_options(
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path
+) -> None:
+    namespace = _make_cli_namespace(
+        input_paths=[str(baseline_path)],
+        clean=True,
+    )
+    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+
+    captured_settings = []
+
+    def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+        captured_settings.append(settings)
+
+    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+
+    main()
+
+    assert len(captured_settings) == 1
+    settings = captured_settings[0]
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is True
+    assert settings.binaries_removal is True
+    assert settings.redact_pii is False
