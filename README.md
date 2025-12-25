@@ -55,17 +55,17 @@ python qwk.py archive.qwk -o output.txt
 
 ### Batch Processing
 
-To process multiple files, provide a list of inputs and specify an output directory with `-o`:
+To process multiple files, provide a list of inputs. You **must** specify an output folder using `-o`:
 ```bash
 python qwk.py *.qwk -o output_directory/
 ```
-Output files will use the input filename with the appropriate extension (e.g., `.txt`, `.json`, `.html`).
+The tool will save each result in that folder, using the original filename with the correct extension (e.g., `.txt`, `.json`, `.html`).
 
 ## Options
 
 | Option | Description |
 | :--- | :--- |
-| `-o`, `--output` | Output path (file or directory). Defaults to stdout for single files. |
+| `-o`, `--output` | Output path (file or folder). Defaults to screen for single files. Must be a folder for multiple files. |
 | `--format` | Output format: `text` (default), `html`, `json`, `xml`. |
 | `-v`, `--verbose` | Include detailed headers (message numbers, references, conference info). |
 | `-p`, `--private` | Include private messages (default: excluded). |
