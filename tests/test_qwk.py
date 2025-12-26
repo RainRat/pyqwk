@@ -202,7 +202,7 @@ def test_process_file_requires_directory_for_individual_files(
             logger=logger,
         )
 
-    assert "directory" in str(exc_info.value)
+    assert "folder" in str(exc_info.value)
 
 
 def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
@@ -745,7 +745,7 @@ def test_cli_requires_output_directory_for_multiple_inputs(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Output directory is required when processing multiple files." in stderr
+    assert "Output folder is required when processing multiple files." in stderr
 
 
 def test_cli_treats_multiple_positional_args_as_inputs(
@@ -764,7 +764,7 @@ def test_cli_treats_multiple_positional_args_as_inputs(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Output directory is required when processing multiple files." in stderr
+    assert "Output folder is required when processing multiple files." in stderr
 
 
 def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
@@ -788,7 +788,7 @@ def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Output directory is required when processing multiple files." in stderr
+    assert "Output folder is required when processing multiple files." in stderr
 
 
 def test_cli_rejects_invalid_log_level(
