@@ -334,6 +334,16 @@ class InvalidMessageTypeError(Exception):
         self.message_type = message_type
 
 
+PROCESSING_EXCEPTIONS = (
+    MessagesDatFormatError,
+    ControlDatFormatError,
+    InvalidMessageTypeError,
+    FileNotFoundError,
+    zipfile.BadZipFile,
+    IOError,
+)
+
+
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray, dict[int, str]]:
@@ -873,14 +883,7 @@ def process_multiple_files(
                 output_path=output_path,
             )
             process_file(input_path, per_file_settings, logger)
-        except (
-            MessagesDatFormatError,
-            ControlDatFormatError,
-            InvalidMessageTypeError,
-            FileNotFoundError,
-            zipfile.BadZipFile,
-            IOError,
-        ) as error:
+        except PROCESSING_EXCEPTIONS as error:
             logger.error("Error processing file %s: %s", input_path, error)
             had_errors = True
     return had_errors
@@ -997,14 +1000,7 @@ def main() -> None:
     else:
         try:
             process_file(input_paths[0], settings, logger)
-        except (
-            MessagesDatFormatError,
-            ControlDatFormatError,
-            InvalidMessageTypeError,
-            FileNotFoundError,
-            zipfile.BadZipFile,
-            IOError,
-        ) as error:
+        except PROCESSING_EXCEPTIONS as error:
             logger.error(error)
             sys.exit(1)
 
