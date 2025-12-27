@@ -210,7 +210,7 @@ def test_process_file_requires_directory_for_individual_files(
 def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
     process_file(
         str(baseline_path),
-        _make_settings(),
+        _make_settings(quiet=True),
         logger=logger,
     )
 
