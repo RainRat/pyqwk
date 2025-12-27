@@ -3,13 +3,24 @@ import logging
 import pytest
 from pathlib import Path
 from contextlib import nullcontext
+import importlib
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from qwk import _create_progress_bar
 
-def test_create_progress_bar_logs_missing_tqdm_only_once(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+@pytest.fixture
+def clean_tqdm():
+    """Ensure tqdm is clean in sys.modules before and after test."""
+    original = sys.modules.get("tqdm")
+    yield
+    if original is None:
+        sys.modules.pop("tqdm", None)
+    else:
+        sys.modules["tqdm"] = original
+
+def test_create_progress_bar_logs_missing_tqdm_only_once(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, clean_tqdm) -> None:
     # Simulate tqdm missing by mocking the import
     monkeypatch.setitem(sys.modules, "tqdm", None)
 
@@ -31,9 +42,18 @@ def test_progress_bar_quiet_mode() -> None:
     bar = _create_progress_bar(total=100, quiet=True)
     assert isinstance(bar, nullcontext)
 
-def test_progress_bar_active() -> None:
+def test_progress_bar_active(clean_tqdm) -> None:
     """Verify that a real progress bar is returned when not quiet and tqdm is installed."""
-    # This assumes tqdm is installed in the test environment (which we did)
+    # Ensure sys.modules is clean (handled by fixture, but double check)
+    if "tqdm" in sys.modules and sys.modules["tqdm"] is None:
+        del sys.modules["tqdm"]
+
+    try:
+        import tqdm
+    except ImportError:
+        # If tqdm cannot be imported, we cannot test the active progress bar.
+        pytest.skip("tqdm is not importable in the test environment.")
+
     bar = _create_progress_bar(total=100, quiet=False)
     assert not isinstance(bar, nullcontext)
     # Check for tqdm interface
