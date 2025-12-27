@@ -497,6 +497,14 @@ def parse_messages(
                 continue
 
             blocks_remaining = header.numblocks - 1
+            if blocks_remaining == 0:
+                yield ParsedMessage(
+                    text="",
+                    msgnum=current_msgnum,
+                    refnum=current_refnum,
+                    confnum=current_confnum,
+                    header=header,
+                )
         else:
             temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
             if blocks_remaining == 1:
@@ -1038,8 +1046,8 @@ def main() -> None:
     format_group = parser.add_argument_group('Formatting & Structure')
     format_group.add_argument(
         '--format',
-        help='Choose the output format: text, json, xml, or html.',
-        default='text',
+        help='Choose the output format: text, json, xml, or html. (Default: auto-detected from output filename, or text)',
+        default=None,
         choices=['text', 'json', 'xml', 'html'],
     )
     format_group.add_argument(
@@ -1123,6 +1131,22 @@ def main() -> None:
         output_mode = 'stdout' if not output_path else 'file'
         resolved_output_path = output_path
 
+    # Auto-detect format if not specified
+    output_format = args.format
+    if output_format is None:
+        if output_path and output_mode == 'file':
+            ext = os.path.splitext(output_path)[1].lower()
+            if ext == '.json':
+                output_format = 'json'
+            elif ext == '.xml':
+                output_format = 'xml'
+            elif ext == '.html':
+                output_format = 'html'
+            else:
+                output_format = 'text'
+        else:
+            output_format = 'text'
+
     settings = ProcessingSettings(
         verbose=args.verbose,
         private=args.private,
@@ -1134,7 +1158,7 @@ def main() -> None:
         binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
         quiet=args.quiet,
-        format=args.format,
+        format=output_format,
         separator=args.separator,
         output_mode=output_mode,
         output_path=resolved_output_path,
