@@ -889,6 +889,61 @@ def _write_text_output(content: str, output_path: str | None, *, encoding: str =
             f.write(content)
 
 
+def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+    """Show a summary of the QWK packet contents."""
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            print(f"File: {input_path}")
+
+            if len(file_data) < BLOCK_SIZE:
+                print("  Invalid or empty file.")
+                continue
+
+            first_record = file_data[0:BLOCK_SIZE]
+            if first_record[0:9] != b'Produced ':
+                print("  Not a valid QWK messages.dat file.")
+                continue
+
+            total_messages = 0
+            conference_counts = defaultdict(int)
+
+            blocks_remaining = 0
+
+            i = BLOCK_SIZE
+            while i < len(file_data):
+                record = file_data[i:i + BLOCK_SIZE]
+                if blocks_remaining == 0:
+                    try:
+                        header = MessageHeader.from_bytes(record, settings.encoding)
+                        total_messages += 1
+                        conference_counts[header.confnum] += 1
+
+                        if header.numblocks and header.numblocks >= 1:
+                            blocks_remaining = header.numblocks - 1
+                        else:
+                            blocks_remaining = 0
+
+                    except (MessagesDatFormatError, InvalidMessageTypeError):
+                        blocks_remaining = 0
+                else:
+                     blocks_remaining -= 1
+
+                i += BLOCK_SIZE
+
+            print(f"  Total Messages: {total_messages}")
+            print("  Conferences:")
+
+            sorted_confs = sorted(conference_counts.items())
+            for conf_num, count in sorted_confs:
+                conf_name = board_dict.get(conf_num, f"Conference {conf_num}")
+                print(f"    {conf_num}: {conf_name} ({count} messages)")
+            print("")
+
+        except Exception as e:
+            logger.error(f"Error reading info for {input_path}: {e}")
+
+
 def process_multiple_files(
     input_paths: list[str],
     output_dir: str,
@@ -1028,6 +1083,11 @@ def main() -> None:
         help='Filter messages by conference name or number (can be used multiple times).',
     )
     parser.add_argument(
+        '--info',
+        action='store_true',
+        help='Show a summary of the QWK packet (conferences, message counts) and exit.'
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f"%(prog)s {__version__}",
@@ -1081,6 +1141,10 @@ def main() -> None:
         encoding=args.encoding,
         conferences=args.conferences,
     )
+
+    if args.info:
+        show_info(input_paths, settings, logger)
+        sys.exit(0)
 
     if len(input_paths) > 1:
         had_errors = process_multiple_files(input_paths, output_path, settings, logger)
