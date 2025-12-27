@@ -924,13 +924,88 @@ def process_multiple_files(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('input_paths', help='The QWK archive files or messages.dat files you want to read.', nargs='+')
-    parser.add_argument(
+
+    io_group = parser.add_argument_group('Input & Output')
+    io_group.add_argument(
         '-o',
         '--output',
         dest='output_path',
         help='Where to save the results (filename or folder). Defaults to showing on screen.',
     )
-    parser.add_argument(
+    io_group.add_argument(
+        '-i', '--individual-files',
+        dest='individualfiles',
+        help='Save each message as its own separate file. (Cannot use with --threaded).',
+        action='store_true'
+    )
+    io_group.add_argument(
+        '--encoding',
+        help='Character encoding of the input file (default: cp437)',
+        default='cp437',
+    )
+
+    content_group = parser.add_argument_group('Content Processing')
+    content_group.add_argument(
+        '--clean',
+        help='Enable all content cleaning options: truncate signatures, cut quoting, and remove binaries.',
+        action='store_true'
+    )
+    content_group.add_argument(
+        '-t', '--truncate-signatures',
+        dest='truncatesignatures',
+        help="Stop reading when a common signature (like '---') is found.",
+        action='store_true'
+    )
+    content_group.add_argument(
+        '-c', '--cut-quoting',
+        dest='cutquoting',
+        help="Remove text quoted from previous messages (lines starting with '>').",
+        action='store_true'
+    )
+    content_group.add_argument(
+        '-b', '--binaries-removal',
+        dest='binariesremoval',
+        help='Remove binary data attachments (like images or programs).',
+        action='store_true'
+    )
+    content_group.add_argument(
+        '-r', '--redact-pii',
+        dest='redactpii',
+        help='Hide personal info like email addresses and phone numbers.',
+        action='store_true'
+    )
+    content_group.add_argument(
+        '-p', '--private',
+        help="Include messages marked as 'Private'.",
+        action='store_true'
+    )
+
+    format_group = parser.add_argument_group('Formatting & Structure')
+    format_group.add_argument(
+        '--format',
+        help='Choose the output format: text, json, xml, or html.',
+        default='text',
+        choices=['text', 'json', 'xml', 'html'],
+    )
+    format_group.add_argument(
+        '--separator',
+        choices=['auto', 'none', 'dashes', 'blank'],
+        default='auto',
+        help='Choose how to separate messages in the output.',
+    )
+    format_group.add_argument(
+        '-n', '--noheader',
+        help='Do not include the message info (header) in the body text.',
+        action='store_true'
+    )
+    format_group.add_argument(
+        '-T', '--threaded',
+        help='Group replies with their original messages. (Cannot use with --individual-files).',
+        action='store_true'
+    )
+
+    control_group = parser.add_argument_group('Output Control')
+    control_group.add_argument(
         '-v',
         '--verbose',
         help=(
@@ -938,38 +1013,12 @@ def main() -> None:
         ),
         action='store_true',
     )
-    parser.add_argument('-p', '--private', help="Include messages marked as 'Private'.", action='store_true')
-    parser.add_argument('-n', '--noheader', help='Do not include the message info (header) in the body text.', action='store_true')
-    parser.add_argument('-t', '--truncate-signatures', dest='truncatesignatures', help="Stop reading when a common signature (like '---') is found.", action='store_true')
-    parser.add_argument('-c', '--cut-quoting', dest='cutquoting', help="Remove text quoted from previous messages (lines starting with '>').", action='store_true')
-    parser.add_argument('-i', '--individual-files', dest='individualfiles', help='Save each message as its own separate file. (Cannot use with --threaded).', action='store_true')
-    parser.add_argument('-T', '--threaded', help='Group replies with their original messages. (Cannot use with --individual-files).', action='store_true')
-    parser.add_argument('-b', '--binaries-removal', dest='binariesremoval', help='Remove binary data attachments (like images or programs).', action='store_true')
-    parser.add_argument('-r', '--redact-pii', dest='redactpii', help='Hide personal info like email addresses and phone numbers.', action='store_true')
-    parser.add_argument('--clean', help='Enable all content cleaning options: truncate signatures, cut quoting, and remove binaries.', action='store_true')
-    parser.add_argument('-q', '--quiet', help='Do not show the progress bar.', action='store_true')
-    parser.add_argument(
+    control_group.add_argument('-q', '--quiet', help='Do not show the progress bar.', action='store_true')
+    control_group.add_argument(
         '-l',
         '--loglevel',
         help='Control how much technical detail to display (DEBUG, INFO, WARNING, ERROR).',
         default='INFO',
-    )
-    parser.add_argument(
-        '--format',
-        help='Choose the output format: text, json, xml, or html.',
-        default='text',
-        choices=['text', 'json', 'xml', 'html'],
-    )
-    parser.add_argument(
-        '--separator',
-        choices=['auto', 'none', 'dashes', 'blank'],
-        default='auto',
-        help='Choose how to separate messages in the output.',
-    )
-    parser.add_argument(
-        '--encoding',
-        help='Character encoding of the input file (default: cp437)',
-        default='cp437',
     )
     parser.add_argument(
         '-C',
