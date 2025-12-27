@@ -1,136 +1,289 @@
-import sys
-import logging
-from unittest.mock import MagicMock, patch
+
 import pytest
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-import qwk
-from qwk import process_file, ProcessingSettings
+import logging
+from dataclasses import replace
+from qwk import process_file, ProcessingSettings, ParsedMessage, MessageHeader, load_data, parse_messages
 
 @pytest.fixture
-def logger() -> logging.Logger:
-    logger = logging.getLogger("pyqwk.tests.filtering")
-    logger.addHandler(logging.NullHandler())
-    return logger
+def mock_logger():
+    return logging.getLogger("test_filtering")
 
-def make_settings(**overrides) -> ProcessingSettings:
-    defaults = dict(
-        verbose=False,
-        private=False,
-        no_header=False,
-        truncate_signatures=False,
-        cut_quoting=False,
-        individual_files=False,
-        threaded=False,
-        binaries_removal=False,
-        redact_pii=False,
-        format="text",
-        separator="auto",
-        output_mode="stdout",
-        output_path=None,
-        encoding="latin1",
+@pytest.fixture
+def mock_messages():
+    header_template = MessageHeader(
+        status=' ', msgnum=1, msgdate='', msgtime='', msgto='', msgfrom='',
+        msgsubject='', msgpassword='', refnum=None, numblocks=1,
+        msgflag=' ', confnum=1, lognum=1, nettag=''
     )
-    defaults.update(overrides)
-    return ProcessingSettings(**defaults)
+
+    msgs = []
+    # Conf 1: General
+    msgs.append(ParsedMessage(
+        text="Msg 1 in Conf 1",
+        msgnum=1, refnum=None, confnum=1,
+        header=replace(header_template, confnum=1, msgnum=1)
+    ))
+    # Conf 2: Tech
+    msgs.append(ParsedMessage(
+        text="Msg 2 in Conf 2",
+        msgnum=2, refnum=None, confnum=2,
+        header=replace(header_template, confnum=2, msgnum=2)
+    ))
+    # Conf 3: Python
+    msgs.append(ParsedMessage(
+        text="Msg 3 in Conf 3",
+        msgnum=3, refnum=None, confnum=3,
+        header=replace(header_template, confnum=3, msgnum=3)
+    ))
+    # Private message
+    msgs.append(ParsedMessage(
+        text="Private Message",
+        msgnum=4, refnum=None, confnum=1,
+        header=replace(header_template, confnum=1, msgnum=4, status='*')
+    ))
+    # Password protected message
+    msgs.append(ParsedMessage(
+        text="Password Protected",
+        msgnum=5, refnum=None, confnum=1,
+        header=replace(header_template, confnum=1, msgnum=5, status='%')
+    ))
+    return msgs
 
 @pytest.fixture
-def mock_dependencies():
-    with patch('qwk.load_data') as mock_load, \
-         patch('qwk.parse_messages') as mock_parse, \
-         patch('qwk._write_text') as mock_write:
+def mock_board_dict():
+    return {
+        1: "General",
+        2: "Tech Talk",
+        3: "Python Dev"
+    }
 
-        mock_load.return_value = (b'', {})
-        yield mock_load, mock_parse, mock_write
+def test_excludes_private_messages_by_default(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
 
-def test_process_file_skips_private_messages_by_default(
-    mock_dependencies, message_factory, logger
-):
-    mock_load, mock_parse, mock_write = mock_dependencies
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
 
-    # Create a private message (status '*')
-    # Reference: qwk.py is_private property: status not in (' ', '-')
-    private_msg = message_factory(1, 0, "Private Msg", status='*')
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
 
-    mock_parse.return_value = [private_msg]
-    settings = make_settings(private=False)
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
 
-    process_file("dummy.qwk", settings, logger)
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True
+    )
 
-    # Verify _write_text called with empty list
-    assert mock_write.called
-    args, _ = mock_write.call_args
-    messages = args[0]
-    assert len(messages) == 0
+    process_file("dummy.qwk", settings, mock_logger)
 
-def test_process_file_includes_private_messages_with_flag(
-    mock_dependencies, message_factory, logger
-):
-    mock_load, mock_parse, mock_write = mock_dependencies
+    content = output_path.read_text(encoding="latin1")
+    assert "Private Message" not in content
 
-    private_msg = message_factory(1, 0, "Private Msg", status='*')
+def test_includes_private_messages_when_requested(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
 
-    mock_parse.return_value = [private_msg]
-    settings = make_settings(private=True)
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
 
-    process_file("dummy.qwk", settings, logger)
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
 
-    # Verify _write_text called with the message
-    assert mock_write.called
-    args, _ = mock_write.call_args
-    messages = args[0]
-    assert len(messages) == 1
-    assert messages[0].msgnum == 1
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
 
-def test_process_file_always_skips_password_messages(
-    mock_dependencies, message_factory, logger
-):
-    mock_load, mock_parse, mock_write = mock_dependencies
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True
+    )
 
-    # Create a password protected message (status '%')
-    # Reference: qwk.py is_password property: status in ('%', '^', '!', '#', '$')
-    password_msg = message_factory(1, 0, "Password Msg", status='%')
+    process_file("dummy.qwk", settings, mock_logger)
 
-    mock_parse.return_value = [password_msg]
+    content = output_path.read_text(encoding="latin1")
+    assert "Private Message" in content
 
-    # Test with private=False
-    settings = make_settings(private=False)
-    process_file("dummy.qwk", settings, logger)
-    assert len(mock_write.call_args[0][0]) == 0
+def test_always_excludes_password_protected_messages(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
 
-    # Test with private=True (should still skip password messages)
-    settings_private = make_settings(private=True)
-    process_file("dummy.qwk", settings_private, logger)
-    assert len(mock_write.call_args[0][0]) == 0
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
 
-def test_process_file_mixed_messages(
-    mock_dependencies, message_factory, logger
-):
-    mock_load, mock_parse, mock_write = mock_dependencies
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
 
-    msgs = [
-        message_factory(1, 0, "Public", status=' '),
-        message_factory(2, 0, "Private", status='*'),
-        message_factory(3, 0, "Password", status='%'),
-    ]
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
 
-    mock_parse.return_value = msgs
+    # Even with private=True, password protected should be skipped
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True
+    )
 
-    # Case 1: Default (Public only)
-    settings = make_settings(private=False)
-    process_file("dummy.qwk", settings, logger)
+    process_file("dummy.qwk", settings, mock_logger)
 
-    processed = mock_write.call_args[0][0]
-    assert len(processed) == 1
-    assert processed[0].msgnum == 1
+    content = output_path.read_text(encoding="latin1")
+    assert "Password Protected" not in content
 
-    # Case 2: Private enabled (Public + Private)
-    settings = make_settings(private=True)
-    process_file("dummy.qwk", settings, logger)
+def test_filtering_by_id(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
 
-    processed = mock_write.call_args[0][0]
-    assert len(processed) == 2
-    assert processed[0].msgnum == 1
-    assert processed[1].msgnum == 2
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
+
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
+
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True,
+        conferences=["2"]
+    )
+
+    process_file("dummy.qwk", settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg 2 in Conf 2" in content
+    assert "Msg 1 in Conf 1" not in content
+    assert "Msg 3 in Conf 3" not in content
+
+def test_filtering_by_name_exact(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
+
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
+
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True,
+        conferences=["Python Dev"]
+    )
+
+    process_file("dummy.qwk", settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg 3 in Conf 3" in content
+    assert "Msg 1 in Conf 1" not in content
+
+def test_filtering_by_name_substring_case_insensitive(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
+
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
+
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True,
+        conferences=["tech"] # Should match "Tech Talk"
+    )
+
+    process_file("dummy.qwk", settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg 2 in Conf 2" in content
+    assert "Msg 1 in Conf 1" not in content
+
+def test_filtering_multiple_criteria(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
+
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
+
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True,
+        conferences=["1", "python"]
+    )
+
+    process_file("dummy.qwk", settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg 1 in Conf 1" in content # Match by ID "1"
+    assert "Msg 3 in Conf 3" in content # Match by name "python"
+    assert "Msg 2 in Conf 2" not in content
+
+def test_filtering_numeric_fallback_when_names_missing(tmp_path, mock_messages, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+
+    # Empty board dict (no control.dat)
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), {}
+
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
+
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True,
+        conferences=["2"]
+    )
+
+    process_file("dummy.qwk", settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg 2 in Conf 2" in content
+    assert "Msg 1 in Conf 1" not in content
+
+def test_filtering_no_matches(tmp_path, mock_messages, mock_board_dict, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+
+    def fake_load_data(*args, **kwargs):
+        return bytearray(), mock_board_dict
+
+    def fake_parse_messages(*args, **kwargs):
+        yield from mock_messages
+
+    monkeypatch.setattr("qwk.load_data", fake_load_data)
+    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+
+    settings = ProcessingSettings(
+        verbose=False, private=False, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="file",
+        output_path=str(output_path), encoding="cp437", quiet=True,
+        conferences=["NonExistent"]
+    )
+
+    process_file("dummy.qwk", settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert content == ""

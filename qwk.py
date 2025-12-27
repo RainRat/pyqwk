@@ -139,6 +139,7 @@ class ProcessingSettings:
     output_path: str | None
     encoding: str
     quiet: bool = False
+    conferences: list[str] | None = None
 
 
 @dataclass
@@ -642,61 +643,92 @@ def process_file(
     elif separator_mode == 'blank':
         separator_str = "\r\n"
 
+    # Prepare conferences filter
+    allowed_conferences: set[int] = set()
+    if settings.conferences:
+        for conf_filter in settings.conferences:
+            # Check if filter matches a number directly
+            if conf_filter.isdigit():
+                allowed_conferences.add(int(conf_filter))
+            else:
+                # Check for name match in board_dict
+                normalized_filter = conf_filter.lower()
+                for num, name in board_dict.items():
+                    if normalized_filter in name.lower():
+                        allowed_conferences.add(num)
+
     with _create_progress_bar(len(file_data), settings.quiet) as progress_bar:
         for parsed_message in parse_messages(
             file_data,
             progress_bar,
             settings.encoding,
         ):
+            # Check private
             if (
-                (settings.private is True or parsed_message.header.is_private is False)
-                and parsed_message.header.is_password is False
-            ):
-                processed_buffer = process_message(
-                    parsed_message.text,
-                    settings.truncate_signatures,
-                    settings.cut_quoting,
-                    settings.binaries_removal,
-                    settings.redact_pii,
+                settings.private is False and parsed_message.header.is_private is True
+            ) or parsed_message.header.is_password is True:
+                continue
+
+            # Check conference filter
+            if settings.conferences:
+                # If we have filters, we check if the message's confnum is in allowed_conferences.
+                # HOWEVER: A filter might be a number that wasn't in board_dict.
+                # So we need to re-check if `parsed_message.confnum` matches any digit filters.
+
+                # Optimized check:
+                # 1. Is it in the allowed set (populated from names and numbers)?
+                is_allowed = parsed_message.confnum in allowed_conferences
+
+                # 2. If not, and we have numeric filters that might not have been in board_dict (because control.dat is missing or incomplete)
+                # Note: `allowed_conferences` already covers numeric inputs derived from `isdigit` check above.
+                if not is_allowed:
+                    continue
+
+            processed_buffer = process_message(
+                parsed_message.text,
+                settings.truncate_signatures,
+                settings.cut_quoting,
+                settings.binaries_removal,
+                settings.redact_pii,
+            )
+            if not settings.no_header and settings.format != 'html':
+                leading_newlines = 0
+                text_prefix = parsed_message.text
+                while text_prefix.startswith('\r\n'):
+                    leading_newlines += 1
+                    text_prefix = text_prefix[2:]
+                if leading_newlines and not processed_buffer.startswith('\r\n'):
+                    processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+                header_text = parsed_message.header.format_text(
+                    board_dict,
+                    settings.verbose,
+                    include_separator=False,
                 )
-                if not settings.no_header and settings.format != 'html':
-                    leading_newlines = 0
-                    text_prefix = parsed_message.text
-                    while text_prefix.startswith('\r\n'):
-                        leading_newlines += 1
-                        text_prefix = text_prefix[2:]
-                    if leading_newlines and not processed_buffer.startswith('\r\n'):
-                        processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
-                    header_text = parsed_message.header.format_text(
-                        board_dict,
-                        settings.verbose,
-                        include_separator=False,
+                processed_buffer = header_text + processed_buffer
+
+            # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
+            if settings.format == 'text' or (not settings.no_header and settings.format != 'html'):
+                processed_buffer = separator_str + processed_buffer
+
+            if settings.individual_files:
+                target_encoding = 'utf-8'
+                if settings.format == 'text':
+                    target_encoding = settings.encoding
+
+                encoded_buffer = processed_buffer.encode(target_encoding)
+                assert output_dir is not None
+                with open(
+                    os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
+                    'wb',
+                ) as f:
+                    f.write(encoded_buffer)
+            else:
+                collected_messages.append(
+                    replace(
+                        parsed_message,
+                        text=processed_buffer,
                     )
-                    processed_buffer = header_text + processed_buffer
-
-                # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
-                if settings.format == 'text' or (not settings.no_header and settings.format != 'html'):
-                    processed_buffer = separator_str + processed_buffer
-
-                if settings.individual_files:
-                    target_encoding = 'utf-8'
-                    if settings.format == 'text':
-                        target_encoding = settings.encoding
-
-                    encoded_buffer = processed_buffer.encode(target_encoding)
-                    assert output_dir is not None
-                    with open(
-                        os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
-                        'wb',
-                    ) as f:
-                        f.write(encoded_buffer)
-                else:
-                    collected_messages.append(
-                        replace(
-                            parsed_message,
-                            text=processed_buffer,
-                        )
-                    )
+                )
 
     if not settings.individual_files:
         ordered_messages = (
@@ -940,6 +972,13 @@ def main() -> None:
         default='cp437',
     )
     parser.add_argument(
+        '-C',
+        '--conference',
+        dest='conferences',
+        action='append',
+        help='Filter messages by conference name or number (can be used multiple times).',
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f"%(prog)s {__version__}",
@@ -991,6 +1030,7 @@ def main() -> None:
         output_mode=output_mode,
         output_path=resolved_output_path,
         encoding=args.encoding,
+        conferences=args.conferences,
     )
 
     if len(input_paths) > 1:
