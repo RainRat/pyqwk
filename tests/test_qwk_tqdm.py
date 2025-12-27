@@ -3,6 +3,7 @@ import logging
 import pytest
 from pathlib import Path
 from contextlib import nullcontext
+import importlib
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
