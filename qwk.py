@@ -626,7 +626,7 @@ def process_file(
             raise ValueError('An output path is required when using individual files.')
         output_dir = resolved_output_path
         if os.path.exists(output_dir) and not os.path.isdir(output_dir):
-            raise ValueError('The output path must be a directory when using individual files.')
+            raise ValueError('The output path must be a folder when using individual files.')
         os.makedirs(output_dir, exist_ok=True)
     file_data, board_dict = load_data(input_path, logger, settings.encoding)
     collected_messages: list[ParsedMessage] = []
@@ -1049,14 +1049,14 @@ def main() -> None:
 
     if args.individualfiles:
         if output_path is None:
-            parser.error('Output directory is required when writing individual files.')
+            parser.error('Output folder is required when writing individual files.')
         if os.path.exists(output_path) and not os.path.isdir(output_path):
-            parser.error('Output path must be a directory when writing individual files.')
+            parser.error('Output path must be a folder when writing individual files.')
         output_mode = 'file'
         resolved_output_path = output_path
     elif len(input_paths) > 1:
         if not output_path:
-            parser.error('Output directory is required when processing multiple files.')
+            parser.error('Output folder is required when processing multiple files.')
         output_mode = 'file'
         resolved_output_path = output_path
     else:
