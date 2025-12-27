@@ -80,6 +80,8 @@ The tool will save each result in that folder, using the original filename with 
 | `--separator` | Control how messages are separated in text output (`auto`, `none`, `dashes`, `blank`). |
 | `-q`, `--quiet` | Suppress the progress bar. |
 | `-l`, `--loglevel` | Set the logging level (e.g., `DEBUG`, `INFO`). |
+| `-C`, `--conference` | Filter messages by conference name or number (can be used multiple times). |
+| `--clean` | Enable all cleaning options (`-t`, `-c`, `-b`) at once. |
 | `--version` | Show the version number. |
 
 ## Output Formats

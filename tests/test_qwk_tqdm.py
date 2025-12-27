@@ -22,6 +22,9 @@ def clean_tqdm():
 
 def test_create_progress_bar_logs_missing_tqdm_only_once(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, clean_tqdm) -> None:
     # Simulate tqdm missing by mocking the import
+    if 'tqdm' in sys.modules:
+        del sys.modules['tqdm']
+
     monkeypatch.setitem(sys.modules, "tqdm", None)
 
     # Reset state
@@ -42,17 +45,30 @@ def test_progress_bar_quiet_mode() -> None:
     bar = _create_progress_bar(total=100, quiet=True)
     assert isinstance(bar, nullcontext)
 
-def test_progress_bar_active(clean_tqdm) -> None:
-    """Verify that a real progress bar is returned when not quiet and tqdm is installed."""
-    # Ensure sys.modules is clean (handled by fixture, but double check)
-    if "tqdm" in sys.modules and sys.modules["tqdm"] is None:
-        del sys.modules["tqdm"]
+@pytest.fixture
+def ensure_tqdm():
+    """Ensure tqdm is available for the test."""
+    if 'tqdm' in sys.modules and sys.modules['tqdm'] is None:
+        del sys.modules['tqdm']
 
+    # Try importing it to verify availability
     try:
         import tqdm
     except ImportError:
-        # If tqdm cannot be imported, we cannot test the active progress bar.
-        pytest.skip("tqdm is not importable in the test environment.")
+        pytest.skip("tqdm not installed")
+
+    yield
+
+    # No teardown needed usually, unless we want to be super clean
+
+def test_progress_bar_active(ensure_tqdm) -> None:
+    """Verify that a real progress bar is returned when not quiet and tqdm is installed."""
+    # This assumes tqdm is installed in the test environment (which we did)
+    # We must ensure tqdm is actually importable here
+    try:
+        import tqdm
+    except ImportError:
+        pytest.skip("tqdm not installed")
 
     bar = _create_progress_bar(total=100, quiet=False)
     assert not isinstance(bar, nullcontext)

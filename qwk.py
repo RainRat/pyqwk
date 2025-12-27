@@ -497,6 +497,14 @@ def parse_messages(
                 continue
 
             blocks_remaining = header.numblocks - 1
+            if blocks_remaining == 0:
+                yield ParsedMessage(
+                    text="",
+                    msgnum=current_msgnum,
+                    refnum=current_refnum,
+                    confnum=current_confnum,
+                    header=header,
+                )
         else:
             temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
             if blocks_remaining == 1:
@@ -889,6 +897,61 @@ def _write_text_output(content: str, output_path: str | None, *, encoding: str =
             f.write(content)
 
 
+def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+    """Show a summary of the QWK packet contents."""
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            print(f"File: {input_path}")
+
+            if len(file_data) < BLOCK_SIZE:
+                print("  Invalid or empty file.")
+                continue
+
+            first_record = file_data[0:BLOCK_SIZE]
+            if first_record[0:9] != b'Produced ':
+                print("  Not a valid QWK messages.dat file.")
+                continue
+
+            total_messages = 0
+            conference_counts = defaultdict(int)
+
+            blocks_remaining = 0
+
+            i = BLOCK_SIZE
+            while i < len(file_data):
+                record = file_data[i:i + BLOCK_SIZE]
+                if blocks_remaining == 0:
+                    try:
+                        header = MessageHeader.from_bytes(record, settings.encoding)
+                        total_messages += 1
+                        conference_counts[header.confnum] += 1
+
+                        if header.numblocks and header.numblocks >= 1:
+                            blocks_remaining = header.numblocks - 1
+                        else:
+                            blocks_remaining = 0
+
+                    except (MessagesDatFormatError, InvalidMessageTypeError):
+                        blocks_remaining = 0
+                else:
+                     blocks_remaining -= 1
+
+                i += BLOCK_SIZE
+
+            print(f"  Total Messages: {total_messages}")
+            print("  Conferences:")
+
+            sorted_confs = sorted(conference_counts.items())
+            for conf_num, count in sorted_confs:
+                conf_name = board_dict.get(conf_num, f"Conference {conf_num}")
+                print(f"    {conf_num}: {conf_name} ({count} messages)")
+            print("")
+
+        except Exception as e:
+            logger.error(f"Error reading info for {input_path}: {e}")
+
+
 def process_multiple_files(
     input_paths: list[str],
     output_dir: str,
@@ -983,8 +1046,8 @@ def main() -> None:
     format_group = parser.add_argument_group('Formatting & Structure')
     format_group.add_argument(
         '--format',
-        help='Choose the output format: text, json, xml, or html.',
-        default='text',
+        help='Choose the output format: text, json, xml, or html. (Default: auto-detected from output filename, or text)',
+        default=None,
         choices=['text', 'json', 'xml', 'html'],
     )
     format_group.add_argument(
@@ -1028,6 +1091,11 @@ def main() -> None:
         help='Filter messages by conference name or number (can be used multiple times).',
     )
     parser.add_argument(
+        '--info',
+        action='store_true',
+        help='Show a summary of the QWK packet (conferences, message counts) and exit.'
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f"%(prog)s {__version__}",
@@ -1063,6 +1131,22 @@ def main() -> None:
         output_mode = 'stdout' if not output_path else 'file'
         resolved_output_path = output_path
 
+    # Auto-detect format if not specified
+    output_format = args.format
+    if output_format is None:
+        if output_path and output_mode == 'file':
+            ext = os.path.splitext(output_path)[1].lower()
+            if ext == '.json':
+                output_format = 'json'
+            elif ext == '.xml':
+                output_format = 'xml'
+            elif ext == '.html':
+                output_format = 'html'
+            else:
+                output_format = 'text'
+        else:
+            output_format = 'text'
+
     settings = ProcessingSettings(
         verbose=args.verbose,
         private=args.private,
@@ -1074,13 +1158,17 @@ def main() -> None:
         binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
         quiet=args.quiet,
-        format=args.format,
+        format=output_format,
         separator=args.separator,
         output_mode=output_mode,
         output_path=resolved_output_path,
         encoding=args.encoding,
         conferences=args.conferences,
     )
+
+    if args.info:
+        show_info(input_paths, settings, logger)
+        sys.exit(0)
 
     if len(input_paths) > 1:
         had_errors = process_multiple_files(input_paths, output_path, settings, logger)

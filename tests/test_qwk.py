@@ -102,6 +102,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         loglevel="INFO",
         encoding="cp437",
         conferences=None,
+        info=False,
     )
     base.update(overrides)
     return argparse.Namespace(**base)
