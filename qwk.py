@@ -497,6 +497,14 @@ def parse_messages(
                 continue
 
             blocks_remaining = header.numblocks - 1
+            if blocks_remaining == 0:
+                yield ParsedMessage(
+                    text="",
+                    msgnum=current_msgnum,
+                    refnum=current_refnum,
+                    confnum=current_confnum,
+                    header=header,
+                )
         else:
             temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
             if blocks_remaining == 1:
