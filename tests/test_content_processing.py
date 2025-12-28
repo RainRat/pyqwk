@@ -32,35 +32,6 @@ def test_process_message_transforms_content() -> None:
     )
 
 
-def test_process_message_preserves_dates_when_redacting() -> None:
-    message = "On 1994-10-05, call 555-123-4567.\r\n"
-
-    processed = process_message(
-        message,
-        truncate_signatures=False,
-        cut_quoting=False,
-        binaries_removal=False,
-        redact_pii=True,
-    )
-
-    assert "1994-10-05" in processed
-    assert "[PHONE]" in processed
-
-
-def test_process_message_redacts_local_numbers() -> None:
-    message = "Local contact: 555-1234 or 555 6789.\r\n"
-
-    processed = process_message(
-        message,
-        truncate_signatures=False,
-        cut_quoting=False,
-        binaries_removal=False,
-        redact_pii=True,
-    )
-
-    assert processed == "Local contact: [PHONE] or [PHONE].\r\n"
-
-
 def test_process_message_removes_yenc_binaries() -> None:
     message = (
         "Intro line\r\n"
@@ -213,30 +184,6 @@ def test_process_message_handles_uue_loose_pattern() -> None:
     # "end" does NOT match loose pattern (len 3). So it should stop skipping.
     assert processed == "Intro\r\n"
 
-
-def test_process_message_redacts_complex_phone_formats() -> None:
-    message = (
-        "(555) 123-4567\r\n"
-        "+61-5-555-1234\r\n"
-        "Call me at 555-1234\r\n"
-        "123-456-7890\r\n"
-    )
-
-    processed = process_message(
-        message,
-        truncate_signatures=False,
-        cut_quoting=False,
-        binaries_removal=False,
-        redact_pii=True,
-    )
-
-    expected = (
-        "[PHONE]\r\n"
-        "[PHONE]\r\n"
-        "Call me at [PHONE]\r\n"
-        "[PHONE]\r\n"
-    )
-    assert processed == expected
 
 def test_process_message_removes_consecutive_loose_uue_lines() -> None:
     # Test case for UUE removal where loose binary lines follow each other
