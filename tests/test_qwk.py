@@ -76,6 +76,8 @@ def _make_settings(**overrides) -> ProcessingSettings:
         output_path=None,
         encoding="latin1",
         conferences=None,
+        authors=None,
+        subjects=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -102,6 +104,8 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         loglevel="INFO",
         encoding="cp437",
         conferences=None,
+        authors=None,
+        subjects=None,
         info=False,
     )
     base.update(overrides)
