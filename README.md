@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a Python tool that converts `.QWK` mail archives into readable formats (Text, HTML, JSON, XML). It is designed for archivists and enthusiasts who want to preserve or read messages from the Fidonet and BBS era.
+pyqwk is a Python tool that converts `.QWK` mail archives into readable formats (Text, HTML, JSON, XML). It helps archivists and enthusiasts preserve messages from the Fidonet and BBS era.
 
 ## Installation
 
@@ -8,35 +8,35 @@ You can use `pyqwk` in two ways: running the script directly or installing it as
 
 **Requirements:** Python 3.10 or newer.
 
-### Option 1: Run Without Installing (Simplest)
+### Option 1: Run Script Directly
 1.  Download the `qwk.py` file.
-2.  Open your terminal or command prompt.
+2.  Open your terminal.
 3.  Run the script:
     ```bash
     python qwk.py [arguments]
     ```
 
-*Tip: If you want a progress bar, install the optional `tqdm` library: `pip install tqdm`.*
+*Tip: For a progress bar, install `tqdm`: `pip install tqdm`.*
 
 ### Option 2: Install as a Command
-If you want to use the `qwk` command from anywhere:
+To use the `qwk` command from anywhere:
 
-1.  Clone this repository or download the source code.
-2.  Open your terminal in the `pyqwk` folder.
-3.  Install the tool:
+1.  Download the source code.
+2.  Go to the `pyqwk` folder in your terminal.
+3.  Install:
     ```bash
     pip install .
     ```
-4.  Run it using the `qwk` command:
+4.  Run:
     ```bash
     qwk [arguments]
     ```
 
 ## Usage
 
-pyqwk can process:
-*   **`.qwk` files:** ZIP archives containing message and control data. This is the preferred format as it includes conference names.
-*   **`messages.dat` files:** Raw message data. Conference names will not be available (numbers only).
+pyqwk processes:
+*   **`.qwk` files:** ZIP archives (includes conference names).
+*   **`messages.dat` files:** Raw message data (numbers only).
 
 ### Basic Usage
 
@@ -45,7 +45,6 @@ Read a QWK file and show it in the terminal:
 ```bash
 python qwk.py archive.qwk
 ```
-*(If you installed the tool, replace `python qwk.py` with `qwk`)*
 
 **Save to file:**
 Convert an archive and save the result:
@@ -55,51 +54,51 @@ python qwk.py archive.qwk -o output.txt
 
 ### Batch Processing
 
-To process multiple files, provide a list of inputs. You **must** specify an output folder using `-o`:
+To process multiple files, specify an output folder using `-o`:
 ```bash
 python qwk.py *.qwk -o output_directory/
 ```
-The tool will save each result in that folder, using the original filename with the correct extension (e.g., `.txt`, `.json`, `.html`).
+The tool saves each result in that folder, using the original filename and correct extension (e.g., `.txt`, `.json`).
 
 ## Options
 
 | Option | Description |
 | :--- | :--- |
-| `-o`, `--output` | Output path (file or folder). Defaults to screen for single files. Must be a folder for multiple files. |
+| `-o`, `--output` | Output file or folder. Default: screen. |
 | `--format` | Output format: `text` (default), `html`, `json`, `xml`. |
-| `-v`, `--verbose` | Include detailed headers (message numbers, references, conference info). |
-| `-p`, `--private` | Include private messages (default: excluded). |
-| `-n`, `--noheader` | Exclude the formatted header from the message body. |
-| `-T`, `--threaded` | Group messages by thread (replies follow parents). **Incompatible with `-i`.** |
-| `-t`, `--truncate-signatures` | Cut off content at common signature markers (e.g., `---`). |
-| `-c`, `--cut-quoting` | Remove quoted text (lines starting with `>`, `|`, etc.). |
-| `-b`, `--binaries-removal` | Remove binary blocks (uuencoded, Base64, yEnc). |
-| `-r`, `--redact-pii` | Redact email addresses and phone numbers. |
-| `-i`, `--individual-files` | Save each message as a separate file using its hash as the filename. **Incompatible with `-T`.** |
-| `--encoding` | Input character encoding (default: `cp437`). |
-| `--separator` | Control how messages are separated in text output (`auto`, `none`, `dashes`, `blank`). |
-| `-q`, `--quiet` | Suppress the progress bar. |
-| `-l`, `--loglevel` | Set the logging level (e.g., `DEBUG`, `INFO`). |
-| `-C`, `--conference` | Filter messages by conference name or number (can be used multiple times). |
-| `--clean` | Enable all cleaning options (`-t`, `-c`, `-b`) at once. |
-| `--version` | Show the version number. |
+| `-v`, `--verbose` | Show detailed headers (numbers, conferences). |
+| `-p`, `--private` | Include private messages. |
+| `-n`, `--noheader` | Exclude headers from the message body. |
+| `-T`, `--threaded` | Group replies by thread. **Incompatible with `-i`.** |
+| `-t`, `--truncate-signatures` | Remove text after signature markers (e.g., `---`). |
+| `-c`, `--cut-quoting` | Remove quotes (lines starting with `>`, `|`). |
+| `-b`, `--binaries-removal` | Remove binary data (uuencoded, Base64, yEnc). |
+| `-r`, `--redact-pii` | Hide emails and phone numbers. |
+| `-i`, `--individual-files` | Save as separate files (hashed filenames). **Incompatible with `-T`.** |
+| `--encoding` | Input text encoding (default: `cp437`). |
+| `--separator` | Message separator style (`auto`, `none`, `dashes`, `blank`). |
+| `-q`, `--quiet` | Hide progress bar. |
+| `-l`, `--loglevel` | Set log level (`DEBUG`, `INFO`). |
+| `-C`, `--conference` | Filter by conference name or number. |
+| `--clean` | Enable all cleaning options (`-t`, `-c`, `-b`). |
+| `--version` | Show version number. |
 
 ## Output Formats
 
 ### Text (Default)
-A plain text format where headers are rearranged for readability.
-*   **Threaded Mode:** Indents replies by 2 spaces per level.
+Plain text with readable headers.
+*   **Threaded Mode:** Indents replies by 2 spaces.
 
 ### HTML
-Generates a browsable web page.
-*   **Structure:** Messages are wrapped in `<div class="message">`.
-*   **Threaded Mode:** Replies are nested within `<div class="reply">` elements.
+Browsable web page.
+*   **Structure:** Messages wrapped in `<div class="message">`.
+*   **Threaded Mode:** Nested `<div class="reply">` elements.
 ```bash
 python qwk.py archive.qwk --format html -o output.html
 ```
 
 ### JSON and XML
-Generates structured data for automated processing.
+Structured data for automated processing.
 
 **JSON Example:**
 ```json
@@ -108,18 +107,7 @@ Generates structured data for automated processing.
         "header": {
             "status": "+",
             "msgnum": "28",
-            "msgdate": "10-04-94",
-            "msgtime": "11:15",
-            "msgto": "ALL",
-            "msgfrom": "DIVER",
-            "msgsubject": "NET/MESSAGE COORDINATION",
-            "msgpassword": "",
-            "refnum": "",
-            "numblocks": "1",
-            "msgflag": "",
-            "confnum": 3,
-            "lognum": 0,
-            "nettag": ""
+            ...
         },
         "text": "<message body>",
         "depth": 0,
@@ -145,19 +133,17 @@ Generates structured data for automated processing.
 </messages>
 ```
 
-In both formats the `header` fields map directly to the `MessageHeader` dataclass in `qwk.py`.
-
 ## Limitations & Troubleshooting
 
-*   **Threading vs. Individual Files:** You cannot use `--threaded` (`-T`) and `--individual-files` (`-i`) together. The tool will show an error if you try to combine them.
-*   **Password Protection:** For security and privacy, password-protected messages are always skipped.
-*   **Compression:** Some older `.qwk` packets use ZIP compression methods not supported by Python's `zipfile` library.
-    *   *Workaround:* Unzip the archive manually and process the `messages.dat` file directly.
-*   **Quoting detection:** The `--cut-quoting` feature uses common prefixes (like `>`) but may miss complex or word-wrapped quotes.
+*   **Threading vs. Individual Files:** You cannot combine `--threaded` (`-T`) and `--individual-files` (`-i`).
+*   **Password Protection:** Password-protected messages are always skipped.
+*   **Compression:** Some older `.qwk` packets use unsupported ZIP compression.
+    *   *Workaround:* Unzip manually and process `messages.dat` directly.
+*   **Quoting detection:** The `--cut-quoting` feature uses common prefixes (like `>`) but may miss complex quotes.
 
 ## Contributing
 
-Pull requests are welcome! Please ensure you run tests before submitting:
+Pull requests welcome! Run tests before submitting:
 ```bash
 pytest
 ```
