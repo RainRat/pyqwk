@@ -76,3 +76,23 @@ def test_show_info_not_messages_dat(capsys, mock_logger, default_settings):
 
         captured = capsys.readouterr()
         assert "Not a valid QWK messages.dat file" in captured.out
+
+
+def test_show_info_colors_enabled(capsys, mock_logger, default_settings):
+    """Test that ANSI colors are applied when stdout is a TTY."""
+    input_path = 'testdata/test1_qwk.zip'
+
+    # Mock sys.stdout.isatty to return True
+    with patch('sys.stdout.isatty', return_value=True):
+        show_info([input_path], default_settings, mock_logger)
+
+    captured = capsys.readouterr()
+    output = captured.out
+
+    # Check for ANSI codes
+    # BOLD = "1", CYAN = "36"
+    assert "\033[36m" in output  # File path color
+    assert "\033[1m" in output   # Bold headers
+    assert "\033[0m" in output   # Reset
+    assert f"File: \033[36m{input_path}\033[0m" in output
+    assert "\033[1mTotal Messages:\033[0m" in output

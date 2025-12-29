@@ -897,12 +897,23 @@ def _write_text_output(content: str, output_path: str | None, *, encoding: str =
             f.write(content)
 
 
+def _colorize(text: str, *attributes: str) -> str:
+    """Apply ANSI color codes if stdout is a TTY."""
+    if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+        return f"\033[{';'.join(attributes)}m{text}\033[0m"
+    return text
+
+
 def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
     """Show a summary of the QWK packet contents."""
+    # ANSI Attribute codes
+    BOLD = "1"
+    CYAN = "36"
+
     for input_path in input_paths:
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
-            print(f"File: {input_path}")
+            print(f"File: {_colorize(input_path, CYAN)}")
 
             if len(file_data) < BLOCK_SIZE:
                 print("  Invalid or empty file.")
@@ -939,13 +950,14 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
 
                 i += BLOCK_SIZE
 
-            print(f"  Total Messages: {total_messages}")
-            print("  Conferences:")
+            print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
+            print(f"  {_colorize('Conferences:', BOLD)}")
 
             sorted_confs = sorted(conference_counts.items())
             for conf_num, count in sorted_confs:
                 conf_name = board_dict.get(conf_num, f"Conference {conf_num}")
-                print(f"    {conf_num}: {conf_name} ({count} messages)")
+                count_str = _colorize(str(count), BOLD)
+                print(f"    {conf_num}: {conf_name} ({count_str} messages)")
             print("")
 
         except Exception as e:
