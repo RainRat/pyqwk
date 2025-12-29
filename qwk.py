@@ -196,7 +196,7 @@ class MessageHeader:
     def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> "MessageHeader":
         try:
             header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
-        except (struct.error, ValueError) as error:
+        except struct.error as error:
             raise MessagesDatFormatError(
                 "messages.dat header record has invalid size or format."
             ) from error
