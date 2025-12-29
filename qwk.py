@@ -584,12 +584,13 @@ def process_message(
     return '\r\n'.join(new_lines) + '\r\n'
 
 
-def _create_progress_bar(total: int, quiet: bool) -> Any:
+def _create_progress_bar(total: int, quiet: bool, desc: str = 'Processing messages') -> Any:
     """Create a progress bar instance or a null context.
 
     Args:
         total: Total number of units (bytes).
         quiet: If True, suppress progress output.
+        desc: Description text for the progress bar.
 
     Returns:
         A context manager that yields a ProgressBar or None.
@@ -603,7 +604,7 @@ def _create_progress_bar(total: int, quiet: bool) -> Any:
             total=total,
             unit='B',
             unit_scale=True,
-            desc='Processing messages',
+            desc=desc,
         )
     except ImportError:  # pragma: no cover - tqdm is optional
         if not getattr(_create_progress_bar, "_logged_missing_tqdm", False):
@@ -667,7 +668,8 @@ def process_file(
                     if normalized_filter in name.lower():
                         allowed_conferences.add(num)
 
-    with _create_progress_bar(len(file_data), settings.quiet) as progress_bar:
+    desc = f"Processing {os.path.basename(input_path)}"
+    with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
         for parsed_message in parse_messages(
             file_data,
             progress_bar,
