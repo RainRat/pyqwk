@@ -140,6 +140,8 @@ class ProcessingSettings:
     encoding: str
     quiet: bool = False
     conferences: list[str] | None = None
+    authors: list[str] | None = None
+    subjects: list[str] | None = None
 
 
 @dataclass
@@ -692,6 +694,18 @@ def process_file(
                 if not is_allowed:
                     continue
 
+            # Check author filter
+            if settings.authors:
+                msg_from_lower = parsed_message.header.msgfrom.lower()
+                if not any(a.lower() in msg_from_lower for a in settings.authors):
+                    continue
+
+            # Check subject filter
+            if settings.subjects:
+                msg_subject_lower = parsed_message.header.msgsubject.lower()
+                if not any(s.lower() in msg_subject_lower for s in settings.subjects):
+                    continue
+
             processed_buffer = process_message(
                 parsed_message.text,
                 settings.truncate_signatures,
@@ -1103,6 +1117,18 @@ def main() -> None:
         help='Filter messages by conference name or number (can be used multiple times).',
     )
     parser.add_argument(
+        '--from',
+        dest='authors',
+        action='append',
+        help='Filter messages by author name (case-insensitive substring match).',
+    )
+    parser.add_argument(
+        '--subject',
+        dest='subjects',
+        action='append',
+        help='Filter messages by subject line (case-insensitive substring match).',
+    )
+    parser.add_argument(
         '--info',
         action='store_true',
         help='Show a summary of the QWK packet (conferences, message counts) and exit.'
@@ -1176,6 +1202,8 @@ def main() -> None:
         output_path=resolved_output_path,
         encoding=args.encoding,
         conferences=args.conferences,
+        authors=args.authors,
+        subjects=args.subjects,
     )
 
     if args.info:
