@@ -21,14 +21,6 @@ BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
 CONTROL_FILENAME = 'control.dat'
 
-QUOTE_HEADER_PATTERNS = [
-    re.compile(
-        r".*(replied|'s comment|said|wrote|was talking|yelled|writes|mentioned|spake thusly|carried on|babbled on|spoke|wrote a message)( in a message| the following| this)? to "
-    ),
-    re.compile(
-        r"^\s*( -=>|\*\*\*|Yo!)?\s*(Quoting|Answering msg from|In a msg on|Reply|QUOTING|In a message originally|Quoted from a message|In a message).* to "
-    ),
-]
 RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s\d{3}\s')
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
