@@ -730,9 +730,23 @@ def process_file(
                 target_encoding = 'utf-8'
                 if settings.format == 'text':
                     target_encoding = settings.encoding
+                    encoded_buffer = processed_buffer.encode(target_encoding)
+                elif settings.format == 'json':
+                    # For JSON, we use the message object but update the text with processed_buffer
+                    # Note: processed_buffer may contain the header if not --noheader, matching existing behavior
+                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    encoded_buffer = _serialize_message_json(temp_msg).encode(target_encoding)
+                elif settings.format == 'xml':
+                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
+                elif settings.format == 'html':
+                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
+                else:
+                    encoded_buffer = processed_buffer.encode(target_encoding)
 
-                encoded_buffer = processed_buffer.encode(target_encoding)
                 assert output_dir is not None
+                # We use sha1 of encoded buffer to determine filename, as before
                 with open(
                     os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
                     'wb',
@@ -767,6 +781,17 @@ def process_file(
         writer(ordered_messages, resolved_output_path, output_encoding)
 
 
+def _serialize_message_json(message: ProcessedMessage) -> str:
+    msg_dict = {
+        'header': message.header.as_dict,
+        'text': message.text,
+        'depth': message.depth,
+        'thread_id': message.thread_id,
+        'parent_msgnum': message.parent_msgnum,
+    }
+    return json.dumps(msg_dict, indent=4, ensure_ascii=False)
+
+
 def _write_json(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
@@ -780,11 +805,35 @@ def _write_json(
             'parent_msgnum': message.parent_msgnum,
         }
         output_data.append(msg_dict)
-    output_json = json.dumps(output_data, indent=4)
+    output_json = json.dumps(output_data, indent=4, ensure_ascii=False)
     _write_text_output(output_json, output_path, encoding='utf-8')
 
 
 XML_INVALID_CHAR_PATTERN = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
+
+
+def _serialize_message_xml(message: ProcessedMessage) -> str:
+    root = ET.Element('message')
+
+    if message.depth > 0:
+        ET.SubElement(root, 'depth').text = str(message.depth)
+    if message.thread_id:
+        ET.SubElement(root, 'thread_id').text = str(message.thread_id)
+    if message.parent_msgnum is not None:
+        ET.SubElement(root, 'parent_msgnum').text = str(message.parent_msgnum)
+
+    header_element = ET.SubElement(root, 'header')
+    header_data = message.header.as_dict
+    for key, value in header_data.items():
+        child = ET.SubElement(header_element, key)
+        child.text = XML_INVALID_CHAR_PATTERN.sub('', str(value))
+
+    text_element = ET.SubElement(root, 'text')
+    text_element.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
+
+    ET.indent(root, space='  ')
+    xml_bytes = ET.tostring(root, encoding='utf-8')
+    return xml_bytes.decode('utf-8')
 
 
 def _write_xml(
@@ -815,6 +864,51 @@ def _write_xml(
     xml_text = xml_bytes.decode('utf-8')
 
     _write_text_output(xml_text, output_path, encoding='utf-8')
+
+
+def _serialize_message_html(message: ProcessedMessage) -> str:
+    html_parts = [
+        '<!DOCTYPE html>',
+        '<html lang="en">',
+        '<head>',
+        '<meta charset="utf-8" />',
+        '<title>QWK Message</title>',
+        '<style>',
+        '.reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }',
+        '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',
+        '.header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }',
+        '.body { white-space: pre-wrap; font-family: monospace; }',
+        '</style>',
+        '</head>',
+        '<body>',
+    ]
+
+    html_parts.append('<div class="message">')
+
+    # Header
+    header = message.header
+    html_parts.append('<div class="header">')
+    html_parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
+    html_parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
+    html_parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
+    html_parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
+    # Conference number is always present as an int
+    html_parts.append(f'<div><strong>Conference:</strong> {header.confnum}</div>')
+    if header.msgnum is not None:
+        html_parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
+    html_parts.append('</div>')
+
+    # Body
+    escaped_text = html.escape(message.text.replace('\r\n', '\n'))
+    html_parts.append('<pre class="body">')
+    html_parts.append(escaped_text)
+    html_parts.append('</pre>')
+    html_parts.append('</div>')
+
+    html_parts.append('</body>')
+    html_parts.append('</html>')
+
+    return '\n'.join(html_parts)
 
 
 def _write_html(
