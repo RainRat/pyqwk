@@ -19,10 +19,10 @@ You can use `pyqwk` in two ways: running the script directly or installing it as
 *Tip: For a progress bar, install `tqdm`: `pip install tqdm`.*
 
 ### Option 2: Install as a Command
-To use the `qwk` command from anywhere:
+To use the `qwk` command from any folder:
 
-1.  Download the source code.
-2.  Go to the `pyqwk` folder in your terminal.
+1.  Download the source code (or clone the repository).
+2.  Open your terminal and go to the project folder (where `qwk.py` is located).
 3.  Install:
     ```bash
     pip install .
@@ -54,18 +54,20 @@ python qwk.py archive.qwk -o output.txt
 
 ### Batch Processing
 
-To process multiple files, specify an output folder using `-o`:
+To process multiple files, use a wildcard (like `*.qwk`) and specify an output folder:
 ```bash
 python qwk.py *.qwk -o output_directory/
 ```
 The tool saves each result in that folder, using the original filename and correct extension (e.g., `.txt`, `.json`).
 
+*Note for Windows users: The Command Prompt does not support wildcards like `*.qwk` automatically. Use PowerShell or list files individually.*
+
 ## Options
 
 | Option | Description |
 | :--- | :--- |
-| `-o`, `--output` | Output file or folder. Default: screen. |
-| `--format` | Output format: `text` (default), `html`, `json`, `xml`. |
+| `-o`, `--output` | Output file or folder. Default: screen (stdout). |
+| `--format` | Output format: `text`, `html`, `json`, `xml`. Default: Auto-detected from filename (or `text`). |
 | `-v`, `--verbose` | Show detailed headers (numbers, conferences). |
 | `-p`, `--private` | Include private messages. |
 | `-n`, `--noheader` | Exclude headers from the message body. |
@@ -79,8 +81,11 @@ The tool saves each result in that folder, using the original filename and corre
 | `--separator` | Message separator style (`auto`, `none`, `dashes`, `blank`). |
 | `-q`, `--quiet` | Hide progress bar. |
 | `-l`, `--loglevel` | Set log level (`DEBUG`, `INFO`). |
-| `-C`, `--conference` | Filter by conference name or number. |
+| `-C`, `--conference` | Filter by conference name or number (can be used multiple times). |
+| `--from` | Filter by author name (can be used multiple times). |
+| `--subject` | Filter by subject (can be used multiple times). |
 | `--clean` | Enable all cleaning options (`-t`, `-c`, `-b`). |
+| `--info` | Show summary (message counts, conferences) and exit. |
 | `--version` | Show version number. |
 
 ## Output Formats
