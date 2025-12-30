@@ -78,12 +78,10 @@ def _is_binary_line(
     """
     is_yenc_marker = RE_YENC_PATTERN.match(line)
 
-    if is_yenc_marker and line.startswith('=ybegin'):
-        return True, True, in_uue_block
+    if is_yenc_marker:
+        return True, not line.startswith('=yend'), in_uue_block
 
-    if in_yenc_block or is_yenc_marker:
-        if is_yenc_marker and line.startswith('=yend'):
-            return True, False, in_uue_block
+    if in_yenc_block:
         return True, True, in_uue_block
 
     if RE_BASE64_PATTERN.match(line):
