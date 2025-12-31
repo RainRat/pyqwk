@@ -16,6 +16,8 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, fields, replace
 from contextlib import contextmanager, nullcontext
 from typing import Any, Callable, Protocol
+import datetime
+import email.utils
 
 __version__ = "0.1.0"
 
@@ -742,6 +744,9 @@ def process_file(
                 elif settings.format == 'html':
                     temp_msg = replace(parsed_message, text=processed_buffer)
                     encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
+                elif settings.format == 'mbox':
+                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
                 else:
                     encoded_buffer = processed_buffer.encode(target_encoding)
 
@@ -773,6 +778,7 @@ def process_file(
             'html': _write_html,
             'text': _write_text,
             'csv': _write_csv,
+            'mbox': _write_mbox,
         }
 
         writer = writers.get(settings.format, _write_text)
@@ -973,6 +979,100 @@ def _write_html(
     _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
 
 
+def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
+    """Parse QWK date (MM-DD-YY) and time (HH:MM) into a datetime object.
+
+    Args:
+        msgdate: Date string in 'MM-DD-YY' format.
+        msgtime: Time string in 'HH:MM' format.
+
+    Returns:
+        A datetime object. Defaults to epoch if parsing fails.
+    """
+    try:
+        # Normalize date separators
+        msgdate = msgdate.replace('/', '-')
+
+        month, day, year = map(int, msgdate.split('-'))
+        hour, minute = map(int, msgtime.split(':'))
+
+        # Handle Year 2000 problem (sliding window)
+        # If year is < 80, assume 2000s, else 1900s
+        if year < 100:
+            if year < 80:
+                year += 2000
+            else:
+                year += 1900
+
+        return datetime.datetime(year, month, day, hour, minute)
+    except (ValueError, IndexError):
+        # Fallback for invalid dates
+        return datetime.datetime(1970, 1, 1, 0, 0)
+
+
+def _serialize_message_mbox(message: ProcessedMessage) -> str:
+    """Serialize a message to mbox format."""
+    header = message.header
+
+    # Parse date
+    dt = _parse_qwk_date(header.msgdate, header.msgtime)
+
+    # Format dates
+    # "From " line uses ctime format: "Day Mon DD HH:MM:SS YYYY"
+    # email.utils.formatdate uses RFC 2822
+
+    from_line_date = dt.ctime()
+    rfc_date = email.utils.format_datetime(dt)
+
+    sender_addr = "user@example.com"
+    if "@" in header.msgfrom:
+         sender_addr = header.msgfrom
+    else:
+         # Create a safe address from the name
+         safe_name = re.sub(r'[^A-Za-z0-9]', '.', header.msgfrom).strip('.')
+         sender_addr = f"{safe_name}@example.com"
+
+    # Escape "From " lines in body
+    body_lines = []
+    for line in message.text.splitlines():
+        if line.startswith("From "):
+            body_lines.append(">" + line)
+        else:
+            body_lines.append(line)
+    body = "\n".join(body_lines)
+
+    # Construct mbox entry
+    # From <sender> <date>
+    parts = [f"From {sender_addr} {from_line_date}"]
+    parts.append(f"From: {header.msgfrom}")
+    parts.append(f"To: {header.msgto}")
+    parts.append(f"Subject: {header.msgsubject}")
+    parts.append(f"Date: {rfc_date}")
+
+    # Generate a unique Message-ID
+    # <confnum.msgnum@qwk>
+    msg_id = f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
+    parts.append(f"Message-ID: {msg_id}")
+    parts.append(f"X-QWK-Conference: {header.confnum}")
+
+    parts.append("")  # Separator before body
+    parts.append(body)
+    parts.append("")  # Trailing newline required by mbox
+
+    return "\n".join(parts)
+
+
+def _write_mbox(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
+    """Write messages to an mbox file."""
+    parts = []
+    for message in messages:
+        parts.append(_serialize_message_mbox(message))
+
+    _write_text_output("\n".join(parts), output_path, encoding=encoding)
+
+
 def _write_text(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
@@ -1108,6 +1208,8 @@ def process_multiple_files(
                 output_filename += '.html'
             elif settings.format == 'csv':
                 output_filename += '.csv'
+            elif settings.format == 'mbox':
+                output_filename += '.mbox'
             else:
                 output_filename += '.txt'
             output_path = os.path.join(output_dir, output_filename)
@@ -1185,9 +1287,9 @@ def main() -> None:
     format_group = parser.add_argument_group('Formatting & Structure')
     format_group.add_argument(
         '--format',
-        help='Choose the output format: text, json, xml, html, or csv. (Default: auto-detected from output filename, or text)',
+        help='Choose the output format: text, json, xml, html, csv, or mbox. (Default: auto-detected from output filename, or text)',
         default=None,
-        choices=['text', 'json', 'xml', 'html', 'csv'],
+        choices=['text', 'json', 'xml', 'html', 'csv', 'mbox'],
     )
     format_group.add_argument(
         '--separator',
@@ -1298,6 +1400,8 @@ def main() -> None:
                 output_format = 'html'
             elif ext == '.csv':
                 output_format = 'csv'
+            elif ext == '.mbox':
+                output_format = 'mbox'
             else:
                 output_format = 'text'
         else:
