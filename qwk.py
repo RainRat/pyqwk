@@ -782,30 +782,24 @@ def process_file(
         writer(ordered_messages, resolved_output_path, output_encoding)
 
 
-def _serialize_message_json(message: ProcessedMessage) -> str:
-    msg_dict = {
+def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
+    return {
         'header': message.header.as_dict,
         'text': message.text,
         'depth': message.depth,
         'thread_id': message.thread_id,
         'parent_msgnum': message.parent_msgnum,
     }
-    return json.dumps(msg_dict, indent=4, ensure_ascii=False)
+
+
+def _serialize_message_json(message: ProcessedMessage) -> str:
+    return json.dumps(_message_to_dict(message), indent=4, ensure_ascii=False)
 
 
 def _write_json(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
-    output_data = []
-    for message in messages:
-        msg_dict = {
-            'header': message.header.as_dict,
-            'text': message.text,
-            'depth': message.depth,
-            'thread_id': message.thread_id,
-            'parent_msgnum': message.parent_msgnum,
-        }
-        output_data.append(msg_dict)
+    output_data = [_message_to_dict(msg) for msg in messages]
     output_json = json.dumps(output_data, indent=4, ensure_ascii=False)
     _write_text_output(output_json, output_path, encoding='utf-8')
 
