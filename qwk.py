@@ -1128,25 +1128,28 @@ def main() -> None:
         help='Control how much technical detail to display (DEBUG, INFO, WARNING, ERROR).',
         default='INFO',
     )
-    parser.add_argument(
+
+    filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument(
         '-C',
         '--conference',
         dest='conferences',
         action='append',
         help='Filter messages by conference name or number (can be used multiple times).',
     )
-    parser.add_argument(
+    filter_group.add_argument(
         '--from',
         dest='authors',
         action='append',
         help='Filter messages by author name (case-insensitive substring match).',
     )
-    parser.add_argument(
+    filter_group.add_argument(
         '--subject',
         dest='subjects',
         action='append',
         help='Filter messages by subject line (case-insensitive substring match).',
     )
+
     parser.add_argument(
         '--info',
         action='store_true',
