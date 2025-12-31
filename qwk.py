@@ -8,6 +8,8 @@ import os
 import logging
 import json
 import html
+import csv
+import io
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from collections.abc import Iterator, Mapping
@@ -634,7 +636,7 @@ def process_file(
 
     separator_mode = settings.separator
     if separator_mode == 'auto':
-        if settings.individual_files or settings.format in ('json', 'xml', 'html'):
+        if settings.individual_files or settings.format in ('json', 'xml', 'html', 'csv'):
             separator_mode = 'none'
         else:
             separator_mode = 'dashes'
@@ -756,6 +758,7 @@ def process_file(
             'xml': _write_xml,
             'html': _write_html,
             'text': _write_text,
+            'csv': _write_csv,
         }
 
         writer = writers.get(settings.format, _write_text)
@@ -893,6 +896,28 @@ def _write_text(
     _write_text_output("".join(parts), output_path, encoding=encoding)
 
 
+def _write_csv(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
+    output = io.StringIO()
+
+    header_fields = [f.name for f in fields(MessageHeader)]
+    fieldnames = header_fields + ['text', 'depth', 'thread_id', 'parent_msgnum']
+
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for message in messages:
+        row = message.header.as_dict
+        row['text'] = message.text
+        row['depth'] = message.depth
+        row['thread_id'] = message.thread_id
+        row['parent_msgnum'] = message.parent_msgnum
+        writer.writerow(row)
+
+    _write_text_output(output.getvalue(), output_path, encoding=encoding)
+
+
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
     if output_path is None:
         if not content.endswith('\n'):
@@ -987,6 +1012,8 @@ def process_multiple_files(
                 output_filename += '.xml'
             elif settings.format == 'html':
                 output_filename += '.html'
+            elif settings.format == 'csv':
+                output_filename += '.csv'
             else:
                 output_filename += '.txt'
             output_path = os.path.join(output_dir, output_filename)
@@ -1064,9 +1091,9 @@ def main() -> None:
     format_group = parser.add_argument_group('Formatting & Structure')
     format_group.add_argument(
         '--format',
-        help='Choose the output format: text, json, xml, or html. (Default: auto-detected from output filename, or text)',
+        help='Choose the output format: text, json, xml, html, or csv. (Default: auto-detected from output filename, or text)',
         default=None,
-        choices=['text', 'json', 'xml', 'html'],
+        choices=['text', 'json', 'xml', 'html', 'csv'],
     )
     format_group.add_argument(
         '--separator',
@@ -1172,6 +1199,8 @@ def main() -> None:
                 output_format = 'xml'
             elif ext == '.html':
                 output_format = 'html'
+            elif ext == '.csv':
+                output_format = 'csv'
             else:
                 output_format = 'text'
         else:
