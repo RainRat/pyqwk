@@ -56,15 +56,48 @@ python qwk.py *.qwk -o output/
 ```
 *Windows Users: Use PowerShell to support the `*.qwk` wildcard.*
 
+## Filtering & Searching
+
+You can filter messages to find exactly what you need.
+
+**Filter by Conference:**
+Find messages in a specific conference by name or number.
+```bash
+python qwk.py archive.qwk -C "General Chat"
+python qwk.py archive.qwk -C 123
+```
+
+**Filter by Sender:**
+Find messages from a specific person.
+```bash
+python qwk.py archive.qwk --from "Sysop"
+```
+
+**Filter by Subject:**
+Find messages about a specific topic.
+```bash
+python qwk.py archive.qwk --subject "Welcome"
+```
+
+**Combine Filters:**
+Find messages from "Sysop" in the "Announcements" conference.
+```bash
+python qwk.py archive.qwk --from "Sysop" -C "Announcements"
+```
+
 ## Common Options
 
 | Flag | Description |
 | :--- | :--- |
 | `-o [file/folder]` | Where to save the output. Defaults to screen. |
+| `-i` | Save each message as a separate file (cannot use with threaded). |
 | `--format [type]` | Output format: `text`, `html`, `json`, `xml`. |
 | `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
 | `--clean` | Remove "junk" like signatures, quotes, and binary data. |
 | `-p`, `--private` | Include private messages. |
+| `-C [conf]` | Filter by conference name or number. |
+| `--from [name]` | Filter by sender name. |
+| `--subject [text]` | Filter by subject line. |
 | `--info` | Show a summary of the archive (counts, conferences) and exit. |
 
 Run `python qwk.py --help` to see all options.
