@@ -85,12 +85,35 @@ class QwkGuiApp:
         list_frame = ttk.Frame(paned, padding=8)
         detail_frame = ttk.Frame(paned, padding=8)
         paned.add(list_frame, weight=1)
-        paned.add(detail_frame, weight=3)
+        paned.add(detail_frame, weight=2)
 
         ttk.Label(list_frame, text="Messages").pack(anchor=tk.W)
-        self.message_list = tk.Listbox(list_frame, exportselection=False)
-        self.message_list.pack(fill=tk.BOTH, expand=True)
-        self.message_list.bind("<<ListboxSelect>>", self.on_message_selected)
+
+        # Treeview setup
+        self.message_list = ttk.Treeview(
+            list_frame,
+            columns=("From", "Date", "Conference"),
+            selectmode="browse",
+        )
+        self.message_list.heading("#0", text="Subject", anchor=tk.W)
+        self.message_list.heading("From", text="From", anchor=tk.W)
+        self.message_list.heading("Date", text="Date", anchor=tk.W)
+        self.message_list.heading("Conference", text="Conference", anchor=tk.W)
+
+        self.message_list.column("#0", minwidth=200, width=300)
+        self.message_list.column("From", minwidth=80, width=120)
+        self.message_list.column("Date", minwidth=80, width=120)
+        self.message_list.column("Conference", minwidth=80, width=100)
+
+        scrollbar = ttk.Scrollbar(
+            list_frame, orient=tk.VERTICAL, command=self.message_list.yview
+        )
+        self.message_list.configure(yscroll=scrollbar.set)
+
+        self.message_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
         ttk.Label(detail_frame, text="Message Detail").pack(anchor=tk.W)
         self.detail_text = tk.Text(detail_frame, wrap=tk.WORD)
@@ -116,14 +139,6 @@ class QwkGuiApp:
             encoding='cp437',
             quiet=True,
         )
-
-    def _format_message_summary(self, message_index: int) -> str:
-        message = self.messages[message_index]
-        header = message.header
-        conf_name = self.board_dict.get(header.confnum, str(header.confnum))
-        subject = header.msgsubject.strip() or "(no subject)"
-        prefix = "  " * message.depth
-        return f"{prefix}[{conf_name}] {subject} — {header.msgfrom.strip()}"
 
     def _format_message_detail(self, message_index: int) -> str:
         message = self.messages[message_index]
@@ -191,16 +206,45 @@ class QwkGuiApp:
             self.messages = messages
             self.board_dict = board_dict
 
-            self.message_list.delete(0, tk.END)
-            for index in range(len(self.messages)):
-                self.message_list.insert(tk.END, self._format_message_summary(index))
+            self.message_list.delete(*self.message_list.get_children())
+            parent_at_depth = {-1: ""}
+
+            for index, message in enumerate(self.messages):
+                header = message.header
+                conf_name = self.board_dict.get(header.confnum, str(header.confnum))
+                subject = header.msgsubject.strip() or "(no subject)"
+
+                parent_iid = ""
+                if settings.threaded:
+                    parent_iid = parent_at_depth.get(message.depth - 1, "")
+
+                iid = str(index)
+                self.message_list.insert(
+                    parent_iid,
+                    tk.END,
+                    iid=iid,
+                    text=subject,
+                    values=(
+                        header.msgfrom,
+                        f"{header.msgdate} {header.msgtime}",
+                        conf_name,
+                    ),
+                    open=True  # Expand by default
+                )
+
+                if settings.threaded:
+                    parent_at_depth[message.depth] = iid
 
             basename = os.path.basename(path)
             self.status_label.config(
                 text=f"Loaded {basename} ({len(self.messages)} messages)"
             )
             if self.messages:
-                self.message_list.selection_set(0)
+                first_item = self.message_list.get_children()[0]
+                self.message_list.selection_set(first_item)
+                # focus is needed for some themes
+                self.message_list.focus(first_item)
+                # Manually trigger selection event since selection_set doesn't fire it
                 self.on_message_selected()
             else:
                 self._set_detail_text("No messages found.")
@@ -215,9 +259,12 @@ class QwkGuiApp:
         self.detail_text.config(state=tk.DISABLED)
 
     def on_message_selected(self, _event: object | None = None) -> None:
-        if not self.message_list.curselection():
+        selected_items = self.message_list.selection()
+        if not selected_items:
             return
-        index = int(self.message_list.curselection()[0])
+        # Use the first selected item
+        iid = selected_items[0]
+        index = int(iid)
         self._set_detail_text(self._format_message_detail(index))
 
 
