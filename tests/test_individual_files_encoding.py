@@ -6,7 +6,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def logger():
@@ -60,8 +60,8 @@ def test_individual_files_text_format_respects_encoding(tmp_path, logger, monkey
     def fake_parse_messages(*args, **kwargs):
         yield msg
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     output_dir = tmp_path / "output_cp437"
 
@@ -107,8 +107,8 @@ def test_individual_files_json_format_forces_utf8(tmp_path, logger, monkeypatch)
     def fake_parse_messages(*args, **kwargs):
         yield msg
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     output_dir = tmp_path / "output_json"
 

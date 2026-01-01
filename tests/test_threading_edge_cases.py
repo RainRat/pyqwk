@@ -3,11 +3,11 @@ import pytest
 import sys
 from pathlib import Path
 
-# Ensure the root directory is in sys.path so we can import qwk
+# Ensure the root directory is in sys.path so we can import pyqwk.
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import _order_messages_by_thread
+from pyqwk.core import _order_messages_by_thread
 
 class TestThreadingEdgeCases:
     """Test suite for edge cases in message threading."""
@@ -57,7 +57,7 @@ class TestThreadingEdgeCases:
             message_factory(20, 999, "Re: Topic"),
         ]
 
-        with caplog.at_level(logging.DEBUG, logger="qwk"):
+        with caplog.at_level(logging.DEBUG, logger="pyqwk.core"):
             ordered = _order_messages_by_thread(msgs)
 
         # Should log a debug message about missing refnum
@@ -86,7 +86,7 @@ class TestThreadingEdgeCases:
             message_factory(30, 999, "Re: Unique Topic"),
         ]
 
-        with caplog.at_level(logging.DEBUG, logger="qwk"):
+        with caplog.at_level(logging.DEBUG, logger="pyqwk.core"):
             ordered = _order_messages_by_thread(msgs)
 
         assert "references missing or external message" in caplog.text

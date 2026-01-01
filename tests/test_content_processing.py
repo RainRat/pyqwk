@@ -5,7 +5,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import process_message
+from pyqwk.core import process_message
 
 def test_process_message_transforms_content() -> None:
     message = (

@@ -2,7 +2,7 @@
 import pytest
 import logging
 from dataclasses import replace
-from qwk import process_file, ProcessingSettings, ParsedMessage, MessageHeader, load_data, parse_messages
+from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader, load_data, parse_messages
 
 @pytest.fixture
 def mock_logger():
@@ -66,8 +66,8 @@ def test_excludes_private_messages_by_default(tmp_path, mock_messages, mock_boar
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -90,8 +90,8 @@ def test_includes_private_messages_when_requested(tmp_path, mock_messages, mock_
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=True, no_header=True, truncate_signatures=False,
@@ -114,8 +114,8 @@ def test_always_excludes_password_protected_messages(tmp_path, mock_messages, mo
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     # Even with private=True, password protected should be skipped
     settings = ProcessingSettings(
@@ -139,8 +139,8 @@ def test_filtering_by_id(tmp_path, mock_messages, mock_board_dict, mock_logger, 
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -166,8 +166,8 @@ def test_filtering_by_name_exact(tmp_path, mock_messages, mock_board_dict, mock_
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -192,8 +192,8 @@ def test_filtering_by_name_substring_case_insensitive(tmp_path, mock_messages, m
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -218,8 +218,8 @@ def test_filtering_multiple_criteria(tmp_path, mock_messages, mock_board_dict, m
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -246,8 +246,8 @@ def test_filtering_numeric_fallback_when_names_missing(tmp_path, mock_messages, 
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -272,8 +272,8 @@ def test_filtering_no_matches(tmp_path, mock_messages, mock_board_dict, mock_log
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -297,8 +297,8 @@ def test_filtering_by_author_single(tmp_path, mock_messages, mock_board_dict, mo
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -324,8 +324,8 @@ def test_filtering_by_author_multiple(tmp_path, mock_messages, mock_board_dict, 
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -351,8 +351,8 @@ def test_filtering_by_subject_substring(tmp_path, mock_messages, mock_board_dict
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -377,8 +377,8 @@ def test_filtering_by_subject_multiple(tmp_path, mock_messages, mock_board_dict,
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     settings = ProcessingSettings(
         verbose=False, private=False, no_header=True, truncate_signatures=False,
@@ -404,8 +404,8 @@ def test_filtering_combined_criteria(tmp_path, mock_messages, mock_board_dict, m
     def fake_parse_messages(*args, **kwargs):
         yield from mock_messages
 
-    monkeypatch.setattr("qwk.load_data", fake_load_data)
-    monkeypatch.setattr("qwk.parse_messages", fake_parse_messages)
+    monkeypatch.setattr("pyqwk.core.load_data", fake_load_data)
+    monkeypatch.setattr("pyqwk.core.parse_messages", fake_parse_messages)
 
     # Filter: Conference 1 OR 2, AND Author "Alice"
     # Conf 1 (Alice) -> Match

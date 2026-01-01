@@ -1,7 +1,7 @@
 import csv
 import io
 import pytest
-from qwk import _write_csv, MessageHeader, ProcessedMessage
+from pyqwk.core import _write_csv, MessageHeader, ProcessedMessage
 
 def test_write_csv_output():
     header = MessageHeader(
@@ -39,7 +39,7 @@ def test_write_csv_output():
 
     from unittest.mock import patch
 
-    with patch('qwk._write_text_output') as mock_write:
+    with patch('pyqwk.core._write_text_output') as mock_write:
         _write_csv([message], None)
 
         mock_write.assert_called_once()
@@ -58,7 +58,7 @@ def test_write_csv_output():
 
 def test_write_csv_empty():
     from unittest.mock import patch
-    with patch('qwk._write_text_output') as mock_write:
+    with patch('pyqwk.core._write_text_output') as mock_write:
         _write_csv([], None)
 
         mock_write.assert_called_once()

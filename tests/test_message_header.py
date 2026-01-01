@@ -6,7 +6,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import MessageHeader, MessagesDatFormatError, InvalidMessageTypeError
+from pyqwk.core import MessageHeader, MessagesDatFormatError, InvalidMessageTypeError
 
 def build_header_bytes(**kwargs) -> bytes:
     """Helper to construct a 128-byte messages.dat header record."""

@@ -8,8 +8,8 @@ import logging
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import qwk
-from qwk import process_file, ProcessingSettings, main
+import pyqwk.core as qwk
+from pyqwk.core import process_file, ProcessingSettings
 
 @pytest.fixture
 def baseline_path() -> Path:
