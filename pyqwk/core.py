@@ -17,6 +17,7 @@ from contextlib import contextmanager, nullcontext
 from typing import Any, Callable, Protocol
 import datetime
 import email.utils
+import sqlite3
 
 __version__ = "0.1.0"
 
@@ -812,6 +813,7 @@ def process_file(
             'text': _write_text,
             'csv': _write_csv,
             'mbox': _write_mbox,
+            'sqlite': _write_sqlite,
         }
 
         writer = writers.get(settings.format, _write_text)
@@ -1137,6 +1139,63 @@ def _write_csv(
         writer.writerow(row)
 
     _write_text_output(output.getvalue(), output_path, encoding=encoding)
+
+
+def _write_sqlite(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
+    if output_path is None:
+        raise ValueError("Output path is required for SQLite export.")
+
+    conn = sqlite3.connect(output_path)
+    c = conn.cursor()
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conference_number INTEGER,
+            message_number INTEGER,
+            date TEXT,
+            author TEXT,
+            recipient TEXT,
+            subject TEXT,
+            status TEXT,
+            text TEXT,
+            reference_number INTEGER,
+            thread_id TEXT,
+            depth INTEGER,
+            parent_message_number INTEGER
+        )
+    ''')
+
+    for msg in messages:
+        header = msg.header
+        dt = _parse_qwk_date(header.msgdate, header.msgtime)
+        iso_date = dt.isoformat()
+
+        c.execute('''
+            INSERT INTO messages (
+                conference_number, message_number, date, author, recipient,
+                subject, status, text, reference_number, thread_id, depth,
+                parent_message_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            header.confnum,
+            header.msgnum,
+            iso_date,
+            header.msgfrom,
+            header.msgto,
+            header.msgsubject,
+            header.status,
+            msg.text,
+            header.refnum,
+            msg.thread_id,
+            msg.depth,
+            msg.parent_msgnum
+        ))
+
+    conn.commit()
+    conn.close()
 
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
