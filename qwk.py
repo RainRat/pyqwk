@@ -341,6 +341,40 @@ PROCESSING_EXCEPTIONS = (
 )
 
 
+class LogFormatter(logging.Formatter):
+    """Custom log formatter that applies colors to log levels."""
+
+    GREY = "\x1b[90m"
+    YELLOW = "\x1b[33m"
+    RED = "\x1b[31m"
+    BOLD_RED = "\x1b[31;1m"
+    RESET = "\x1b[0m"
+
+    def __init__(self, use_colors: bool = True) -> None:
+        super().__init__()
+        self.use_colors = use_colors
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_fmt = "%(levelname)s: %(message)s"
+
+        if record.levelno == logging.INFO:
+            # For INFO, just show the message
+            log_fmt = "%(message)s"
+
+        if self.use_colors:
+            if record.levelno == logging.DEBUG:
+                log_fmt = f"{self.GREY}{log_fmt}{self.RESET}"
+            elif record.levelno == logging.WARNING:
+                log_fmt = f"{self.YELLOW}{log_fmt}{self.RESET}"
+            elif record.levelno == logging.ERROR:
+                log_fmt = f"{self.RED}{log_fmt}{self.RESET}"
+            elif record.levelno == logging.CRITICAL:
+                log_fmt = f"{self.BOLD_RED}{log_fmt}{self.RESET}"
+
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray, dict[int, str]]:
@@ -1359,7 +1393,13 @@ def main() -> None:
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {args.loglevel}')
-    logging.basicConfig(level=numeric_level)
+
+    # Configure logging
+    use_colors = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
+    handler = logging.StreamHandler()
+    handler.setFormatter(LogFormatter(use_colors=use_colors))
+    logging.basicConfig(level=numeric_level, handlers=[handler])
+
     logger = logging.getLogger(__name__)
 
     input_paths = args.input_paths
