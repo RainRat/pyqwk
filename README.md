@@ -4,8 +4,8 @@ pyqwk is a simple tool to convert `.QWK` mail archives (from the BBS era) into r
 
 ## Quick Start
 
-1.  **Download** the `qwk.py` file (or install the package).
-2.  **Run it** (requires Python 3.10+):
+1.  **Download** this repository.
+2.  **Run the script** (requires Python 3.10+):
     ```bash
     python qwk.py archive.qwk
     ```
@@ -14,22 +14,26 @@ pyqwk is a simple tool to convert `.QWK` mail archives (from the BBS era) into r
 
 ## Installation (Optional)
 
-If you want to use the `qwk` command from any folder:
+You can install `pyqwk` to use the `qwk` command from any folder.
 
-1.  Download this repository.
-2.  Open your terminal in the folder.
-3.  Install:
+1.  Open your terminal in the project folder.
+2.  Install the package:
     ```bash
     pip install .
     ```
-4.  Now you can run:
+3.  Now you can use the command-line tool anywhere:
     ```bash
     qwk archive.qwk
     ```
-5.  Or launch the GUI reader:
+4.  Or launch the GUI reader:
     ```bash
     qwk-gui
     ```
+
+*Note: If you don't want to install the package, you can run the GUI directly:*
+```bash
+python -m pyqwk.gui
+```
 
 ## Library Usage
 
