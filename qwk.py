@@ -1550,8 +1550,18 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
                     parent_index = preceding[-1]
 
         if parent_index is not None and parent_index != index:
-            children[parent_index].append(index)
-            parent_map[index] = parent_index
+            # Check for immediate cycle (parent is already a child of this message)
+            if index in children and parent_index in children[index]:
+                child_msg = messages[index]
+                logger.warning(
+                    "Circular reference detected (conf %s, msgnum %s) - skipping parent assignment.",
+                    child_msg.confnum,
+                    child_msg.msgnum,
+                )
+                roots.append(index)
+            else:
+                children[parent_index].append(index)
+                parent_map[index] = parent_index
         else:
             roots.append(index)
 
@@ -1614,8 +1624,13 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
                     cycle_reported.add(child_idx)
                 continue
 
-            if child_idx not in visited:
-                enter_node(child_idx, depth + 1, thread_id)
+            if child_idx in visited:
+                # If a node was already visited but is NOT in the current recursion path,
+                # it means it was already processed as part of this or another tree.
+                # We skip it to avoid duplication.
+                continue
+
+            enter_node(child_idx, depth + 1, thread_id)
 
     for root_idx in roots:
         visit_iterative(root_idx)

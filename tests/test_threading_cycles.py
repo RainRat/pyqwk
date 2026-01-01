@@ -16,7 +16,9 @@ def test_threading_circular_reference(message_factory, caplog):
 
     # Check for warning
     assert "Circular reference detected" in caplog.text
-    assert "conf 1, msgnum 1" in caplog.text
+    # Cycle is detected when processing the second message (B), which tries to set A as parent
+    # but A is already a child of B (due to B appearing later in list/processing order).
+    assert "conf 1, msgnum 2" in caplog.text
 
     # Both messages should be present
     assert len(ordered) == 2
