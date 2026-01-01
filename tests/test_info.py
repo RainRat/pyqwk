@@ -1,7 +1,7 @@
 import logging
 from unittest.mock import MagicMock, patch
 import pytest
-from qwk import show_info, ProcessingSettings
+from pyqwk.core import show_info, ProcessingSettings
 
 @pytest.fixture
 def mock_logger():
@@ -56,7 +56,7 @@ def test_show_info_with_multiple_files(capsys, mock_logger, default_settings):
 
 def test_show_info_invalid_file(capsys, mock_logger, default_settings):
     # Mock load_data to return invalid data
-    with patch('qwk.load_data') as mock_load:
+    with patch('pyqwk.core.load_data') as mock_load:
         # Return tiny file
         mock_load.return_value = (bytearray(b'too_short'), {})
 
@@ -67,7 +67,7 @@ def test_show_info_invalid_file(capsys, mock_logger, default_settings):
 
 def test_show_info_not_messages_dat(capsys, mock_logger, default_settings):
     # Mock load_data to return data with wrong header
-    with patch('qwk.load_data') as mock_load:
+    with patch('pyqwk.core.load_data') as mock_load:
         # Return enough bytes but wrong header
         bad_data = bytearray(b'X' * 128)
         mock_load.return_value = (bad_data, {})

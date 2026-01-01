@@ -8,7 +8,7 @@ import importlib
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import _create_progress_bar
+from pyqwk.core import _create_progress_bar
 
 @pytest.fixture
 def clean_tqdm():

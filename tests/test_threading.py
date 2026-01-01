@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import (
+from pyqwk.core import (
     ProcessedMessage,
     MessageHeader,
     _order_messages_by_thread,
@@ -77,7 +77,7 @@ def test_text_output_indentation(message_factory):
     ]
     msgs[1].depth = 1 # Manually set depth as _write_text expects it
 
-    with patch("qwk._write_text_output") as mock_write:
+    with patch("pyqwk.core._write_text_output") as mock_write:
         _write_text(msgs, None)
         content = mock_write.call_args[0][0]
         assert "RootBody" in content
@@ -91,7 +91,7 @@ def test_html_output_nesting(message_factory):
     msgs[0].depth = 0
     msgs[1].depth = 1
 
-    with patch("qwk._write_text_output") as mock_write:
+    with patch("pyqwk.core._write_text_output") as mock_write:
         _write_html(msgs, None)
         content = mock_write.call_args[0][0]
         # Should contain nested structure
@@ -104,7 +104,7 @@ def test_json_metadata(message_factory):
     msgs[0].depth = 0
     msgs[0].thread_id = "1"
 
-    with patch("qwk._write_text_output") as mock_write:
+    with patch("pyqwk.core._write_text_output") as mock_write:
         _write_json(msgs, None)
         content = mock_write.call_args[0][0]
         data = json.loads(content)
@@ -116,7 +116,7 @@ def test_xml_metadata(message_factory):
     msgs[0].depth = 1
     msgs[0].thread_id = "thread1"
 
-    with patch("qwk._write_text_output") as mock_write:
+    with patch("pyqwk.core._write_text_output") as mock_write:
         _write_xml(msgs, None)
         content = mock_write.call_args[0][0]
         assert "<depth>1</depth>" in content
@@ -127,7 +127,7 @@ def test_threading_warning_is_suppressed(caplog: pytest.LogCaptureFixture, messa
         message_factory(2, 1, "Orphan Child"),
     ]
 
-    with caplog.at_level(logging.WARNING, logger="qwk"):
+    with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         _order_messages_by_thread(msgs)
 
     assert "references missing or external message" not in caplog.text

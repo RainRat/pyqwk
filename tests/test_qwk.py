@@ -11,10 +11,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import qwk
+import pyqwk.core as qwk
 import html
 
-from qwk import (
+from pyqwk.core import (
     ProcessingSettings,
     ParsedMessage,
     ProcessedMessage,
@@ -28,8 +28,8 @@ from qwk import (
     process_file,
     _write_xml,
     _write_html,
-    main,
 )
+from pyqwk.cli import main
 
 
 @pytest.fixture
@@ -146,7 +146,7 @@ def test_invalid_messages_dat_reports_clear_error(
     invalid_file.write_text("This is not a messages.dat file", encoding="latin1")
 
     monkeypatch.setattr(sys, "argv", ["qwk", str(invalid_file)])
-    with caplog.at_level(logging.ERROR, logger="qwk"):
+    with caplog.at_level(logging.ERROR, logger="pyqwk.core"):
         with pytest.raises(SystemExit) as exc_info:
             main()
 
@@ -321,7 +321,7 @@ def test_order_messages_by_thread_logs_circular_reference(caplog: pytest.LogCapt
         ProcessedMessage("third\r\n", msgnum=3, refnum=2, confnum=1, header=header),
     ]
 
-    with caplog.at_level(logging.WARNING, logger="qwk"):
+    with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(messages)
 
     assert [message.msgnum for message in ordered] == [1, 2, 3]
@@ -600,7 +600,7 @@ def test_process_file_writes_html(
 def test_process_file_writes_xml_with_special_characters(
     tmp_path, logger: logging.Logger
 ) -> None:
-    from qwk import _write_xml
+    from pyqwk.core import _write_xml
     header = MessageHeader(
         status=' ',
         msgnum=1,
@@ -704,7 +704,7 @@ def test_process_multiple_files_creates_multiple_outputs(
         str(testdata_dir / "test2_qwk.zip"),
     ]
 
-    from qwk import process_multiple_files
+    from pyqwk.core import process_multiple_files
 
     process_multiple_files(
         input_paths,
@@ -1056,7 +1056,8 @@ def test_process_multiple_files_handles_controldat_error(
         if "bad" in input_path:
             raise ControlDatFormatError("Bad control.dat")
 
-    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+    import pyqwk.cli as cli
+    monkeypatch.setattr(cli, "process_file", mock_process_file)
 
     input_paths = ["bad.zip", "good.zip"]
     output_dir = tmp_path / "output"
@@ -1081,7 +1082,8 @@ def test_clean_flag_activates_cleaning_options(
     def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
         captured_settings.append(settings)
 
-    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+    import pyqwk.cli as cli
+    monkeypatch.setattr(cli, "process_file", mock_process_file)
 
     main()
 

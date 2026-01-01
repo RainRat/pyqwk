@@ -19,7 +19,9 @@ classifiers = [
 ]
 
 [project.scripts]
-qwk = "qwk:main"
+qwk = "pyqwk.cli:main"
+qwk-gui = "pyqwk.gui:main"
 
 [tool.setuptools]
+packages = ["pyqwk"]
 py-modules = ["qwk"]

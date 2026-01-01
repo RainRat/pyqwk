@@ -2,12 +2,12 @@ import pytest
 import sys
 from pathlib import Path
 
-# Ensure the root directory is in sys.path so we can import qwk
+# Ensure the root directory is in sys.path so we can import pyqwk.
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from qwk import ProcessedMessage, MessageHeader
+from pyqwk.core import ProcessedMessage, MessageHeader
 
 @pytest.fixture
 def message_factory():

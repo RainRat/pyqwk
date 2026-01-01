@@ -1,4 +1,3 @@
-from qwk import process_file, ProcessingSettings
 import pytest
 import logging
 import os
@@ -18,8 +17,7 @@ def logger() -> logging.Logger:
 
 def test_main_auto_detects_json(monkeypatch, tmp_path, baseline_path):
     import sys
-    from qwk import main
-    import argparse
+    from pyqwk.cli import main
 
     output_path = tmp_path / "output.json"
 
@@ -34,8 +32,8 @@ def test_main_auto_detects_json(monkeypatch, tmp_path, baseline_path):
     def mock_process_file(input_path, settings, logger):
         captured_settings.append(settings)
 
-    import qwk
-    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+    import pyqwk.cli as cli
+    monkeypatch.setattr(cli, "process_file", mock_process_file)
 
     main()
 
@@ -44,7 +42,7 @@ def test_main_auto_detects_json(monkeypatch, tmp_path, baseline_path):
 
 def test_main_auto_detects_html(monkeypatch, tmp_path, baseline_path):
     import sys
-    from qwk import main
+    from pyqwk.cli import main
 
     output_path = tmp_path / "output.html"
 
@@ -54,8 +52,8 @@ def test_main_auto_detects_html(monkeypatch, tmp_path, baseline_path):
     def mock_process_file(input_path, settings, logger):
         captured_settings.append(settings)
 
-    import qwk
-    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+    import pyqwk.cli as cli
+    monkeypatch.setattr(cli, "process_file", mock_process_file)
 
     main()
 
@@ -64,7 +62,7 @@ def test_main_auto_detects_html(monkeypatch, tmp_path, baseline_path):
 
 def test_main_defaults_to_text_unknown_extension(monkeypatch, tmp_path, baseline_path):
     import sys
-    from qwk import main
+    from pyqwk.cli import main
 
     output_path = tmp_path / "output.foo"
 
@@ -74,8 +72,8 @@ def test_main_defaults_to_text_unknown_extension(monkeypatch, tmp_path, baseline
     def mock_process_file(input_path, settings, logger):
         captured_settings.append(settings)
 
-    import qwk
-    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+    import pyqwk.cli as cli
+    monkeypatch.setattr(cli, "process_file", mock_process_file)
 
     main()
 
@@ -84,7 +82,7 @@ def test_main_defaults_to_text_unknown_extension(monkeypatch, tmp_path, baseline
 
 def test_main_respects_explicit_format(monkeypatch, tmp_path, baseline_path):
     import sys
-    from qwk import main
+    from pyqwk.cli import main
 
     output_path = tmp_path / "output.json"
 
@@ -95,8 +93,8 @@ def test_main_respects_explicit_format(monkeypatch, tmp_path, baseline_path):
     def mock_process_file(input_path, settings, logger):
         captured_settings.append(settings)
 
-    import qwk
-    monkeypatch.setattr(qwk, "process_file", mock_process_file)
+    import pyqwk.cli as cli
+    monkeypatch.setattr(cli, "process_file", mock_process_file)
 
     main()
 

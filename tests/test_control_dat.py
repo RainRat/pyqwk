@@ -6,7 +6,7 @@ import logging
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import _parse_control_dat, ControlDatFormatError
+from pyqwk.core import _parse_control_dat, ControlDatFormatError
 
 def test_parse_control_dat_too_short():
     # CONTROL.DAT must have at least 11 lines (indices 0-10) to read the conference count.

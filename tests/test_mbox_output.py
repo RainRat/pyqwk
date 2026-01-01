@@ -7,7 +7,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from qwk import _write_mbox, _serialize_message_mbox, ProcessedMessage, MessageHeader
+from pyqwk.core import _write_mbox, _serialize_message_mbox, ProcessedMessage, MessageHeader
 
 @pytest.fixture
 def sample_message():

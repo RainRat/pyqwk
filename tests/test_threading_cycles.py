@@ -1,6 +1,6 @@
 import logging
 import pytest
-from qwk import _order_messages_by_thread
+from pyqwk.core import _order_messages_by_thread
 
 def test_threading_circular_reference(message_factory, caplog):
     """Test that circular references are detected and do not cause infinite recursion."""
@@ -11,7 +11,7 @@ def test_threading_circular_reference(message_factory, caplog):
         message_factory(2, 1, "Message B"),
     ]
 
-    with caplog.at_level(logging.WARNING, logger="qwk"):
+    with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(msgs)
 
     # Check for warning
@@ -43,7 +43,7 @@ def test_threading_self_reference(message_factory, caplog):
         message_factory(1, 1, "Message A"),
     ]
 
-    with caplog.at_level(logging.WARNING, logger="qwk"):
+    with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(msgs)
 
     # Should be no warning because it's filtered out before traversal
@@ -63,7 +63,7 @@ def test_threading_long_cycle(message_factory, caplog):
         message_factory(3, 2, "Message C"),
     ]
 
-    with caplog.at_level(logging.WARNING, logger="qwk"):
+    with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(msgs)
 
     assert "Circular reference detected" in caplog.text
