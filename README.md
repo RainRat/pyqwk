@@ -107,7 +107,7 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 | :--- | :--- |
 | `-o [file/folder]` | Where to save the output. Defaults to screen. |
 | `-i` | Save each message as a separate file (cannot use with threaded). |
-| `--format [type]` | Output format: `text`, `html`, `json`, `xml`. |
+| `--format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
 | `--clean` | Remove "junk" like signatures, quotes, and binary data. |
 | `-p`, `--private` | Include private messages. |
