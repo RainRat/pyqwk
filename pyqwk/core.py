@@ -846,25 +846,31 @@ def _write_json(
 XML_INVALID_CHAR_PATTERN = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
 
 
-def _serialize_message_xml(message: ProcessedMessage) -> str:
-    root = ET.Element('message')
+def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
+    """Convert a message to an XML Element."""
+    msg_element = ET.Element('message')
 
     if message.depth > 0:
-        ET.SubElement(root, 'depth').text = str(message.depth)
+        ET.SubElement(msg_element, 'depth').text = str(message.depth)
     if message.thread_id:
-        ET.SubElement(root, 'thread_id').text = str(message.thread_id)
+        ET.SubElement(msg_element, 'thread_id').text = str(message.thread_id)
     if message.parent_msgnum is not None:
-        ET.SubElement(root, 'parent_msgnum').text = str(message.parent_msgnum)
+        ET.SubElement(msg_element, 'parent_msgnum').text = str(message.parent_msgnum)
 
-    header_element = ET.SubElement(root, 'header')
+    header_element = ET.SubElement(msg_element, 'header')
     header_data = message.header.as_dict
     for key, value in header_data.items():
         child = ET.SubElement(header_element, key)
         child.text = XML_INVALID_CHAR_PATTERN.sub('', str(value))
 
-    text_element = ET.SubElement(root, 'text')
+    text_element = ET.SubElement(msg_element, 'text')
     text_element.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
 
+    return msg_element
+
+
+def _serialize_message_xml(message: ProcessedMessage) -> str:
+    root = _message_to_xml_element(message)
     ET.indent(root, space='  ')
     xml_bytes = ET.tostring(root, encoding='utf-8')
     return xml_bytes.decode('utf-8')
@@ -875,23 +881,8 @@ def _write_xml(
 ) -> None:
     root = ET.Element('messages')
     for message in messages:
-        msg_element = ET.SubElement(root, 'message')
-
-        if message.depth > 0:
-            ET.SubElement(msg_element, 'depth').text = str(message.depth)
-        if message.thread_id:
-            ET.SubElement(msg_element, 'thread_id').text = str(message.thread_id)
-        if message.parent_msgnum is not None:
-            ET.SubElement(msg_element, 'parent_msgnum').text = str(message.parent_msgnum)
-
-        header_element = ET.SubElement(msg_element, 'header')
-        header_data = message.header.as_dict
-        for key, value in header_data.items():
-            child = ET.SubElement(header_element, key)
-            child.text = XML_INVALID_CHAR_PATTERN.sub('', str(value))
-
-        text_element = ET.SubElement(msg_element, 'text')
-        text_element.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
+        msg_element = _message_to_xml_element(message)
+        root.append(msg_element)
 
     ET.indent(root, space='  ')
     xml_bytes = ET.tostring(root, encoding='utf-8')
