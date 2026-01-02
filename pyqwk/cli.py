@@ -32,6 +32,8 @@ def _resolve_output_format(
                 return 'csv'
             if ext == '.mbox':
                 return 'mbox'
+            if ext == '.sqlite' or ext == '.db':
+                return 'sqlite'
         return 'text'
     return output_format
 
@@ -109,11 +111,11 @@ def main() -> None:
     format_group.add_argument(
         '--format',
         help=(
-            'Choose the output format: text, json, xml, html, csv, or mbox. '
+            'Choose the output format: text, json, xml, html, csv, mbox, or sqlite. '
             '(Default: auto-detected from output filename, or text)'
         ),
         default=None,
-        choices=['text', 'json', 'xml', 'html', 'csv', 'mbox'],
+        choices=['text', 'json', 'xml', 'html', 'csv', 'mbox', 'sqlite'],
     )
     format_group.add_argument(
         '--separator',
