@@ -771,7 +771,9 @@ def process_file(
                     # For JSON, we use the message object but update the text with processed_buffer
                     # Note: processed_buffer may contain the header if not --noheader, matching existing behavior
                     temp_msg = replace(parsed_message, text=processed_buffer)
-                    encoded_buffer = _serialize_message_json(temp_msg).encode(target_encoding)
+                    encoded_buffer = json.dumps(
+                        _message_to_dict(temp_msg), indent=4, ensure_ascii=False
+                    ).encode(target_encoding)
                 elif settings.format == 'xml':
                     temp_msg = replace(parsed_message, text=processed_buffer)
                     encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
@@ -831,10 +833,6 @@ def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
         'thread_id': message.thread_id,
         'parent_msgnum': message.parent_msgnum,
     }
-
-
-def _serialize_message_json(message: ProcessedMessage) -> str:
-    return json.dumps(_message_to_dict(message), indent=4, ensure_ascii=False)
 
 
 def _write_json(
