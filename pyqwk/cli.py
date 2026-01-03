@@ -66,7 +66,7 @@ def main() -> None:
         '-o',
         '--output',
         dest='output_path',
-        help='Where to save the results (filename or folder). Defaults to showing on screen.',
+        help='Where to save the results. Use a folder for multiple files. Defaults to screen.',
     )
     io_group.add_argument(
         '-i',
