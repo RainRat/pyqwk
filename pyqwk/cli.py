@@ -38,11 +38,26 @@ def _resolve_output_format(
     return output_format
 
 
+def _expand_directories(paths: list[str]) -> list[str]:
+    """Recursively find supported QWK files in directories."""
+    expanded_paths = []
+    for path in paths:
+        if os.path.isdir(path):
+            for root, _, files in os.walk(path):
+                for file in files:
+                    lower_file = file.lower()
+                    if lower_file.endswith(('.qwk', '.zip', '.rep')) or lower_file == 'messages.dat':
+                        expanded_paths.append(os.path.join(root, file))
+        else:
+            expanded_paths.append(path)
+    return sorted(expanded_paths)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'input_paths',
-        help='The QWK archive files or messages.dat files you want to read.',
+        help='The QWK archive files, messages.dat files, or directories you want to read.',
         nargs='+',
     )
 
@@ -204,8 +219,13 @@ def main() -> None:
 
     logger = logging.getLogger(__name__)
 
-    input_paths = args.input_paths
+    has_directory_input = any(os.path.isdir(p) for p in args.input_paths)
+    input_paths = _expand_directories(args.input_paths)
     output_path = args.output_path
+
+    if not input_paths:
+        logger.error("No valid QWK files found in the provided paths.")
+        sys.exit(1)
 
     if args.individualfiles:
         if output_path is None:
@@ -214,7 +234,7 @@ def main() -> None:
             parser.error('Output path must be a folder when writing individual files.')
         output_mode = 'file'
         resolved_output_path = output_path
-    elif len(input_paths) > 1:
+    elif len(input_paths) > 1 or has_directory_input:
         if not output_path:
             parser.error('Output folder is required when processing multiple files.')
         output_mode = 'file'
@@ -250,7 +270,7 @@ def main() -> None:
         show_info(input_paths, settings, logger)
         sys.exit(0)
 
-    if len(input_paths) > 1:
+    if len(input_paths) > 1 or has_directory_input:
         had_errors = process_multiple_files(input_paths, output_path, settings, logger)
         if had_errors:
             sys.exit(1)
