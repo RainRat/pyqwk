@@ -133,6 +133,7 @@ class ProcessingSettings:
     output_path: str | None
     encoding: str
     quiet: bool = False
+    headers_only: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
     subjects: list[str] | None = None
@@ -476,6 +477,7 @@ def parse_messages(
     file_data: bytearray,
     progress_bar: ProgressBar | None,
     encoding: str = 'cp437',
+    headers_only: bool = False,
 ) -> Iterator[ParsedMessage]:
     """Parse a QWK messages.dat payload into message objects.
 
@@ -483,6 +485,7 @@ def parse_messages(
         file_data: Raw bytes from a messages.dat file.
         progress_bar: Optional tqdm-compatible progress reporter to update as blocks are read.
         encoding: Character encoding to use when decoding messages.
+        headers_only: If True, skips reading the message body content.
 
     Yields:
         ParsedMessage instances containing the message body, header, and metadata flags.
@@ -536,10 +539,12 @@ def parse_messages(
                     header=header,
                 )
         else:
-            temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
-            if blocks_remaining == 1:
-                temp_record = temp_record.rstrip() + '\r\n'
-            message_buffer += temp_record
+            if not headers_only:
+                temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
+                if blocks_remaining == 1:
+                    temp_record = temp_record.rstrip() + '\r\n'
+                message_buffer += temp_record
+
             blocks_remaining = blocks_remaining - 1
             if blocks_remaining == 0 and header is not None:
                 yield ParsedMessage(
@@ -702,6 +707,7 @@ def process_file(
             file_data,
             progress_bar,
             settings.encoding,
+            settings.headers_only,
         ):
             # Check private
             if (
@@ -770,7 +776,9 @@ def process_file(
                 elif settings.format == 'json':
                     # For JSON, we use the message object but update the text with processed_buffer
                     # Note: processed_buffer may contain the header if not --noheader, matching existing behavior
-                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    # If headers_only, we want empty text in the JSON, not processed_buffer (which might be the formatted header)
+                    text_content = "" if settings.headers_only else processed_buffer
+                    temp_msg = replace(parsed_message, text=text_content)
                     encoded_buffer = json.dumps(
                         _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                     ).encode(target_encoding)
@@ -794,10 +802,18 @@ def process_file(
                 ) as f:
                     f.write(encoded_buffer)
             else:
+                text_content = processed_buffer
+                if settings.headers_only:
+                    # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
+                    # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
+                    # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
+                    if settings.format in ('xml', 'csv', 'sqlite'):
+                         text_content = ""
+
                 collected_messages.append(
                     replace(
                         parsed_message,
-                        text=processed_buffer,
+                        text=text_content,
                     )
                 )
 

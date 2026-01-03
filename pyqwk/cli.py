@@ -121,6 +121,11 @@ def main() -> None:
         help="Include messages marked as 'Private'.",
         action='store_true',
     )
+    content_group.add_argument(
+        '--headers-only',
+        help='Extract only message headers, skipping body text (faster for metadata/stats).',
+        action='store_true',
+    )
 
     format_group = parser.add_argument_group('Formatting & Structure')
     format_group.add_argument(
@@ -256,6 +261,7 @@ def main() -> None:
         binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
         quiet=args.quiet,
+        headers_only=args.headers_only,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,
