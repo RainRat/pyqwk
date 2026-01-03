@@ -120,6 +120,13 @@ class QwkGuiApp:
         self.detail_text.pack(fill=tk.BOTH, expand=True)
         self.detail_text.config(state=tk.DISABLED)
 
+        # Configure tags for visual hierarchy
+        self.detail_text.tag_configure(
+            "header_label", font=("TkDefaultFont", 9, "bold"), foreground="#555555"
+        )
+        self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 9))
+        self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
+
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
         return ProcessingSettings(
@@ -140,24 +147,34 @@ class QwkGuiApp:
             quiet=True,
         )
 
-    def _format_message_detail(self, message_index: int) -> str:
+    def _render_message(self, message_index: int) -> None:
+        """Render a message with rich formatting in the detail view."""
         message = self.messages[message_index]
         header = message.header
         conf_name = self.board_dict.get(header.confnum, str(header.confnum))
-        parts = [
-            f"Conference: {conf_name}",
-            f"Date: {header.msgdate} {header.msgtime}",
-            f"From: {header.msgfrom}",
-            f"To: {header.msgto}",
-            f"Subject: {header.msgsubject}",
-        ]
+
+        self.detail_text.config(state=tk.NORMAL)
+        self.detail_text.delete("1.0", tk.END)
+
+        def insert_header(label: str, value: str) -> None:
+            self.detail_text.insert(tk.END, f"{label}: ", "header_label")
+            self.detail_text.insert(tk.END, f"{value}\n", "header_value")
+
+        insert_header("Conference", conf_name)
+        insert_header("Date", f"{header.msgdate} {header.msgtime}")
+        insert_header("From", header.msgfrom)
+        insert_header("To", header.msgto)
+        insert_header("Subject", header.msgsubject)
+
         if header.msgnum is not None:
-            parts.append(f"Message #: {header.msgnum}")
+            insert_header("Message #", str(header.msgnum))
         if message.refnum:
-            parts.append(f"Reference #: {message.refnum}")
-        parts.append("")
-        parts.append(message.text)
-        return "\n".join(parts)
+            insert_header("Reference #", str(message.refnum))
+
+        self.detail_text.insert(tk.END, "\n", "header_value")
+        self.detail_text.insert(tk.END, message.text, "body")
+
+        self.detail_text.config(state=tk.DISABLED)
 
     def open_file(self) -> None:
         filetypes = [
@@ -265,7 +282,7 @@ class QwkGuiApp:
         # Use the first selected item
         iid = selected_items[0]
         index = int(iid)
-        self._set_detail_text(self._format_message_detail(index))
+        self._render_message(index)
 
 
 def main() -> None:
