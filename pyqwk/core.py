@@ -891,13 +891,13 @@ def _write_xml(
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
-def _serialize_message_html(message: ProcessedMessage) -> str:
-    html_parts = [
+def _get_html_header(title: str) -> list[str]:
+    return [
         '<!DOCTYPE html>',
         '<html lang="en">',
         '<head>',
         '<meta charset="utf-8" />',
-        '<title>QWK Message</title>',
+        f'<title>{title}</title>',
         '<style>',
         '.reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }',
         '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',
@@ -908,30 +908,45 @@ def _serialize_message_html(message: ProcessedMessage) -> str:
         '<body>',
     ]
 
-    html_parts.append('<div class="message">')
+
+def _get_html_footer() -> list[str]:
+    return [
+        '</body>',
+        '</html>',
+    ]
+
+
+def _render_single_message_html(message: ProcessedMessage) -> list[str]:
+    parts = []
+    parts.append('<div class="message">')
 
     # Header
     header = message.header
-    html_parts.append('<div class="header">')
-    html_parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
-    html_parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
-    html_parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
-    html_parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
+    parts.append('<div class="header">')
+    parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
+    parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
+    parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
+    parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
     # Conference number is always present as an int
-    html_parts.append(f'<div><strong>Conference:</strong> {header.confnum}</div>')
+    parts.append(f'<div><strong>Conference:</strong> {header.confnum}</div>')
     if header.msgnum is not None:
-        html_parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
-    html_parts.append('</div>')
+        parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
+    parts.append('</div>')
 
     # Body
     escaped_text = html.escape(message.text.replace('\r\n', '\n'))
-    html_parts.append('<pre class="body">')
-    html_parts.append(escaped_text)
-    html_parts.append('</pre>')
-    html_parts.append('</div>')
+    parts.append('<pre class="body">')
+    parts.append(escaped_text)
+    parts.append('</pre>')
+    parts.append('</div>')
 
-    html_parts.append('</body>')
-    html_parts.append('</html>')
+    return parts
+
+
+def _serialize_message_html(message: ProcessedMessage) -> str:
+    html_parts = _get_html_header('QWK Message')
+    html_parts.extend(_render_single_message_html(message))
+    html_parts.extend(_get_html_footer())
 
     return '\n'.join(html_parts)
 
@@ -939,22 +954,7 @@ def _serialize_message_html(message: ProcessedMessage) -> str:
 def _write_html(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
-    html_parts = [
-        '<!DOCTYPE html>',
-        '<html lang="en">',
-        '<head>',
-        '<meta charset="utf-8" />',
-        '<title>QWK Messages</title>',
-        '<style>',
-        '.reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }',
-        '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',
-        '.header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }',
-        '.body { white-space: pre-wrap; font-family: monospace; }',
-        '</style>',
-        '</head>',
-        '<body>',
-    ]
-
+    html_parts = _get_html_header('QWK Messages')
     current_depth = 0
 
     for message in messages:
@@ -965,34 +965,13 @@ def _write_html(
             html_parts.append('</div>')
             current_depth -= 1
 
-        html_parts.append('<div class="message">')
-
-        # Header
-        header = message.header
-        html_parts.append('<div class="header">')
-        html_parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
-        html_parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
-        html_parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
-        html_parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
-        # Conference number is always present as an int
-        html_parts.append(f'<div><strong>Conference:</strong> {header.confnum}</div>')
-        if header.msgnum is not None:
-            html_parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
-        html_parts.append('</div>')
-
-        # Body
-        escaped_text = html.escape(message.text.replace('\r\n', '\n'))
-        html_parts.append('<pre class="body">')
-        html_parts.append(escaped_text)
-        html_parts.append('</pre>')
-        html_parts.append('</div>')
+        html_parts.extend(_render_single_message_html(message))
 
     while current_depth > 0:
         html_parts.append('</div>')
         current_depth -= 1
 
-    html_parts.append('</body>')
-    html_parts.append('</html>')
+    html_parts.extend(_get_html_footer())
 
     _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
 
