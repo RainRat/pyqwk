@@ -104,10 +104,30 @@ class QwkGuiApp:
             columns=("From", "Date", "Conference"),
             selectmode="browse",
         )
-        self.message_list.heading("#0", text="Subject", anchor=tk.W)
-        self.message_list.heading("From", text="From", anchor=tk.W)
-        self.message_list.heading("Date", text="Date", anchor=tk.W)
-        self.message_list.heading("Conference", text="Conference", anchor=tk.W)
+        self.message_list.heading(
+            "#0",
+            text="Subject",
+            anchor=tk.W,
+            command=lambda: self.sort_column("#0", False),
+        )
+        self.message_list.heading(
+            "From",
+            text="From",
+            anchor=tk.W,
+            command=lambda: self.sort_column("From", False),
+        )
+        self.message_list.heading(
+            "Date",
+            text="Date",
+            anchor=tk.W,
+            command=lambda: self.sort_column("Date", False),
+        )
+        self.message_list.heading(
+            "Conference",
+            text="Conference",
+            anchor=tk.W,
+            command=lambda: self.sort_column("Conference", False),
+        )
 
         self.message_list.column("#0", minwidth=200, width=300)
         self.message_list.column("From", minwidth=80, width=120)
@@ -290,8 +310,41 @@ class QwkGuiApp:
             return
         # Use the first selected item
         iid = selected_items[0]
-        index = int(iid)
-        self._render_message(index)
+        try:
+            index = int(iid)
+            self._render_message(index)
+        except ValueError:
+            # Handle cases where iid is not an integer (e.g., if we change ID generation)
+            pass
+
+    def sort_column(self, col: str, reverse: bool) -> None:
+        """Sort the treeview contents by the given column."""
+        if self.threaded_var.get():
+            # Sorting breaks the tree structure visualization, so we disable it for now
+            # or we could just sort top-level items. For simplicity, we skip if threaded.
+            return
+
+        l = [
+            (self.message_list.set(k, col), k)
+            if col != "#0"
+            else (self.message_list.item(k, "text"), k)
+            for k in self.message_list.get_children("")
+        ]
+
+        try:
+            l.sort(key=lambda t: t[0].lower(), reverse=reverse)
+        except Exception:
+            # Fallback if sorting fails
+            l.sort(key=lambda t: t[0], reverse=reverse)
+
+        # Rearrange items in sorted positions
+        for index, (_, k) in enumerate(l):
+            self.message_list.move(k, "", index)
+
+        # Update heading to toggle reverse flag
+        self.message_list.heading(
+            col, command=lambda: self.sort_column(col, not reverse)
+        )
 
 
 def main() -> None:
