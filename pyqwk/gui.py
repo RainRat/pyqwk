@@ -37,11 +37,20 @@ class QwkGuiApp:
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Open...", command=self.open_file)
+        file_menu.add_command(
+            label="Open...", command=self.open_file, accelerator="Ctrl+O"
+        )
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
+        file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
         menubar.add_cascade(label="File", menu=file_menu)
         self.root.config(menu=menubar)
+
+        # Bind keyboard shortcuts
+        self.root.bind("<Control-o>", self.open_file)
+        self.root.bind("<Control-q>", self.quit_app)
+
+    def quit_app(self, _event: object | None = None) -> None:
+        self.root.quit()
 
     def _build_toolbar(self) -> None:
         toolbar = ttk.Frame(self.root, padding=(10, 5))
@@ -176,7 +185,7 @@ class QwkGuiApp:
 
         self.detail_text.config(state=tk.DISABLED)
 
-    def open_file(self) -> None:
+    def open_file(self, _event: object | None = None) -> None:
         filetypes = [
             ("QWK archives", "*.qwk"),
             ("messages.dat", "messages.dat"),
