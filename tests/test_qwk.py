@@ -99,6 +99,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         redactpii=False,
         clean=False,
         quiet=False,
+        headers_only=False,
         format="text",
         separator="auto",
         loglevel="INFO",
@@ -516,7 +517,7 @@ def test_process_file_preserves_thread_order_in_json(
     def fake_load_data(path: str, logger_param: logging.Logger, encoding: str = 'cp437') -> tuple[bytearray, dict[int, str]]:
         return bytearray(), {}
 
-    def fake_parse_messages(file_data: bytearray, progress_bar: object, encoding: str = 'cp437'):
+    def fake_parse_messages(file_data: bytearray, progress_bar: object, encoding: str = 'cp437', headers_only: bool = False):
         yield from parsed_messages
 
     monkeypatch.setattr(qwk, "load_data", fake_load_data)
