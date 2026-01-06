@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import sys
+import datetime
 
 from pyqwk.core import (
     LogFormatter,
@@ -51,6 +52,27 @@ def _expand_directories(paths: list[str]) -> list[str]:
         else:
             expanded_paths.append(path)
     return sorted(expanded_paths)
+
+
+def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.datetime | None:
+    """Parse a date string from the command line into a datetime object.
+
+    Args:
+        date_str: Date string in 'YYYY-MM-DD' format.
+        end_of_day: If True, set the time to 23:59:59.999999.
+
+    Returns:
+        A datetime object or None.
+    """
+    if not date_str:
+        return None
+    try:
+        dt = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        if end_of_day:
+            dt = dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return dt
+    except ValueError:
+        raise ValueError(f"Invalid date format: '{date_str}'. Use YYYY-MM-DD.")
 
 
 def main() -> None:
@@ -196,6 +218,16 @@ def main() -> None:
         action='append',
         help='Filter messages by subject line (case-insensitive substring match).',
     )
+    filter_group.add_argument(
+        '--after',
+        help='Filter messages dated on or after this date (format: YYYY-MM-DD).',
+        default=None,
+    )
+    filter_group.add_argument(
+        '--before',
+        help='Filter messages dated on or before this date (format: YYYY-MM-DD).',
+        default=None,
+    )
 
     parser.add_argument(
         '--info',
@@ -250,6 +282,12 @@ def main() -> None:
 
     output_format = _resolve_output_format(args.format, output_path, output_mode)
 
+    try:
+        after_date = _parse_cli_date(args.after)
+        before_date = _parse_cli_date(args.before, end_of_day=True)
+    except ValueError as e:
+        parser.error(str(e))
+
     settings = ProcessingSettings(
         verbose=args.verbose,
         private=args.private,
@@ -270,6 +308,8 @@ def main() -> None:
         conferences=args.conferences,
         authors=args.authors,
         subjects=args.subjects,
+        after=after_date,
+        before=before_date,
     )
 
     if args.info:

@@ -141,6 +141,8 @@ class ProcessingSettings:
     conferences: list[str] | None = None
     authors: list[str] | None = None
     subjects: list[str] | None = None
+    after: datetime.datetime | None = None
+    before: datetime.datetime | None = None
 
 
 @dataclass
@@ -745,6 +747,14 @@ def process_file(
                 msg_subject_lower = parsed_message.header.msgsubject.lower()
                 if not any(s.lower() in msg_subject_lower for s in settings.subjects):
                     continue
+
+            # Check date filter
+            if settings.after or settings.before:
+                 msg_dt = _parse_qwk_date(parsed_message.header.msgdate, parsed_message.header.msgtime)
+                 if settings.after and msg_dt < settings.after:
+                     continue
+                 if settings.before and msg_dt > settings.before:
+                     continue
 
             processed_buffer = process_message(
                 parsed_message.text,
@@ -1461,4 +1471,3 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
             visit_iterative(idx)
 
     return ordered_messages
-
