@@ -46,6 +46,10 @@ RE_PHONE_PATTERN = re.compile(
     r'\b'
 )
 
+RE_SUBJECT_PREFIX_PATTERN = re.compile(
+    r'^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*', re.IGNORECASE
+)
+
 SIGNATURE_PATTERNS_EXACT = {
     "---",
     "___",
@@ -1299,10 +1303,10 @@ def _normalize_subject(subject: str) -> str:
     """Normalize subject line for threading by removing prefixes."""
     s = subject.strip()
     while True:
-        m = re.match(r'^(?:re|fw|fwd)[:\[\s-]', s, re.IGNORECASE)
-        if not m:
+        new_s = RE_SUBJECT_PREFIX_PATTERN.sub('', s)
+        if new_s == s:
             break
-        s = re.sub(r'^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*', '', s, flags=re.IGNORECASE)
+        s = new_s
     return s.strip().lower()
 
 
