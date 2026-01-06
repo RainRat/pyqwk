@@ -65,6 +65,11 @@ python qwk.py archive.qwk --format html -o messages.html
 python qwk.py archive.qwk --format json -o data.json
 ```
 
+**Export to SQLite database:**
+```bash
+python qwk.py archive.qwk --format sqlite -o messages.db
+```
+
 **Process multiple files:**
 Save all converted files into a folder named `output`:
 ```bash
