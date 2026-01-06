@@ -520,7 +520,17 @@ def parse_messages(
         if progress_bar is not None:
             progress_bar.update(len(record))
         if blocks_remaining == 0:
-            header = MessageHeader.from_bytes(record, encoding)
+            try:
+                header = MessageHeader.from_bytes(record, encoding)
+            except (MessagesDatFormatError, InvalidMessageTypeError):
+                # If the header is invalid, we skip this block and try the next one as a header.
+                logging.warning(
+                    "Invalid message header at offset %s; skipping block.",
+                    i,
+                )
+                blocks_remaining = 0
+                continue
+
             current_msgnum = header.msgnum
             current_refnum = header.refnum
             current_confnum = header.confnum
