@@ -100,6 +100,12 @@ Find messages about a specific topic.
 python qwk.py archive.qwk --subject "Welcome"
 ```
 
+**Search Body Content:**
+Search for a keyword in author, subject, and message body.
+```bash
+python qwk.py archive.qwk --search "BBS"
+```
+
 **Combine Filters:**
 Find messages from "Sysop" in the "Announcements" conference.
 ```bash
@@ -119,6 +125,7 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 | `-C [conf]` | Filter by conference name or number. |
 | `--from [name]` | Filter by sender name. |
 | `--subject [text]` | Filter by subject line. |
+| `--search [text]` | Search in author, subject, and body. |
 | `--info` | Show a summary of the archive (counts, conferences) and exit. |
 
 Run `python qwk.py --help` to see all options.

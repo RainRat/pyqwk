@@ -78,6 +78,9 @@ def _make_settings(**overrides) -> ProcessingSettings:
         conferences=None,
         authors=None,
         subjects=None,
+        search_term=None,
+        after=None,
+        before=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -107,6 +110,9 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         conferences=None,
         authors=None,
         subjects=None,
+        search_term=None,
+        after=None,
+        before=None,
         info=False,
     )
     base.update(overrides)

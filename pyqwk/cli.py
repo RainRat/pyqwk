@@ -219,6 +219,11 @@ def main() -> None:
         help='Filter messages by subject line (case-insensitive substring match).',
     )
     filter_group.add_argument(
+        '--search',
+        dest='search_term',
+        help='Search for a keyword in author, subject, and message body.',
+    )
+    filter_group.add_argument(
         '--after',
         help='Filter messages dated on or after this date (format: YYYY-MM-DD).',
         default=None,
@@ -308,6 +313,7 @@ def main() -> None:
         conferences=args.conferences,
         authors=args.authors,
         subjects=args.subjects,
+        search_term=args.search_term,
         after=after_date,
         before=before_date,
     )

@@ -10,6 +10,8 @@ from pyqwk.core import (
     load_data,
     parse_messages,
     process_message,
+    matches_filters,
+    get_allowed_conferences,
 )
 
 
@@ -29,6 +31,9 @@ class QwkGuiApp:
         self.private_var = tk.BooleanVar(value=False)
         self.redact_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
+
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self.reload_messages())
 
         self._build_menu()
         self._build_toolbar()
@@ -59,6 +64,17 @@ class QwkGuiApp:
         ttk.Button(toolbar, text="Open QWK", command=self.open_file).pack(
             side=tk.LEFT
         )
+
+        # Search bar
+        search_frame = ttk.Frame(toolbar)
+        search_frame.pack(side=tk.LEFT, padx=(20, 0))
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        self.search_entry = ttk.Entry(
+            search_frame, textvariable=self.search_var, width=30
+        )
+        self.search_entry.pack(side=tk.LEFT, padx=5)
+        self.root.bind("<Control-f>", lambda e: self.search_entry.focus_set())
+
         ttk.Checkbutton(
             toolbar,
             text="Clean",
@@ -158,6 +174,7 @@ class QwkGuiApp:
 
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
+        search_val = self.search_var.get().strip()
         return ProcessingSettings(
             verbose=False,
             private=self.private_var.get(),
@@ -174,6 +191,7 @@ class QwkGuiApp:
             output_path=None,
             encoding='cp437',
             quiet=True,
+            search_term=search_val if search_val else None,
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -231,12 +249,11 @@ class QwkGuiApp:
             settings = self._current_settings()
             file_data, board_dict = load_data(path, self.logger, settings.encoding)
             messages = []
+            allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
             for parsed_message in parse_messages(file_data, None, settings.encoding):
-                if (
-                    settings.private is False
-                    and parsed_message.header.is_private is True
-                ) or parsed_message.header.is_password is True:
+                if not matches_filters(parsed_message, settings, allowed_conferences):
                     continue
+
                 processed_buffer = process_message(
                     parsed_message.text,
                     settings.truncate_signatures,
