@@ -807,16 +807,20 @@ def process_file(
                         _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                     ).encode(target_encoding)
                 elif settings.format == 'xml':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    text_content = "" if settings.headers_only else processed_buffer
+                    temp_msg = replace(parsed_message, text=text_content)
                     encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
                 elif settings.format == 'html':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    text_content = "" if settings.headers_only else processed_buffer
+                    temp_msg = replace(parsed_message, text=text_content)
                     encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
                 elif settings.format == 'mbox':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    text_content = "" if settings.headers_only else processed_buffer
+                    temp_msg = replace(parsed_message, text=text_content)
                     encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
                 else:
-                    encoded_buffer = processed_buffer.encode(target_encoding)
+                    text_content = "" if settings.headers_only else processed_buffer
+                    encoded_buffer = text_content.encode(target_encoding)
 
                 assert output_dir is not None
                 # We use sha1 of encoded buffer to determine filename, as before
@@ -828,10 +832,10 @@ def process_file(
             else:
                 text_content = processed_buffer
                 if settings.headers_only:
-                    # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
+                    # For structured formats (JSON, XML, CSV, SQLite, MBOX), we want empty text field
                     # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
-                    # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
-                    if settings.format in ('xml', 'csv', 'sqlite'):
+                    # But if the format is JSON/XML/CSV/SQLite/MBOX, we want to strip that.
+                    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
                          text_content = ""
 
                 collected_messages.append(
