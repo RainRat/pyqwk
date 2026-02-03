@@ -143,6 +143,7 @@ class ProcessingSettings:
     subjects: list[str] | None = None
     after: datetime.datetime | None = None
     before: datetime.datetime | None = None
+    search_term: str | None = None
 
 
 @dataclass
@@ -662,6 +663,86 @@ def _create_progress_bar(total: int, quiet: bool, desc: str = 'Processing messag
         return nullcontext()
 
 
+def get_allowed_conferences(
+    settings: ProcessingSettings, board_dict: Mapping[int, str]
+) -> set[int]:
+    """Pre-calculate the set of conference IDs that match the conference filter."""
+    allowed_conferences: set[int] = set()
+    if settings.conferences:
+        for conf_filter in settings.conferences:
+            if conf_filter.isdigit():
+                allowed_conferences.add(int(conf_filter))
+            else:
+                normalized_filter = conf_filter.lower()
+                for num, name in board_dict.items():
+                    if normalized_filter in name.lower():
+                        allowed_conferences.add(num)
+    return allowed_conferences
+
+
+def matches_filters(
+    message: ParsedMessage,
+    settings: ProcessingSettings,
+    board_dict: Mapping[int, str],
+    allowed_conferences: set[int] | None = None,
+) -> bool:
+    """Determine if a message should be included based on filtering settings.
+
+    Args:
+        message: The message to check.
+        settings: The current processing settings containing filter criteria.
+        board_dict: Mapping of conference numbers to names.
+        allowed_conferences: Pre-calculated set of conference IDs that match the
+            conference filter. If None, and settings.conferences is present, it will
+            be calculated on the fly (less efficient).
+
+    Returns:
+        True if the message matches the filters, False otherwise.
+    """
+    # Check private/password
+    if (
+        settings.private is False and message.header.is_private is True
+    ) or message.header.is_password is True:
+        return False
+
+    # Check conference filter
+    if settings.conferences:
+        if allowed_conferences is None:
+            allowed_conferences = get_allowed_conferences(settings, board_dict)
+        if message.confnum not in allowed_conferences:
+            return False
+
+    # Check author filter
+    if settings.authors:
+        msg_from_lower = message.header.msgfrom.lower()
+        if not any(a.lower() in msg_from_lower for a in settings.authors):
+            return False
+
+    # Check subject filter
+    if settings.subjects:
+        msg_subject_lower = message.header.msgsubject.lower()
+        if not any(s.lower() in msg_subject_lower for s in settings.subjects):
+            return False
+
+    # Check search term (OR match across author and subject)
+    if settings.search_term:
+        term = settings.search_term.lower()
+        msg_from_lower = message.header.msgfrom.lower()
+        msg_subject_lower = message.header.msgsubject.lower()
+        if term not in msg_from_lower and term not in msg_subject_lower:
+            return False
+
+    # Check date filter
+    if settings.after or settings.before:
+        msg_dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+        if settings.after and msg_dt < settings.after:
+            return False
+        if settings.before and msg_dt > settings.before:
+            return False
+
+    return True
+
+
 def process_file(
     input_path: str,
     settings: ProcessingSettings,
@@ -704,18 +785,7 @@ def process_file(
         separator_str = "\r\n"
 
     # Prepare conferences filter
-    allowed_conferences: set[int] = set()
-    if settings.conferences:
-        for conf_filter in settings.conferences:
-            # Check if filter matches a number directly
-            if conf_filter.isdigit():
-                allowed_conferences.add(int(conf_filter))
-            else:
-                # Check for name match in board_dict
-                normalized_filter = conf_filter.lower()
-                for num, name in board_dict.items():
-                    if normalized_filter in name.lower():
-                        allowed_conferences.add(num)
+    allowed_conferences = get_allowed_conferences(settings, board_dict)
 
     desc = f"Processing {os.path.basename(input_path)}"
     with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
@@ -725,46 +795,10 @@ def process_file(
             settings.encoding,
             settings.headers_only,
         ):
-            # Check private
-            if (
-                settings.private is False and parsed_message.header.is_private is True
-            ) or parsed_message.header.is_password is True:
+            if not matches_filters(
+                parsed_message, settings, board_dict, allowed_conferences
+            ):
                 continue
-
-            # Check conference filter
-            if settings.conferences:
-                # If we have filters, we check if the message's confnum is in allowed_conferences.
-                # HOWEVER: A filter might be a number that wasn't in board_dict.
-                # So we need to re-check if `parsed_message.confnum` matches any digit filters.
-
-                # Optimized check:
-                # 1. Is it in the allowed set (populated from names and numbers)?
-                is_allowed = parsed_message.confnum in allowed_conferences
-
-                # 2. If not, and we have numeric filters that might not have been in board_dict (because control.dat is missing or incomplete)
-                # Note: `allowed_conferences` already covers numeric inputs derived from `isdigit` check above.
-                if not is_allowed:
-                    continue
-
-            # Check author filter
-            if settings.authors:
-                msg_from_lower = parsed_message.header.msgfrom.lower()
-                if not any(a.lower() in msg_from_lower for a in settings.authors):
-                    continue
-
-            # Check subject filter
-            if settings.subjects:
-                msg_subject_lower = parsed_message.header.msgsubject.lower()
-                if not any(s.lower() in msg_subject_lower for s in settings.subjects):
-                    continue
-
-            # Check date filter
-            if settings.after or settings.before:
-                 msg_dt = _parse_qwk_date(parsed_message.header.msgdate, parsed_message.header.msgtime)
-                 if settings.after and msg_dt < settings.after:
-                     continue
-                 if settings.before and msg_dt > settings.before:
-                     continue
 
             processed_buffer = process_message(
                 parsed_message.text,
@@ -831,7 +865,7 @@ def process_file(
                     # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
                     # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
                     # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
-                    if settings.format in ('xml', 'csv', 'sqlite'):
+                    if settings.format in ('json', 'xml', 'csv', 'sqlite'):
                          text_content = ""
 
                 collected_messages.append(

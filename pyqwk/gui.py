@@ -7,7 +7,9 @@ from tkinter import filedialog, messagebox, ttk
 from pyqwk.core import (
     ProcessingSettings,
     _order_messages_by_thread,
+    get_allowed_conferences,
     load_data,
+    matches_filters,
     parse_messages,
     process_message,
 )
@@ -29,10 +31,17 @@ class QwkGuiApp:
         self.private_var = tk.BooleanVar(value=False)
         self.redact_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
+        self.search_var = tk.StringVar(value="")
 
         self._build_menu()
         self._build_toolbar()
         self._build_layout()
+
+        # Keyboard shortcuts
+        self.root.bind("<Control-f>", self._focus_search)
+
+    def _focus_search(self, _event: object | None = None) -> None:
+        self.search_entry.focus_set()
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
@@ -84,10 +93,28 @@ class QwkGuiApp:
             command=self.reload_messages,
         ).pack(side=tk.LEFT, padx=8)
 
-        self.status_label = ttk.Label(toolbar, text="Ready")
-        self.status_label.pack(side=tk.RIGHT)
+        # Search section
+        ttk.Label(toolbar, text="Search:").pack(side=tk.LEFT, padx=(10, 2))
+        self.search_entry = ttk.Entry(toolbar, textvariable=self.search_var)
+        self.search_entry.pack(side=tk.LEFT, padx=2)
+        self.search_entry.bind("<Return>", lambda e: self.reload_messages())
+
+        ttk.Button(toolbar, text="Clear", width=5, command=self._clear_search).pack(
+            side=tk.LEFT, padx=2
+        )
+
+    def _clear_search(self) -> None:
+        self.search_var.set("")
+        self.reload_messages()
 
     def _build_layout(self) -> None:
+        # Status Bar at the bottom
+        status_bar = ttk.Frame(self.root, padding=(5, 2), relief=tk.SUNKEN)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status_label = ttk.Label(status_bar, text="Ready")
+        self.status_label.pack(side=tk.LEFT)
+        ttk.Sizegrip(status_bar).pack(side=tk.RIGHT)
+
         paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         paned.pack(fill=tk.BOTH, expand=True)
 
@@ -158,6 +185,8 @@ class QwkGuiApp:
 
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
+        search_term = self.search_var.get().strip()
+
         return ProcessingSettings(
             verbose=False,
             private=self.private_var.get(),
@@ -174,6 +203,7 @@ class QwkGuiApp:
             output_path=None,
             encoding='cp437',
             quiet=True,
+            search_term=search_term if search_term else None,
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -230,13 +260,14 @@ class QwkGuiApp:
             self.root.update_idletasks()
             settings = self._current_settings()
             file_data, board_dict = load_data(path, self.logger, settings.encoding)
+            allowed_conferences = get_allowed_conferences(settings, board_dict)
             messages = []
             for parsed_message in parse_messages(file_data, None, settings.encoding):
-                if (
-                    settings.private is False
-                    and parsed_message.header.is_private is True
-                ) or parsed_message.header.is_password is True:
+                if not matches_filters(
+                    parsed_message, settings, board_dict, allowed_conferences
+                ):
                     continue
+
                 processed_buffer = process_message(
                     parsed_message.text,
                     settings.truncate_signatures,
