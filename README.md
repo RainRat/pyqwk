@@ -65,6 +65,11 @@ python qwk.py archive.qwk --format html -o messages.html
 python qwk.py archive.qwk --format json -o data.json
 ```
 
+**Convert to mbox for email clients:**
+```bash
+python qwk.py archive.qwk --format mbox -o archive.mbox
+```
+
 **Export to SQLite database:**
 ```bash
 python qwk.py archive.qwk --format sqlite -o messages.db
@@ -106,6 +111,16 @@ Find messages from "Sysop" in the "Announcements" conference.
 python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 ```
 
+**Filter by Date:**
+Find messages within a specific time range (format: YYYY-MM-DD).
+```bash
+# Everything after January 1st, 1995
+python qwk.py archive.qwk --after 1995-01-01
+
+# Everything before December 31st, 1996
+python qwk.py archive.qwk --before 1996-12-31
+```
+
 ## Common Options
 
 | Flag | Description |
@@ -114,12 +129,17 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 | `-i` | Save each message as a separate file (cannot use with threaded). |
 | `--format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
-| `--clean` | Remove "junk" like signatures, quotes, and binary data. |
+| `--clean` | Remove signatures, quotes, and binary data. |
 | `-p`, `--private` | Include private messages. |
 | `-C [conf]` | Filter by conference name or number. |
 | `--from [name]` | Filter by sender name. |
 | `--subject [text]` | Filter by subject line. |
+| `--after [date]` | Filter messages dated on or after YYYY-MM-DD. |
+| `--before [date]` | Filter messages dated on or before YYYY-MM-DD. |
+| `--encoding [enc]` | Input file encoding (default: `cp437`). |
+| `--headers-only` | Extract only metadata, skipping message bodies. |
 | `--info` | Show a summary of the archive (counts, conferences) and exit. |
+| `-q`, `--quiet` | Hide the progress bar. |
 
 Run `python qwk.py --help` to see all options.
 

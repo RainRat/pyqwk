@@ -831,7 +831,7 @@ def process_file(
                     # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
                     # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
                     # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
-                    if settings.format in ('xml', 'csv', 'sqlite'):
+                    if settings.format in ('json', 'xml', 'csv', 'sqlite'):
                          text_content = ""
 
                 collected_messages.append(
