@@ -65,6 +65,12 @@ python qwk.py archive.qwk --format html -o messages.html
 python qwk.py archive.qwk --format json -o data.json
 ```
 
+**Save as an mbox file:**
+Perfect for importing into modern email clients.
+```bash
+python qwk.py archive.qwk --format mbox -o messages.mbox
+```
+
 **Export to SQLite database:**
 ```bash
 python qwk.py archive.qwk --format sqlite -o messages.db
@@ -106,6 +112,12 @@ Search for a keyword in author, subject, and message body.
 python qwk.py archive.qwk --search "BBS"
 ```
 
+**Filter by Date:**
+Find messages from a specific date range (inclusive). Use the `YYYY-MM-DD` format.
+```bash
+python qwk.py archive.qwk --after 2023-01-01 --before 2023-12-31
+```
+
 **Combine Filters:**
 Find messages from "Sysop" in the "Announcements" conference.
 ```bash
@@ -116,17 +128,22 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 
 | Flag | Description |
 | :--- | :--- |
-| `-o [file/folder]` | Where to save the output. Defaults to screen. |
-| `-i` | Save each message as a separate file (cannot use with threaded). |
-| `--format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
-| `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
+| `-o [path]` | Where to save the output. Defaults to screen. |
+| `-i` | Save each message as a separate file. |
+| `--format [type]` | Output: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
+| `--encoding [enc]` | Set the input character encoding (default: `cp437`). |
+| `-T`, `--threaded` | Group replies together into conversations. |
 | `--clean` | Remove "junk" like signatures, quotes, and binary data. |
-| `-p`, `--private` | Include private messages. |
+| `--redact-pii` | Hide personal info like email addresses and phone numbers. |
+| `--headers-only` | Extract only headers, skipping the message body. |
+| `-p`, `--private` | Include messages marked as private. |
 | `-C [conf]` | Filter by conference name or number. |
 | `--from [name]` | Filter by sender name. |
 | `--subject [text]` | Filter by subject line. |
-| `--search [text]` | Search in author, subject, and body. |
-| `--info` | Show a summary of the archive (counts, conferences) and exit. |
+| `--search [text]` | Search in author, subject, and message body. |
+| `--after [date]` | Filter messages on or after this date (`YYYY-MM-DD`). |
+| `--before [date]` | Filter messages on or before this date (`YYYY-MM-DD`). |
+| `--info` | Show a summary of the archive and exit. |
 
 Run `python qwk.py --help` to see all options.
 
