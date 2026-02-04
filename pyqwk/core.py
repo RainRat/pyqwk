@@ -144,6 +144,7 @@ class ProcessingSettings:
     search_term: str | None = None
     after: datetime.datetime | None = None
     before: datetime.datetime | None = None
+    limit: int | None = None
 
 
 @dataclass
@@ -790,6 +791,7 @@ def process_file(
         separator_str = "\r\n"
 
     allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+    count = 0
 
     desc = f"Processing {os.path.basename(input_path)}"
     with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
@@ -801,6 +803,10 @@ def process_file(
         ):
             if not matches_filters(parsed_message, settings, allowed_conferences):
                 continue
+
+            count += 1
+            if settings.limit is not None and count > settings.limit:
+                break
 
             processed_buffer = process_message(
                 parsed_message.text,

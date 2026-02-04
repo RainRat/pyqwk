@@ -126,6 +126,7 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 | `--from [name]` | Filter by sender name. |
 | `--subject [text]` | Filter by subject line. |
 | `--search [text]` | Search in author, subject, and body. |
+| `--limit [num]` | Limit the number of messages processed. |
 | `--info` | Show a summary of the archive (counts, conferences) and exit. |
 
 Run `python qwk.py --help` to see all options.

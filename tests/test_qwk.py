@@ -81,6 +81,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         search_term=None,
         after=None,
         before=None,
+        limit=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -113,6 +114,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         search_term=None,
         after=None,
         before=None,
+        limit=None,
         info=False,
     )
     base.update(overrides)

@@ -233,6 +233,12 @@ def main() -> None:
         help='Filter messages dated on or before this date (format: YYYY-MM-DD).',
         default=None,
     )
+    filter_group.add_argument(
+        '--limit',
+        help='Limit the number of messages processed.',
+        type=int,
+        default=None,
+    )
 
     parser.add_argument(
         '--info',
@@ -316,6 +322,7 @@ def main() -> None:
         search_term=args.search_term,
         after=after_date,
         before=before_date,
+        limit=args.limit,
     )
 
     if args.info:
