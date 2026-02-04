@@ -84,6 +84,7 @@ def test_process_message_removes_uue_binaries() -> None:
         "Intro line\r\n"
         "begin 644 test.txt\r\n"
         "M" + ("A" * 60) + "\r\n"
+        "end\r\n"
         "Another line\r\n"
     )
 
