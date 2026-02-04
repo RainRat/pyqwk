@@ -108,9 +108,7 @@ def _is_binary_line(
             return True, in_yenc_block, True
 
     if in_uue_block:
-        if line.strip() == 'end':
-            return True, in_yenc_block, False
-        return False, in_yenc_block, False
+        return True, in_yenc_block, line.strip() != 'end'
 
     return False, in_yenc_block, False
 

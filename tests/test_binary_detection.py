@@ -37,6 +37,16 @@ class TestBinaryDetection:
         assert in_yenc is False
         assert in_uue is False
 
+    def test_detects_uue_backtick_line(self):
+        # A single backtick is often used as a zero-length data line in UUE
+        line = "`"
+        skip, in_yenc, in_uue = _is_binary_line(
+            line, previous_line=None, in_yenc_block=False, in_uue_block=True
+        )
+        assert skip is True
+        assert in_yenc is False
+        assert in_uue is True
+
     def test_detects_uue_start(self):
         line = "begin 644 test.txt"
         skip, in_yenc, in_uue = _is_binary_line(
@@ -102,9 +112,9 @@ class TestBinaryDetection:
         skip, in_yenc, in_uue = _is_binary_line(
             line, previous_line=None, in_yenc_block=False, in_uue_block=True
         )
-        assert skip is False
+        assert skip is True
         assert in_yenc is False
-        assert in_uue is False
+        assert in_uue is True
 
     def test_detects_base64(self):
         line = "VGhpcyBpcyBhIHRlc3QgbWVzc2FnZQ==" # Base64 for "This is a test message"
