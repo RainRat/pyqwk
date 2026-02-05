@@ -100,6 +100,12 @@ Find messages about a specific topic.
 python qwk.py archive.qwk --subject "Welcome"
 ```
 
+**Filter by Date:**
+Find messages from a specific date range (format: YYYY-MM-DD).
+```bash
+python qwk.py archive.qwk --after 2023-01-01 --before 2023-12-31
+```
+
 **Search Body Content:**
 Search for a keyword in author, subject, and message body.
 ```bash
@@ -120,12 +126,17 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 | `-i` | Save each message as a separate file (cannot use with threaded). |
 | `--format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
-| `--clean` | Remove "junk" like signatures, quotes, and binary data. |
+| `--clean` | Clean up messages by removing signatures, quotes, and binary data. |
+| `--redact-pii` | Hide personal information like email addresses and phone numbers. |
+| `--headers-only` | Extract only message headers and skip the message body. |
+| `--encoding [name]` | Set the input file encoding (default is `cp437`). |
 | `-p`, `--private` | Include private messages. |
 | `-C [conf]` | Filter by conference name or number. |
 | `--from [name]` | Filter by sender name. |
 | `--subject [text]` | Filter by subject line. |
 | `--search [text]` | Search in author, subject, and body. |
+| `--after [date]` | Show messages on or after this date (YYYY-MM-DD). |
+| `--before [date]` | Show messages on or before this date (YYYY-MM-DD). |
 | `--limit [num]` | Limit the number of messages processed. |
 | `--info` | Show a summary of the archive (counts, conferences) and exit. |
 
