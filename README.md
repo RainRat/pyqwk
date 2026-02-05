@@ -116,18 +116,20 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 
 | Flag | Description |
 | :--- | :--- |
-| `-o [file/folder]` | Where to save the output. Defaults to screen. |
-| `-i` | Save each message as a separate file (cannot use with threaded). |
-| `--format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
-| `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
+| `-o, --output [file/folder]` | Where to save the output. Defaults to screen. |
+| `-i, --individual-files` | Save each message as a separate file (cannot use with threaded). |
+| `-F, --format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
+| `-T, --threaded` | Group replies together (ideal for reading conversations). |
 | `--clean` | Remove "junk" like signatures, quotes, and binary data. |
-| `-p`, `--private` | Include private messages. |
-| `-C [conf]` | Filter by conference name or number. |
-| `--from [name]` | Filter by sender name. |
-| `--subject [text]` | Filter by subject line. |
-| `--search [text]` | Search in author, subject, and body. |
-| `--limit [num]` | Limit the number of messages processed. |
-| `--info` | Show a summary of the archive (counts, conferences) and exit. |
+| `-p, --private` | Include private messages. |
+| `-H, --headers-only` | Extract headers only, skip body content. |
+| `-C, --conference [conf]` | Filter by conference name or number. |
+| `-f, --from [name]` | Filter by sender name. |
+| `-s, --subject [text]` | Filter by subject line. |
+| `-S, --search [text]` | Search in author, subject, and body. |
+| `-L, --limit [num]` | Limit the number of messages processed. |
+| `-I, --info` | Show a summary of the archive (counts, conferences) and exit. |
+| `-V, --version` | Show version number and exit. |
 
 Run `python qwk.py --help` to see all options.
 
