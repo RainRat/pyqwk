@@ -94,6 +94,12 @@ Find messages from a specific person.
 python qwk.py archive.qwk --from "Sysop"
 ```
 
+**Filter by Recipient:**
+Find messages addressed to a specific person.
+```bash
+python qwk.py archive.qwk --to "Alice"
+```
+
 **Filter by Subject:**
 Find messages about a specific topic.
 ```bash
@@ -124,6 +130,7 @@ python qwk.py archive.qwk --from "Sysop" -C "Announcements"
 | `-p`, `--private` | Include private messages. |
 | `-C [conf]` | Filter by conference name or number. |
 | `--from [name]` | Filter by sender name. |
+| `--to [name]` | Filter by recipient name. |
 | `--subject [text]` | Filter by subject line. |
 | `--search [text]` | Search in author, subject, and body. |
 | `--limit [num]` | Limit the number of messages processed. |

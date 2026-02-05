@@ -140,6 +140,7 @@ class ProcessingSettings:
     headers_only: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
+    recipients: list[str] | None = None
     subjects: list[str] | None = None
     search_term: str | None = None
     after: datetime.datetime | None = None
@@ -721,17 +722,24 @@ def matches_filters(
         if not any(a.lower() in msg_from_lower for a in settings.authors):
             return False
 
-    # 4. Subject Filter
+    # 4. Recipient Filter
+    if settings.recipients:
+        msg_to_lower = message.header.msgto.lower()
+        if not any(r.lower() in msg_to_lower for r in settings.recipients):
+            return False
+
+    # 5. Subject Filter
     if settings.subjects:
         msg_subject_lower = message.header.msgsubject.lower()
         if not any(s.lower() in msg_subject_lower for s in settings.subjects):
             return False
 
-    # 5. Full-Text Search
+    # 6. Full-Text Search
     if settings.search_term:
         search_lower = settings.search_term.lower()
         found = (
             search_lower in message.header.msgfrom.lower()
+            or search_lower in message.header.msgto.lower()
             or search_lower in message.header.msgsubject.lower()
             or search_lower in message.text.lower()
         )
