@@ -1288,36 +1288,22 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
                 print("  Invalid or empty file.")
                 continue
 
-            first_record = file_data[0:BLOCK_SIZE]
-            if first_record[0:9] != b'Produced ':
+            if not file_data.startswith(b'Produced '):
                 print("  Not a valid QWK messages.dat file.")
                 continue
 
             total_messages = 0
             conference_counts = defaultdict(int)
 
-            blocks_remaining = 0
-
-            i = BLOCK_SIZE
-            while i < len(file_data):
-                record = file_data[i:i + BLOCK_SIZE]
-                if blocks_remaining == 0:
-                    try:
-                        header = MessageHeader.from_bytes(record, settings.encoding)
-                        total_messages += 1
-                        conference_counts[header.confnum] += 1
-
-                        if header.numblocks and header.numblocks >= 1:
-                            blocks_remaining = header.numblocks - 1
-                        else:
-                            blocks_remaining = 0
-
-                    except (MessagesDatFormatError, InvalidMessageTypeError):
-                        blocks_remaining = 0
-                else:
-                     blocks_remaining -= 1
-
-                i += BLOCK_SIZE
+            try:
+                for message in parse_messages(
+                    file_data, None, settings.encoding, headers_only=True
+                ):
+                    total_messages += 1
+                    conference_counts[message.confnum] += 1
+            except MessagesDatFormatError:
+                # Stop parsing on errors (like truncation) and show partial results
+                pass
 
             print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
             print(f"  {_colorize('Conferences:', BOLD)}")
