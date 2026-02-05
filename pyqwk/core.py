@@ -1280,6 +1280,10 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
                 print("  Invalid or empty file.")
                 continue
 
+            if not file_data.startswith(b'Produced '):
+                print("  Not a valid QWK messages.dat file.")
+                continue
+
             total_messages = 0
             conference_counts = defaultdict(int)
 
@@ -1289,10 +1293,9 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
                 ):
                     total_messages += 1
                     conference_counts[message.confnum] += 1
-            except MessagesDatFormatError as error:
-                if "Input does not start with 'Produced '" in str(error):
-                    print("  Not a valid QWK messages.dat file.")
-                    continue
+            except MessagesDatFormatError:
+                # Stop parsing on errors (like truncation) and show partial results
+                pass
 
             print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
             print(f"  {_colorize('Conferences:', BOLD)}")
