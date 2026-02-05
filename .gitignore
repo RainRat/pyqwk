@@ -1,3 +1,5 @@
 *.qwk
 /messages.dat
 __pycache__/
+.coverage
+htmlcov/
