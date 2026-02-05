@@ -37,6 +37,7 @@ class QwkGuiApp:
 
         self._build_menu()
         self._build_toolbar()
+        self._build_status_bar()
         self._build_layout()
 
     def _build_menu(self) -> None:
@@ -57,51 +58,52 @@ class QwkGuiApp:
     def quit_app(self, _event: object | None = None) -> None:
         self.root.quit()
 
+    def _build_status_bar(self) -> None:
+        status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.status_label = ttk.Label(status_bar, text="Ready", padding=(5, 2))
+        self.status_label.pack(side=tk.LEFT)
+
+        ttk.Sizegrip(status_bar).pack(side=tk.RIGHT)
+
     def _build_toolbar(self) -> None:
         toolbar = ttk.Frame(self.root, padding=(10, 5))
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
-        ttk.Button(toolbar, text="Open QWK", command=self.open_file).pack(
-            side=tk.LEFT
-        )
+        # Actions group
+        actions_frame = ttk.Frame(toolbar)
+        actions_frame.pack(side=tk.LEFT)
+        ttk.Button(actions_frame, text="Open QWK", command=self.open_file).pack(side=tk.LEFT)
 
-        # Search bar
+        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        # Search group
         search_frame = ttk.Frame(toolbar)
-        search_frame.pack(side=tk.LEFT, padx=(20, 0))
+        search_frame.pack(side=tk.LEFT)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
-        self.search_entry = ttk.Entry(
-            search_frame, textvariable=self.search_var, width=30
-        )
-        self.search_entry.pack(side=tk.LEFT, padx=5)
+        self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=25)
+        self.search_entry.pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Button(
+            search_frame, text="×", width=2, command=lambda: self.search_var.set("")
+        ).pack(side=tk.LEFT)
         self.root.bind("<Control-f>", lambda e: self.search_entry.focus_set())
 
-        ttk.Checkbutton(
-            toolbar,
-            text="Clean",
-            variable=self.clean_var,
-            command=self.reload_messages,
-        ).pack(side=tk.LEFT, padx=8)
-        ttk.Checkbutton(
-            toolbar,
-            text="Include Private",
-            variable=self.private_var,
-            command=self.reload_messages,
-        ).pack(side=tk.LEFT, padx=8)
-        ttk.Checkbutton(
-            toolbar,
-            text="Redact PII",
-            variable=self.redact_var,
-            command=self.reload_messages,
-        ).pack(side=tk.LEFT, padx=8)
-        ttk.Checkbutton(
-            toolbar,
-            text="Threaded",
-            variable=self.threaded_var,
-            command=self.reload_messages,
-        ).pack(side=tk.LEFT, padx=8)
+        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
-        self.status_label = ttk.Label(toolbar, text="Ready")
-        self.status_label.pack(side=tk.RIGHT)
+        # Options group
+        options_frame = ttk.Frame(toolbar)
+        options_frame.pack(side=tk.LEFT)
+
+        for text, var in [
+            ("Clean", self.clean_var),
+            ("Include Private", self.private_var),
+            ("Redact PII", self.redact_var),
+            ("Threaded", self.threaded_var),
+        ]:
+            ttk.Checkbutton(
+                options_frame, text=text, variable=var, command=self.reload_messages
+            ).pack(side=tk.LEFT, padx=5)
 
     def _build_layout(self) -> None:
         paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
