@@ -213,6 +213,12 @@ def main() -> None:
         help='Filter messages by author name (case-insensitive substring match).',
     )
     filter_group.add_argument(
+        '--to',
+        dest='recipients',
+        action='append',
+        help='Filter messages by recipient name (case-insensitive substring match).',
+    )
+    filter_group.add_argument(
         '--subject',
         dest='subjects',
         action='append',
@@ -318,6 +324,7 @@ def main() -> None:
         encoding=args.encoding,
         conferences=args.conferences,
         authors=args.authors,
+        recipients=args.recipients,
         subjects=args.subjects,
         search_term=args.search_term,
         after=after_date,
