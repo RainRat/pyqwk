@@ -19,6 +19,24 @@ class TestBinaryDetection:
         assert in_yenc is True
         assert in_uue is False
 
+    def test_uue_backtick_inside_block(self):
+        # Backtick is a valid UUE line (zero length) but often doesn't match data patterns
+        line = "`"
+        skip, in_yenc, in_uue = _is_binary_line(
+            line, previous_line=None, in_yenc_block=False, in_uue_block=True
+        )
+        assert skip is True
+        assert in_uue is True
+
+    def test_uue_skips_until_end(self):
+        # Any garbage inside a UUE block should be skipped until 'end'
+        line = "This is not UUE data"
+        skip, in_yenc, in_uue = _is_binary_line(
+            line, previous_line=None, in_yenc_block=False, in_uue_block=True
+        )
+        assert skip is True
+        assert in_uue is True
+
     def test_detects_yenc_body(self):
         line = "random_yenc_data"
         skip, in_yenc, in_uue = _is_binary_line(
@@ -97,14 +115,15 @@ class TestBinaryDetection:
         assert in_yenc is False
         assert in_uue is False
 
-    def test_exits_uue_on_invalid_line(self):
+    def test_stays_in_uue_on_invalid_line(self):
         line = "Not a uue line"
         skip, in_yenc, in_uue = _is_binary_line(
             line, previous_line=None, in_yenc_block=False, in_uue_block=True
         )
-        assert skip is False
+        # We should stay in UUE block and skip the line
+        assert skip is True
         assert in_yenc is False
-        assert in_uue is False
+        assert in_uue is True
 
     def test_detects_base64(self):
         line = "VGhpcyBpcyBhIHRlc3QgbWVzc2FnZQ==" # Base64 for "This is a test message"
