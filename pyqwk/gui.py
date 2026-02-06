@@ -26,6 +26,8 @@ class QwkGuiApp:
         self.messages = []
         self.board_dict: dict[int, str] = {}
         self.current_path: str | None = None
+        self._cache = {}
+        self.conf_mapping = {}
 
         self.clean_var = tk.BooleanVar(value=False)
         self.private_var = tk.BooleanVar(value=False)
@@ -88,6 +90,16 @@ class QwkGuiApp:
             search_frame, text="×", width=2, command=lambda: self.search_var.set("")
         ).pack(side=tk.LEFT)
         self.root.bind("<Control-f>", lambda e: self.search_entry.focus_set())
+
+        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        # Filters group
+        filters_frame = ttk.Frame(toolbar)
+        filters_frame.pack(side=tk.LEFT)
+        ttk.Label(filters_frame, text="Conf:").pack(side=tk.LEFT)
+        self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
+        self.conf_combo.pack(side=tk.LEFT, padx=(5, 0))
+        self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
@@ -177,6 +189,14 @@ class QwkGuiApp:
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
         search_val = self.search_var.get().strip()
+
+        selected_conf_name = self.conf_combo.get()
+        conferences = None
+        if selected_conf_name and selected_conf_name != "All Conferences":
+            conf_id = self.conf_mapping.get(selected_conf_name)
+            if conf_id is not None:
+                conferences = [str(conf_id)]
+
         return ProcessingSettings(
             verbose=False,
             private=self.private_var.get(),
@@ -194,6 +214,7 @@ class QwkGuiApp:
             encoding='cp437',
             quiet=True,
             search_term=search_val if search_val else None,
+            conferences=conferences,
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -249,7 +270,26 @@ class QwkGuiApp:
             self.status_label.config(text="Loading...")
             self.root.update_idletasks()
             settings = self._current_settings()
-            file_data, board_dict = load_data(path, self.logger, settings.encoding)
+
+            # Cache file data to improve responsiveness during filtering
+            if self._cache.get('path') != path:
+                file_data, board_dict = load_data(path, self.logger, settings.encoding)
+                self._cache = {
+                    'path': path,
+                    'file_data': file_data,
+                    'board_dict': board_dict
+                }
+                # Populate conference selector
+                conf_list = ["All Conferences"]
+                for cid, name in sorted(board_dict.items()):
+                    conf_list.append(f"{cid}: {name}")
+                self.conf_combo['values'] = conf_list
+                self.conf_combo.set("All Conferences")
+                self.conf_mapping = {f"{cid}: {name}": cid for cid, name in board_dict.items()}
+
+            file_data = self._cache['file_data']
+            board_dict = self._cache['board_dict']
+
             messages = []
             allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
             for parsed_message in parse_messages(file_data, None, settings.encoding):

@@ -1,6 +1,15 @@
 import sys
 from unittest.mock import MagicMock, patch, call
 import pytest
+
+# Mock tkinter before any pyqwk.gui imports
+mock_tk = MagicMock()
+mock_ttk = MagicMock()
+sys.modules["tkinter"] = mock_tk
+sys.modules["tkinter.filedialog"] = MagicMock()
+sys.modules["tkinter.messagebox"] = MagicMock()
+sys.modules["tkinter.ttk"] = mock_ttk
+
 from pyqwk.core import ProcessingSettings, ParsedMessage, MessageHeader
 
 # Ensure pyqwk.gui uses our mocks
