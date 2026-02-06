@@ -510,6 +510,11 @@ def parse_messages(
     current_confnum = 0
     header: MessageHeader | None = None
 
+    if len(file_data) < BLOCK_SIZE:
+        raise MessagesDatFormatError(
+            "Input too short to contain a valid messages.dat header block."
+        )
+
     first_record = file_data[0:BLOCK_SIZE]
     if progress_bar is not None:
         progress_bar.update(len(first_record))

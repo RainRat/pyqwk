@@ -162,7 +162,7 @@ def test_invalid_messages_dat_reports_clear_error(
             main()
 
     assert exc_info.value.code == 1
-    assert "Input does not start with 'Produced '" in caplog.text
+    assert "Input too short" in caplog.text
 
 
 def test_parse_messages_raises_for_truncated_payload(
