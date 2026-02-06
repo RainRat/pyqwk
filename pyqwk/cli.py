@@ -249,7 +249,7 @@ def main() -> None:
     parser.add_argument(
         '--info',
         action='store_true',
-        help='Show a summary of the QWK packet (conferences, message counts) and exit.',
+        help='Show a summary of the QWK packet (BBS info, conferences, message counts) and exit. (Respects --format json)',
     )
     parser.add_argument(
         '--version',

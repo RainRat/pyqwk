@@ -12,7 +12,7 @@ import io
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass, fields, replace
+from dataclasses import asdict, dataclass, fields, replace
 from contextlib import contextmanager, nullcontext
 from typing import Any, Callable, Protocol
 import datetime
@@ -146,6 +146,31 @@ class ProcessingSettings:
     after: datetime.datetime | None = None
     before: datetime.datetime | None = None
     limit: int | None = None
+
+
+@dataclass
+class BBSInfo:
+    """Metadata about the BBS that generated the QWK packet."""
+    name: str = ""
+    location: str = ""
+    phone: str = ""
+    sysop: str = ""
+    serial_number: str = ""
+    bbs_id: str = ""
+    user_name: str = ""
+    packet_at: str = ""
+    total_messages: int = 0
+    num_conferences: int = 0
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+class ConferenceMap(dict):
+    """A dictionary mapping conference numbers to names, with optional BBS metadata."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bbs_info: BBSInfo | None = None
 
 
 @dataclass
@@ -436,7 +461,7 @@ def _parse_control_dat(
     control_data: list[bytes],
     logger: logging.Logger | None = None,
     encoding: str = 'cp437',
-) -> dict[int, str]:
+) -> ConferenceMap:
     if logger is None:
         logger = logging.getLogger(__name__)
 
@@ -445,6 +470,26 @@ def _parse_control_dat(
             "CONTROL.DAT is too short; header information missing."
         )
 
+    bbs_info = BBSInfo()
+    def dec(b):
+        try:
+            return b.decode(encoding).strip()
+        except UnicodeDecodeError:
+            return b.decode('latin1').strip()
+
+    bbs_info.name = dec(control_data[0])
+    bbs_info.location = dec(control_data[1])
+    bbs_info.phone = dec(control_data[2])
+    bbs_info.sysop = dec(control_data[3])
+
+    line5 = dec(control_data[4]).split(',', 1)
+    bbs_info.serial_number = line5[0].strip()
+    if len(line5) > 1:
+        bbs_info.bbs_id = line5[1].strip()
+
+    bbs_info.packet_at = dec(control_data[5])
+    bbs_info.user_name = dec(control_data[6])
+
     try:
         num_conferences = int(control_data[10]) + 1
     except ValueError as error:
@@ -452,7 +497,11 @@ def _parse_control_dat(
             f"Invalid conference count in CONTROL.DAT: {control_data[10]!r}"
         ) from error
 
-    board_dict: dict[int, str] = {}
+    bbs_info.num_conferences = num_conferences
+
+    board_dict = ConferenceMap()
+    board_dict.bbs_info = bbs_info
+
     for i in range(num_conferences):
         index = 11 + i * 2
         try:
@@ -1279,17 +1328,30 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
     BOLD = "1"
     CYAN = "36"
 
+    all_info = []
+
     for input_path in input_paths:
+        info_entry = {
+            "file": input_path,
+            "bbs_info": None,
+            "total_messages": 0,
+            "conferences": []
+        }
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
-            print(f"File: {_colorize(input_path, CYAN)}")
 
-            if len(file_data) < BLOCK_SIZE:
-                print("  Invalid or empty file.")
-                continue
+            bbs_info = getattr(board_dict, 'bbs_info', None)
+            if bbs_info:
+                info_entry["bbs_info"] = bbs_info.as_dict()
 
-            if not file_data.startswith(b'Produced '):
-                print("  Not a valid QWK messages.dat file.")
+            if len(file_data) < BLOCK_SIZE or not file_data.startswith(b'Produced '):
+                if settings.format != 'json':
+                    print(f"File: {_colorize(input_path, CYAN)}")
+                    if len(file_data) < BLOCK_SIZE:
+                        print("  Invalid or empty file.")
+                    else:
+                        print("  Not a valid QWK messages.dat file.")
+                all_info.append(info_entry)
                 continue
 
             total_messages = 0
@@ -1302,21 +1364,51 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
                     total_messages += 1
                     conference_counts[message.confnum] += 1
             except MessagesDatFormatError:
-                # Stop parsing on errors (like truncation) and show partial results
                 pass
 
-            print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
-            print(f"  {_colorize('Conferences:', BOLD)}")
+            info_entry["total_messages"] = total_messages
+            if bbs_info:
+                bbs_info.total_messages = total_messages
+                info_entry["bbs_info"] = bbs_info.as_dict()
 
             sorted_confs = sorted(conference_counts.items())
             for conf_num, count in sorted_confs:
                 conf_name = board_dict.get(conf_num, f"Conference {conf_num}")
-                count_str = _colorize(str(count), BOLD)
-                print(f"    {conf_num}: {conf_name} ({count_str} messages)")
-            print("")
+                info_entry["conferences"].append({
+                    "number": conf_num,
+                    "name": conf_name,
+                    "message_count": count
+                })
+
+            if settings.format != 'json':
+                print(f"File: {_colorize(input_path, CYAN)}")
+                if bbs_info:
+                    if bbs_info.name:
+                        print(f"  {_colorize('BBS Name:', BOLD)} {bbs_info.name}")
+                    if bbs_info.sysop:
+                        print(f"  {_colorize('SysOp:', BOLD)}    {bbs_info.sysop}")
+                    if bbs_info.location:
+                        print(f"  {_colorize('Location:', BOLD)} {bbs_info.location}")
+                    if bbs_info.bbs_id:
+                        print(f"  {_colorize('BBS ID:', BOLD)}   {bbs_info.bbs_id}")
+                    if bbs_info.packet_at:
+                        print(f"  {_colorize('Packet At:', BOLD)} {bbs_info.packet_at}")
+
+                print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
+                print(f"  {_colorize('Conferences:', BOLD)}")
+
+                for conf in info_entry["conferences"]:
+                    count_str = _colorize(str(conf["message_count"]), BOLD)
+                    print(f"    {conf['number']}: {conf['name']} ({count_str} messages)")
+                print("")
+
+            all_info.append(info_entry)
 
         except Exception as e:
             logger.error(f"Error reading info for {input_path}: {e}")
+
+    if settings.format == 'json':
+        print(json.dumps(all_info, indent=4, ensure_ascii=False))
 
 
 def process_multiple_files(

@@ -300,9 +300,14 @@ class QwkGuiApp:
                 if settings.threaded:
                     parent_at_depth[message.depth] = iid
 
-            basename = os.path.basename(path)
+            bbs_info = getattr(self.board_dict, "bbs_info", None)
+            if bbs_info and bbs_info.name:
+                source_display = f"{bbs_info.name} ({os.path.basename(path)})"
+            else:
+                source_display = os.path.basename(path)
+
             self.status_label.config(
-                text=f"Loaded {basename} ({len(self.messages)} messages)"
+                text=f"Loaded {source_display} - {len(self.messages)} messages"
             )
             if self.messages:
                 first_item = self.message_list.get_children()[0]
