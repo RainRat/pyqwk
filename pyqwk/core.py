@@ -92,25 +92,21 @@ def _is_binary_line(
     if in_yenc_block:
         return True, True, in_uue_block
 
-    if RE_BASE64_PATTERN.match(line):
-        return True, in_yenc_block, in_uue_block
-
-    if RE_UUE_DATA_PATTERN.match(line) or RE_UUE_PATTERN.match(line):
+    if in_uue_block:
+        if line.strip() == 'end':
+            return True, in_yenc_block, False
         return True, in_yenc_block, True
 
-    if RE_UUE_LOOSE_PATTERN.match(line):
-        if in_uue_block:
-            return True, in_yenc_block, True
+    if RE_BASE64_PATTERN.match(line):
+        return True, in_yenc_block, in_uue_block
+    elif RE_UUE_DATA_PATTERN.match(line) or RE_UUE_PATTERN.match(line):
+        return True, in_yenc_block, True
+    elif RE_UUE_LOOSE_PATTERN.match(line):
         if previous_line and (
             RE_UUE_DATA_PATTERN.match(previous_line)
             or RE_UUE_PATTERN.match(previous_line)
         ):
             return True, in_yenc_block, True
-
-    if in_uue_block:
-        if line.strip() == 'end':
-            return True, in_yenc_block, False
-        return True, in_yenc_block, True
 
     return False, in_yenc_block, False
 
