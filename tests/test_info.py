@@ -1,4 +1,5 @@
 import logging
+from dataclasses import replace
 from unittest.mock import MagicMock, patch
 import pytest
 from pyqwk.core import show_info, ProcessingSettings
@@ -96,3 +97,40 @@ def test_show_info_colors_enabled(capsys, mock_logger, default_settings):
     assert "\033[0m" in output   # Reset
     assert f"File: \033[36m{input_path}\033[0m" in output
     assert "\033[1mTotal Messages:\033[0m" in output
+
+
+def test_show_info_bbs_metadata(capsys, mock_logger, default_settings):
+    """Test that BBS metadata is correctly displayed in info output."""
+    input_path = 'testdata/test1_qwk.zip'
+    show_info([input_path], default_settings, mock_logger)
+
+    captured = capsys.readouterr()
+    output = captured.out
+
+    assert "BBS Name: Benden Weyr, Pern, Sagittarius Sector" in output
+    assert "SysOp:    Ken Read" in output
+    assert "BBS ID:   Benden" in output
+    assert "Packet At: 09-04-1994,19:25:58" in output
+
+
+def test_show_info_json_format(capsys, mock_logger, default_settings):
+    """Test that info output can be formatted as JSON."""
+    input_path = 'testdata/test1_qwk.zip'
+    json_settings = replace(default_settings, format='json')
+
+    show_info([input_path], json_settings, mock_logger)
+
+    captured = capsys.readouterr()
+    output = captured.out
+
+    import json
+    data = json.loads(output)
+
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["file"] == input_path
+    assert data[0]["total_messages"] == 1
+    assert data[0]["bbs_info"]["name"] == "Benden Weyr, Pern, Sagittarius Sector"
+    assert data[0]["bbs_info"]["sysop"] == "Ken Read"
+    assert len(data[0]["conferences"]) == 1
+    assert data[0]["conferences"][0]["number"] == 4
