@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a friendly tool to convert old `.QWK` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, and XML.
+pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into modern formats including Text, HTML, JSON, XML, CSV, mbox, and SQLite.
 
 ## Features
 
@@ -13,7 +13,7 @@ pyqwk is a friendly tool to convert old `.QWK` mail archives (from the BBS era) 
 
 ## Quick Start
 
-1. **Run the script** (requires Python 3.10+):
+1. **Run the script** (requires Python 3.10 or newer):
    ```bash
    python qwk.py archive.qwk
    ```
@@ -118,16 +118,15 @@ You can use `pyqwk` in your own Python projects:
 import logging
 from pyqwk.core import load_data, parse_messages, process_message
 
-# Set up a logger
+# Configure logging to see progress and warnings
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyqwk")
 
-# Load the archive and conference names
+# Load the archive
 file_data, board_dict = load_data("archive.qwk", logger)
 
-# Loop through the messages
 for msg in parse_messages(file_data, None):
-    # msg.text contains the raw message
-    # process_message can clean up signatures and quotes
+    # Clean the message content
     clean_text = process_message(
         msg.text,
         truncate_signatures=True,
@@ -164,7 +163,8 @@ Run `qwk --help` to see all available options.
 
 ## Troubleshooting
 
-- **Unsupported Compression:** Some very old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **Unsupported Compression:** Some old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's character set.
 - **Compatibility:** You cannot use `--threaded` and `--individual-files` at the same time.
 
 ## Contributing
