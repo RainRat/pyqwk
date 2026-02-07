@@ -1009,11 +1009,15 @@ def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
     return msg_element
 
 
+def _xml_element_to_str(element: ET.Element) -> str:
+    """Helper to indent and serialize an XML element to a string."""
+    ET.indent(element, space='  ')
+    return ET.tostring(element, encoding='unicode')
+
+
 def _serialize_message_xml(message: ProcessedMessage) -> str:
     root = _message_to_xml_element(message)
-    ET.indent(root, space='  ')
-    xml_bytes = ET.tostring(root, encoding='utf-8')
-    return xml_bytes.decode('utf-8')
+    return _xml_element_to_str(root)
 
 
 def _write_xml(
@@ -1024,10 +1028,7 @@ def _write_xml(
         msg_element = _message_to_xml_element(message)
         root.append(msg_element)
 
-    ET.indent(root, space='  ')
-    xml_bytes = ET.tostring(root, encoding='utf-8')
-    xml_text = xml_bytes.decode('utf-8')
-
+    xml_text = _xml_element_to_str(root)
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
