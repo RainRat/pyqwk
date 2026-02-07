@@ -1,165 +1,175 @@
 # pyqwk
 
-pyqwk is a simple tool to convert `.QWK` mail archives (from the BBS era) into readable formats like Text, HTML, JSON, and XML.
+pyqwk is a friendly tool to convert old `.QWK` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, and XML.
+
+## Features
+
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, CSV, mbox, or SQLite.
+- **Conversation Threading:** Group replies together to follow discussions easily.
+- **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
+- **Privacy:** Redact personal information and handle private messages.
+- **Batch Processing:** Convert many archives or entire folders at once.
+- **Built-in GUI:** A simple graphical interface for reading messages without conversion.
 
 ## Quick Start
 
-1.  **Download** this repository.
-2.  **Run the script** (requires Python 3.10+):
-    ```bash
-    python qwk.py archive.qwk
-    ```
+1. **Run the script** (requires Python 3.10+):
+   ```bash
+   python qwk.py archive.qwk
+   ```
 
-*Tip: Run `pip install tqdm` to see a progress bar.*
+*Tip: Install the `tqdm` package (`pip install tqdm`) to see a progress bar during processing.*
 
-## Installation (Optional)
+## Installation
 
-You can install `pyqwk` to use the `qwk` command from any folder.
+You can install `pyqwk` to use it from any folder.
 
-1.  Open your terminal in the project folder.
-2.  Install the package:
-    ```bash
-    pip install .
-    ```
-3.  Now you can use the command-line tool anywhere:
-    ```bash
-    qwk archive.qwk
-    ```
-4.  Or launch the GUI reader:
-    ```bash
-    qwk-gui
-    ```
+1. Open your terminal in the project folder.
+2. Install the package:
+   ```bash
+   pip install .
+   ```
+3. Now you can use the `qwk` command anywhere:
+   ```bash
+   qwk archive.qwk
+   ```
+4. Or launch the graphical reader:
+   ```bash
+   qwk-gui
+   ```
 
-*Note: If you don't want to install the package, you can run the GUI directly:*
+*Note: You can also run the GUI directly without installing:*
 ```bash
 python -m pyqwk.gui
 ```
 
-## Library Usage
-
-pyqwk can be imported as a module so you can reuse the parsing logic in your own tools:
-
-```python
-from pyqwk.core import load_data, parse_messages, process_message
-```
-
 ## Usage Examples
 
-**View an archive on screen:**
+**Read an archive on your screen:**
 ```bash
-python qwk.py archive.qwk
+qwk archive.qwk
 ```
 
 **Save as a text file:**
 ```bash
-python qwk.py archive.qwk -o messages.txt
+qwk archive.qwk -o messages.txt
+```
+
+**Group messages by thread (conversations):**
+```bash
+qwk archive.qwk --threaded -o messages.txt
 ```
 
 **Create a browsable HTML file:**
 ```bash
-python qwk.py archive.qwk --format html -o messages.html
+qwk archive.qwk --format html -o messages.html
 ```
 
-**Convert to JSON for programming:**
+**Convert to an mbox file (for email apps):**
 ```bash
-python qwk.py archive.qwk --format json -o data.json
+qwk archive.qwk --format mbox -o messages.mbox
 ```
 
-**Export to SQLite database:**
+**Convert to JSON for your own scripts:**
 ```bash
-python qwk.py archive.qwk --format sqlite -o messages.db
+qwk archive.qwk --format json -o data.json
 ```
 
-**Process multiple files:**
-Save all converted files into a folder named `output`:
+**Process a whole folder of archives:**
 ```bash
-python qwk.py *.qwk -o output/
+qwk my_archives/ -o output_folder/
 ```
-*Windows Users: Use PowerShell to support the `*.qwk` wildcard.*
+
+*Note for Windows users: If you use wildcards like `*.qwk`, use PowerShell instead of the standard Command Prompt.*
 
 ## Filtering & Searching
 
-You can filter messages to find exactly what you need.
-
 **Filter by Conference:**
-Find messages in a specific conference by name or number.
+Find messages in a specific conference by its name or number.
 ```bash
-python qwk.py archive.qwk -C "General Chat"
-python qwk.py archive.qwk -C 123
+qwk archive.qwk -C "General Chat"
+qwk archive.qwk -C 123
 ```
 
-**Filter by Sender:**
-Find messages from a specific person.
+**Filter by Person:**
+Find messages from or to a specific person.
 ```bash
-python qwk.py archive.qwk --from "Sysop"
-```
-
-**Filter by Recipient:**
-Find messages addressed to a specific person.
-```bash
-python qwk.py archive.qwk --to "Alice"
-```
-
-**Filter by Subject:**
-Find messages about a specific topic.
-```bash
-python qwk.py archive.qwk --subject "Welcome"
-```
-
-**Filter by Date:**
-Find messages from a specific date range (format: YYYY-MM-DD).
-```bash
-python qwk.py archive.qwk --after 2023-01-01 --before 2023-12-31
+qwk archive.qwk --from "Sysop"
+qwk archive.qwk --to "Alice"
 ```
 
 **Search Body Content:**
-Search for a keyword in author, subject, and message body.
+Search for keywords in the author, subject, and message body.
 ```bash
-python qwk.py archive.qwk --search "BBS"
+qwk archive.qwk --search "BBS"
 ```
 
-**Combine Filters:**
-Find messages from "Sysop" in the "Announcements" conference.
+**Filter by Date:**
+Find messages from a specific date range (use YYYY-MM-DD).
 ```bash
-python qwk.py archive.qwk --from "Sysop" -C "Announcements"
+qwk archive.qwk --after 2023-01-01 --before 2023-12-31
+```
+
+## Library Usage
+
+You can use `pyqwk` in your own Python projects:
+
+```python
+import logging
+from pyqwk.core import load_data, parse_messages, process_message
+
+# Set up a logger
+logger = logging.getLogger("pyqwk")
+
+# Load the archive and conference names
+file_data, board_dict = load_data("archive.qwk", logger)
+
+# Loop through the messages
+for msg in parse_messages(file_data, None):
+    # msg.text contains the raw message
+    # process_message can clean up signatures and quotes
+    clean_text = process_message(
+        msg.text,
+        truncate_signatures=True,
+        cut_quoting=True,
+        binaries_removal=True,
+        redact_pii=False
+    )
+
+    print(f"From: {msg.header.msgfrom}")
+    print(f"Subject: {msg.header.msgsubject}")
+    print(clean_text)
 ```
 
 ## Common Options
 
 | Flag | Description |
 | :--- | :--- |
-| `-o [file/folder]` | Where to save the output. Defaults to screen. |
-| `-i` | Save each message as a separate file (cannot use with threaded). |
-| `--format [type]` | Output format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
-| `-T`, `--threaded` | Group replies together (ideal for reading conversations). |
-| `--clean` | Clean up messages by removing signatures, quotes, and binary data. |
-| `--redact-pii` | Hide personal information like email addresses and phone numbers. |
+| `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
+| `-i`, `--individual-files` | Save each message as a separate file. |
+| `--format [type]` | Choose format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
+| `-T`, `--threaded` | Group replies together into conversations. |
+| `--clean` | Remove signatures, quotes, and binary data automatically. |
+| `--redact-pii` | Hide personal info like email addresses and phone numbers. |
 | `--headers-only` | Extract only message headers and skip the message body. |
-| `--encoding [name]` | Set the input file encoding (default is `cp437`). |
-| `-p`, `--private` | Include private messages. |
-| `-C [conf]` | Filter by conference name or number. |
-| `--from [name]` | Filter by sender name. |
-| `--to [name]` | Filter by recipient name. |
-| `--subject [text]` | Filter by subject line. |
-| `--search [text]` | Search in author, subject, and body. |
-| `--after [date]` | Show messages on or after this date (YYYY-MM-DD). |
-| `--before [date]` | Show messages on or before this date (YYYY-MM-DD). |
-| `--limit [num]` | Limit the number of messages processed. |
-| `--info` | Show a summary of the archive (counts, conferences) and exit. |
+| `--encoding [name]` | Set the input text encoding (default is `cp437`). |
+| `-p`, `--private` | Include private messages in the output. |
+| `-n`, `--noheader` | Do not include the message header info in the text. |
+| `-v`, `--verbose` | Show more details like conference names and message numbers. |
+| `-q`, `--quiet` | Hide the progress bar and extra info. |
+| `--limit [num]` | Stop after processing this many messages. |
+| `--info` | Show a summary of the archive and exit. |
 
-Run `python qwk.py --help` to see all options.
+Run `qwk --help` to see all available options.
 
 ## Troubleshooting
 
-*   **Unsupported Compression:** Some old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run pyqwk on the `messages.dat` file:
-    ```bash
-    python qwk.py messages.dat
-    ```
-*   **Threading:** You cannot use `--threaded` (`-T`) when saving individual files (`-i`).
+- **Unsupported Compression:** Some very old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **Compatibility:** You cannot use `--threaded` and `--individual-files` at the same time.
 
 ## Contributing
 
-Pull requests are welcome! Please run tests before submitting:
+We welcome your contributions! Please run tests before submitting a pull request:
 ```bash
 pytest
 ```
