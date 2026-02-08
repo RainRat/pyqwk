@@ -134,3 +134,26 @@ def test_show_info_json_format(capsys, mock_logger, default_settings):
     assert data[0]["bbs_info"]["sysop"] == "Ken Read"
     assert len(data[0]["conferences"]) == 1
     assert data[0]["conferences"][0]["number"] == 4
+
+def test_show_info_truncated_messages_dat(capsys, mock_logger, default_settings):
+    """Test handling of truncated messages.dat in show_info."""
+    import struct
+    with patch('pyqwk.core.load_data') as mock_load:
+        # First block: Produced header
+        # Second block: Valid message header that claims to have 5 blocks, but no body blocks follow
+        header = struct.pack(
+            '<c7s8s5s25s25s25s12s8s6scHHc',
+            b' ', b"1".ljust(7, b' '), b"01-01-90", b"12:00",
+            b"To".ljust(25, b' '), b"From".ljust(25, b' '), b"Subj".ljust(25, b' '),
+            b"".ljust(12, b' '), b"0".ljust(8, b' '),
+            b"5".ljust(6, b' '), # Claims 5 blocks
+            b' ', 1, 1, b' '
+        )
+        bad_data = bytearray(b'Produced ' + b'X' * (128 - 9) + header)
+        mock_load.return_value = (bad_data, {})
+
+        show_info(['truncated.zip'], default_settings, mock_logger)
+
+        captured = capsys.readouterr()
+        # Should not crash and should print the file path
+        assert "File: truncated.zip" in captured.out

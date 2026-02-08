@@ -122,3 +122,11 @@ class TestParserEdgeCases:
             list(parse_messages(data, progress_bar=None))
 
         assert "Input too short" in str(exc.value)
+
+    def test_parse_messages_invalid_produced_header(self):
+        """
+        Verify that data that doesn't start with 'Produced ' raises MessagesDatFormatError.
+        """
+        data = bytearray(b"X" * 128)
+        with pytest.raises(MessagesDatFormatError, match="Input does not start with 'Produced '"):
+            list(parse_messages(data, progress_bar=None))
