@@ -185,6 +185,9 @@ class QwkGuiApp:
         )
         self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 9))
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
+        self.detail_text.tag_configure(
+            "search_highlight", background="#ffff00", foreground="#000000"
+        )
 
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
@@ -243,6 +246,21 @@ class QwkGuiApp:
 
         self.detail_text.insert(tk.END, "\n", "header_value")
         self.detail_text.insert(tk.END, message.text, "body")
+
+        # Highlight search terms if present
+        search_term = self.search_var.get().strip()
+        if search_term:
+            start_pos = "1.0"
+            while True:
+                start_pos = self.detail_text.search(
+                    search_term, start_pos, stopindex=tk.END, nocase=True
+                )
+                if not start_pos:
+                    break
+                end_pos = f"{start_pos}+{len(search_term)}c"
+                self.detail_text.tag_add("search_highlight", start_pos, end_pos)
+                start_pos = end_pos
+            self.detail_text.tag_raise("search_highlight")
 
         self.detail_text.config(state=tk.DISABLED)
 
