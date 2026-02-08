@@ -10,6 +10,7 @@ from pyqwk.core import (
     ProcessingSettings,
     __version__,
     process_file,
+    process_merged_files,
     process_multiple_files,
     show_info,
 )
@@ -179,6 +180,12 @@ def main() -> None:
         help='Group replies with their original messages. (Cannot use with --individual-files).',
         action='store_true',
     )
+    format_group.add_argument(
+        '-m',
+        '--merge',
+        help='Merge multiple input archives into a single output. Enables cross-archive threading.',
+        action='store_true',
+    )
 
     control_group = parser.add_argument_group('Output Control')
     control_group.add_argument(
@@ -283,12 +290,18 @@ def main() -> None:
         logger.error("No valid QWK files found in the provided paths.")
         sys.exit(1)
 
-    if args.individualfiles:
+    if args.info:
+        output_mode = 'stdout'
+        resolved_output_path = None
+    elif args.individualfiles:
         if output_path is None:
             parser.error('Output folder is required when writing individual files.')
         if os.path.exists(output_path) and not os.path.isdir(output_path):
             parser.error('Output path must be a folder when writing individual files.')
         output_mode = 'file'
+        resolved_output_path = output_path
+    elif args.merge:
+        output_mode = 'stdout' if not output_path else 'file'
         resolved_output_path = output_path
     elif len(input_paths) > 1 or has_directory_input:
         if not output_path:
@@ -315,6 +328,7 @@ def main() -> None:
         cut_quoting=args.cutquoting or args.clean,
         individual_files=args.individualfiles,
         threaded=args.threaded,
+        merge=args.merge,
         binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
         quiet=args.quiet,
@@ -338,7 +352,13 @@ def main() -> None:
         show_info(input_paths, settings, logger)
         sys.exit(0)
 
-    if len(input_paths) > 1 or has_directory_input:
+    if args.merge:
+        try:
+            process_merged_files(input_paths, settings, logger)
+        except PROCESSING_EXCEPTIONS as error:
+            logger.error(error)
+            sys.exit(1)
+    elif len(input_paths) > 1 or has_directory_input:
         had_errors = process_multiple_files(input_paths, output_path, settings, logger)
         if had_errors:
             sys.exit(1)
