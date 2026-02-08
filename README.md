@@ -4,7 +4,7 @@ pyqwk is a friendly tool to convert old `.QWK` mail archives (from the BBS era) 
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, CSV, mbox, or SQLite.
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, or SQLite.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
 - **Privacy:** Redact personal information and handle private messages.
@@ -73,6 +73,11 @@ qwk archive.qwk --format mbox -o messages.mbox
 **Convert to JSON for your own scripts:**
 ```bash
 qwk archive.qwk --format json -o data.json
+```
+
+**Save as Markdown:**
+```bash
+qwk archive.qwk --format markdown -o messages.md
 ```
 
 **Process a whole folder of archives:**
@@ -147,7 +152,7 @@ for msg in parse_messages(file_data, None):
 | :--- | :--- |
 | `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
-| `--format [type]` | Choose format: `text`, `html`, `json`, `xml`, `csv`, `mbox`, `sqlite`. |
+| `--format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
 | `--clean` | Remove signatures, quotes, and binary data automatically. |
 | `--redact-pii` | Hide personal info like email addresses and phone numbers. |

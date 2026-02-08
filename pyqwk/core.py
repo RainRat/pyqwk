@@ -838,7 +838,7 @@ def process_file(
 
     separator_mode = settings.separator
     if separator_mode == 'auto':
-        if settings.individual_files or settings.format in ('json', 'xml', 'html', 'csv'):
+        if settings.individual_files or settings.format in ('json', 'xml', 'html', 'csv', 'markdown'):
             separator_mode = 'none'
         else:
             separator_mode = 'dashes'
@@ -873,7 +873,7 @@ def process_file(
                 settings.binaries_removal,
                 settings.redact_pii,
             )
-            if not settings.no_header and settings.format != 'html':
+            if not settings.no_header and settings.format not in ('html', 'markdown'):
                 leading_newlines = 0
                 text_prefix = parsed_message.text
                 while text_prefix.startswith('\r\n'):
@@ -889,7 +889,7 @@ def process_file(
                 processed_buffer = header_text + processed_buffer
 
             # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
-            if settings.format == 'text' or (not settings.no_header and settings.format != 'html'):
+            if settings.format == 'text' or (not settings.no_header and settings.format not in ('html', 'markdown')):
                 processed_buffer = separator_str + processed_buffer
 
             if settings.individual_files:
@@ -912,6 +912,9 @@ def process_file(
                 elif settings.format == 'html':
                     temp_msg = replace(parsed_message, text=processed_buffer)
                     encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
+                elif settings.format == 'markdown':
+                    temp_msg = replace(parsed_message, text=processed_buffer)
+                    encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
                 elif settings.format == 'mbox':
                     temp_msg = replace(parsed_message, text=processed_buffer)
                     encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
@@ -952,6 +955,7 @@ def process_file(
             'json': _write_json,
             'xml': _write_xml,
             'html': _write_html,
+            'markdown': _write_markdown,
             'text': _write_text,
             'csv': _write_csv,
             'mbox': _write_mbox,
@@ -1091,6 +1095,29 @@ def _serialize_message_html(message: ProcessedMessage) -> str:
     return '\n'.join(html_parts)
 
 
+def _render_single_message_markdown(message: ProcessedMessage) -> list[str]:
+    header = message.header
+    parts = []
+    parts.append(f"## {header.msgsubject}")
+    parts.append(f"- **Date:** {header.msgdate} {header.msgtime}")
+    parts.append(f"- **From:** {header.msgfrom}")
+    parts.append(f"- **To:** {header.msgto}")
+    parts.append(f"- **Conference:** {header.confnum}")
+    if header.msgnum is not None:
+        parts.append(f"- **Number:** {header.msgnum}")
+    parts.append("")
+    parts.append(message.text.replace('\r\n', '\n'))
+    parts.append("")
+    parts.append("---")
+    return parts
+
+
+def _serialize_message_markdown(message: ProcessedMessage) -> str:
+    md_parts = ["# QWK Message\n"]
+    md_parts.extend(_render_single_message_markdown(message))
+    return '\n'.join(md_parts)
+
+
 def _write_html(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
@@ -1114,6 +1141,26 @@ def _write_html(
     html_parts.extend(_get_html_footer())
 
     _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
+
+
+def _write_markdown(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
+    md_parts = ["# QWK Messages\n"]
+
+    for message in messages:
+        single_md = _render_single_message_markdown(message)
+        if message.depth > 0:
+            prefix = "> " * message.depth
+            indented_md = []
+            for line in single_md:
+                indented_md.append(f"{prefix}{line}".rstrip())
+            md_parts.extend(indented_md)
+        else:
+            md_parts.extend(single_md)
+        md_parts.append("")
+
+    _write_text_output('\n'.join(md_parts), output_path, encoding='utf-8')
 
 
 def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
@@ -1429,6 +1476,8 @@ def process_multiple_files(
                 output_filename += '.xml'
             elif settings.format == 'html':
                 output_filename += '.html'
+            elif settings.format == 'markdown':
+                output_filename += '.md'
             elif settings.format == 'csv':
                 output_filename += '.csv'
             elif settings.format == 'mbox':
