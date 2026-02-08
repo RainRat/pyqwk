@@ -581,7 +581,6 @@ def parse_messages(
                     "Invalid message header at offset %s; skipping block.",
                     i,
                 )
-                blocks_remaining = 0
                 continue
 
             current_msgnum = header.msgnum
@@ -595,7 +594,6 @@ def parse_messages(
                     getattr(header, '_numblocks_raw', header.numblocks),
                     i,
                 )
-                blocks_remaining = 0
                 continue
 
             blocks_remaining = header.numblocks - 1
