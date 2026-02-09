@@ -32,6 +32,7 @@ class QwkGuiApp:
         self.clean_var = tk.BooleanVar(value=False)
         self.private_var = tk.BooleanVar(value=False)
         self.redact_var = tk.BooleanVar(value=False)
+        self.ansi_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
@@ -111,6 +112,7 @@ class QwkGuiApp:
             ("Clean", self.clean_var),
             ("Include Private", self.private_var),
             ("Redact PII", self.redact_var),
+            ("Strip ANSI", self.ansi_var),
             ("Threaded", self.threaded_var),
         ]:
             ttk.Checkbutton(
@@ -210,6 +212,7 @@ class QwkGuiApp:
             threaded=self.threaded_var.get(),
             binaries_removal=clean,
             redact_pii=self.redact_var.get(),
+            strip_ansi=clean or self.ansi_var.get(),
             format='text',
             separator='none',
             output_mode='stdout',
@@ -320,6 +323,7 @@ class QwkGuiApp:
                     settings.cut_quoting,
                     settings.binaries_removal,
                     settings.redact_pii,
+                    settings.strip_ansi,
                 )
                 messages.append(replace(parsed_message, text=processed_buffer))
 

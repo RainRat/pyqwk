@@ -205,3 +205,30 @@ def test_process_message_removes_consecutive_loose_uue_lines() -> None:
         redact_pii=False,
     )
     assert processed == "Intro\r\nOutro\r\n"
+
+
+def test_process_message_strips_ansi_escapes() -> None:
+    # ESC [ 31 m (Red) Body ESC [ 0 m (Reset)
+    message = "Intro\r\n\x1b[31mRed Text\x1b[0m\r\nOutro\r\n"
+
+    # Test with stripping ENABLED
+    processed_enabled = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=False,
+        strip_ansi=True,
+    )
+    assert processed_enabled == "Intro\r\nRed Text\r\nOutro\r\n"
+
+    # Test with stripping DISABLED
+    processed_disabled = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=False,
+        redact_pii=False,
+        strip_ansi=False,
+    )
+    assert processed_disabled == "Intro\r\n\x1b[31mRed Text\x1b[0m\r\nOutro\r\n"

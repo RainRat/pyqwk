@@ -50,6 +50,8 @@ RE_SUBJECT_PREFIX_PATTERN = re.compile(
     r'^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*', re.IGNORECASE
 )
 
+RE_ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
+
 SIGNATURE_PATTERNS_EXACT = {
     "---",
     "___",
@@ -132,6 +134,7 @@ class ProcessingSettings:
     output_mode: str
     output_path: str | None
     encoding: str
+    strip_ansi: bool = False
     quiet: bool = False
     headers_only: bool = False
     merge: bool = False
@@ -635,6 +638,7 @@ def process_message(
     cut_quoting: bool,
     binaries_removal: bool,
     redact_pii: bool,
+    strip_ansi: bool = False,
 ) -> str:
     """Transform a raw message body according to processing settings.
 
@@ -644,6 +648,7 @@ def process_message(
         cut_quoting: Whether to remove quoted text and quote headers.
         binaries_removal: Whether to strip uuencoded, Base64, and yEnc payloads.
         redact_pii: Whether to redact email addresses and phone numbers.
+        strip_ansi: Whether to remove ANSI escape sequences from the text.
 
     Returns:
         The processed message text with transformations applied.
@@ -679,6 +684,8 @@ def process_message(
         if redact_pii:
             line = RE_EMAIL_PATTERN.sub('[EMAIL]', line)
             line = RE_PHONE_PATTERN.sub('[PHONE]', line)
+        if strip_ansi:
+            line = RE_ANSI_ESCAPE_PATTERN.sub('', line)
         new_lines.append(line)
         previous_line = line
 
@@ -872,6 +879,7 @@ def process_merged_files(
                     settings.cut_quoting,
                     settings.binaries_removal,
                     settings.redact_pii,
+                    settings.strip_ansi,
                 )
                 if not settings.no_header and settings.format not in ('html', 'markdown'):
                     leading_newlines = 0
