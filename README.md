@@ -180,7 +180,14 @@ Run `qwk --help` to see all available options.
 
 ## Contributing
 
-We welcome your contributions! Please run tests before submitting a pull request:
+We welcome your contributions! Please install the development dependencies and run the tests before you submit a pull request.
+
+To install dependencies for testing:
 ```bash
-pytest
+pip install pytest
+```
+
+To run the tests:
+```bash
+python -m pytest
 ```
