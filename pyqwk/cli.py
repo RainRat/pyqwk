@@ -110,7 +110,7 @@ def main() -> None:
     content_group = parser.add_argument_group('Content Processing')
     content_group.add_argument(
         '--clean',
-        help='Clean the message by removing signatures, old quotes, and binary data.',
+        help='Clean the message by removing signatures, old quotes, binary data, and ANSI colors.',
         action='store_true',
     )
     content_group.add_argument(
@@ -139,6 +139,13 @@ def main() -> None:
         '--redact-pii',
         dest='redactpii',
         help='Hide personal info like email addresses and phone numbers.',
+        action='store_true',
+    )
+    content_group.add_argument(
+        '-A',
+        '--strip-ansi',
+        dest='stripansi',
+        help='Remove ANSI escape sequences (colors) from the message text.',
         action='store_true',
     )
     content_group.add_argument(
@@ -340,6 +347,7 @@ def main() -> None:
         merge=args.merge,
         binaries_removal=args.binariesremoval or args.clean,
         redact_pii=args.redactpii,
+        strip_ansi=args.stripansi or args.clean,
         quiet=args.quiet,
         headers_only=args.headers_only,
         format=output_format,
