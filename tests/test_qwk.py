@@ -764,7 +764,7 @@ def test_cli_requires_output_directory_for_multiple_inputs(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Output folder is required when processing multiple files." in stderr
+    assert "You must provide an output folder when processing more than one file." in stderr
 
 
 def test_cli_treats_multiple_positional_args_as_inputs(
@@ -783,7 +783,7 @@ def test_cli_treats_multiple_positional_args_as_inputs(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Output folder is required when processing multiple files." in stderr
+    assert "You must provide an output folder when processing more than one file." in stderr
 
 
 def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
@@ -807,7 +807,7 @@ def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Output folder is required when processing multiple files." in stderr
+    assert "You must provide an output folder when processing more than one file." in stderr
 
 
 def test_cli_rejects_invalid_log_level(
@@ -929,7 +929,7 @@ def test_cli_rejects_threaded_with_individual_files(
         main()
 
     stderr = capsys.readouterr().err
-    assert "Threading is not compatible with individual files output." in stderr
+    assert "You cannot use --threaded and --individual-files at the same time." in stderr
 
 
 def test_cli_allows_noheader_with_structured_formats(
