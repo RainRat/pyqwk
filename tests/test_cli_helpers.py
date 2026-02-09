@@ -14,9 +14,9 @@ def test_parse_cli_date_none():
     assert _parse_cli_date("") is None
 
 def test_parse_cli_date_invalid():
-    with pytest.raises(ValueError, match="Invalid date format"):
+    with pytest.raises(ValueError, match="is invalid. Please use YYYY-MM-DD"):
         _parse_cli_date("01-01-2023")
-    with pytest.raises(ValueError, match="Invalid date format"):
+    with pytest.raises(ValueError, match="is invalid. Please use YYYY-MM-DD"):
         _parse_cli_date("2023-13-01")
 
 def test_resolve_output_format_explicit():
