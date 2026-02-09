@@ -8,7 +8,7 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
 - **Privacy:** Redact personal information and handle private messages.
-- **Batch Processing:** Convert many archives or entire folders at once.
+- **Batch Processing:** Convert many archives or entire folders at once, or merge them into a single file.
 - **Built-in GUI:** A simple graphical interface for reading messages without conversion.
 
 ## Quick Start
@@ -85,6 +85,11 @@ qwk archive.qwk --format markdown -o messages.md
 qwk my_archives/ -o output_folder/
 ```
 
+**Merge multiple archives into one file (with cross-archive threading):**
+```bash
+qwk archive1.qwk archive2.qwk --merge -o combined.mbox
+```
+
 *Note for Windows users: If you use wildcards like `*.qwk`, use PowerShell instead of the standard Command Prompt.*
 
 ## Filtering & Searching
@@ -153,6 +158,7 @@ for msg in parse_messages(file_data, None):
 | `-i`, `--individual-files` | Save each message as a separate file. |
 | `--format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
+| `-m`, `--merge` | Merge multiple inputs into a single output file. |
 | `--clean` | Remove signatures, quotes, and binary data automatically. |
 | `--redact-pii` | Hide personal info like email addresses and phone numbers. |
 | `--headers-only` | Extract only message headers and skip the message body. |

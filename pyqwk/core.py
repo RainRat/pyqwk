@@ -134,6 +134,7 @@ class ProcessingSettings:
     encoding: str
     quiet: bool = False
     headers_only: bool = False
+    merge: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
@@ -807,12 +808,11 @@ def matches_filters(
     return True
 
 
-def process_file(
-    input_path: str,
+def process_merged_files(
+    input_paths: list[str],
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> None:
-
     output_mode = settings.output_mode
     resolved_output_path = settings.output_path
 
@@ -833,7 +833,7 @@ def process_file(
         if os.path.exists(output_dir) and not os.path.isdir(output_dir):
             raise ValueError('The output path must be a folder when using individual files.')
         os.makedirs(output_dir, exist_ok=True)
-    file_data, board_dict = load_data(input_path, logger, settings.encoding)
+
     collected_messages: list[ParsedMessage] = []
 
     separator_mode = settings.separator
@@ -848,101 +848,105 @@ def process_file(
     elif separator_mode == 'blank':
         separator_str = "\r\n"
 
-    allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
     count = 0
+    for input_path in input_paths:
+        file_data, board_dict = load_data(input_path, logger, settings.encoding)
+        allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
 
-    desc = f"Processing {os.path.basename(input_path)}"
-    with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
-        for parsed_message in parse_messages(
-            file_data,
-            progress_bar,
-            settings.encoding,
-            settings.headers_only,
-        ):
-            if not matches_filters(parsed_message, settings, allowed_conferences):
-                continue
+        desc = f"Processing {os.path.basename(input_path)}"
+        with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
+            for parsed_message in parse_messages(
+                file_data,
+                progress_bar,
+                settings.encoding,
+                settings.headers_only,
+            ):
+                if not matches_filters(parsed_message, settings, allowed_conferences):
+                    continue
 
-            count += 1
+                count += 1
+                if settings.limit is not None and count > settings.limit:
+                    break
+
+                processed_buffer = process_message(
+                    parsed_message.text,
+                    settings.truncate_signatures,
+                    settings.cut_quoting,
+                    settings.binaries_removal,
+                    settings.redact_pii,
+                )
+                if not settings.no_header and settings.format not in ('html', 'markdown'):
+                    leading_newlines = 0
+                    text_prefix = parsed_message.text
+                    while text_prefix.startswith('\r\n'):
+                        leading_newlines += 1
+                        text_prefix = text_prefix[2:]
+                    if leading_newlines and not processed_buffer.startswith('\r\n'):
+                        processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+                    header_text = parsed_message.header.format_text(
+                        board_dict,
+                        settings.verbose,
+                        include_separator=False,
+                    )
+                    processed_buffer = header_text + processed_buffer
+
+                # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
+                if settings.format == 'text' or (not settings.no_header and settings.format not in ('html', 'markdown')):
+                    processed_buffer = separator_str + processed_buffer
+
+                if settings.individual_files:
+                    target_encoding = 'utf-8'
+                    if settings.format == 'text':
+                        target_encoding = settings.encoding
+                        encoded_buffer = processed_buffer.encode(target_encoding)
+                    elif settings.format == 'json':
+                        # For JSON, we use the message object but update the text with processed_buffer
+                        # Note: processed_buffer may contain the header if not --noheader, matching existing behavior
+                        # If headers_only, we want empty text in the JSON, not processed_buffer (which might be the formatted header)
+                        text_content = "" if settings.headers_only else processed_buffer
+                        temp_msg = replace(parsed_message, text=text_content)
+                        encoded_buffer = json.dumps(
+                            _message_to_dict(temp_msg), indent=4, ensure_ascii=False
+                        ).encode(target_encoding)
+                    elif settings.format == 'xml':
+                        temp_msg = replace(parsed_message, text=processed_buffer)
+                        encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
+                    elif settings.format == 'html':
+                        temp_msg = replace(parsed_message, text=processed_buffer)
+                        encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
+                    elif settings.format == 'markdown':
+                        temp_msg = replace(parsed_message, text=processed_buffer)
+                        encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
+                    elif settings.format == 'mbox':
+                        temp_msg = replace(parsed_message, text=processed_buffer)
+                        encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
+                    else:
+                        encoded_buffer = processed_buffer.encode(target_encoding)
+
+                    assert output_dir is not None
+                    # We use sha1 of encoded buffer to determine filename, as before
+                    with open(
+                        os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
+                        'wb',
+                    ) as f:
+                        f.write(encoded_buffer)
+                else:
+                    text_content = processed_buffer
+                    if settings.headers_only:
+                        # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
+                        # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
+                        # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
+                        if settings.format in ('json', 'xml', 'csv', 'sqlite'):
+                            text_content = ""
+
+                    collected_messages.append(
+                        replace(
+                            parsed_message,
+                            text=text_content,
+                        )
+                    )
             if settings.limit is not None and count > settings.limit:
                 break
-
-            processed_buffer = process_message(
-                parsed_message.text,
-                settings.truncate_signatures,
-                settings.cut_quoting,
-                settings.binaries_removal,
-                settings.redact_pii,
-            )
-            if not settings.no_header and settings.format not in ('html', 'markdown'):
-                leading_newlines = 0
-                text_prefix = parsed_message.text
-                while text_prefix.startswith('\r\n'):
-                    leading_newlines += 1
-                    text_prefix = text_prefix[2:]
-                if leading_newlines and not processed_buffer.startswith('\r\n'):
-                    processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
-                header_text = parsed_message.header.format_text(
-                    board_dict,
-                    settings.verbose,
-                    include_separator=False,
-                )
-                processed_buffer = header_text + processed_buffer
-
-            # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
-            if settings.format == 'text' or (not settings.no_header and settings.format not in ('html', 'markdown')):
-                processed_buffer = separator_str + processed_buffer
-
-            if settings.individual_files:
-                target_encoding = 'utf-8'
-                if settings.format == 'text':
-                    target_encoding = settings.encoding
-                    encoded_buffer = processed_buffer.encode(target_encoding)
-                elif settings.format == 'json':
-                    # For JSON, we use the message object but update the text with processed_buffer
-                    # Note: processed_buffer may contain the header if not --noheader, matching existing behavior
-                    # If headers_only, we want empty text in the JSON, not processed_buffer (which might be the formatted header)
-                    text_content = "" if settings.headers_only else processed_buffer
-                    temp_msg = replace(parsed_message, text=text_content)
-                    encoded_buffer = json.dumps(
-                        _message_to_dict(temp_msg), indent=4, ensure_ascii=False
-                    ).encode(target_encoding)
-                elif settings.format == 'xml':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
-                    encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
-                elif settings.format == 'html':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
-                    encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
-                elif settings.format == 'markdown':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
-                    encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
-                elif settings.format == 'mbox':
-                    temp_msg = replace(parsed_message, text=processed_buffer)
-                    encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
-                else:
-                    encoded_buffer = processed_buffer.encode(target_encoding)
-
-                assert output_dir is not None
-                # We use sha1 of encoded buffer to determine filename, as before
-                with open(
-                    os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
-                    'wb',
-                ) as f:
-                    f.write(encoded_buffer)
-            else:
-                text_content = processed_buffer
-                if settings.headers_only:
-                    # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
-                    # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
-                    # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
-                    if settings.format in ('json', 'xml', 'csv', 'sqlite'):
-                         text_content = ""
-
-                collected_messages.append(
-                    replace(
-                        parsed_message,
-                        text=text_content,
-                    )
-                )
 
     if not settings.individual_files:
         ordered_messages = (
@@ -967,6 +971,14 @@ def process_file(
         if settings.format == 'text':
             output_encoding = settings.encoding
         writer(ordered_messages, resolved_output_path, output_encoding)
+
+
+def process_file(
+    input_path: str,
+    settings: ProcessingSettings,
+    logger: logging.Logger,
+) -> None:
+    process_merged_files([input_path], settings, logger)
 
 
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
