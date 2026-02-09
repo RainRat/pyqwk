@@ -124,3 +124,45 @@ def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logge
         content = f.read()
         assert "<!DOCTYPE html>" in content or "<html>" in content
         assert '<div class="message">' in content
+
+def test_individual_files_markdown_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+    output_dir = tmp_path / "md_out"
+
+    process_file(
+        str(baseline_path),
+        _make_settings(
+            individual_files=True,
+            format="markdown",
+            output_mode="file",
+            output_path=str(output_dir),
+        ),
+        logger=logger,
+    )
+
+    files = list(output_dir.iterdir())
+    assert len(files) > 0
+    with files[0].open("r", encoding="utf-8") as f:
+        content = f.read()
+        assert "# QWK Message" in content
+        assert "## " in content
+
+def test_individual_files_mbox_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+    output_dir = tmp_path / "mbox_out"
+
+    process_file(
+        str(baseline_path),
+        _make_settings(
+            individual_files=True,
+            format="mbox",
+            output_mode="file",
+            output_path=str(output_dir),
+        ),
+        logger=logger,
+    )
+
+    files = list(output_dir.iterdir())
+    assert len(files) > 0
+    with files[0].open("r", encoding="utf-8") as f:
+        content = f.read()
+        assert content.startswith("From ")
+        assert "Subject: " in content
