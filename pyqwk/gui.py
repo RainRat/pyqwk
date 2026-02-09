@@ -184,6 +184,10 @@ class QwkGuiApp:
             "header_label", font=("TkDefaultFont", 9, "bold"), foreground="#555555"
         )
         self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 9))
+        self.detail_text.tag_configure(
+            "header_subject", font=("TkDefaultFont", 11, "bold")
+        )
+        self.detail_text.tag_configure("header_separator", foreground="#cccccc")
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
         self.detail_text.tag_configure(
             "search_highlight", background="#ffff00", foreground="#000000"
@@ -229,22 +233,28 @@ class QwkGuiApp:
         self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
 
-        def insert_header(label: str, value: str) -> None:
+        # Subject as a prominent title
+        self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n", "header_subject")
+
+        def insert_field(label: str, value: str, last: bool = False) -> None:
             self.detail_text.insert(tk.END, f"{label}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{value}\n", "header_value")
+            self.detail_text.insert(tk.END, f"{value}" + ("\n" if last else "  |  "), "header_value")
 
-        insert_header("Conference", conf_name)
-        insert_header("Date", f"{header.msgdate} {header.msgtime}")
-        insert_header("From", header.msgfrom)
-        insert_header("To", header.msgto)
-        insert_header("Subject", header.msgsubject)
+        insert_field("From", header.msgfrom)
+        insert_field("To", header.msgto, last=True)
+        insert_field("Date", f"{header.msgdate} {header.msgtime}")
+        insert_field("Conf", conf_name, last=True)
 
-        if header.msgnum is not None:
-            insert_header("Message #", str(header.msgnum))
-        if message.refnum:
-            insert_header("Reference #", str(message.refnum))
+        if header.msgnum is not None or message.refnum:
+            if header.msgnum is not None:
+                self.detail_text.insert(tk.END, f"Msg #{header.msgnum}  ", "header_label")
+            if message.refnum:
+                self.detail_text.insert(tk.END, f"Ref #{message.refnum}", "header_label")
+            self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "\n", "header_value")
+        # Visual separator
+        self.detail_text.insert(tk.END, "—" * 60 + "\n\n", "header_separator")
+
         self.detail_text.insert(tk.END, message.text, "body")
 
         # Highlight search terms if present
