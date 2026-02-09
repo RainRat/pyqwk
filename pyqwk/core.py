@@ -1547,6 +1547,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
     logger = logging.getLogger(__name__)
     index_by_key: dict[tuple[int, int], int] = {}
     index_by_subject: dict[tuple[int, str], list[int]] = defaultdict(list)
+    normalized_subjects: list[str] = []
     children: dict[int, list[int]] = defaultdict(list)
     roots: list[int] = []
 
@@ -1556,6 +1557,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
             index_by_key[(message.confnum, message.msgnum)] = index
 
         subj = _normalize_subject(message.header.msgsubject)
+        normalized_subjects.append(subj)
         if subj:
             index_by_subject[(message.confnum, subj)].append(index)
 
@@ -1579,7 +1581,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
 
         # Fallback: Subject matching
         if parent_index is None:
-            subj = _normalize_subject(message.header.msgsubject)
+            subj = normalized_subjects[index]
             if subj:
                 candidates = index_by_subject.get((message.confnum, subj), [])
                 # Prefer candidates that appear before this message
