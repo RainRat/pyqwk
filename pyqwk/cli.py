@@ -101,6 +101,7 @@ def main() -> None:
         action='store_true',
     )
     io_group.add_argument(
+        '-E',
         '--encoding',
         help='Character encoding of the input file (default: cp437)',
         default='cp437',
@@ -147,6 +148,7 @@ def main() -> None:
         action='store_true',
     )
     content_group.add_argument(
+        '-H',
         '--headers-only',
         help='Extract only message headers, skipping body text (faster for metadata/stats).',
         action='store_true',
@@ -154,6 +156,7 @@ def main() -> None:
 
     format_group = parser.add_argument_group('Formatting & Structure')
     format_group.add_argument(
+        '-F',
         '--format',
         help=(
             'Choose the output format: text, json, xml, html, markdown, csv, mbox, or sqlite. '
@@ -216,6 +219,7 @@ def main() -> None:
         help='Filter messages by conference name or number (can be used multiple times).',
     )
     filter_group.add_argument(
+        '-f',
         '--from',
         dest='authors',
         action='append',
@@ -228,12 +232,14 @@ def main() -> None:
         help='Filter messages by recipient name (case-insensitive substring match).',
     )
     filter_group.add_argument(
+        '-s',
         '--subject',
         dest='subjects',
         action='append',
         help='Filter messages by subject line (case-insensitive substring match).',
     )
     filter_group.add_argument(
+        '-S',
         '--search',
         dest='search_term',
         help='Search for a keyword in author, subject, and message body.',
@@ -249,6 +255,7 @@ def main() -> None:
         default=None,
     )
     filter_group.add_argument(
+        '-L',
         '--limit',
         help='Limit the number of messages processed.',
         type=int,
@@ -256,11 +263,13 @@ def main() -> None:
     )
 
     parser.add_argument(
+        '-I',
         '--info',
         action='store_true',
         help='Show a summary of the QWK packet (BBS info, conferences, message counts) and exit. (Respects --format json)',
     )
     parser.add_argument(
+        '-V',
         '--version',
         action='version',
         version=f"%(prog)s {__version__}",

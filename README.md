@@ -156,19 +156,19 @@ for msg in parse_messages(file_data, None):
 | :--- | :--- |
 | `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
-| `--format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
+| `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
 | `-m`, `--merge` | Merge multiple inputs into a single output file. |
 | `--clean` | Remove signatures, quotes, and binary data automatically. |
-| `--redact-pii` | Hide personal info like email addresses and phone numbers. |
-| `--headers-only` | Extract only message headers and skip the message body. |
-| `--encoding [name]` | Set the input text encoding (default is `cp437`). |
+| `-r, --redact-pii` | Hide personal info like email addresses and phone numbers. |
+| `-H, --headers-only` | Extract only message headers and skip the message body. |
+| `-E, --encoding [name]` | Set the input text encoding (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
 | `-n`, `--noheader` | Do not include the message header info in the text. |
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
 | `-q`, `--quiet` | Hide the progress bar and extra info. |
-| `--limit [num]` | Stop after processing this many messages. |
-| `--info` | Show a summary of the archive and exit. |
+| `-L, --limit [num]` | Stop after processing this many messages. |
+| `-I, --info` | Show a summary of the archive and exit. |
 
 Run `qwk --help` to see all available options.
 
