@@ -60,6 +60,25 @@ def test_serialize_message_mbox_format(sample_message):
     # Check Body
     assert "This is the body." in mbox_content
 
+def test_serialize_message_mbox_with_metadata(sample_message):
+    sample_message.confname = "Main Board"
+    sample_message.header.status = "*"
+    sample_message.header.msgflag = " "
+
+    mbox_content = _serialize_message_mbox(sample_message)
+
+    assert "X-QWK-Conference-Name: Main Board" in mbox_content
+    assert "X-QWK-Message-Number: 123" in mbox_content
+    assert "X-QWK-Status: *" in mbox_content
+    assert "Content-Type: text/plain; charset=utf-8" in mbox_content
+
+def test_serialize_message_mbox_threading(sample_message):
+    sample_message.parent_msgnum = 100
+    mbox_content = _serialize_message_mbox(sample_message)
+
+    assert "In-Reply-To: <1.100@qwk>" in mbox_content
+    assert "References: <1.100@qwk>" in mbox_content
+
 def test_write_mbox_multiple(tmp_path, sample_message):
     output_file = tmp_path / "output.mbox"
 
