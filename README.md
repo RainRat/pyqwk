@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into modern formats including Text, HTML, JSON, XML, CSV, mbox, and SQLite.
+pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, XML, CSV, mbox, and SQLite.
 
 ## Features
 
@@ -8,21 +8,24 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
 - **Privacy:** Redact personal information and handle private messages.
-- **Batch Processing:** Convert many archives or entire folders at once, or merge them into a single file.
-- **Built-in GUI:** A simple graphical interface for reading messages without conversion.
+- **Batch Processing:** Convert many archives at once or merge them into a single file.
+- **Built-in Reader:** A simple graphical interface to read messages without converting them.
+
+## Prerequisites
+
+- **Python 3.10** or newer is required.
+- (Optional) Install the `tqdm` package for a progress bar: `pip install tqdm`
 
 ## Quick Start
 
-1. **Run the script** (requires Python 3.10 or newer):
-   ```bash
-   python qwk.py archive.qwk
-   ```
-
-*Tip: Install the `tqdm` package (`pip install tqdm`) to see a progress bar during processing.*
+Run the script on any QWK archive:
+```bash
+python qwk.py archive.qwk
+```
 
 ## Installation
 
-You can install `pyqwk` to use it from any folder.
+You can install `pyqwk` to use it from any folder on your computer.
 
 1. Open your terminal in the project folder.
 2. Install the package:
@@ -38,7 +41,7 @@ You can install `pyqwk` to use it from any folder.
    qwk-gui
    ```
 
-*Note: You can also run the GUI directly without installing:*
+*Note: You can also run the reader directly without installing:*
 ```bash
 python -m pyqwk.gui
 ```
@@ -85,7 +88,7 @@ qwk archive.qwk --format markdown -o messages.md
 qwk my_archives/ -o output_folder/
 ```
 
-**Merge multiple archives into one file (with cross-archive threading):**
+**Merge multiple archives into one file:**
 ```bash
 qwk archive1.qwk archive2.qwk --merge -o combined.mbox
 ```
@@ -108,7 +111,7 @@ qwk archive.qwk --from "Sysop"
 qwk archive.qwk --to "Alice"
 ```
 
-**Search Body Content:**
+**Keyword Search:**
 Search for keywords in the author, subject, and message body.
 ```bash
 qwk archive.qwk --search "BBS"
@@ -132,11 +135,12 @@ from pyqwk.core import load_data, parse_messages, process_message
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyqwk")
 
-# Load the archive
+# Load the archive and conference list
 file_data, board_dict = load_data("archive.qwk", logger)
 
+# Loop through all messages
 for msg in parse_messages(file_data, None):
-    # Clean the message content
+    # Clean the message content (remove signatures, quotes, and binaries)
     clean_text = process_message(
         msg.text,
         truncate_signatures=True,
@@ -145,9 +149,13 @@ for msg in parse_messages(file_data, None):
         redact_pii=False
     )
 
-    print(f"From: {msg.header.msgfrom}")
+    # Get the conference name from the board dictionary
+    conf_name = board_dict.get(msg.confnum, f"Conference {msg.confnum}")
+
+    print(f"[{conf_name}] From: {msg.header.msgfrom}")
     print(f"Subject: {msg.header.msgsubject}")
     print(clean_text)
+    print("-" * 40)
 ```
 
 ## Common Options
@@ -158,13 +166,17 @@ for msg in parse_messages(file_data, None):
 | `-i`, `--individual-files` | Save each message as a separate file. |
 | `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
-| `-m`, `--merge` | Merge multiple inputs into a single output file. |
-| `--clean` | Remove signatures, quotes, and binary data automatically. |
+| `-m`, `--merge` | Combine multiple inputs into a single output file. |
+| `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
+| `-C`, `--conference [id]` | Only show messages from this conference name or number. |
+| `--clean` | Automatically remove signatures, quotes, binary data, and color codes. |
 | `-r, --redact-pii` | Hide personal info like email addresses and phone numbers. |
 | `-H, --headers-only` | Extract only message headers and skip the message body. |
-| `-E, --encoding [name]` | Set the input text encoding (default is `cp437`). |
+| `-E, --encoding [name]` | Set the text character set (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
 | `-n`, `--noheader` | Do not include the message header info in the text. |
+| -A, --strip-ansi | Remove color codes and other formatting symbols. |
+| `--separator [type]` | How to separate messages (`auto`, `none`, `dashes`, `blank`). |
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
 | `-q`, `--quiet` | Hide the progress bar and extra info. |
 | `-L, --limit [num]` | Stop after processing this many messages. |
@@ -180,14 +192,13 @@ Run `qwk --help` to see all available options.
 
 ## Contributing
 
-We welcome your contributions! Please install the development dependencies and run the tests before you submit a pull request.
+We welcome your contributions! To help develop `pyqwk`:
 
-To install dependencies for testing:
-```bash
-pip install pytest
-```
-
-To run the tests:
-```bash
-python -m pytest
-```
+1. Install the development and testing dependencies:
+   ```bash
+   pip install pytest pytest-mock
+   ```
+2. Run the tests to make sure everything is working:
+   ```bash
+   python -m pytest
+   ```
