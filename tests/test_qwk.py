@@ -120,6 +120,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         before=None,
         limit=None,
         info=False,
+        stats=False,
     )
     base.update(overrides)
     return argparse.Namespace(**base)

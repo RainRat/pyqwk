@@ -10,7 +10,7 @@ import html
 import csv
 import io
 import xml.etree.ElementTree as ET
-from collections import defaultdict
+from collections import defaultdict, Counter
 from collections.abc import Iterator, Mapping
 from dataclasses import asdict, dataclass, fields, replace
 from contextlib import contextmanager, nullcontext
@@ -1508,6 +1508,136 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
 
     if settings.format == 'json':
         print(json.dumps(all_info, indent=4, ensure_ascii=False))
+
+
+def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+    """Show detailed statistics about the messages in the QWK archives."""
+    # ANSI Attribute codes
+    BOLD = "1"
+    CYAN = "36"
+
+    all_stats = []
+
+    for input_path in input_paths:
+        stats_entry = {
+            "file": input_path,
+            "total_messages": 0,
+            "matching_messages": 0,
+            "dates": {"earliest": None, "latest": None},
+            "authors": [],
+            "conferences": [],
+            "subjects": [],
+            "day_of_week": {},
+            "hour_of_day": {},
+            "private_count": 0,
+        }
+
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+
+            author_counter = Counter()
+            conf_counter = Counter()
+            subject_counter = Counter()
+            dow_counter = Counter()
+            hour_counter = Counter()
+
+            earliest_dt = None
+            latest_dt = None
+            private_count = 0
+            matching_count = 0
+            total_count = 0
+
+            desc = f"Analyzing {os.path.basename(input_path)}"
+            # Use a progress bar for statistics gathering
+            with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
+                for message in parse_messages(
+                    file_data, progress_bar, settings.encoding, headers_only=True
+                ):
+                    total_count += 1
+
+                    if not matches_filters(message, settings, allowed_conferences):
+                        continue
+
+                    matching_count += 1
+
+                    # Date/Time
+                    dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+                    if earliest_dt is None or dt < earliest_dt:
+                        earliest_dt = dt
+                    if latest_dt is None or dt > latest_dt:
+                        latest_dt = dt
+
+                    author_counter[message.header.msgfrom.strip()] += 1
+                    conf_counter[message.confnum] += 1
+                    subject_counter[_normalize_subject(message.header.msgsubject)] += 1
+
+                    dow_counter[dt.strftime('%A')] += 1
+                    hour_counter[dt.hour] += 1
+
+                    if message.header.is_private:
+                        private_count += 1
+
+            stats_entry["total_messages"] = total_count
+            stats_entry["matching_messages"] = matching_count
+            stats_entry["private_count"] = private_count
+
+            if earliest_dt:
+                stats_entry["dates"]["earliest"] = earliest_dt.isoformat()
+                stats_entry["dates"]["latest"] = latest_dt.isoformat()
+
+            # Top 10
+            stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
+            stats_entry["conferences"] = [{"number": n, "name": board_dict.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
+            stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
+            stats_entry["day_of_week"] = dict(dow_counter)
+            stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
+
+            if settings.format != 'json':
+                print(f"Statistics for: {_colorize(input_path, CYAN)}")
+                print(f"  {_colorize('Messages:', BOLD)} {matching_count} matching / {total_count} total")
+
+                if earliest_dt:
+                    print(f"  {_colorize('Date Range:', BOLD)} {earliest_dt.strftime('%Y-%m-%d')} to {latest_dt.strftime('%Y-%m-%d')}")
+
+                print(f"  {_colorize('Private:', BOLD)}    {private_count} messages")
+
+                if author_counter:
+                    print(f"\n  {_colorize('Top Authors:', BOLD)}")
+                    for auth in stats_entry["authors"]:
+                        print(f"    {auth['name']:25} : {auth['count']}")
+
+                if conf_counter:
+                    print(f"\n  {_colorize('Top Conferences:', BOLD)}")
+                    for conf in stats_entry["conferences"]:
+                        conf_name = conf['name'][:21]
+                        print(f"    {conf['number']:3} {conf_name:21} : {conf['count']}")
+
+                if dow_counter:
+                    print(f"\n  {_colorize('Day of Week Distribution:', BOLD)}")
+                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    max_dow_count = max(dow_counter.values())
+                    for day in days:
+                        count = dow_counter.get(day, 0)
+                        bar = "#" * int(count * 40 / max_dow_count) if max_dow_count > 0 else ""
+                        print(f"    {day:10}: {count:4} {bar}")
+
+                if hour_counter:
+                    print(f"\n  {_colorize('Hourly Distribution:', BOLD)}")
+                    max_hour_count = max(hour_counter.values())
+                    for h in range(24):
+                        count = hour_counter.get(h, 0)
+                        bar = "#" * int(count * 40 / max_hour_count) if max_hour_count > 0 else ""
+                        print(f"    {h:02}:00 : {count:4} {bar}")
+                print("")
+
+            all_stats.append(stats_entry)
+
+        except Exception as e:
+            logger.error(f"Error calculating stats for {input_path}: {e}")
+
+    if settings.format == 'json':
+        print(json.dumps(all_stats, indent=4, ensure_ascii=False))
 
 
 def process_multiple_files(
