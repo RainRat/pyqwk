@@ -72,6 +72,7 @@ qwk archive.qwk --format html -o messages.html
 ```bash
 qwk archive.qwk --format mbox -o messages.mbox
 ```
+*Tip: Use `--threaded` to include standard email threading headers for better organization in your mail app.*
 
 **Convert to JSON for your own scripts:**
 ```bash

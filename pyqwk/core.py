@@ -190,6 +190,7 @@ class ParsedMessage:
     depth: int = 0
     thread_id: str | None = None
     parent_msgnum: int | None = None
+    confname: str | None = None
 
 
 
@@ -874,6 +875,10 @@ def process_merged_files(
                 settings.encoding,
                 settings.headers_only,
             ):
+                parsed_message = replace(
+                    parsed_message,
+                    confname=board_dict.get(parsed_message.confnum)
+                )
                 if not matches_filters(parsed_message, settings, allowed_conferences):
                     continue
 
@@ -1218,7 +1223,11 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
 
 
 def _serialize_message_mbox(message: ProcessedMessage) -> str:
-    """Serialize a message to mbox format."""
+    """Serialize a message to mbox format with threading and metadata.
+
+    Includes standard email headers for threading (Message-ID, In-Reply-To, References)
+    and custom X-QWK headers for conference names, message numbers, and statuses.
+    """
     header = message.header
 
     # Parse date
@@ -1260,7 +1269,26 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
     # <confnum.msgnum@qwk>
     msg_id = f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
     parts.append(f"Message-ID: {msg_id}")
+
+    # Threading headers
+    if message.parent_msgnum is not None:
+        parent_id = f"<{header.confnum}.{message.parent_msgnum}@qwk>"
+        parts.append(f"In-Reply-To: {parent_id}")
+        parts.append(f"References: {parent_id}")
+
+    # QWK Metadata headers
     parts.append(f"X-QWK-Conference: {header.confnum}")
+    if message.confname:
+        parts.append(f"X-QWK-Conference-Name: {message.confname}")
+    if header.msgnum is not None:
+        parts.append(f"X-QWK-Message-Number: {header.msgnum}")
+    if header.status.strip():
+        parts.append(f"X-QWK-Status: {header.status}")
+    if header.msgflag.strip():
+        parts.append(f"X-QWK-Flags: {header.msgflag}")
+
+    parts.append("Content-Type: text/plain; charset=utf-8")
+    parts.append("Content-Transfer-Encoding: 8bit")
 
     parts.append("")  # Separator before body
     parts.append(body)
