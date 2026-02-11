@@ -914,16 +914,14 @@ def process_merged_files(
                         target_encoding = settings.encoding
                         encoded_buffer = processed_buffer.encode(target_encoding)
                     elif settings.format == 'json':
-                        # For JSON, we use the message object but update the text with processed_buffer
-                        # Note: processed_buffer may contain the header if not --noheader, matching existing behavior
-                        # If headers_only, we want empty text in the JSON, not processed_buffer (which might be the formatted header)
                         text_content = "" if settings.headers_only else processed_buffer
                         temp_msg = replace(parsed_message, text=text_content)
                         encoded_buffer = json.dumps(
                             _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                         ).encode(target_encoding)
                     elif settings.format == 'xml':
-                        temp_msg = replace(parsed_message, text=processed_buffer)
+                        text_content = "" if settings.headers_only else processed_buffer
+                        temp_msg = replace(parsed_message, text=text_content)
                         encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
                     elif settings.format == 'html':
                         temp_msg = replace(parsed_message, text=processed_buffer)
@@ -932,7 +930,8 @@ def process_merged_files(
                         temp_msg = replace(parsed_message, text=processed_buffer)
                         encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
                     elif settings.format == 'mbox':
-                        temp_msg = replace(parsed_message, text=processed_buffer)
+                        text_content = "" if settings.headers_only else processed_buffer
+                        temp_msg = replace(parsed_message, text=text_content)
                         encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
                     else:
                         encoded_buffer = processed_buffer.encode(target_encoding)
@@ -947,10 +946,7 @@ def process_merged_files(
                 else:
                     text_content = processed_buffer
                     if settings.headers_only:
-                        # For structured formats (JSON, XML, CSV, SQLite), we want empty text field
-                        # For text/HTML formats, we might have formatted header in processed_buffer, which we want to keep
-                        # But if the format is JSON/XML/CSV/SQLite, we want to strip that.
-                        if settings.format in ('json', 'xml', 'csv', 'sqlite'):
+                        if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
                             text_content = ""
 
                     collected_messages.append(
