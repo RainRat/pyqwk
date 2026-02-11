@@ -52,11 +52,27 @@ class QwkGuiApp:
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
         menubar.add_cascade(label="File", menu=file_menu)
+
+        edit_menu = tk.Menu(menubar, tearoff=0)
+        edit_menu.add_command(
+            label="Find",
+            command=lambda: self.search_entry.focus_set(),
+            accelerator="Ctrl+F",
+        )
+        edit_menu.add_command(
+            label="Clear Search", command=self.clear_search, accelerator="Esc"
+        )
+        menubar.add_cascade(label="Edit", menu=edit_menu)
+
         self.root.config(menu=menubar)
 
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-q>", self.quit_app)
+
+    def clear_search(self, _event: object | None = None) -> None:
+        self.search_var.set("")
+        self.message_list.focus_set()
 
     def quit_app(self, _event: object | None = None) -> None:
         self.root.quit()
@@ -85,11 +101,16 @@ class QwkGuiApp:
         search_frame = ttk.Frame(toolbar)
         search_frame.pack(side=tk.LEFT)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
-        self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=25)
+        self.search_entry = ttk.Entry(
+            search_frame, textvariable=self.search_var, width=25
+        )
         self.search_entry.pack(side=tk.LEFT, padx=(5, 2))
-        ttk.Button(
-            search_frame, text="×", width=2, command=lambda: self.search_var.set("")
-        ).pack(side=tk.LEFT)
+        ttk.Button(search_frame, text="×", width=2, command=self.clear_search).pack(
+            side=tk.LEFT
+        )
+
+        self.search_entry.bind("<Return>", lambda e: self.message_list.focus_set())
+        self.search_entry.bind("<Escape>", self.clear_search)
         self.root.bind("<Control-f>", lambda e: self.search_entry.focus_set())
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
