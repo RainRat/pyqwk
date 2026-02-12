@@ -96,9 +96,9 @@ qwk my_archives/ -o output_folder/
 ```
 *Tip: The output folder will be created automatically if it does not exist.*
 
-**Merge multiple archives into one file:**
+**Merge multiple archives into one file (removing any duplicate messages):**
 ```bash
-qwk archive1.qwk archive2.qwk --merge -o combined.mbox
+qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
 ```
 
 **Clean up messages (removes signatures, quotes, and binaries):**
@@ -195,6 +195,7 @@ for msg in parse_messages(file_data, None):
 | `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
+| `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number. |
 | `--clean` | Automatically remove signatures, quotes, binary data, and color codes. |

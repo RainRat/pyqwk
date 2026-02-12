@@ -145,6 +145,7 @@ class ProcessingSettings:
     quiet: bool = False
     headers_only: bool = False
     merge: bool = False
+    unique: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
@@ -848,6 +849,7 @@ def process_merged_files(
         os.makedirs(output_dir, exist_ok=True)
 
     collected_messages: list[ParsedMessage] = []
+    seen_ids: set[tuple[str, int, int | str]] = set()
 
     separator_mode = settings.separator
     if separator_mode == 'auto':
@@ -864,6 +866,9 @@ def process_merged_files(
     count = 0
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
+        bbs_info = getattr(board_dict, 'bbs_info', None)
+        bbs_key = f"{bbs_info.name}|{bbs_info.bbs_id}" if bbs_info else ""
+
         allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
 
         desc = f"Processing {os.path.basename(input_path)}"
@@ -880,6 +885,20 @@ def process_merged_files(
                 )
                 if not matches_filters(parsed_message, settings, allowed_conferences):
                     continue
+
+                if settings.unique:
+                    msg_id: tuple[str, int, int | str]
+                    if parsed_message.msgnum is not None:
+                        msg_id = (bbs_key, parsed_message.confnum, parsed_message.msgnum)
+                    else:
+                        content_hash = hashlib.sha1(
+                            parsed_message.text.encode(settings.encoding, errors='replace')
+                        ).hexdigest()
+                        msg_id = (bbs_key, parsed_message.confnum, content_hash)
+
+                    if msg_id in seen_ids:
+                        continue
+                    seen_ids.add(msg_id)
 
                 count += 1
                 if settings.limit is not None and count > settings.limit:
