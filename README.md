@@ -47,6 +47,28 @@ You can install `pyqwk` to use it from any folder on your computer.
 python -m pyqwk.gui
 ```
 
+## Graphical Reader
+
+If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations.
+
+**To start the reader:**
+```bash
+qwk-gui
+```
+
+**Key Features:**
+- **Search:** Quickly find messages by keyword. Results are highlighted in the message text.
+- **Filtering:** View messages from specific conferences or include private messages.
+- **Threading:** Group replies together to follow the flow of a conversation.
+- **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
+
+**Keyboard Shortcuts:**
+- **Ctrl + O**: Open a QWK archive.
+- **Ctrl + F**: Jump to the search bar.
+- **Ctrl + Q**: Exit the application.
+- **Esc**: Clear the search (when the search bar is focused).
+- **Enter**: Move focus to the message list after typing a search term.
+
 ## Usage Examples
 
 **Read an archive on your screen:**
