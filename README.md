@@ -84,6 +84,11 @@ qwk archive.qwk --format json -o data.json
 qwk archive.qwk --format markdown -o messages.md
 ```
 
+**Show detailed archive statistics:**
+```bash
+qwk archive.qwk --stats
+```
+
 **Process a whole folder of archives:**
 ```bash
 qwk my_archives/ -o output_folder/
@@ -182,6 +187,7 @@ for msg in parse_messages(file_data, None):
 | `-q`, `--quiet` | Hide the progress bar and extra info. |
 | `-L, --limit [num]` | Stop after processing this many messages. |
 | `-I, --info` | Show a summary of the archive and exit. |
+| `--stats` | Show detailed statistics about the messages and exit. |
 
 Run `qwk --help` to see all available options.
 

@@ -13,6 +13,7 @@ from pyqwk.core import (
     process_merged_files,
     process_multiple_files,
     show_info,
+    show_stats,
 )
 
 
@@ -276,6 +277,11 @@ def main() -> None:
         help='Show a summary of the QWK archive and exit. Use --format json for JSON output.',
     )
     parser.add_argument(
+        '--stats',
+        action='store_true',
+        help='Show detailed statistics about the messages and exit. Use --format json for JSON output.',
+    )
+    parser.add_argument(
         '-V',
         '--version',
         action='version',
@@ -367,6 +373,10 @@ def main() -> None:
 
     if args.info:
         show_info(input_paths, settings, logger)
+        sys.exit(0)
+
+    if args.stats:
+        show_stats(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge:
