@@ -36,7 +36,8 @@ class QwkGuiApp:
         self.threaded_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
-        self.search_var.trace_add("write", lambda *args: self.reload_messages())
+        self.search_var.trace_add("write", self._on_search_changed)
+        self._search_timer: str | None = None
 
         self._build_menu()
         self._build_toolbar()
@@ -109,7 +110,7 @@ class QwkGuiApp:
             side=tk.LEFT
         )
 
-        self.search_entry.bind("<Return>", lambda e: self.message_list.focus_set())
+        self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
         self.root.bind("<Control-f>", lambda e: self.search_entry.focus_set())
 
@@ -320,7 +321,22 @@ class QwkGuiApp:
         self.current_path = path
         self.load_messages(path)
 
+    def _on_search_changed(self, *args: object) -> None:
+        """Handle search term changes with debouncing to improve UI responsiveness."""
+        if self._search_timer is not None:
+            self.root.after_cancel(self._search_timer)
+        self._search_timer = self.root.after(250, self.reload_messages)
+
+    def _on_search_enter(self, _event: object) -> None:
+        """Execute search immediately when Enter is pressed."""
+        self.reload_messages()
+        self.message_list.focus_set()
+
     def reload_messages(self) -> None:
+        if self._search_timer is not None:
+            self.root.after_cancel(self._search_timer)
+            self._search_timer = None
+
         if self.current_path:
             self.load_messages(self.current_path)
 
