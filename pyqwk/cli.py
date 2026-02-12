@@ -269,6 +269,12 @@ def main() -> None:
         type=int,
         default=None,
     )
+    filter_group.add_argument(
+        '-u',
+        '--unique',
+        help='Only include unique messages (removes duplicates when merging archives).',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -356,6 +362,7 @@ def main() -> None:
         strip_ansi=args.stripansi or args.clean,
         quiet=args.quiet,
         headers_only=args.headers_only,
+        unique=args.unique,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,

@@ -101,6 +101,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         individualfiles=False,
         threaded=False,
         merge=False,
+        unique=False,
         binariesremoval=False,
         redactpii=False,
         stripansi=False,
