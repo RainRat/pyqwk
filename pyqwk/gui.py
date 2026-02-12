@@ -154,7 +154,7 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("From", "Date", "Conference"),
+            columns=("Num", "From", "Date", "Conference"),
             selectmode="browse",
         )
         self.message_list.heading(
@@ -162,6 +162,12 @@ class QwkGuiApp:
             text="Subject",
             anchor=tk.W,
             command=lambda: self.sort_column("#0", False),
+        )
+        self.message_list.heading(
+            "Num",
+            text="Num",
+            anchor=tk.W,
+            command=lambda: self.sort_column("Num", False),
         )
         self.message_list.heading(
             "From",
@@ -183,6 +189,7 @@ class QwkGuiApp:
         )
 
         self.message_list.column("#0", minwidth=200, width=300)
+        self.message_list.column("Num", minwidth=50, width=60, anchor=tk.E)
         self.message_list.column("From", minwidth=80, width=120)
         self.message_list.column("Date", minwidth=80, width=120)
         self.message_list.column("Conference", minwidth=80, width=100)
@@ -383,6 +390,7 @@ class QwkGuiApp:
                     iid=iid,
                     text=subject,
                     values=(
+                        header.msgnum if header.msgnum is not None else "",
                         header.msgfrom,
                         f"{header.msgdate} {header.msgtime}",
                         conf_name,
@@ -449,7 +457,10 @@ class QwkGuiApp:
         ]
 
         try:
-            l.sort(key=lambda t: t[0].lower(), reverse=reverse)
+            if col == "Num":
+                l.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
+            else:
+                l.sort(key=lambda t: t[0].lower(), reverse=reverse)
         except Exception:
             # Fallback if sorting fails
             l.sort(key=lambda t: t[0], reverse=reverse)
