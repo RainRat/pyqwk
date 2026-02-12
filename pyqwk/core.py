@@ -533,8 +533,7 @@ def _parse_control_dat(
                 conf_number_raw,
             )
             continue
-        conf_name = conf_name_raw.decode(encoding)
-        board_dict[conf_number] = conf_name
+        board_dict[conf_number] = dec(conf_name_raw)
 
     return board_dict
 
