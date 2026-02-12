@@ -9,12 +9,13 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 - **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
 - **Privacy:** Redact personal information and handle private messages.
 - **Batch Processing:** Convert many archives at once or merge them into a single file.
-- **Built-in Reader:** A simple graphical interface to read messages without converting them.
+- **Built-in Reader:** A simple graphical interface to read messages without converting them. It includes search and filtering tools.
 
 ## Prerequisites
 
 - **Python 3.10** or newer is required.
-- (Optional) Install the `tqdm` package for a progress bar: `pip install tqdm`
+- (Optional) **Tkinter** is required for the graphical reader. It is usually included with Python, but Linux users may need to install it separately (for example: `sudo apt install python3-tk`).
+- (Optional) Install the **tqdm** package for a progress bar: `pip install tqdm`
 
 ## Quick Start
 
@@ -93,13 +94,34 @@ qwk archive.qwk --stats
 ```bash
 qwk my_archives/ -o output_folder/
 ```
+*Tip: The output folder will be created automatically if it does not exist.*
 
 **Merge multiple archives into one file:**
 ```bash
 qwk archive1.qwk archive2.qwk --merge -o combined.mbox
 ```
 
-*Note for Windows users: If you use wildcards like `*.qwk`, use PowerShell instead of the standard Command Prompt.*
+**Clean up messages (removes signatures, quotes, and binaries):**
+```bash
+qwk archive.qwk --clean -o clean.txt
+```
+
+**Hide personal information (emails and phone numbers):**
+```bash
+qwk archive.qwk --redact-pii -o safe.txt
+```
+
+**Export to a database (SQLite):**
+```bash
+qwk archive.qwk --format sqlite -o messages.db
+```
+
+**Export to a spreadsheet-friendly format (CSV):**
+```bash
+qwk archive.qwk --format csv -o messages.csv
+```
+
+*Note for Windows users: If you use symbols like `*` (wildcards) to select multiple files, use PowerShell instead of the standard Command Prompt.*
 
 ## Filtering & Searching
 
