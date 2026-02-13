@@ -35,6 +35,8 @@ def _resolve_output_format(
                 return 'csv'
             if ext == '.mbox':
                 return 'mbox'
+            if ext == '.eml':
+                return 'eml'
             if ext == '.md' or ext == '.markdown':
                 return 'markdown'
             if ext == '.sqlite' or ext == '.db':
@@ -167,11 +169,11 @@ def main() -> None:
         '-F',
         '--format',
         help=(
-            'Choose the output format (text, json, xml, html, markdown, csv, mbox, or sqlite). '
+            'Choose the output format (text, json, xml, html, markdown, csv, mbox, eml, or sqlite). '
             'If you do not choose one, it is guessed from the output filename.'
         ),
         default=None,
-        choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'sqlite'],
+        choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
     )
     format_group.add_argument(
         '--separator',
@@ -341,6 +343,15 @@ def main() -> None:
         resolved_output_path = output_path
 
     output_format = _resolve_output_format(args.format, output_path, output_mode)
+
+    # Default to individual files for EML format if an output path is provided
+    if output_format == 'eml' and not args.individualfiles and output_path:
+        args.individualfiles = True
+        # Re-verify output mode logic if we changed individualfiles
+        if os.path.exists(output_path) and not os.path.isdir(output_path):
+            parser.error("The output path must be a folder when saving messages as individual EML files.")
+        output_mode = 'file'
+        resolved_output_path = output_path
 
     try:
         after_date = _parse_cli_date(args.after)
