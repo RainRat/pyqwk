@@ -6,15 +6,15 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 
 - **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, or SQLite.
 - **Conversation Threading:** Group replies together to follow discussions easily.
-- **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
-- **Privacy:** Redact personal information and handle private messages.
+- **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
+- **Privacy:** Hide personal information and handle private messages.
 - **Batch Processing:** Convert many archives at once or merge them into a single file.
 - **Built-in Reader:** A simple graphical interface to read messages without converting them. It includes search and filtering tools.
 
 ## Prerequisites
 
-- **Python 3.10** or newer is required.
-- (Optional) **Tkinter** is required for the graphical reader. It is usually included with Python, but Linux users may need to install it separately (for example: `sudo apt install python3-tk`).
+- You need **Python 3.10** or newer.
+- (Optional) You need **Tkinter** for the graphical reader. Python usually includes it, but Linux users may need to install it separately (for example: `sudo apt install python3-tk`).
 - (Optional) Install the **tqdm** package for a progress bar: `pip install tqdm`
 
 ## Quick Start
@@ -107,6 +107,11 @@ qwk archive.qwk --format json -o data.json
 qwk archive.qwk --format markdown -o messages.md
 ```
 
+**Save each message as a separate file:**
+```bash
+qwk archive.qwk --individual-files -o output_folder/
+```
+
 **Show detailed archive statistics:**
 ```bash
 qwk archive.qwk --stats
@@ -123,7 +128,7 @@ qwk my_archives/ -o output_folder/
 qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
 ```
 
-**Clean up messages (removes signatures, quotes, and binaries):**
+**Clean up messages (removes signatures, quotes, and attachments):**
 ```bash
 qwk archive.qwk --clean -o clean.txt
 ```
@@ -220,9 +225,9 @@ for msg in parse_messages(file_data, None):
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number. |
-| `--clean` | Automatically remove signatures, quotes, binary data, and color codes. |
+| `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
 | `-r, --redact-pii` | Hide personal info like email addresses and phone numbers. |
-| `-H, --headers-only` | Extract only message headers and skip the message body. |
+| `-H, --headers-only` | Show only message headers and skip the message text. |
 | `-E, --encoding [name]` | Set the text character set (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
 | `-n`, `--noheader` | Do not include the message header info in the text. |
@@ -240,7 +245,7 @@ Run `qwk --help` to see all available options.
 
 - **Unsupported Compression:** Some old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
 - **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's character set.
-- **Compatibility:** You cannot use `--threaded` and `--individual-files` at the same time.
+- **Option Conflict:** You cannot use the `--threaded` and `--individual-files` options together.
 
 ## Contributing
 
@@ -248,7 +253,7 @@ We welcome your contributions! To help develop `pyqwk`:
 
 1. Install the development and testing dependencies:
    ```bash
-   pip install pytest pytest-mock
+   pip install -e . pytest pytest-mock pytest-cov
    ```
 2. Run the tests to make sure everything is working:
    ```bash
