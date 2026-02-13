@@ -562,9 +562,6 @@ def parse_messages(
     """
     blocks_remaining = 0
     message_buffer = ''
-    current_msgnum: int | None = None
-    current_refnum: int | None = None
-    current_confnum = 0
     header: MessageHeader | None = None
 
     if len(file_data) < BLOCK_SIZE:
@@ -595,10 +592,6 @@ def parse_messages(
                 )
                 continue
 
-            current_msgnum = header.msgnum
-            current_refnum = header.refnum
-            current_confnum = header.confnum
-
             message_buffer = ''
             if header.numblocks is None or header.numblocks < 1:
                 logging.warning(
@@ -612,9 +605,9 @@ def parse_messages(
             if blocks_remaining == 0:
                 yield ParsedMessage(
                     text="",
-                    msgnum=current_msgnum,
-                    refnum=current_refnum,
-                    confnum=current_confnum,
+                    msgnum=header.msgnum,
+                    refnum=header.refnum,
+                    confnum=header.confnum,
                     header=header,
                 )
         else:
@@ -628,9 +621,9 @@ def parse_messages(
             if blocks_remaining == 0 and header is not None:
                 yield ParsedMessage(
                     text=message_buffer,
-                    msgnum=current_msgnum,
-                    refnum=current_refnum,
-                    confnum=current_confnum,
+                    msgnum=header.msgnum,
+                    refnum=header.refnum,
+                    confnum=header.confnum,
                     header=header,
                 )
 
