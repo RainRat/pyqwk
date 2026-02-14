@@ -988,9 +988,17 @@ def process_merged_files(
 
                     # Collision avoidance
                     if os.path.exists(full_path):
-                        short_hash = hashlib.sha1(encoded_buffer).hexdigest()[:8]
-                        filename = filename.replace(".", f"-{short_hash}.")
-                        full_path = os.path.join(output_dir, filename)
+                        base_filename = filename
+                        counter = 0
+                        while os.path.exists(full_path):
+                            counter += 1
+                            # Incorporate counter into hash to ensure uniqueness even for same content
+                            salt = str(counter).encode()
+                            short_hash = hashlib.sha1(encoded_buffer + salt).hexdigest()[:8]
+                            filename = base_filename.replace(".", f"-{short_hash}.")
+                            full_path = os.path.join(output_dir, filename)
+                            if counter > 100:  # Safety break
+                                break
 
                     with open(full_path, 'wb') as f:
                         f.write(encoded_buffer)

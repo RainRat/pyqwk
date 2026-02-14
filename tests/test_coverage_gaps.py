@@ -232,3 +232,75 @@ def test_parse_messages_progress_bar():
 
 def test_order_messages_by_thread_empty():
     assert _order_messages_by_thread([]) == []
+
+def test_individual_files_triple_collision(tmp_path, logger, default_settings):
+    """Test collision handling when three messages would have the same filename."""
+    output_dir = tmp_path / "triple_collision"
+    output_dir.mkdir()
+
+    def make_msg(text):
+        h = MagicMock(spec=MessageHeader)
+        h.is_private = False
+        h.is_password = False
+        h.msgnum = 1
+        h.confnum = 1
+        h.msgfrom = "User"
+        h.msgto = "All"
+        h.msgdate = "01-01-23"
+        h.msgtime = "12:00"
+        h.msgsubject = "Collision"
+        h.format_text.return_value = ""
+        return ParsedMessage(text=text, msgnum=1, refnum=None, confnum=1, header=h)
+
+    # Three messages with identical content and metadata -> same base filename AND same hash
+    msg1 = make_msg("Duplicate Body")
+    msg2 = make_msg("Duplicate Body")
+    msg3 = make_msg("Duplicate Body")
+
+    settings = replace(
+        default_settings,
+        individual_files=True,
+        format='text',
+        output_mode='file',
+        output_path=str(output_dir),
+        no_header=True
+    )
+
+    with patch('pyqwk.core.load_data') as mock_load:
+        mock_load.return_value = (bytearray(b'Produced '), {1: "General"})
+        with patch('pyqwk.core.parse_messages') as mock_parse:
+            mock_parse.return_value = [msg1, msg2, msg3]
+            process_merged_files(['archive.qwk'], settings, logger)
+
+    files = list(output_dir.iterdir())
+    # If the logic is buggy (no loop), it will only have 2 files because the 3rd overwrote the 2nd
+    # or failed to be unique.
+    assert len(files) == 3, f"Expected 3 files, found {len(files)}: {[f.name for f in files]}"
+
+def test_parse_control_dat_truncated(logger):
+    """Test that CONTROL.DAT with fewer conference entries than specified is handled."""
+    control_data = [
+        b"BBS Name",
+        b"Location",
+        b"Phone",
+        b"SysOp",
+        b"Serial,ID",
+        b"01-01-23",
+        b"User",
+        b"Menu",
+        b"1",
+        b"0",
+        b"10"  # Says 10 conferences (+1 = 11), but we provide fewer
+    ]
+    # Add only 2 conference entries (4 lines)
+    control_data += [b"1", b"Conf 1", b"2", b"Conf 2"]
+
+    from pyqwk.core import _parse_control_dat
+    with patch.object(logger, 'warning') as mock_warn:
+        board_dict = _parse_control_dat(control_data, logger)
+
+        assert len(board_dict) == 2
+        assert board_dict[1] == "Conf 1"
+        assert board_dict[2] == "Conf 2"
+        mock_warn.assert_called()
+        assert "CONTROL.DAT is truncated" in mock_warn.call_args[0][0]
