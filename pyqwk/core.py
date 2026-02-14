@@ -822,6 +822,30 @@ def matches_filters(
     return True
 
 
+def _generate_safe_filename(message: ParsedMessage, output_format: str, count: int) -> str:
+    """Generate a human-readable filename for an individual message."""
+    ext = {
+        'text': '.txt',
+        'json': '.json',
+        'xml': '.xml',
+        'html': '.html',
+        'markdown': '.md',
+        'mbox': '.mbox',
+        'csv': '.csv',
+        'sqlite': '.db',
+        'eml': '.eml',
+    }.get(output_format, '.txt')
+
+    msg_num = message.msgnum if message.msgnum is not None else count
+    subject = message.header.msgsubject
+    # Replace non-alphanumeric with underscores and truncate
+    slug = re.sub(r'[^a-zA-Z0-9]+', '_', subject).strip('_').lower()[:30]
+    if not slug:
+        slug = "message"
+
+    return f"{message.confnum:03d}-{msg_num:05d}-{slug}{ext}"
+
+
 def process_merged_files(
     input_paths: list[str],
     settings: ProcessingSettings,
@@ -958,15 +982,24 @@ def process_merged_files(
                         text_content = "" if settings.headers_only else processed_buffer
                         temp_msg = replace(parsed_message, text=text_content)
                         encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
+                    elif settings.format == 'eml':
+                        text_content = "" if settings.headers_only else processed_buffer
+                        temp_msg = replace(parsed_message, text=text_content)
+                        encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
                     else:
                         encoded_buffer = processed_buffer.encode(target_encoding)
 
                     assert output_dir is not None
-                    # We use sha1 of encoded buffer to determine filename, as before
-                    with open(
-                        os.path.join(output_dir, hashlib.sha1(encoded_buffer).hexdigest()),
-                        'wb',
-                    ) as f:
+                    filename = _generate_safe_filename(parsed_message, settings.format, count)
+                    full_path = os.path.join(output_dir, filename)
+
+                    # Collision avoidance
+                    if os.path.exists(full_path):
+                        short_hash = hashlib.sha1(encoded_buffer).hexdigest()[:8]
+                        filename = filename.replace(".", f"-{short_hash}.")
+                        full_path = os.path.join(output_dir, filename)
+
+                    with open(full_path, 'wb') as f:
                         f.write(encoded_buffer)
                 else:
                     text_content = processed_buffer
@@ -998,6 +1031,7 @@ def process_merged_files(
             'text': _write_text,
             'csv': _write_csv,
             'mbox': _write_mbox,
+            'eml': _write_eml,
             'sqlite': _write_sqlite,
         }
 
@@ -1317,6 +1351,16 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
     return "\n".join(parts)
 
 
+def _serialize_message_eml(message: ProcessedMessage) -> str:
+    """Serialize a message to EML format (RFC 822)."""
+    mbox_str = _serialize_message_mbox(message)
+    # Remove the first "From " line which is specific to mbox
+    lines = mbox_str.splitlines()
+    if lines and lines[0].startswith("From "):
+        return "\n".join(lines[1:])
+    return mbox_str
+
+
 def _write_mbox(
     messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
 ) -> None:
@@ -1326,6 +1370,21 @@ def _write_mbox(
         parts.append(_serialize_message_mbox(message))
 
     _write_text_output("\n".join(parts), output_path, encoding=encoding)
+
+
+def _write_eml(
+    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+) -> None:
+    """Write messages as EML.
+
+    If multiple messages are provided and no individual files are requested,
+    they are aggregated with double newlines, effectively becoming a text-based collection.
+    """
+    parts = []
+    for message in messages:
+        parts.append(_serialize_message_eml(message))
+
+    _write_text_output("\n\n".join(parts), output_path, encoding=encoding)
 
 
 def _write_text(

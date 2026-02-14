@@ -4,7 +4,7 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, or SQLite.
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and binary attachments.
 - **Privacy:** Redact personal information and handle private messages.
@@ -96,6 +96,12 @@ qwk archive.qwk --format html -o messages.html
 qwk archive.qwk --format mbox -o messages.mbox
 ```
 *Tip: Use `--threaded` to include standard email threading headers for better organization in your mail app.*
+
+**Convert to EML files (individual messages for mail apps):**
+```bash
+qwk archive.qwk --format eml -o ./output_folder/
+```
+*Tip: This automatically saves each message as a separate `.eml` file with a human-readable name.*
 
 **Convert to JSON for your own scripts:**
 ```bash
@@ -214,7 +220,7 @@ for msg in parse_messages(file_data, None):
 | :--- | :--- |
 | `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
-| `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `sqlite`. |
+| `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
