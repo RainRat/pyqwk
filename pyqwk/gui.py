@@ -75,6 +75,12 @@ class QwkGuiApp:
         self.search_var.set("")
         self.message_list.focus_set()
 
+    def clear_conf_filter(self, _event: object | None = None) -> None:
+        """Reset the conference filter to show all conferences."""
+        self.conf_combo.set("All Conferences")
+        self.reload_messages()
+        self.message_list.focus_set()
+
     def quit_app(self, _event: object | None = None) -> None:
         self.root.quit()
 
@@ -121,8 +127,13 @@ class QwkGuiApp:
         filters_frame.pack(side=tk.LEFT)
         ttk.Label(filters_frame, text="Conf:").pack(side=tk.LEFT)
         self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
-        self.conf_combo.pack(side=tk.LEFT, padx=(5, 0))
+        self.conf_combo.pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Button(filters_frame, text="×", width=2, command=self.clear_conf_filter).pack(
+            side=tk.LEFT
+        )
+
         self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
+        self.conf_combo.bind("<Escape>", lambda e: self.clear_conf_filter())
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
