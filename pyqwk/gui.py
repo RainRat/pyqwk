@@ -366,8 +366,10 @@ class QwkGuiApp:
             board_dict = self._cache['board_dict']
 
             messages = []
+            total_count = 0
             allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
             for parsed_message in parse_messages(file_data, None, settings.encoding):
+                total_count += 1
                 if not matches_filters(parsed_message, settings, allowed_conferences):
                     continue
 
@@ -424,7 +426,7 @@ class QwkGuiApp:
                 source_display = os.path.basename(path)
 
             self.status_label.config(
-                text=f"Loaded {source_display} - {len(self.messages)} messages"
+                text=f"Showing {len(self.messages)} of {total_count} messages from {source_display}"
             )
             if self.messages:
                 first_item = self.message_list.get_children()[0]
