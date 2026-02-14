@@ -19,10 +19,11 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 
 ## Quick Start
 
-Run the script on any QWK archive:
+Run the command on any QWK archive:
 ```bash
-python qwk.py archive.qwk
+qwk archive.qwk
 ```
+*(If you have not installed the package yet, use `python qwk.py archive.qwk` instead.)*
 
 ## Installation
 
@@ -225,25 +226,35 @@ for msg in parse_messages(file_data, None):
 | :--- | :--- |
 | `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
-| `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
+| `-F`, `--format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number. |
+| `-f`, `--from [name]` | Filter messages by author name. |
+| `--to [name]` | Filter messages by recipient name. |
+| `-s`, `--subject [text]` | Filter messages by subject line. |
+| `--after [date]` | Show messages on or after this date (YYYY-MM-DD). |
+| `--before [date]` | Show messages on or before this date (YYYY-MM-DD). |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
-| `-r, --redact-pii` | Hide personal info like email addresses and phone numbers. |
-| `-H, --headers-only` | Show only message headers and skip the message text. |
-| `-E, --encoding [name]` | Set the text character set (default is `cp437`). |
+| `-t`, `--truncate-signatures` | Stop reading a message when a signature separator is found. |
+| `-c`, `--cut-quoting` | Remove text quoted from earlier messages. |
+| `-b`, `--binaries-removal` | Remove binary attachments like images or programs. |
+| `-r`, `--redact-pii` | Hide personal info like email addresses and phone numbers. |
+| `-H`, `--headers-only` | Show only message headers and skip the message text. |
+| `-E`, `--encoding [name]` | Set the text character set (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
 | `-n`, `--noheader` | Do not include the message header info in the text. |
-| -A, --strip-ansi | Remove color codes and other formatting symbols. |
+| `-A`, `--strip-ansi` | Remove color codes and other formatting symbols. |
 | `--separator [type]` | How to separate messages (`auto`, `none`, `dashes`, `blank`). |
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
 | `-q`, `--quiet` | Hide the progress bar and extra info. |
-| `-L, --limit [num]` | Stop after processing this many messages. |
-| `-I, --info` | Show a summary of the archive and exit. |
+| `-L`, `--limit [num]` | Stop after processing this many messages. |
+| `-l`, `--loglevel [level]` | Choose how much detail to show in logs (DEBUG, INFO, etc.). |
+| `-I`, `--info` | Show a summary of the archive and exit. |
 | `--stats` | Show detailed statistics about the messages and exit. |
+| `-V`, `--version` | Show the version number and exit. |
 
 Run `qwk --help` to see all available options.
 
