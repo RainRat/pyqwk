@@ -104,6 +104,11 @@ def main() -> None:
         action='store_true',
     )
     io_group.add_argument(
+        '--organize',
+        help='Organize individual files into subfolders by conference.',
+        action='store_true',
+    )
+    io_group.add_argument(
         '-E',
         '--encoding',
         help='Character encoding of the input file (default: cp437)',
@@ -374,6 +379,7 @@ def main() -> None:
         quiet=args.quiet,
         headers_only=args.headers_only,
         unique=args.unique,
+        organize=args.organize,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,
