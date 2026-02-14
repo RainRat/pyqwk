@@ -170,9 +170,6 @@ class BBSInfo:
     total_messages: int = 0
     num_conferences: int = 0
 
-    def as_dict(self) -> dict[str, Any]:
-        return asdict(self)
-
 
 class ConferenceMap(dict):
     """A dictionary mapping conference numbers to names, with optional BBS metadata."""
@@ -1513,7 +1510,7 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
 
             bbs_info = getattr(board_dict, 'bbs_info', None)
             if bbs_info:
-                info_entry["bbs_info"] = bbs_info.as_dict()
+                info_entry["bbs_info"] = asdict(bbs_info)
 
             if len(file_data) < BLOCK_SIZE or not file_data.startswith(b'Produced '):
                 if settings.format != 'json':
@@ -1540,7 +1537,7 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
             info_entry["total_messages"] = total_messages
             if bbs_info:
                 bbs_info.total_messages = total_messages
-                info_entry["bbs_info"] = bbs_info.as_dict()
+                info_entry["bbs_info"] = asdict(bbs_info)
 
             sorted_confs = sorted(conference_counts.items())
             for conf_num, count in sorted_confs:
