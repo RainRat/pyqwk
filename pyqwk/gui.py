@@ -217,14 +217,15 @@ class QwkGuiApp:
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
         ttk.Label(detail_frame, text="Message Detail").pack(anchor=tk.W)
-        self.detail_text = tk.Text(detail_frame, wrap=tk.WORD)
+        self.detail_text = tk.Text(detail_frame, wrap=tk.WORD, tabs=("2.5c", "10c"))
         self.detail_text.pack(fill=tk.BOTH, expand=True)
         self.detail_text.config(state=tk.DISABLED)
 
         # Configure tags for visual hierarchy
         self.detail_text.tag_configure(
-            "header_label", font=("TkDefaultFont", 9, "bold"), foreground="#555555"
+            "header_label", font=("TkDefaultFont", 9, "bold"), foreground="#444444"
         )
+        self.detail_text.tag_configure("header_area", background="#f9f9f9")
         self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 9))
         self.detail_text.tag_configure(
             "header_subject", font=("TkDefaultFont", 11, "bold")
@@ -276,27 +277,40 @@ class QwkGuiApp:
         self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
 
+        # Apply header area background
+        header_start = "1.0"
+
         # Subject as a prominent title
         self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n", "header_subject")
 
-        def insert_field(label: str, value: str, last: bool = False) -> None:
+        def insert_field(label: str, value: str, last_in_row: bool = False) -> None:
             self.detail_text.insert(tk.END, f"{label}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{value}" + ("\n" if last else "  |  "), "header_value")
+            self.detail_text.insert(tk.END, f"{value}\t", "header_value")
+            if last_in_row:
+                self.detail_text.insert(tk.END, "\n")
 
         insert_field("From", header.msgfrom)
-        insert_field("To", header.msgto, last=True)
+        insert_field("To", header.msgto, last_in_row=True)
         insert_field("Date", f"{header.msgdate} {header.msgtime}")
-        insert_field("Conf", conf_name, last=True)
+        insert_field("Conf", conf_name, last_in_row=True)
 
         if header.msgnum is not None or message.refnum:
             if header.msgnum is not None:
-                self.detail_text.insert(tk.END, f"Msg #{header.msgnum}  ", "header_label")
+                self.detail_text.insert(tk.END, "Msg #: ", "header_label")
+                self.detail_text.insert(tk.END, f"{header.msgnum}\t", "header_value")
             if message.refnum:
-                self.detail_text.insert(tk.END, f"Ref #{message.refnum}", "header_label")
+                self.detail_text.insert(tk.END, "Ref #: ", "header_label")
+                self.detail_text.insert(tk.END, f"{message.refnum}\t", "header_value")
             self.detail_text.insert(tk.END, "\n")
 
+        header_end = self.detail_text.index(tk.INSERT)
+        self.detail_text.tag_add("header_area", header_start, header_end)
+
         # Visual separator
-        self.detail_text.insert(tk.END, "—" * 60 + "\n\n", "header_separator")
+        self.detail_text.insert(tk.END, "\n")
+        separator = ttk.Separator(self.detail_text, orient=tk.HORIZONTAL)
+        self.detail_text.window_create(tk.END, window=separator, stretch=True)
+        self.detail_text.insert(tk.END, "\n\n")
 
         self.detail_text.insert(tk.END, message.text, "body")
 
