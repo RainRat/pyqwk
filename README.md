@@ -184,6 +184,13 @@ Search for keywords in the author, subject, and message body.
 qwk archive.qwk --search "BBS"
 ```
 
+**Pagination:**
+Skip a number of messages or limit the total results. This is useful for processing large archives in chunks.
+```bash
+# Skip the first 100 messages and process the next 50
+qwk archive.qwk --skip 100 --limit 50
+```
+
 **Filter by Date:**
 Find messages from a specific date range (use YYYY-MM-DD).
 ```bash
@@ -249,6 +256,7 @@ for msg in parse_messages(file_data, None):
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
 | `-q`, `--quiet` | Hide the progress bar and extra info. |
 | `-L, --limit [num]` | Stop after processing this many messages. |
+| `-K, --skip [num]` | Skip the first this many matching messages. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show detailed statistics about the messages and exit. |
 
