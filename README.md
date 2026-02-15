@@ -118,6 +118,12 @@ qwk archive.qwk --format markdown -o messages.md
 qwk archive.qwk --individual-files -o output_folder/
 ```
 
+**Save each message as a separate file organized by conference:**
+```bash
+qwk archive.qwk --individual-files --organize -o output_folder/
+```
+*Tip: This creates subfolders for each conference (e.g., `001-general_chat/`) to keep the output tidy.*
+
 **Show detailed archive statistics:**
 ```bash
 qwk archive.qwk --stats
@@ -225,6 +231,7 @@ for msg in parse_messages(file_data, None):
 | :--- | :--- |
 | `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
+| `--organize` | Organize individual files into subfolders by conference. |
 | `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |

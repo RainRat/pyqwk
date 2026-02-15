@@ -146,6 +146,7 @@ class ProcessingSettings:
     headers_only: bool = False
     merge: bool = False
     unique: bool = False
+    organize: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
@@ -983,14 +984,25 @@ def process_merged_files(
                         encoded_buffer = processed_buffer.encode(target_encoding)
 
                     assert output_dir is not None
+
+                    target_dir = output_dir
+                    if settings.organize:
+                        conf_name = parsed_message.confname or "unknown"
+                        conf_slug = re.sub(r'[^a-zA-Z0-9]+', '_', conf_name).strip('_').lower()[:30]
+                        if not conf_slug:
+                            conf_slug = "conference"
+                        conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
+                        target_dir = os.path.join(output_dir, conf_dir)
+                        os.makedirs(target_dir, exist_ok=True)
+
                     filename = _generate_safe_filename(parsed_message, settings.format, count)
-                    full_path = os.path.join(output_dir, filename)
+                    full_path = os.path.join(target_dir, filename)
 
                     # Collision avoidance
                     if os.path.exists(full_path):
                         short_hash = hashlib.sha1(encoded_buffer).hexdigest()[:8]
                         filename = filename.replace(".", f"-{short_hash}.")
-                        full_path = os.path.join(output_dir, filename)
+                        full_path = os.path.join(target_dir, filename)
 
                     with open(full_path, 'wb') as f:
                         f.write(encoded_buffer)
