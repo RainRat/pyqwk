@@ -207,7 +207,7 @@ file_data, board_dict = load_data("archive.qwk", logger)
 
 # Loop through all messages
 for msg in parse_messages(file_data, None):
-    # Clean the message content (remove signatures, quotes, and binaries)
+    # Clean the message content (remove signatures, quotes, and attachments)
     clean_text = process_message(
         msg.text,
         truncate_signatures=True,
@@ -239,18 +239,28 @@ for msg in parse_messages(file_data, None):
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number. |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
-| `-r, --redact-pii` | Hide personal info like email addresses and phone numbers. |
+| `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
+| `-c, --cut-quoting` | Remove text quoted from earlier messages. |
+| `-b, --binaries-removal` | Remove attachments such as images or programs. |
+| `-r, --redact-pii` | Hide personal information like email addresses and phone numbers. |
 | `-H, --headers-only` | Show only message headers and skip the message text. |
 | `-E, --encoding [name]` | Set the text character set (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
-| `-n`, `--noheader` | Do not include the message header info in the text. |
-| -A, --strip-ansi | Remove color codes and other formatting symbols. |
+| `-f, --from [name]` | Only show messages from this author. |
+| `--to [name]` | Only show messages to this recipient. |
+| `-s, --subject [text]` | Only show messages with this word in the subject. |
+| `--after [date]` | Only show messages from this date or later (YYYY-MM-DD). |
+| `--before [date]` | Only show messages from this date or earlier (YYYY-MM-DD). |
+| `-n, --noheader` | Do not include the message header information in the text. |
+| `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `--separator [type]` | How to separate messages (`auto`, `none`, `dashes`, `blank`). |
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
-| `-q`, `--quiet` | Hide the progress bar and extra info. |
+| `-q`, `--quiet` | Hide the progress bar and extra information. |
+| `--loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR). |
 | `-L, --limit [num]` | Stop after processing this many messages. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show detailed statistics about the messages and exit. |
+| `-V, --version` | Show the version number and exit. |
 
 Run `qwk --help` to see all available options.
 
