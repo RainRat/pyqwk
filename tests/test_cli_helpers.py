@@ -29,6 +29,7 @@ def test_resolve_output_format_auto_detect():
     assert _resolve_output_format(None, "out.html", "file") == "html"
     assert _resolve_output_format(None, "out.csv", "file") == "csv"
     assert _resolve_output_format(None, "out.mbox", "file") == "mbox"
+    assert _resolve_output_format(None, "out.eml", "file") == "eml"
     assert _resolve_output_format(None, "out.md", "file") == "markdown"
     assert _resolve_output_format(None, "out.markdown", "file") == "markdown"
     assert _resolve_output_format(None, "out.sqlite", "file") == "sqlite"
