@@ -82,10 +82,12 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Convert old QWK mail archives from the BBS era into modern formats like Text, HTML, JSON, and more."
+    )
     parser.add_argument(
         'input_paths',
-        help='The QWK archive files, messages.dat files, or directories you want to read.',
+        help='The archives, message files, or folders you want to read.',
         nargs='+',
     )
 
@@ -94,13 +96,13 @@ def main() -> None:
         '-o',
         '--output',
         dest='output_path',
-        help='Where to save the results. Use a folder for multiple files. Defaults to screen.',
+        help='Save results to this file or folder. Prints to the screen if not set.',
     )
     io_group.add_argument(
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message in a separate file. Do not use this with --threaded.',
+        help='Save each message as its own file. Do not use this with --threaded.',
         action='store_true',
     )
     io_group.add_argument(
@@ -118,14 +120,14 @@ def main() -> None:
     content_group = parser.add_argument_group('Content Processing')
     content_group.add_argument(
         '--clean',
-        help='Clean the message by removing signatures, old quotes, binary data, and ANSI colors.',
+        help='Automatically remove signatures, old quotes, attachments, and color codes.',
         action='store_true',
     )
     content_group.add_argument(
         '-t',
         '--truncate-signatures',
         dest='truncatesignatures',
-        help="Stop reading the message when a signature (like '---') is found.",
+        help="Stop showing the message once a signature (like '---') is found.",
         action='store_true',
     )
     content_group.add_argument(
@@ -139,21 +141,21 @@ def main() -> None:
         '-b',
         '--binaries-removal',
         dest='binariesremoval',
-        help='Remove binary attachments such as images or programs.',
+        help='Remove attachments such as images or programs encoded in the text.',
         action='store_true',
     )
     content_group.add_argument(
         '-r',
         '--redact-pii',
         dest='redactpii',
-        help='Hide personal info like email addresses and phone numbers.',
+        help='Hide personal information like email addresses and phone numbers.',
         action='store_true',
     )
     content_group.add_argument(
         '-A',
         '--strip-ansi',
         dest='stripansi',
-        help='Remove ANSI escape sequences (colors) from the message text.',
+        help='Remove color codes and other formatting symbols from the message text.',
         action='store_true',
     )
     content_group.add_argument(
@@ -165,7 +167,7 @@ def main() -> None:
     content_group.add_argument(
         '-H',
         '--headers-only',
-        help='Only process message headers and skip the message body.',
+        help='Show only the message headers and hide the message text.',
         action='store_true',
     )
 
@@ -195,7 +197,7 @@ def main() -> None:
     format_group.add_argument(
         '-T',
         '--threaded',
-        help='Group replies together into conversations. Do not use this with --individual-files.',
+        help='Group replies into conversations. Do not use this with --individual-files.',
         action='store_true',
     )
     format_group.add_argument(
@@ -267,7 +269,7 @@ def main() -> None:
     filter_group.add_argument(
         '-K',
         '--skip',
-        help='Skip the first this many matching messages.',
+        help='Skip the first [number] matching messages.',
         type=int,
         default=None,
     )
@@ -279,14 +281,14 @@ def main() -> None:
     filter_group.add_argument(
         '-L',
         '--limit',
-        help='Stop after processing this many messages.',
+        help='Process only the first [number] matching messages.',
         type=int,
         default=None,
     )
     filter_group.add_argument(
         '-u',
         '--unique',
-        help='Only include unique messages (removes duplicates when merging archives).',
+        help='Remove duplicate messages when merging archives.',
         action='store_true',
     )
 

@@ -658,9 +658,9 @@ def process_message(
         message_buffer: The original message text with DOS-style newlines.
         truncate_signatures: Whether to stop output at common signature separators.
         cut_quoting: Whether to remove quoted text and quote headers.
-        binaries_removal: Whether to strip uuencoded, Base64, and yEnc payloads.
-        redact_pii: Whether to redact email addresses and phone numbers.
-        strip_ansi: Whether to remove ANSI escape sequences from the text.
+        binaries_removal: Whether to remove attachments (like images or programs) encoded in the text.
+        redact_pii: Whether to hide personal information like email addresses and phone numbers.
+        strip_ansi: Whether to remove color codes and other formatting symbols from the text.
 
     Returns:
         The processed message text with transformations applied.
