@@ -83,6 +83,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         after=None,
         before=None,
         limit=None,
+        skip=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -121,6 +122,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         after=None,
         before=None,
         limit=None,
+        skip=None,
         info=False,
         stats=False,
     )

@@ -265,6 +265,13 @@ def main() -> None:
         default=None,
     )
     filter_group.add_argument(
+        '-K',
+        '--skip',
+        help='Skip the first this many matching messages.',
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         '--before',
         help='Filter messages dated on or before this date (format: YYYY-MM-DD).',
         default=None,
@@ -393,6 +400,7 @@ def main() -> None:
         after=after_date,
         before=before_date,
         limit=args.limit,
+        skip=args.skip,
     )
 
     if args.info:

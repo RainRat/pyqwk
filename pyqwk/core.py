@@ -155,6 +155,7 @@ class ProcessingSettings:
     after: datetime.datetime | None = None
     before: datetime.datetime | None = None
     limit: int | None = None
+    skip: int | None = None
 
 
 @dataclass
@@ -880,7 +881,8 @@ def process_merged_files(
     elif separator_mode == 'blank':
         separator_str = "\r\n"
 
-    count = 0
+    total_matching = 0
+    processed_count = 0
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, 'bbs_info', None)
@@ -917,9 +919,13 @@ def process_merged_files(
                         continue
                     seen_ids.add(msg_id)
 
-                count += 1
-                if settings.limit is not None and count > settings.limit:
+                total_matching += 1
+                if settings.skip is not None and total_matching <= settings.skip:
+                    continue
+
+                if settings.limit is not None and processed_count >= settings.limit:
                     break
+                processed_count += 1
 
                 processed_buffer = process_message(
                     parsed_message.text,
@@ -992,7 +998,7 @@ def process_merged_files(
                         target_dir = os.path.join(output_dir, conf_dir)
                         os.makedirs(target_dir, exist_ok=True)
 
-                    filename = _generate_safe_filename(parsed_message, settings.format, count)
+                    filename = _generate_safe_filename(parsed_message, settings.format, processed_count)
                     full_path = os.path.join(target_dir, filename)
 
                     # Collision avoidance
@@ -1015,7 +1021,7 @@ def process_merged_files(
                             text=text_content,
                         )
                     )
-            if settings.limit is not None and count > settings.limit:
+            if settings.limit is not None and processed_count >= settings.limit:
                 break
 
     if not settings.individual_files:
@@ -1628,6 +1634,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             private_count = 0
             matching_count = 0
             total_count = 0
+            processed_count = 0
 
             desc = f"Analyzing {os.path.basename(input_path)}"
             # Use a progress bar for statistics gathering
@@ -1641,6 +1648,13 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                         continue
 
                     matching_count += 1
+
+                    if settings.skip is not None and matching_count <= settings.skip:
+                        continue
+
+                    if settings.limit is not None and processed_count >= settings.limit:
+                        break
+                    processed_count += 1
 
                     # Date/Time
                     dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
@@ -1660,7 +1674,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                         private_count += 1
 
             stats_entry["total_messages"] = total_count
-            stats_entry["matching_messages"] = matching_count
+            stats_entry["matching_messages"] = processed_count
             stats_entry["private_count"] = private_count
 
             if earliest_dt:
@@ -1676,7 +1690,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
             if settings.format != 'json':
                 print(f"Statistics for: {_colorize(input_path, CYAN)}")
-                print(f"  {_colorize('Messages:', BOLD)} {matching_count} matching / {total_count} total")
+                print(f"  {_colorize('Messages:', BOLD)} {processed_count} matching / {total_count} total")
 
                 if earliest_dt:
                     print(f"  {_colorize('Date Range:', BOLD)} {earliest_dt.strftime('%Y-%m-%d')} to {latest_dt.strftime('%Y-%m-%d')}")
