@@ -57,10 +57,12 @@ def test_search_highlighting(mock_gui_deps):
     # Render message
     app._render_message(0)
 
-    # Verify tag_add was called for the two matches returned by mock search
-    assert app.detail_text.tag_add.call_count == 2
+    # Verify tag_add was called for the two matches returned by mock search plus header_area
+    assert app.detail_text.tag_add.call_count == 3
     app.detail_text.tag_add.assert_any_call("search_highlight", "1.10", "1.10+9c")
     app.detail_text.tag_add.assert_any_call("search_highlight", "2.5", "2.5+9c")
+    from unittest.mock import ANY
+    app.detail_text.tag_add.assert_any_call("header_area", "1.0", ANY)
     app.detail_text.tag_raise.assert_called_with("search_highlight")
 
 def test_no_search_no_highlighting(mock_gui_deps):
