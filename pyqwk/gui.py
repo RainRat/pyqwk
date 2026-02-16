@@ -12,6 +12,7 @@ from pyqwk.core import (
     process_message,
     matches_filters,
     get_allowed_conferences,
+    _parse_qwk_date,
 )
 
 
@@ -502,6 +503,14 @@ class QwkGuiApp:
         try:
             if col == "Num":
                 l.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
+            elif col == "Date":
+                # QWK date is MM-DD-YY HH:MM. Sort chronologically.
+                def get_date_key(date_str):
+                    parts = date_str.split()
+                    date_part = parts[0] if len(parts) > 0 else ""
+                    time_part = parts[1] if len(parts) > 1 else "00:00"
+                    return _parse_qwk_date(date_part, time_part)
+                l.sort(key=lambda item_tuple: get_date_key(item_tuple[0]), reverse=reverse)
             else:
                 l.sort(key=lambda t: t[0].lower(), reverse=reverse)
         except Exception:
