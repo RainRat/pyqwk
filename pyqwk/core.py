@@ -937,7 +937,12 @@ def process_merged_files(
                     settings.redact_pii,
                     settings.strip_ansi,
                 )
-                if not settings.no_header and settings.format not in ('html', 'markdown'):
+
+                # Logic for prepending headers and separators
+                include_header = (
+                    not settings.no_header and settings.format not in ('html', 'markdown')
+                )
+                if include_header:
                     leading_newlines = 0
                     text_prefix = parsed_message.text
                     while text_prefix.startswith('\r\n'):
@@ -953,7 +958,7 @@ def process_merged_files(
                     processed_buffer = header_text + processed_buffer
 
                 # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
-                if settings.format == 'text' or (not settings.no_header and settings.format not in ('html', 'markdown')):
+                if settings.format == 'text' or include_header:
                     processed_buffer = separator_str + processed_buffer
 
                 if settings.individual_files:
