@@ -289,6 +289,17 @@ def main() -> None:
         help='Only include unique messages (removes duplicates when merging archives).',
         action='store_true',
     )
+    filter_group.add_argument(
+        '--sort',
+        help='Sort results by field (date, author, to, subject, num, or conference).',
+        choices=['date', 'author', 'to', 'subject', 'num', 'conference'],
+        default=None,
+    )
+    filter_group.add_argument(
+        '--reverse',
+        help='Reverse the order of the results.',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -401,6 +412,8 @@ def main() -> None:
         before=before_date,
         limit=args.limit,
         skip=args.skip,
+        sort=args.sort,
+        reverse=args.reverse,
     )
 
     if args.info:

@@ -123,6 +123,8 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         before=None,
         limit=None,
         skip=None,
+        sort=None,
+        reverse=False,
         info=False,
         stats=False,
     )
