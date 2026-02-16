@@ -25,6 +25,18 @@ BLOCK_SIZE = 128
 MESSAGES_FILENAME = 'messages.dat'
 CONTROL_FILENAME = 'control.dat'
 
+FORMAT_EXTENSIONS = {
+    'text': '.txt',
+    'json': '.json',
+    'xml': '.xml',
+    'html': '.html',
+    'markdown': '.md',
+    'mbox': '.mbox',
+    'csv': '.csv',
+    'sqlite': '.db',
+    'eml': '.eml',
+}
+
 RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s\d{3}\s')
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
@@ -816,17 +828,7 @@ def matches_filters(
 
 def _generate_safe_filename(message: ParsedMessage, output_format: str, count: int) -> str:
     """Generate a human-readable filename for an individual message."""
-    ext = {
-        'text': '.txt',
-        'json': '.json',
-        'xml': '.xml',
-        'html': '.html',
-        'markdown': '.md',
-        'mbox': '.mbox',
-        'csv': '.csv',
-        'sqlite': '.db',
-        'eml': '.eml',
-    }.get(output_format, '.txt')
+    ext = FORMAT_EXTENSIONS.get(output_format, '.txt')
 
     msg_num = message.msgnum if message.msgnum is not None else count
     subject = message.header.msgsubject
@@ -1746,20 +1748,8 @@ def process_multiple_files(
     for input_path in input_paths:
         try:
             output_filename = os.path.splitext(os.path.basename(input_path))[0]
-            if settings.format == 'json':
-                output_filename += '.json'
-            elif settings.format == 'xml':
-                output_filename += '.xml'
-            elif settings.format == 'html':
-                output_filename += '.html'
-            elif settings.format == 'markdown':
-                output_filename += '.md'
-            elif settings.format == 'csv':
-                output_filename += '.csv'
-            elif settings.format == 'mbox':
-                output_filename += '.mbox'
-            else:
-                output_filename += '.txt'
+            ext = FORMAT_EXTENSIONS.get(settings.format, '.txt')
+            output_filename += ext
             output_path = os.path.join(output_dir, output_filename)
             per_file_settings = replace(
                 settings,
