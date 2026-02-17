@@ -153,6 +153,7 @@ class ProcessingSettings:
     output_mode: str
     output_path: str | None
     encoding: str
+    regex: bool = False
     strip_ansi: bool = False
     quiet: bool = False
     headers_only: bool = False
@@ -764,6 +765,14 @@ def get_allowed_conferences(
     return allowed
 
 
+def _regex_match(pattern: str, text: str) -> bool:
+    """Helper for case-insensitive regex matching with error handling."""
+    try:
+        return bool(re.search(pattern, text, re.IGNORECASE))
+    except re.error:
+        return False
+
+
 def matches_filters(
     message: ParsedMessage,
     settings: ProcessingSettings,
@@ -787,32 +796,35 @@ def matches_filters(
     if settings.conferences and message.confnum not in allowed_conferences:
         return False
 
+    def check_str_match(pattern: str, text: str) -> bool:
+        if settings.regex:
+            return _regex_match(pattern, text)
+        return pattern.lower() in text.lower()
+
+    def any_match(patterns: list[str] | None, text: str) -> bool:
+        if not patterns:
+            return True
+        return any(check_str_match(p, text) for p in patterns)
+
     # 3. Author Filter
-    if settings.authors:
-        msg_from_lower = message.header.msgfrom.lower()
-        if not any(a.lower() in msg_from_lower for a in settings.authors):
-            return False
+    if settings.authors and not any_match(settings.authors, message.header.msgfrom):
+        return False
 
     # 4. Recipient Filter
-    if settings.recipients:
-        msg_to_lower = message.header.msgto.lower()
-        if not any(r.lower() in msg_to_lower for r in settings.recipients):
-            return False
+    if settings.recipients and not any_match(settings.recipients, message.header.msgto):
+        return False
 
     # 5. Subject Filter
-    if settings.subjects:
-        msg_subject_lower = message.header.msgsubject.lower()
-        if not any(s.lower() in msg_subject_lower for s in settings.subjects):
-            return False
+    if settings.subjects and not any_match(settings.subjects, message.header.msgsubject):
+        return False
 
     # 6. Full-Text Search
     if settings.search_term:
-        search_lower = settings.search_term.lower()
         found = (
-            search_lower in message.header.msgfrom.lower()
-            or search_lower in message.header.msgto.lower()
-            or search_lower in message.header.msgsubject.lower()
-            or search_lower in message.text.lower()
+            check_str_match(settings.search_term, message.header.msgfrom)
+            or check_str_match(settings.search_term, message.header.msgto)
+            or check_str_match(settings.search_term, message.header.msgsubject)
+            or check_str_match(settings.search_term, message.text)
         )
         if not found:
             return False
