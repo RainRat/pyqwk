@@ -102,18 +102,18 @@ def main() -> None:
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message as its own file. Do not use this with --threaded.',
+        help='Save each message as a separate file with a human-readable name. This cannot be used with the --threaded option.',
         action='store_true',
     )
     io_group.add_argument(
         '--organize',
-        help='Organize individual files into subfolders by conference.',
+        help='Organize individual files into folders by conference.',
         action='store_true',
     )
     io_group.add_argument(
         '-E',
         '--encoding',
-        help='Character encoding of the input file (default: cp437)',
+        help='Text character set of the input file (default: cp437).',
         default='cp437',
     )
 
@@ -197,13 +197,13 @@ def main() -> None:
     format_group.add_argument(
         '-T',
         '--threaded',
-        help='Group replies into conversations. Do not use this with --individual-files.',
+        help='Group replies into conversations. This cannot be used with the --individual-files option.',
         action='store_true',
     )
     format_group.add_argument(
         '-m',
         '--merge',
-        help='Merge multiple input archives into a single output. Enables cross-archive threading.',
+        help='Merge multiple input archives into a single output. This allows conversations to span across different archives.',
         action='store_true',
     )
 
@@ -217,7 +217,7 @@ def main() -> None:
     control_group.add_argument(
         '-q',
         '--quiet',
-        help='Hide the progress bar and other info.',
+        help='Hide the progress bar and other information.',
         action='store_true',
     )
     control_group.add_argument(
@@ -240,20 +240,20 @@ def main() -> None:
         '--from',
         dest='authors',
         action='append',
-        help='Filter messages by author name (case-insensitive substring match).',
+        help='Only show messages from this author (you can use part of the name).',
     )
     filter_group.add_argument(
         '--to',
         dest='recipients',
         action='append',
-        help='Filter messages by recipient name (case-insensitive substring match).',
+        help='Only show messages to this recipient (you can use part of the name).',
     )
     filter_group.add_argument(
         '-s',
         '--subject',
         dest='subjects',
         action='append',
-        help='Filter messages by subject line (case-insensitive substring match).',
+        help='Only show messages with this word in the subject line.',
     )
     filter_group.add_argument(
         '-S',
@@ -307,12 +307,12 @@ def main() -> None:
         '-I',
         '--info',
         action='store_true',
-        help='Show a summary of the QWK archive and exit. Use --format json for JSON output.',
+        help='Show a summary of the archive and exit. Use --format json for JSON output.',
     )
     parser.add_argument(
         '--stats',
         action='store_true',
-        help='Show detailed statistics about the messages and exit. Use --format json for JSON output.',
+        help='Show detailed statistics about the messages and exit. This respects your current filters. Use --format json for JSON output.',
     )
     parser.add_argument(
         '-V',
