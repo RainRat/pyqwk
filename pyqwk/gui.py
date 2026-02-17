@@ -145,8 +145,8 @@ class QwkGuiApp:
         for text, var in [
             ("Clean", self.clean_var),
             ("Include Private", self.private_var),
-            ("Redact PII", self.redact_var),
-            ("Strip ANSI", self.ansi_var),
+            ("Hide Personal Info", self.redact_var),
+            ("Remove Colors", self.ansi_var),
             ("Threaded", self.threaded_var),
         ]:
             ttk.Checkbutton(
