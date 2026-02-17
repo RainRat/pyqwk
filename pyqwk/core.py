@@ -1357,13 +1357,12 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
     from_line_date = dt.ctime()
     rfc_date = email.utils.format_datetime(dt)
 
-    sender_addr = "user@example.com"
     if "@" in header.msgfrom:
-         sender_addr = header.msgfrom
+        sender_addr = header.msgfrom
     else:
-         # Create a safe address from the name
-         safe_name = re.sub(r'[^A-Za-z0-9]', '.', header.msgfrom).strip('.')
-         sender_addr = f"{safe_name}@example.com"
+        # Create a safe address from the name
+        safe_name = re.sub(r'[^A-Za-z0-9]', '.', header.msgfrom).strip('.')
+        sender_addr = f"{safe_name}@example.com"
 
     # Escape "From " lines in body
     body_lines = []
