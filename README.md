@@ -191,6 +191,13 @@ Skip a number of messages or limit the total results. This is useful for process
 qwk archive.qwk --skip 100 --limit 50
 ```
 
+**Sorting Results:**
+You can sort the output by various fields such as date, author, or subject.
+```bash
+# Show the 10 most recent messages
+qwk archive.qwk --sort date --reverse --limit 10
+```
+
 **Filter by Date:**
 Find messages from a specific date range (use YYYY-MM-DD).
 ```bash
@@ -266,6 +273,8 @@ for msg in parse_messages(file_data, None):
 | `--loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR). |
 | `-L, --limit [num]` | Stop after processing this many messages. |
 | `-K, --skip [num]` | Skip the first this many matching messages. |
+| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, or `conference`. |
+| `--reverse` | Reverse the order of the output. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show detailed statistics about the messages and exit. |
 | `-V, --version` | Show the version number and exit. |

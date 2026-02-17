@@ -168,6 +168,8 @@ class ProcessingSettings:
     before: datetime.datetime | None = None
     limit: int | None = None
     skip: int | None = None
+    sort: str | None = None
+    reverse: bool = False
 
 
 @dataclass
@@ -885,6 +887,118 @@ def process_merged_files(
 
     total_matching = 0
     processed_count = 0
+    use_streaming = not (settings.sort or settings.reverse)
+    sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
+
+    def handle_output(parsed_message: ParsedMessage, board_dict: dict[int, str]) -> bool:
+        """Process and output a single message. Returns True if processing should stop."""
+        nonlocal total_matching, processed_count
+
+        total_matching += 1
+        if settings.skip is not None and total_matching <= settings.skip:
+            return False
+
+        if settings.limit is not None and processed_count >= settings.limit:
+            return True
+        processed_count += 1
+
+        processed_buffer = process_message(
+            parsed_message.text,
+            settings.truncate_signatures,
+            settings.cut_quoting,
+            settings.binaries_removal,
+            settings.redact_pii,
+            settings.strip_ansi,
+        )
+        include_header = not settings.no_header and settings.format not in ('html', 'markdown')
+        if include_header:
+            leading_newlines = 0
+            text_prefix = parsed_message.text
+            while text_prefix.startswith('\r\n'):
+                leading_newlines += 1
+                text_prefix = text_prefix[2:]
+            if leading_newlines and not processed_buffer.startswith('\r\n'):
+                processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+            header_text = parsed_message.header.format_text(
+                board_dict,
+                settings.verbose,
+                include_separator=False,
+            )
+            processed_buffer = header_text + processed_buffer
+
+        # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
+        if settings.format == 'text' or include_header:
+            processed_buffer = separator_str + processed_buffer
+
+        if settings.individual_files:
+            target_encoding = 'utf-8'
+            if settings.format == 'text':
+                target_encoding = settings.encoding
+                encoded_buffer = processed_buffer.encode(target_encoding)
+            elif settings.format == 'json':
+                text_content = "" if settings.headers_only else processed_buffer
+                temp_msg = replace(parsed_message, text=text_content)
+                encoded_buffer = json.dumps(
+                    _message_to_dict(temp_msg), indent=4, ensure_ascii=False
+                ).encode(target_encoding)
+            elif settings.format == 'xml':
+                text_content = "" if settings.headers_only else processed_buffer
+                temp_msg = replace(parsed_message, text=text_content)
+                encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
+            elif settings.format == 'html':
+                temp_msg = replace(parsed_message, text=processed_buffer)
+                encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
+            elif settings.format == 'markdown':
+                temp_msg = replace(parsed_message, text=processed_buffer)
+                encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
+            elif settings.format == 'mbox':
+                text_content = "" if settings.headers_only else processed_buffer
+                temp_msg = replace(parsed_message, text=text_content)
+                encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
+            elif settings.format == 'eml':
+                text_content = "" if settings.headers_only else processed_buffer
+                temp_msg = replace(parsed_message, text=text_content)
+                encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
+            else:
+                encoded_buffer = processed_buffer.encode(target_encoding)
+
+            assert output_dir is not None
+
+            target_dir = output_dir
+            if settings.organize:
+                conf_name = parsed_message.confname or "unknown"
+                conf_slug = re.sub(r'[^a-zA-Z0-9]+', '_', conf_name).strip('_').lower()[:30]
+                if not conf_slug:
+                    conf_slug = "conference"
+                conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
+                target_dir = os.path.join(output_dir, conf_dir)
+                os.makedirs(target_dir, exist_ok=True)
+
+            filename = _generate_safe_filename(parsed_message, settings.format, processed_count)
+            full_path = os.path.join(target_dir, filename)
+
+            # Collision avoidance
+            if os.path.exists(full_path):
+                short_hash = hashlib.sha1(encoded_buffer).hexdigest()[:8]
+                filename = filename.replace(".", f"-{short_hash}.")
+                full_path = os.path.join(target_dir, filename)
+
+            with open(full_path, 'wb') as f:
+                f.write(encoded_buffer)
+        else:
+            text_content = processed_buffer
+            if settings.headers_only:
+                if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
+                    text_content = ""
+
+            collected_messages.append(
+                replace(
+                    parsed_message,
+                    text=text_content,
+                )
+            )
+        return False
+
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, 'bbs_info', None)
@@ -921,109 +1035,36 @@ def process_merged_files(
                         continue
                     seen_ids.add(msg_id)
 
-                total_matching += 1
-                if settings.skip is not None and total_matching <= settings.skip:
+                if not use_streaming:
+                    sort_buffer.append((parsed_message, board_dict))
                     continue
 
-                if settings.limit is not None and processed_count >= settings.limit:
+                should_stop = handle_output(parsed_message, board_dict)
+                if should_stop:
                     break
-                processed_count += 1
-
-                processed_buffer = process_message(
-                    parsed_message.text,
-                    settings.truncate_signatures,
-                    settings.cut_quoting,
-                    settings.binaries_removal,
-                    settings.redact_pii,
-                    settings.strip_ansi,
-                )
-                if not settings.no_header and settings.format not in ('html', 'markdown'):
-                    leading_newlines = 0
-                    text_prefix = parsed_message.text
-                    while text_prefix.startswith('\r\n'):
-                        leading_newlines += 1
-                        text_prefix = text_prefix[2:]
-                    if leading_newlines and not processed_buffer.startswith('\r\n'):
-                        processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
-                    header_text = parsed_message.header.format_text(
-                        board_dict,
-                        settings.verbose,
-                        include_separator=False,
-                    )
-                    processed_buffer = header_text + processed_buffer
-
-                # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
-                if settings.format == 'text' or (not settings.no_header and settings.format not in ('html', 'markdown')):
-                    processed_buffer = separator_str + processed_buffer
-
-                if settings.individual_files:
-                    target_encoding = 'utf-8'
-                    if settings.format == 'text':
-                        target_encoding = settings.encoding
-                        encoded_buffer = processed_buffer.encode(target_encoding)
-                    elif settings.format == 'json':
-                        text_content = "" if settings.headers_only else processed_buffer
-                        temp_msg = replace(parsed_message, text=text_content)
-                        encoded_buffer = json.dumps(
-                            _message_to_dict(temp_msg), indent=4, ensure_ascii=False
-                        ).encode(target_encoding)
-                    elif settings.format == 'xml':
-                        text_content = "" if settings.headers_only else processed_buffer
-                        temp_msg = replace(parsed_message, text=text_content)
-                        encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
-                    elif settings.format == 'html':
-                        temp_msg = replace(parsed_message, text=processed_buffer)
-                        encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
-                    elif settings.format == 'markdown':
-                        temp_msg = replace(parsed_message, text=processed_buffer)
-                        encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
-                    elif settings.format == 'mbox':
-                        text_content = "" if settings.headers_only else processed_buffer
-                        temp_msg = replace(parsed_message, text=text_content)
-                        encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
-                    elif settings.format == 'eml':
-                        text_content = "" if settings.headers_only else processed_buffer
-                        temp_msg = replace(parsed_message, text=text_content)
-                        encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
-                    else:
-                        encoded_buffer = processed_buffer.encode(target_encoding)
-
-                    assert output_dir is not None
-
-                    target_dir = output_dir
-                    if settings.organize:
-                        conf_name = parsed_message.confname or "unknown"
-                        conf_slug = re.sub(r'[^a-zA-Z0-9]+', '_', conf_name).strip('_').lower()[:30]
-                        if not conf_slug:
-                            conf_slug = "conference"
-                        conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
-                        target_dir = os.path.join(output_dir, conf_dir)
-                        os.makedirs(target_dir, exist_ok=True)
-
-                    filename = _generate_safe_filename(parsed_message, settings.format, processed_count)
-                    full_path = os.path.join(target_dir, filename)
-
-                    # Collision avoidance
-                    if os.path.exists(full_path):
-                        short_hash = hashlib.sha1(encoded_buffer).hexdigest()[:8]
-                        filename = filename.replace(".", f"-{short_hash}.")
-                        full_path = os.path.join(target_dir, filename)
-
-                    with open(full_path, 'wb') as f:
-                        f.write(encoded_buffer)
-                else:
-                    text_content = processed_buffer
-                    if settings.headers_only:
-                        if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
-                            text_content = ""
-
-                    collected_messages.append(
-                        replace(
-                            parsed_message,
-                            text=text_content,
-                        )
-                    )
             if settings.limit is not None and processed_count >= settings.limit:
+                break
+
+    if not use_streaming:
+        if settings.sort:
+            if settings.sort == 'date':
+                sort_buffer.sort(key=lambda x: _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime))
+            elif settings.sort == 'author':
+                sort_buffer.sort(key=lambda x: x[0].header.msgfrom.lower())
+            elif settings.sort == 'to':
+                sort_buffer.sort(key=lambda x: x[0].header.msgto.lower())
+            elif settings.sort == 'subject':
+                sort_buffer.sort(key=lambda x: x[0].header.msgsubject.lower())
+            elif settings.sort == 'num':
+                sort_buffer.sort(key=lambda x: (x[0].confnum, x[0].msgnum or 0))
+            elif settings.sort == 'conference':
+                sort_buffer.sort(key=lambda x: (x[0].confnum, _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
+
+        if settings.reverse:
+            sort_buffer.reverse()
+
+        for parsed_message, board_dict in sort_buffer:
+            if handle_output(parsed_message, board_dict):
                 break
 
     if not settings.individual_files:
