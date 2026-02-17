@@ -30,6 +30,14 @@ class QwkGuiApp:
         self._cache = {}
         self.conf_mapping = {}
 
+        self.column_labels = {
+            "#0": "Subject",
+            "Num": "Num",
+            "From": "From",
+            "Date": "Date",
+            "Conference": "Conference",
+        }
+
         self.clean_var = tk.BooleanVar(value=False)
         self.private_var = tk.BooleanVar(value=False)
         self.redact_var = tk.BooleanVar(value=False)
@@ -170,36 +178,14 @@ class QwkGuiApp:
             columns=("Num", "From", "Date", "Conference"),
             selectmode="browse",
         )
-        self.message_list.heading(
-            "#0",
-            text="Subject",
-            anchor=tk.W,
-            command=lambda: self.sort_column("#0", False),
-        )
-        self.message_list.heading(
-            "Num",
-            text="Num",
-            anchor=tk.W,
-            command=lambda: self.sort_column("Num", False),
-        )
-        self.message_list.heading(
-            "From",
-            text="From",
-            anchor=tk.W,
-            command=lambda: self.sort_column("From", False),
-        )
-        self.message_list.heading(
-            "Date",
-            text="Date",
-            anchor=tk.W,
-            command=lambda: self.sort_column("Date", False),
-        )
-        self.message_list.heading(
-            "Conference",
-            text="Conference",
-            anchor=tk.W,
-            command=lambda: self.sort_column("Conference", False),
-        )
+
+        for col, label in self.column_labels.items():
+            self.message_list.heading(
+                col,
+                text=label,
+                anchor=tk.W,
+                command=lambda c=col: self.sort_column(c, False),
+            )
 
         self.message_list.column("#0", minwidth=200, width=300)
         self.message_list.column("Num", minwidth=50, width=60, anchor=tk.E)
@@ -366,11 +352,23 @@ class QwkGuiApp:
         if self.current_path:
             self.load_messages(self.current_path)
 
+    def _reset_column_headers(self) -> None:
+        """Reset all column headers to their original labels without sort indicators."""
+        for col, label in self.column_labels.items():
+            self.message_list.heading(
+                col,
+                text=label,
+                command=lambda c=col: self.sort_column(c, False)
+            )
+
     def load_messages(self, path: str) -> None:
         try:
             self.status_label.config(text="Loading...")
             self.root.update_idletasks()
             settings = self._current_settings()
+
+            # Reset headers to remove any previous sort indicators
+            self._reset_column_headers()
 
             # Cache file data to improve responsiveness during filtering
             if self._cache.get('path') != path:
@@ -521,10 +519,22 @@ class QwkGuiApp:
         for index, (_, k) in enumerate(l):
             self.message_list.move(k, "", index)
 
-        # Update heading to toggle reverse flag
-        self.message_list.heading(
-            col, command=lambda: self.sort_column(col, not reverse)
-        )
+        # Update all headings to show indicators and set correct toggle commands
+        for c in self.column_labels:
+            label = self.column_labels[c]
+            if c == col:
+                label += " ▼" if reverse else " ▲"
+                # If we just sorted this column, the next click should reverse it
+                next_reverse = not reverse
+            else:
+                # If we click a different column, it should start as ascending
+                next_reverse = False
+
+            self.message_list.heading(
+                c,
+                text=label,
+                command=lambda _c=c, _r=next_reverse: self.sort_column(_c, _r)
+            )
 
 
 def main() -> None:
