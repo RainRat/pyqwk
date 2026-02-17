@@ -109,6 +109,18 @@ def test_sort_by_author(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 1", "Message 3", "Message 2"]
 
+def test_sort_by_to(mock_messages, monkeypatch, capsys):
+    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
+    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = _make_settings(sort="to")
+    process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
+
+    captured = capsys.readouterr().out
+    # Alice (2), Bob (1), Charlie (3)
+    lines = [line.strip() for line in captured.splitlines() if line.strip()]
+    assert lines == ["Message 2", "Message 1", "Message 3"]
+
 def test_sort_by_subject(mock_messages, monkeypatch, capsys):
     monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
     monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
@@ -144,6 +156,27 @@ def test_sort_by_conference(mock_messages, monkeypatch, capsys):
     # Conf 1 (1, 2), Conf 2 (3)
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 1", "Message 2", "Message 3"]
+
+def test_sort_by_num(mock_messages, monkeypatch, capsys):
+    # Add a message with None msgnum to test fallback
+    h_none = _make_header(None, "01-01-23", "08:00", "Dave", "Alice", "None Num", 1)
+    msg_none = ParsedMessage(text="Message None", msgnum=None, refnum=None, confnum=1, header=h_none)
+    extended_messages = mock_messages + [msg_none]
+
+    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
+    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(extended_messages))
+
+    settings = _make_settings(sort="num")
+    process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
+
+    captured = capsys.readouterr().out
+    # Order should be:
+    # 1. Message None (Conf 1, Num None -> 0)
+    # 2. Message 1 (Conf 1, Num 1)
+    # 3. Message 2 (Conf 1, Num 2)
+    # 4. Message 3 (Conf 2, Num 3)
+    lines = [line.strip() for line in captured.splitlines() if line.strip()]
+    assert lines == ["Message None", "Message 1", "Message 2", "Message 3"]
 
 def test_sort_with_limit(mock_messages, monkeypatch, capsys):
     monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))

@@ -104,3 +104,23 @@ def test_eml_default_individual_files(tmp_path: Path, testdata_dir: Path, monkey
     files = list(output_dir.iterdir())
     assert len(files) == 1
     assert files[0].suffix == ".eml"
+
+def test_eml_aggregated_output(tmp_path: Path, testdata_dir: Path, capsys) -> None:
+    # Test that EML can be aggregated when individual_files=False
+    logger = logging.getLogger("pyqwk.tests")
+    input_file = testdata_dir / "messages.dat"
+
+    settings = _make_settings(
+        format="eml",
+        individual_files=False,
+        output_mode="stdout"
+    )
+
+    process_file(str(input_file), settings, logger)
+
+    captured = capsys.readouterr()
+    # messages.dat has one message. Aggregated EML should contain the content.
+    assert "From: GammaO #571 @0*1" in captured.out
+    assert "Subject: New User" in captured.out
+    # Check that it doesn't have the mbox "From " separator
+    assert not captured.out.startswith("From ")

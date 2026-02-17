@@ -20,7 +20,8 @@ from pyqwk.core import (
     LogFormatter,
     _message_to_xml_element,
     parse_messages,
-    _order_messages_by_thread
+    _order_messages_by_thread,
+    _write_text_output
 )
 
 @pytest.fixture
@@ -232,3 +233,15 @@ def test_parse_messages_progress_bar():
 
 def test_order_messages_by_thread_empty():
     assert _order_messages_by_thread([]) == []
+
+def test_write_text_output_stdout_no_newline(capsys):
+    # Test that _write_text_output adds a newline if it's missing on stdout
+    _write_text_output("No newline", None)
+    captured = capsys.readouterr()
+    assert captured.out == "No newline\n"
+
+def test_write_text_output_stdout_with_newline(capsys):
+    # Test that _write_text_output does NOT add an extra newline if it's already there
+    _write_text_output("Has newline\n", None)
+    captured = capsys.readouterr()
+    assert captured.out == "Has newline\n"
