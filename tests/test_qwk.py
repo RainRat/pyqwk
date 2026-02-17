@@ -75,6 +75,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         output_mode="stdout",
         output_path=None,
         encoding="latin1",
+        regex=False,
         conferences=None,
         authors=None,
         recipients=None,
@@ -125,6 +126,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         skip=None,
         sort=None,
         reverse=False,
+        regex=False,
         info=False,
         stats=False,
     )

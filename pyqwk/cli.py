@@ -262,6 +262,11 @@ def main() -> None:
         help='Search for a keyword in author, subject, and message body.',
     )
     filter_group.add_argument(
+        '--regex',
+        action='store_true',
+        help='Use regular expressions for searching and filtering.',
+    )
+    filter_group.add_argument(
         '--after',
         help='Filter messages dated on or after this date (format: YYYY-MM-DD).',
         default=None,
@@ -405,6 +410,7 @@ def main() -> None:
         output_mode=output_mode,
         output_path=resolved_output_path,
         encoding=args.encoding,
+        regex=args.regex,
         conferences=args.conferences,
         authors=args.authors,
         recipients=args.recipients,

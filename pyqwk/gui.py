@@ -35,6 +35,7 @@ class QwkGuiApp:
         self.redact_var = tk.BooleanVar(value=False)
         self.ansi_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
+        self.regex_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -144,6 +145,7 @@ class QwkGuiApp:
 
         for text, var in [
             ("Clean", self.clean_var),
+            ("Regex", self.regex_var),
             ("Include Private", self.private_var),
             ("Hide Personal Info", self.redact_var),
             ("Remove Colors", self.ansi_var),
@@ -264,6 +266,7 @@ class QwkGuiApp:
             output_mode='stdout',
             output_path=None,
             encoding='cp437',
+            regex=self.regex_var.get(),
             quiet=True,
             search_term=search_val if search_val else None,
             conferences=conferences,
@@ -319,13 +322,24 @@ class QwkGuiApp:
         search_term = self.search_var.get().strip()
         if search_term:
             start_pos = "1.0"
+            is_regex = self.regex_var.get()
+            count_var = tk.IntVar()
             while True:
-                start_pos = self.detail_text.search(
-                    search_term, start_pos, stopindex=tk.END, nocase=True
-                )
+                try:
+                    start_pos = self.detail_text.search(
+                        search_term, start_pos, stopindex=tk.END,
+                        nocase=True, regexp=is_regex, count=count_var
+                    )
+                except tk.TclError:
+                    # Invalid regex
+                    break
                 if not start_pos:
                     break
-                end_pos = f"{start_pos}+{len(search_term)}c"
+                match_count = count_var.get()
+                if match_count == 0:  # Avoid infinite loop on zero-width match
+                    start_pos = f"{start_pos}+1c"
+                    continue
+                end_pos = f"{start_pos}+{match_count}c"
                 self.detail_text.tag_add("search_highlight", start_pos, end_pos)
                 start_pos = end_pos
             self.detail_text.tag_raise("search_highlight")

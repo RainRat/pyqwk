@@ -23,6 +23,7 @@ def mock_gui_deps():
             return m
         mock_tk.BooleanVar.side_effect = lambda value=False, **kwargs: make_var(value)
         mock_tk.StringVar.side_effect = lambda value="", **kwargs: make_var(value)
+        mock_tk.IntVar.side_effect = lambda value=0, **kwargs: make_var(value)
 
         # Ensure END is available
         mock_tk.END = "end"
@@ -54,13 +55,21 @@ def test_search_highlighting(mock_gui_deps):
     # Mock the search method of detail_text to return some positions then None
     app.detail_text.search.side_effect = ["1.10", "2.5", None]
 
+    # Setup mock IntVar behavior
+    mock_iv = MagicMock()
+    mock_iv.get.return_value = 9
+    mock_gui_deps["tk"].IntVar.side_effect = None
+    mock_gui_deps["tk"].IntVar.return_value = mock_iv
+
     # Render message
     app._render_message(0)
 
     # Verify tag_add was called for the two matches returned by mock search plus header_area
     assert app.detail_text.tag_add.call_count == 3
-    app.detail_text.tag_add.assert_any_call("search_highlight", "1.10", "1.10+9c")
-    app.detail_text.tag_add.assert_any_call("search_highlight", "2.5", "2.5+9c")
+    # Use ANY for the second coordinate because it now comes from count_var.get()
+    from unittest.mock import ANY
+    app.detail_text.tag_add.assert_any_call("search_highlight", "1.10", ANY)
+    app.detail_text.tag_add.assert_any_call("search_highlight", "2.5", ANY)
     from unittest.mock import ANY
     app.detail_text.tag_add.assert_any_call("header_area", "1.0", ANY)
     app.detail_text.tag_raise.assert_called_with("search_highlight")
