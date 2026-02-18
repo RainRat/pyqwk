@@ -154,6 +154,7 @@ class ProcessingSettings:
     output_path: str | None
     encoding: str
     regex: bool = False
+    dry_run: bool = False
     strip_ansi: bool = False
     quiet: bool = False
     headers_only: bool = False
@@ -899,12 +900,14 @@ def process_merged_files(
 
     total_matching = 0
     processed_count = 0
+    estimated_bytes = 0
+    potential_files = 0
     use_streaming = not (settings.sort or settings.reverse)
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
 
     def handle_output(parsed_message: ParsedMessage, board_dict: dict[int, str]) -> bool:
         """Process and output a single message. Returns True if processing should stop."""
-        nonlocal total_matching, processed_count
+        nonlocal total_matching, processed_count, estimated_bytes, potential_files
 
         total_matching += 1
         if settings.skip is not None and total_matching <= settings.skip:
@@ -995,20 +998,25 @@ def process_merged_files(
                 filename = filename.replace(".", f"-{short_hash}.")
                 full_path = os.path.join(target_dir, filename)
 
-            with open(full_path, 'wb') as f:
-                f.write(encoded_buffer)
+            estimated_bytes += len(encoded_buffer)
+            potential_files += 1
+            if not settings.dry_run:
+                with open(full_path, 'wb') as f:
+                    f.write(encoded_buffer)
         else:
-            text_content = processed_buffer
-            if settings.headers_only:
-                if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
-                    text_content = ""
+            estimated_bytes += len(processed_buffer.encode('utf-8'))
+            if not settings.dry_run:
+                text_content = processed_buffer
+                if settings.headers_only:
+                    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
+                        text_content = ""
 
-            collected_messages.append(
-                replace(
-                    parsed_message,
-                    text=text_content,
+                collected_messages.append(
+                    replace(
+                        parsed_message,
+                        text=text_content,
+                    )
                 )
-            )
         return False
 
     for input_path in input_paths:
@@ -1080,29 +1088,47 @@ def process_merged_files(
                 break
 
     if not settings.individual_files:
-        ordered_messages = (
-            _order_messages_by_thread(collected_messages)
-            if settings.threaded
-            else collected_messages
-        )
+        if not settings.dry_run:
+            ordered_messages = (
+                _order_messages_by_thread(collected_messages)
+                if settings.threaded
+                else collected_messages
+            )
 
-        writers: dict[str, Callable[[list[ProcessedMessage], str | None, str], None]] = {
-            'json': _write_json,
-            'xml': _write_xml,
-            'html': _write_html,
-            'markdown': _write_markdown,
-            'text': _write_text,
-            'csv': _write_csv,
-            'mbox': _write_mbox,
-            'eml': _write_eml,
-            'sqlite': _write_sqlite,
-        }
+            writers: dict[str, Callable[[list[ProcessedMessage], str | None, str], None]] = {
+                'json': _write_json,
+                'xml': _write_xml,
+                'html': _write_html,
+                'markdown': _write_markdown,
+                'text': _write_text,
+                'csv': _write_csv,
+                'mbox': _write_mbox,
+                'eml': _write_eml,
+                'sqlite': _write_sqlite,
+            }
 
-        writer = writers.get(settings.format, _write_text)
-        output_encoding = 'utf-8'
-        if settings.format == 'text':
-            output_encoding = settings.encoding
-        writer(ordered_messages, resolved_output_path, output_encoding)
+            writer = writers.get(settings.format, _write_text)
+            output_encoding = 'utf-8'
+            if settings.format == 'text':
+                output_encoding = settings.encoding
+            writer(ordered_messages, resolved_output_path, output_encoding)
+        else:
+            potential_files = 1
+
+    if settings.dry_run:
+        CYAN = "36"
+        BOLD = "1"
+        print(f"\n{_colorize('--- Dry Run Summary ---', BOLD, CYAN)}")
+        print(f"Archives processed: {len(input_paths)}")
+        print(f"Matching messages:  {processed_count}")
+        if settings.individual_files:
+            print(f"Files to create:    {potential_files}")
+        else:
+            print(f"Files to create:    1 (merged)")
+
+        size_str = f"{estimated_bytes / 1024:.1f} KB" if estimated_bytes < 1024 * 1024 else f"{estimated_bytes / (1024 * 1024):.1f} MB"
+        print(f"Estimated size:     {size_str}")
+        print(f"{_colorize('No changes were made to the disk.', BOLD)}")
 
 
 def process_file(

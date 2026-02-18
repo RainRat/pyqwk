@@ -9,6 +9,7 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
 - **Batch Processing:** Convert many archives at once or merge them into a single file.
+- **Dry Run Mode:** Preview the results of a conversion without writing any files to disk.
 - **Built-in Reader:** A simple graphical interface to read messages without converting them. It includes search and filtering tools.
 
 ## Prerequisites
@@ -204,6 +205,12 @@ Find messages from a specific date range (use YYYY-MM-DD).
 qwk archive.qwk --after 2023-01-01 --before 2023-12-31
 ```
 
+**Dry Run:**
+Preview exactly how many messages match your filters and how many files will be created without actually making any changes.
+```bash
+qwk archives/ --search "BBS" --dry-run
+```
+
 ## Library Usage
 
 You can use `pyqwk` in your own Python projects:
@@ -270,6 +277,7 @@ for msg in parse_messages(file_data, None):
 | `--separator [type]` | How to separate messages (`auto`, `none`, `dashes`, `blank`). |
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
 | `-q`, `--quiet` | Hide the progress bar and extra information. |
+| `--dry-run` | Preview actions without writing files to disk. |
 | `--loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR). |
 | `-L, --limit [num]` | Stop after processing this many messages. |
 | `-K, --skip [num]` | Skip the first this many matching messages. |
