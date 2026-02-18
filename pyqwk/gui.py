@@ -80,6 +80,7 @@ class QwkGuiApp:
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-q>", self.quit_app)
+        self.root.bind("<Escape>", self.clear_search)
 
     def clear_search(self, _event: object | None = None) -> None:
         self.search_var.set("")
@@ -109,14 +110,14 @@ class QwkGuiApp:
 
         # Actions group
         actions_frame = ttk.Frame(toolbar)
-        actions_frame.pack(side=tk.LEFT)
+        actions_frame.pack(side=tk.LEFT, padx=5)
         ttk.Button(actions_frame, text="Open QWK", command=self.open_file).pack(side=tk.LEFT)
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
         # Search group
         search_frame = ttk.Frame(toolbar)
-        search_frame.pack(side=tk.LEFT)
+        search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
             search_frame, textvariable=self.search_var, width=25
@@ -134,7 +135,7 @@ class QwkGuiApp:
 
         # Filters group
         filters_frame = ttk.Frame(toolbar)
-        filters_frame.pack(side=tk.LEFT)
+        filters_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(filters_frame, text="Conf:").pack(side=tk.LEFT)
         self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
         self.conf_combo.pack(side=tk.LEFT, padx=(5, 2))
@@ -149,7 +150,8 @@ class QwkGuiApp:
 
         # Options group
         options_frame = ttk.Frame(toolbar)
-        options_frame.pack(side=tk.LEFT)
+        options_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
 
         for text, var in [
             ("Clean", self.clean_var),

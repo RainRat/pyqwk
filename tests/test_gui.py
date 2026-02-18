@@ -46,6 +46,7 @@ class TestQwkGui:
         assert app.root is not None
         assert hasattr(app, 'message_list')
         app.root.bind.assert_any_call("<Control-o>", app.open_file)
+        app.root.bind.assert_any_call("<Escape>", app.clear_search)
 
     def test_current_settings(self, mock_gui_deps):
         app = get_app()
