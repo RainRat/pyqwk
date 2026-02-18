@@ -840,16 +840,18 @@ def matches_filters(
     return True
 
 
+def _slugify(text: str, default: str) -> str:
+    """Create a URL-friendly slug from text."""
+    slug = re.sub(r'[^a-zA-Z0-9]+', '_', text).strip('_').lower()[:30]
+    return slug if slug else default
+
+
 def _generate_safe_filename(message: ParsedMessage, output_format: str, count: int) -> str:
     """Generate a human-readable filename for an individual message."""
     ext = FORMAT_EXTENSIONS.get(output_format, '.txt')
 
     msg_num = message.msgnum if message.msgnum is not None else count
-    subject = message.header.msgsubject
-    # Replace non-alphanumeric with underscores and truncate
-    slug = re.sub(r'[^a-zA-Z0-9]+', '_', subject).strip('_').lower()[:30]
-    if not slug:
-        slug = "message"
+    slug = _slugify(message.header.msgsubject, "message")
 
     return f"{message.confnum:03d}-{msg_num:05d}-{slug}{ext}"
 
@@ -979,9 +981,7 @@ def process_merged_files(
             target_dir = output_dir
             if settings.organize:
                 conf_name = parsed_message.confname or "unknown"
-                conf_slug = re.sub(r'[^a-zA-Z0-9]+', '_', conf_name).strip('_').lower()[:30]
-                if not conf_slug:
-                    conf_slug = "conference"
+                conf_slug = _slugify(conf_name, "conference")
                 conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
                 target_dir = os.path.join(output_dir, conf_dir)
                 os.makedirs(target_dir, exist_ok=True)
