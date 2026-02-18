@@ -221,6 +221,11 @@ def main() -> None:
         action='store_true',
     )
     control_group.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Do everything except actually writing files. Useful for testing filters.',
+    )
+    control_group.add_argument(
         '-l',
         '--loglevel',
         help='Choose how much detail to show in logs (DEBUG, INFO, WARNING, ERROR).',
@@ -422,6 +427,7 @@ def main() -> None:
         skip=args.skip,
         sort=args.sort,
         reverse=args.reverse,
+        dry_run=args.dry_run,
     )
 
     if args.info:
