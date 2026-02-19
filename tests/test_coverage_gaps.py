@@ -204,6 +204,9 @@ def test_xml_serialization_with_parent():
     msg.thread_id = 123
     msg.parent_msgnum = 456
     msg.text = "Body"
+    msg.confname = "Conf"
+    msg.bbs_name = "BBS"
+    msg.source_file = "file.qwk"
 
     element = _message_to_xml_element(msg)
     import xml.etree.ElementTree as ET
@@ -211,6 +214,9 @@ def test_xml_serialization_with_parent():
     assert "<depth>1</depth>" in xml_str
     assert "<thread_id>123</thread_id>" in xml_str
     assert "<parent_msgnum>456</parent_msgnum>" in xml_str
+    assert "<conference_name>Conf</conference_name>" in xml_str
+    assert "<bbs_name>BBS</bbs_name>" in xml_str
+    assert "<source_file>file.qwk</source_file>" in xml_str
 
 def test_parse_messages_progress_bar():
     data = bytearray(b'Produced '.ljust(128, b' '))

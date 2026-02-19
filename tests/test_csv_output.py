@@ -55,6 +55,9 @@ def test_write_csv_output():
         assert rows[0]['msgfrom'] == 'Sysop'
         assert rows[0]['text'] == 'Hello World'
         assert rows[0]['thread_id'] == '1'
+        assert 'conference_name' in rows[0]
+        assert 'bbs_name' in rows[0]
+        assert 'source_file' in rows[0]
 
 def test_write_csv_empty():
     from unittest.mock import patch
