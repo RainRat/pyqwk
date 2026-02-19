@@ -120,9 +120,12 @@ class QwkGuiApp:
         search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
-            search_frame, textvariable=self.search_var, width=25
+            search_frame, textvariable=self.search_var, width=20
         )
         self.search_entry.pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Checkbutton(
+            search_frame, text="Regex", variable=self.regex_var, command=self.reload_messages
+        ).pack(side=tk.LEFT, padx=5)
         ttk.Button(search_frame, text="×", width=2, command=self.clear_search).pack(
             side=tk.LEFT
         )
@@ -155,7 +158,6 @@ class QwkGuiApp:
 
         for text, var in [
             ("Clean", self.clean_var),
-            ("Regex", self.regex_var),
             ("Include Private", self.private_var),
             ("Hide Personal Info", self.redact_var),
             ("Remove Colors", self.ansi_var),
