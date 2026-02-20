@@ -207,6 +207,8 @@ class ParsedMessage:
     thread_id: str | None = None
     parent_msgnum: int | None = None
     confname: str | None = None
+    bbs_name: str | None = None
+    source_file: str | None = None
 
 
 
@@ -1036,7 +1038,9 @@ def process_merged_files(
             ):
                 parsed_message = replace(
                     parsed_message,
-                    confname=board_dict.get(parsed_message.confnum)
+                    confname=board_dict.get(parsed_message.confnum),
+                    bbs_name=bbs_info.name if bbs_info else None,
+                    source_file=os.path.basename(input_path),
                 )
                 if not matches_filters(parsed_message, settings, allowed_conferences):
                     continue
@@ -1142,6 +1146,9 @@ def process_file(
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
     return {
         'header': message.header.as_dict,
+        'conference': message.confname,
+        'bbs_name': message.bbs_name,
+        'source_file': message.source_file,
         'text': message.text,
         'depth': message.depth,
         'thread_id': message.thread_id,
@@ -1170,6 +1177,13 @@ def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
         ET.SubElement(msg_element, 'thread_id').text = str(message.thread_id)
     if message.parent_msgnum is not None:
         ET.SubElement(msg_element, 'parent_msgnum').text = str(message.parent_msgnum)
+
+    if message.confname:
+        ET.SubElement(msg_element, 'conference_name').text = message.confname
+    if message.bbs_name:
+        ET.SubElement(msg_element, 'bbs_name').text = message.bbs_name
+    if message.source_file:
+        ET.SubElement(msg_element, 'source_file').text = message.source_file
 
     header_element = ET.SubElement(msg_element, 'header')
     header_data = message.header.as_dict
@@ -1422,6 +1436,10 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
     parts.append(f"X-QWK-Conference: {header.confnum}")
     if message.confname:
         parts.append(f"X-QWK-Conference-Name: {message.confname}")
+    if message.bbs_name:
+        parts.append(f"X-QWK-BBS-Name: {message.bbs_name}")
+    if message.source_file:
+        parts.append(f"X-QWK-Source-File: {message.source_file}")
     if header.msgnum is not None:
         parts.append(f"X-QWK-Message-Number: {header.msgnum}")
     if header.status.strip():
@@ -1498,13 +1516,19 @@ def _write_csv(
     output = io.StringIO()
 
     header_fields = [f.name for f in fields(MessageHeader)]
-    fieldnames = header_fields + ['text', 'depth', 'thread_id', 'parent_msgnum']
+    fieldnames = header_fields + [
+        'conference_name', 'bbs_name', 'source_file',
+        'text', 'depth', 'thread_id', 'parent_msgnum'
+    ]
 
     writer = csv.DictWriter(output, fieldnames=fieldnames)
     writer.writeheader()
 
     for message in messages:
         row = message.header.as_dict
+        row['conference_name'] = message.confname
+        row['bbs_name'] = message.bbs_name
+        row['source_file'] = message.source_file
         row['text'] = message.text
         row['depth'] = message.depth
         row['thread_id'] = message.thread_id
@@ -1537,7 +1561,10 @@ def _write_sqlite(
             reference_number INTEGER,
             thread_id TEXT,
             depth INTEGER,
-            parent_message_number INTEGER
+            parent_message_number INTEGER,
+            conference_name TEXT,
+            bbs_name TEXT,
+            source_file TEXT
         )
     ''')
 
@@ -1550,8 +1577,8 @@ def _write_sqlite(
             INSERT INTO messages (
                 conference_number, message_number, date, author, recipient,
                 subject, status, text, reference_number, thread_id, depth,
-                parent_message_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                parent_message_number, conference_name, bbs_name, source_file
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             header.confnum,
             header.msgnum,
@@ -1564,7 +1591,10 @@ def _write_sqlite(
             header.refnum,
             msg.thread_id,
             msg.depth,
-            msg.parent_msgnum
+            msg.parent_msgnum,
+            msg.confname,
+            msg.bbs_name,
+            msg.source_file
         ))
 
     conn.commit()
