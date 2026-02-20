@@ -509,14 +509,16 @@ class QwkGuiApp:
             # or we could just sort top-level items. For simplicity, we skip if threaded.
             return
 
-        l = [
-            (self.message_list.set(k, col), k)
-            if col != "#0"
-            else (self.message_list.item(k, "text"), k)
-            for k in self.message_list.get_children("")
-        ]
-
+        l = []
         try:
+            l = [
+                (self.message_list.set(k, col), k)
+                if col != "#0"
+                else (self.message_list.item(k, "text"), k)
+                for k in self.message_list.get_children("")
+            ]
+            if not l:
+                return
             if col == "Num":
                 l.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
             elif col == "Date":
@@ -531,7 +533,8 @@ class QwkGuiApp:
                 l.sort(key=lambda t: t[0].lower(), reverse=reverse)
         except Exception:
             # Fallback if sorting fails
-            l.sort(key=lambda t: t[0], reverse=reverse)
+            if l:
+                l.sort(key=lambda t: t[0], reverse=reverse)
 
         # Rearrange items in sorted positions
         for index, (_, k) in enumerate(l):
