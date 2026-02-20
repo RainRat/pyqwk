@@ -186,7 +186,7 @@ qwk archive.qwk --to "Alice"
 ```
 
 **Keyword Search:**
-Search for keywords in the author, subject, and message body.
+Search for keywords in the author, subject, and message body. Results are highlighted in the terminal for easy identification.
 ```bash
 qwk archive.qwk --search "BBS"
 ```
@@ -197,6 +197,9 @@ Skip a number of messages or limit the total results. This is useful for process
 # Skip the first 100 messages and process the next 50
 qwk archive.qwk --skip 100 --limit 50
 ```
+
+**Rich Terminal Output:**
+When viewing messages in your terminal, pyqwk automatically uses colors to make them easier to read. Message headers are bolded, and search terms are highlighted using reverse video. This only applies to terminal output; file exports remain clean.
 
 **Sorting Results:**
 You can sort the output by various fields such as date, author, or subject.
