@@ -195,7 +195,12 @@ class TestQwkGui:
         app.message_list.move.assert_has_calls([call("item2", "", 0), call("item1", "", 1)])
 
         # Test sorting by Subject (#0)
-        app.message_list.item.side_effect = lambda k, attr: {"text": "Subject B" if k == "item1" else "Subject A"}[attr]
+        def mock_item(k, attr=None, **kwargs):
+            if attr:
+                return {"text": "Subject B" if k == "item1" else "Subject A"}[attr]
+            return None
+
+        app.message_list.item.side_effect = mock_item
         app.sort_column("#0", False)
         app.message_list.move.assert_any_call("item2", "", 0)
 
@@ -393,8 +398,8 @@ class TestQwkGui:
             mock_parse_messages.return_value = [msg1, msg2]
             mock_order.return_value = [msg1, msg2]
             app.load_messages("test.qwk")
-            app.message_list.insert.assert_any_call("", "end", iid="0", text="Sub", values=ANY, open=True)
-            app.message_list.insert.assert_any_call("0", "end", iid="1", text="Sub", values=ANY, open=True)
+            app.message_list.insert.assert_any_call("", "end", iid="0", text="Sub", values=ANY, open=True, tags=ANY)
+            app.message_list.insert.assert_any_call("0", "end", iid="1", text="Sub", values=ANY, open=True, tags=ANY)
 
     def test_on_message_selected_value_error(self, mock_gui_deps):
         app = get_app()

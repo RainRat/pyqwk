@@ -207,6 +207,9 @@ class QwkGuiApp:
         self.message_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Alternating row colors for better visual hierarchy
+        self.message_list.tag_configure("even", background="#f7f7f7")
+
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
         ttk.Label(detail_frame, text="Message Detail").pack(anchor=tk.W)
@@ -444,6 +447,7 @@ class QwkGuiApp:
                     parent_iid = parent_at_depth.get(message.depth - 1, "")
 
                 iid = str(index)
+                tags = ("even",) if index % 2 != 0 else ()
                 self.message_list.insert(
                     parent_iid,
                     tk.END,
@@ -455,7 +459,8 @@ class QwkGuiApp:
                         f"{header.msgdate} {header.msgtime}",
                         conf_name,
                     ),
-                    open=True  # Expand by default
+                    open=True,  # Expand by default
+                    tags=tags
                 )
 
                 if settings.threaded:
@@ -539,6 +544,9 @@ class QwkGuiApp:
         # Rearrange items in sorted positions
         for index, (_, k) in enumerate(l):
             self.message_list.move(k, "", index)
+            # Re-apply alternating tags after sorting
+            tags = ("even",) if index % 2 != 0 else ()
+            self.message_list.item(k, tags=tags)
 
         # Update all headings to show indicators and set correct toggle commands
         for c in self.column_labels:
