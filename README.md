@@ -64,7 +64,7 @@ qwk-gui
 ```
 
 **Key Features:**
-- **Search:** Quickly find messages by keyword. Results are highlighted in the message text.
+- **Search:** Quickly find messages by keyword or regular expression. Results are highlighted in the message text.
 - **Filtering:** View messages from specific conferences or include private messages.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
@@ -73,8 +73,8 @@ qwk-gui
 - **Ctrl + O**: Open a QWK archive.
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + Q**: Exit the application.
-- **Esc**: Clear the search (when the search bar is focused).
-- **Enter**: Move focus to the message list after typing a search term.
+- **Esc**: Clear the search filter and return focus to the message list. This works from anywhere in the application.
+- **Enter**: Execute the search immediately and move focus to the message list.
 
 ## Usage Examples
 
