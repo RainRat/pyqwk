@@ -2,6 +2,12 @@
 
 pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, XML, CSV, mbox, and SQLite.
 
+## What is a QWK file?
+
+QWK is a file format created in the late 1980s for Bulletin Board Systems (BBS). In the days before the modern internet, it allowed users to download all their new messages in a single "packet." They could then disconnect their phone line, read the messages at their own pace, and write replies without tying up the BBS's phone line. Once finished, they would upload their replies back to the BBS.
+
+Today, these files are valuable pieces of digital history. `pyqwk` helps you open these archives and convert them into modern, easy-to-read formats.
+
 ## Features
 
 - **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite.
