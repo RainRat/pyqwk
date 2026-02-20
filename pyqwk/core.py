@@ -891,7 +891,7 @@ def process_merged_files(
     separator_mode = settings.separator
     if separator_mode == 'auto':
         if settings.individual_files or settings.format in (
-            'json', 'xml', 'html', 'csv', 'markdown', 'sqlite', 'mbox'
+            'json', 'xml', 'html', 'csv', 'markdown', 'sqlite', 'mbox', 'eml'
         ):
             separator_mode = 'none'
         else:
