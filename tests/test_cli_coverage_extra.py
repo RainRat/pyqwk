@@ -130,3 +130,17 @@ def test_individual_files_mode_setup(monkeypatch, testdata_dir, tmp_path):
     with monkeypatch.context() as m:
         m.setattr(cli, "process_file", lambda *args: None)
         main()
+
+def test_merge_mode_error(monkeypatch, testdata_dir, caplog):
+    from unittest.mock import MagicMock
+    input_file = testdata_dir / "messages.dat"
+    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--merge"])
+
+    import pyqwk.cli as cli
+    with monkeypatch.context() as m:
+        m.setattr(cli, "process_merged_files", MagicMock(side_effect=OSError("Merge failure")))
+        with caplog.at_level(logging.ERROR):
+            with pytest.raises(SystemExit) as exc:
+                main()
+            assert exc.value.code == 1
+            assert "Merge failure" in caplog.text
