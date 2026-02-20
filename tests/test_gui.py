@@ -104,7 +104,7 @@ class TestQwkGui:
              patch("pyqwk.gui.process_message") as mock_process_message, \
              patch.object(app, "on_message_selected"):
 
-            # Test with BBS Info (covers line 464)
+            # Test with BBS Info
             mock_board_dict = MagicMock(spec=dict)
             mock_board_dict.get.return_value = "General"
             mock_board_dict.items.return_value = {1: "General"}.items()
@@ -134,7 +134,7 @@ class TestQwkGui:
             texts = [c.kwargs['text'] for c in calls if 'text' in c.kwargs]
             assert "Test BBS" in texts[-1]
 
-            # Verify Ref #: was rendered (covers lines 294-295)
+            # Verify Ref #: was rendered
             app._render_message(0)
             app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Ref #: ", "header_label")
 
@@ -155,7 +155,7 @@ class TestQwkGui:
 
     def test_on_message_selected(self, mock_gui_deps):
         app = get_app()
-        # Test no selection (covers line 493)
+        # Test no selection
         app.message_list.selection.return_value = ()
         app.on_message_selected()
         app.detail_text.delete.assert_not_called()
@@ -194,24 +194,30 @@ class TestQwkGui:
         app.sort_column("From", False)
         app.message_list.move.assert_has_calls([call("item2", "", 0), call("item1", "", 1)])
 
-        # Test sorting by Subject (#0) (covers line 464)
+        # Test sorting by Subject (#0)
         app.message_list.item.side_effect = lambda k, attr: {"text": "Subject B" if k == "item1" else "Subject A"}[attr]
         app.sort_column("#0", False)
         app.message_list.move.assert_any_call("item2", "", 0)
 
-    def test_sort_column_fallback(self, mock_gui_deps):
+    def test_sort_column_fallback_on_sort(self, mock_gui_deps):
         app = get_app()
         app.message_list.get_children.return_value = ["item1"]
-        # Trigger an exception inside the try block of sort_column
-        # By having set return something that cannot be compared?
-        # Or by having a custom exception in the loop.
-        app.message_list.set.side_effect = lambda k, col: 123
+        app.message_list.set.return_value = "Value"
         app.threaded_var.get.return_value = False
-        # If we sort by non-numeric column with mixed types, it might fail?
-        # Actually, let's just mock the sort to fail.
+        # Trigger an exception inside the try block but after l is populated
         with patch("pyqwk.gui._parse_qwk_date", side_effect=Exception("Sort error")):
             app.sort_column("Date", False)
         app.message_list.move.assert_called()
+
+    def test_sort_column_fallback_on_retrieval(self, mock_gui_deps):
+        app = get_app()
+        app.message_list.get_children.return_value = ["item1"]
+        # Trigger an exception during list comprehension
+        app.message_list.set.side_effect = Exception("Retrieval error")
+        app.threaded_var.get.return_value = False
+        # Should catch exception and NOT crash (and NOT sort since l is empty)
+        app.sort_column("From", False)
+        app.message_list.move.assert_not_called()
 
     def test_sort_column_threaded_disabled(self, mock_gui_deps):
         app = get_app()
@@ -347,19 +353,19 @@ class TestQwkGui:
 
     def test_search_events_and_timers(self, mock_gui_deps):
         app = get_app()
-        # Test _on_search_changed (covers lines 354-356)
+        # Test _on_search_changed
         app._search_timer = "timer1"
         app._on_search_changed()
         app.root.after_cancel.assert_called_with("timer1")
         app.root.after.assert_called_with(250, app.reload_messages)
 
-        # Test _on_search_enter (covers lines 360-361)
+        # Test _on_search_enter
         with patch.object(app, "reload_messages") as mock_reload:
             app._on_search_enter(None)
             mock_reload.assert_called_once()
             app.message_list.focus_set.assert_called_once()
 
-        # Test reload_messages with timer (covers lines 364-369)
+        # Test reload_messages with timer
         app._search_timer = "timer2"
         with patch.object(app, "load_messages") as mock_load:
             app.current_path = "path"
