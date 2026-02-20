@@ -334,6 +334,9 @@ class MessageHeader:
         board_dict: Mapping[int, str],
         verbose: bool,
         include_separator: bool = True,
+        use_colors: bool = False,
+        highlight_term: str | None = None,
+        is_regex: bool = False,
     ) -> str:
         """Render a message header into readable text.
 
@@ -341,6 +344,9 @@ class MessageHeader:
             board_dict: Mapping of conference numbers to human-readable names.
             verbose: Whether to include extra metadata such as message numbers and reference numbers.
             include_separator: Whether to prepend the message separator line.
+            use_colors: Whether to use ANSI colors for terminal output.
+            highlight_term: Optional term to highlight in the header values.
+            is_regex: Whether the highlight_term is a regular expression.
 
         Returns:
             The formatted header text with DOS-style newlines appended.
@@ -352,23 +358,35 @@ class MessageHeader:
             conf_name = str(self.confnum)
             not_found_flag = True
 
+        def fmt_val(val: str) -> str:
+            if highlight_term and use_colors:
+                return _highlight_text(val, highlight_term, is_regex, use_colors)
+            return val
+
+        def fmt_line(label: str, value: str, newline: bool = True) -> str:
+            suffix = "\r\n" if newline else ""
+            if use_colors:
+                return f"\x1b[1m{label}\x1b[0m{fmt_val(value)}{suffix}"
+            return f"{label}{value}{suffix}"
+
         header_parts: list[str] = []
         if include_separator:
             header_parts.append(("-" * 80) + "\r\n")
         if verbose or not not_found_flag:
-            header_parts.append("Conference: " + str(conf_name) + "\r\n")
+            header_parts.append(fmt_line("Conference: ", str(conf_name)))
         if verbose:
             message_number = str(self.msgnum) if self.msgnum is not None else ""
-            header_parts.append("Message number: " + message_number + (" " * 20))
+            # Original layout: Message number and Date on the same line
+            header_parts.append(fmt_line("Message number: ", message_number + (" " * 20), newline=False))
         header_parts.append(
-            "Date: " + self.msgdate + " " + self.msgtime + "\r\n"
+            fmt_line("Date: ", self.msgdate + " " + self.msgtime)
         )
-        header_parts.append("From: " + self.msgfrom + "\r\n")
-        header_parts.append("To: " + self.msgto + "\r\n")
-        header_parts.append("Subject: " + self.msgsubject + "\r\n")
+        header_parts.append(fmt_line("From: ", self.msgfrom))
+        header_parts.append(fmt_line("To: ", self.msgto))
+        header_parts.append(fmt_line("Subject: ", self.msgsubject))
         if verbose:
             reference_number = str(self.refnum) if self.refnum is not None else ""
-            header_parts.append("Reference number: " + reference_number + "\r\n")
+            header_parts.append(fmt_line("Reference number: ", reference_number))
         header_parts.append("\r\n")
         return "".join(header_parts)
 
@@ -929,6 +947,21 @@ def process_merged_files(
             settings.redact_pii,
             settings.strip_ansi,
         )
+        use_colors = (
+            output_mode == 'stdout'
+            and hasattr(sys.stdout, 'isatty')
+            and sys.stdout.isatty()
+        )
+
+        # Apply search highlighting to body for terminal output
+        if use_colors and settings.search_term:
+            processed_buffer = _highlight_text(
+                processed_buffer,
+                settings.search_term,
+                settings.regex,
+                use_colors=True
+            )
+
         include_header = not settings.no_header and settings.format not in ('html', 'markdown')
         if include_header:
             leading_newlines = 0
@@ -938,10 +971,14 @@ def process_merged_files(
                 text_prefix = text_prefix[2:]
             if leading_newlines and not processed_buffer.startswith('\r\n'):
                 processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+
             header_text = parsed_message.header.format_text(
                 board_dict,
                 settings.verbose,
                 include_separator=False,
+                use_colors=use_colors,
+                highlight_term=settings.search_term,
+                is_regex=settings.regex,
             )
             processed_buffer = header_text + processed_buffer
 
@@ -1616,6 +1653,27 @@ def _colorize(text: str, *attributes: str) -> str:
     if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
         return f"\033[{';'.join(attributes)}m{text}\033[0m"
     return text
+
+
+def _highlight_text(
+    text: str,
+    term: str | None,
+    is_regex: bool = False,
+    use_colors: bool = False,
+) -> str:
+    """Apply reverse-video highlighting to matching terms in text for terminal output."""
+    if not term or not use_colors:
+        return text
+
+    flags = re.IGNORECASE
+    pattern_str = term if is_regex else re.escape(term)
+    try:
+        pattern = re.compile(pattern_str, flags)
+    except re.error:
+        return text
+
+    # Apply reverse video (\x1b[7m) to matches
+    return pattern.sub(lambda m: f"\x1b[7m{m.group(0)}\x1b[0m", text)
 
 
 def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
