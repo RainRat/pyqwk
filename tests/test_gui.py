@@ -83,7 +83,7 @@ class TestQwkGui:
     def test_current_settings(self, mock_gui_deps):
         app = get_app()
         app.clean_var.get.return_value = True
-        app.private_var.get.return_value = False
+        app.private_var.get.return_value = True
         app.search_var.get.return_value = "test search"
 
         # Test conference filtering in settings
@@ -92,7 +92,7 @@ class TestQwkGui:
 
         settings = app._current_settings()
         assert isinstance(settings, ProcessingSettings)
-        assert settings.private is False
+        assert settings.private is True
         assert settings.search_term == "test search"
         assert settings.conferences == ["1"]
 
@@ -188,7 +188,7 @@ class TestQwkGui:
 
     def test_sort_column(self, mock_gui_deps):
         app = get_app()
-        app.message_list.get_children.return_value = ["item1", "item2"]
+        app.message_list.get_children.side_effect = lambda parent="": ["item1", "item2"] if parent == "" else []
         app.message_list.set.side_effect = lambda k, col: "Value2" if k == "item1" else "Value1"
         app.threaded_var.get.return_value = False
         app.sort_column("From", False)
@@ -206,7 +206,7 @@ class TestQwkGui:
 
     def test_sort_column_fallback_on_sort(self, mock_gui_deps):
         app = get_app()
-        app.message_list.get_children.return_value = ["item1"]
+        app.message_list.get_children.side_effect = lambda parent="": ["item1"] if parent == "" else []
         app.message_list.set.return_value = "Value"
         app.threaded_var.get.return_value = False
         # Trigger an exception inside the try block but after l is populated
@@ -216,7 +216,7 @@ class TestQwkGui:
 
     def test_sort_column_fallback_on_retrieval(self, mock_gui_deps):
         app = get_app()
-        app.message_list.get_children.return_value = ["item1"]
+        app.message_list.get_children.side_effect = lambda parent="": ["item1"] if parent == "" else []
         # Trigger an exception during list comprehension
         app.message_list.set.side_effect = Exception("Retrieval error")
         app.threaded_var.get.return_value = False
@@ -224,12 +224,14 @@ class TestQwkGui:
         app.sort_column("From", False)
         app.message_list.move.assert_not_called()
 
-    def test_sort_column_threaded_disabled(self, mock_gui_deps):
+    def test_sort_column_threaded_enabled(self, mock_gui_deps):
         app = get_app()
         app.message_list.move.reset_mock()
+        app.message_list.get_children.side_effect = lambda parent="": ["item1"] if parent == "" else []
+        app.message_list.set.return_value = "Value"
         app.threaded_var.get.return_value = True
         app.sort_column("From", False)
-        app.message_list.move.assert_not_called()
+        app.message_list.move.assert_called()
 
     def test_conference_population(self, mock_gui_deps):
         app = get_app()
@@ -257,7 +259,7 @@ class TestQwkGui:
 
     def test_sort_column_chronological(self, mock_gui_deps):
         app = get_app()
-        app.message_list.get_children.return_value = ["item1", "item2"]
+        app.message_list.get_children.side_effect = lambda parent="": ["item1", "item2"] if parent == "" else []
         dates = {"item1": "12-10-93 12:00", "item2": "01-15-94 09:00"}
         app.message_list.set.side_effect = lambda k, col: dates[k]
         app.threaded_var.get.return_value = False
@@ -266,7 +268,7 @@ class TestQwkGui:
 
     def test_sort_column_numeric(self, mock_gui_deps):
         app = get_app()
-        app.message_list.get_children.return_value = ["item1", "item2"]
+        app.message_list.get_children.side_effect = lambda parent="": ["item1", "item2"] if parent == "" else []
         app.message_list.set.side_effect = lambda k, col: "100" if k == "item1" else "20"
         app.threaded_var.get.return_value = False
         app.sort_column("Num", False)
@@ -288,7 +290,7 @@ class TestQwkGui:
 
     def test_sort_indicators_update(self, mock_gui_deps):
         app = get_app()
-        app.message_list.get_children.return_value = ["item1"]
+        app.message_list.get_children.side_effect = lambda parent="": ["item1"] if parent == "" else []
         app.message_list.set.return_value = "Val"
         app.threaded_var.get.return_value = False
         app.sort_column("From", False)
