@@ -20,7 +20,7 @@ class QwkGuiApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("PyQWK Reader")
-        self.root.geometry("1000x650")
+        self.root.geometry("1100x650")
 
         self.logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class QwkGuiApp:
         }
 
         self.clean_var = tk.BooleanVar(value=False)
-        self.private_var = tk.BooleanVar(value=False)
+        self.private_var = tk.BooleanVar(value=True)
         self.redact_var = tk.BooleanVar(value=False)
         self.ansi_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
@@ -158,7 +158,6 @@ class QwkGuiApp:
 
         for text, var in [
             ("Clean", self.clean_var),
-            ("Include Private", self.private_var),
             ("Hide Personal Info", self.redact_var),
             ("Remove Colors", self.ansi_var),
             ("Threaded", self.threaded_var),
@@ -388,6 +387,20 @@ class QwkGuiApp:
             self.root.update_idletasks()
             settings = self._current_settings()
 
+            # Capture current selection to restore it later
+            selected_msg_key = None
+            current_selection = self.message_list.selection()
+            if current_selection:
+                prev_iid = current_selection[0]
+                try:
+                    prev_index = int(prev_iid)
+                    if 0 <= prev_index < len(self.messages):
+                        m = self.messages[prev_index]
+                        # Use conference and message number as a unique key
+                        selected_msg_key = (m.header.confnum, m.header.msgnum, m.header.msgsubject, m.header.msgfrom)
+                except (ValueError, IndexError):
+                    pass
+
             # Reset headers to remove any previous sort indicators
             self._reset_column_headers()
 
@@ -492,12 +505,24 @@ class QwkGuiApp:
             self.status_label.config(
                 text=f"Showing {len(self.messages)} of {total_count} messages from {source_display}"
             )
+
+            # Restore selection if possible
+            new_iid_to_select = None
+            if selected_msg_key:
+                for i, m in enumerate(self.messages):
+                    if (m.header.confnum, m.header.msgnum, m.header.msgsubject, m.header.msgfrom) == selected_msg_key:
+                        new_iid_to_select = str(i)
+                        break
+
             if self.messages:
-                first_item = self.message_list.get_children()[0]
-                self.message_list.selection_set(first_item)
-                # focus is needed for some themes
-                self.message_list.focus(first_item)
-                # Manually trigger selection event since selection_set doesn't fire it
+                if new_iid_to_select and self.message_list.exists(new_iid_to_select):
+                    item_to_select = new_iid_to_select
+                else:
+                    item_to_select = self.message_list.get_children()[0]
+
+                self.message_list.selection_set(item_to_select)
+                self.message_list.focus(item_to_select)
+                self.message_list.see(item_to_select)
                 self.on_message_selected()
             else:
                 self._set_detail_text("No messages found.")
@@ -524,13 +549,22 @@ class QwkGuiApp:
             # Handle cases where iid is not an integer (e.g., if we change ID generation)
             pass
 
+    def _apply_zebra_striping(self) -> None:
+        """Re-apply alternating 'even' tags to all items in their current display order."""
+        def traverse(item_id, count):
+            tags = ("even",) if count % 2 != 0 else ()
+            self.message_list.item(item_id, tags=tags)
+            count += 1
+            for child in self.message_list.get_children(item_id):
+                count = traverse(child, count)
+            return count
+
+        current_count = 0
+        for root_item in self.message_list.get_children(""):
+            current_count = traverse(root_item, current_count)
+
     def sort_column(self, col: str, reverse: bool) -> None:
         """Sort the treeview contents by the given column."""
-        if self.threaded_var.get():
-            # Sorting breaks the tree structure visualization, so we disable it for now
-            # or we could just sort top-level items. For simplicity, we skip if threaded.
-            return
-
         l = []
         try:
             l = [
@@ -561,9 +595,9 @@ class QwkGuiApp:
         # Rearrange items in sorted positions
         for index, (_, k) in enumerate(l):
             self.message_list.move(k, "", index)
-            # Re-apply alternating tags after sorting
-            tags = ("even",) if index % 2 != 0 else ()
-            self.message_list.item(k, tags=tags)
+
+        # Re-apply alternating tags after sorting to maintain zebra striping
+        self._apply_zebra_striping()
 
         # Update all headings to show indicators and set correct toggle commands
         for c in self.column_labels:
