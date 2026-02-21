@@ -408,3 +408,36 @@ class TestQwkGui:
         app.message_list.selection.return_value = ("not-an-int",)
         app.on_message_selected()
         app.detail_text.delete.assert_not_called()
+
+    def test_conference_discovery(self, mock_gui_deps):
+        """Test that conferences found in messages.dat but not in CONTROL.DAT are discovered."""
+        app = get_app()
+        with patch("pyqwk.gui.load_data") as mock_load_data, \
+             patch("pyqwk.gui.parse_messages") as mock_parse_messages:
+
+            # CONTROL.DAT only knows about conf 1
+            mock_load_data.return_value = (bytearray(b"data"), {1: "General"})
+
+            # Message from conference 99 (not in CONTROL.DAT)
+            header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 99, 1, "")
+            msg = ParsedMessage("Msg in Conf 99", 1, None, 99, header)
+
+            # parse_messages is called twice: once for discovery (headers_only=True) and once for actual loading
+            mock_parse_messages.side_effect = [[msg], [msg]]
+
+            app.load_messages("test.qwk")
+
+            # Check if Conf 99 was added to dropdown
+            # Values are ["All Conferences", "1: General", "99: Conference 99"]
+            expected_values = ["All Conferences", "1: General", "99: Conference 99"]
+            mock_gui_deps["combo"].__setitem__.assert_any_call('values', expected_values)
+            assert app.conf_mapping["99: Conference 99"] == 99
+
+            # Test exception handling in discovery phase (line 423)
+            # Reset cache to force a new load_data call
+            app._cache = {}
+            mock_parse_messages.side_effect = [Exception("Discovery error"), [msg]]
+
+            # Should NOT crash and still load messages
+            app.load_messages("test.qwk")
+            assert len(app.messages) == 1
