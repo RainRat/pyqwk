@@ -394,6 +394,23 @@ class QwkGuiApp:
             # Cache file data to improve responsiveness during filtering
             if self._cache.get('path') != path:
                 file_data, board_dict = load_data(path, self.logger, settings.encoding)
+
+                # Ensure all conferences present in the data are in the dropdown,
+                # even if CONTROL.DAT is missing or incomplete.
+                try:
+                    found_confs = set()
+                    for parsed_message in parse_messages(
+                        file_data, None, settings.encoding, headers_only=True
+                    ):
+                        found_confs.add(parsed_message.confnum)
+
+                    for cid in sorted(found_confs):
+                        if cid not in board_dict:
+                            board_dict[cid] = f"Conference {cid}"
+                except Exception:
+                    # If discovery fails, we proceed with whatever load_data found
+                    pass
+
                 self._cache = {
                     'path': path,
                     'file_data': file_data,
