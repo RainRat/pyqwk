@@ -926,10 +926,12 @@ def process_merged_files(
     potential_files = 0
     use_streaming = not (settings.sort or settings.reverse)
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
+    collected_for_index: list[dict[str, Any]] = []
+    bbs_info_to_use = None
 
     def handle_output(parsed_message: ParsedMessage, board_dict: dict[int, str]) -> bool:
         """Process and output a single message. Returns True if processing should stop."""
-        nonlocal total_matching, processed_count, estimated_bytes, potential_files
+        nonlocal total_matching, processed_count, estimated_bytes, potential_files, collected_for_index
 
         total_matching += 1
         if settings.skip is not None and total_matching <= settings.skip:
@@ -1039,6 +1041,20 @@ def process_merged_files(
 
             estimated_bytes += len(encoded_buffer)
             potential_files += 1
+
+            if settings.format in ('html', 'markdown'):
+                rel_path = os.path.join(conf_dir if settings.organize else "", filename)
+                collected_for_index.append({
+                    'path': rel_path,
+                    'subject': parsed_message.header.msgsubject.strip(),
+                    'from': parsed_message.header.msgfrom.strip(),
+                    'to': parsed_message.header.msgto.strip(),
+                    'date': f"{parsed_message.header.msgdate} {parsed_message.header.msgtime}",
+                    'conf_num': parsed_message.confnum,
+                    'conf_name': parsed_message.confname or f"Conference {parsed_message.confnum}",
+                    'msgnum': parsed_message.header.msgnum
+                })
+
             if not settings.dry_run:
                 with open(full_path, 'wb') as f:
                     f.write(encoded_buffer)
@@ -1061,6 +1077,8 @@ def process_merged_files(
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, 'bbs_info', None)
+        if bbs_info and not bbs_info_to_use:
+            bbs_info_to_use = bbs_info
         bbs_key = f"{bbs_info.name}|{bbs_info.bbs_id}" if bbs_info else ""
 
         allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
@@ -1128,7 +1146,10 @@ def process_merged_files(
             if handle_output(parsed_message, board_dict):
                 break
 
-    if not settings.individual_files:
+    if settings.individual_files:
+        if not settings.dry_run and collected_for_index:
+            _write_index(collected_for_index, resolved_output_path, settings, bbs_info_to_use)
+    else:
         if not settings.dry_run:
             ordered_messages = (
                 _order_messages_by_thread(collected_messages)
@@ -1636,6 +1657,86 @@ def _write_sqlite(
 
     conn.commit()
     conn.close()
+
+
+def _write_index(
+    collected_info: list[dict[str, Any]],
+    output_dir: str | None,
+    settings: ProcessingSettings,
+    bbs_info: BBSInfo | None = None
+) -> None:
+    """Generate a browsable index (HTML or Markdown) for individual message files."""
+    if not output_dir or not collected_info:
+        return
+
+    # Group by conference
+    by_conf = defaultdict(list)
+    for info in collected_info:
+        by_conf[(info['conf_num'], info['conf_name'])].append(info)
+
+    title = "Message Archive"
+    if bbs_info and bbs_info.name:
+        title = f"{bbs_info.name} Message Archive"
+
+    if settings.format == 'html':
+        _write_html_index(by_conf, title, output_dir)
+    elif settings.format == 'markdown':
+        _write_markdown_index(by_conf, title, output_dir)
+
+
+def _write_html_index(
+    by_conf: Mapping[tuple[int, str], list[dict[str, Any]]],
+    title: str,
+    output_dir: str
+) -> None:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{html.escape(title)}</h1>")
+
+    for (conf_num, conf_name), messages in sorted(by_conf.items()):
+        html_parts.append(f"<h2>{html.escape(conf_name)} (Conference {conf_num})</h2>")
+        html_parts.append("<table>")
+        html_parts.append("<thead><tr><th>#</th><th>Date</th><th>From</th><th>To</th><th>Subject</th></tr></thead>")
+        html_parts.append("<tbody>")
+        for msg in messages:
+            html_parts.append("<tr>")
+            html_parts.append(f"<td>{msg['msgnum'] or ''}</td>")
+            html_parts.append(f"<td>{html.escape(msg['date'])}</td>")
+            html_parts.append(f"<td>{html.escape(msg['from'])}</td>")
+            html_parts.append(f"<td>{html.escape(msg['to'])}</td>")
+            html_parts.append(f'<td><a href="{html.escape(msg["path"])}">{html.escape(msg["subject"] or "(no subject)")}</a></td>')
+            html_parts.append("</tr>")
+        html_parts.append("</tbody></table>")
+
+    html_parts.extend(_get_html_footer())
+    index_path = os.path.join(output_dir, "index.html")
+    with open(index_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(html_parts))
+
+
+def _write_markdown_index(
+    by_conf: Mapping[tuple[int, str], list[dict[str, Any]]],
+    title: str,
+    output_dir: str
+) -> None:
+    md_parts = [f"# {title}\n"]
+
+    for (conf_num, conf_name), messages in sorted(by_conf.items()):
+        md_parts.append(f"## {conf_name} (Conference {conf_num})\n")
+        md_parts.append("| # | Date | From | To | Subject |")
+        md_parts.append("|---|---|---|---|---|")
+        for msg in messages:
+            def esc_md(text: Any) -> str:
+                return str(text or "").replace("|", "\\|")
+
+            subj = esc_md(msg['subject'] or "(no subject)")
+            from_name = esc_md(msg['from'])
+            to_name = esc_md(msg['to'])
+            md_parts.append(f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | [{subj}]({msg['path']}) |")
+        md_parts.append("")
+
+    index_path = os.path.join(output_dir, "README.md")
+    with open(index_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(md_parts))
 
 
 def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:

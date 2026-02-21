@@ -116,7 +116,7 @@ def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logge
         logger=logger,
     )
 
-    files = list(output_dir.iterdir())
+    files = [f for f in output_dir.iterdir() if f.name not in ("index.html", "README.md")]
     assert len(files) > 0
 
     # Check that the content is valid HTML (contains doctype or html tag)
@@ -139,7 +139,7 @@ def test_individual_files_markdown_format(tmp_path: Path, baseline_path: Path, l
         logger=logger,
     )
 
-    files = list(output_dir.iterdir())
+    files = [f for f in output_dir.iterdir() if f.name not in ("index.html", "README.md")]
     assert len(files) > 0
     with files[0].open("r", encoding="utf-8") as f:
         content = f.read()

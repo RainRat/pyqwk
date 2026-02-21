@@ -102,7 +102,7 @@ def main() -> None:
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message as a separate file with a human-readable name. This cannot be used with the --threaded option.',
+        help='Save each message as a separate file with a human-readable name. For HTML and Markdown formats, an index file (index.html or README.md) is automatically generated for easier browsing. This cannot be used with the --threaded option.',
         action='store_true',
     )
     io_group.add_argument(
