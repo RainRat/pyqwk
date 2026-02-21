@@ -64,7 +64,7 @@ qwk-gui
 ```
 
 **Key Features:**
-- **Search:** Quickly find messages by keyword or regular expression. Results are highlighted in the message text.
+- **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text.
 - **Filtering:** View messages from specific conferences or include private messages.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
@@ -191,6 +191,12 @@ Search for keywords in the author, subject, and message body. Results are highli
 qwk archive.qwk --search "BBS"
 ```
 
+**Regular Expression Search:**
+Search using advanced patterns (regex) by adding the `--regex` flag.
+```bash
+qwk archive.qwk --search "BBS|Board" --regex
+```
+
 **Pagination:**
 Skip a number of messages or limit the total results. This is useful for processing large archives in chunks.
 ```bash
@@ -267,6 +273,7 @@ for msg in parse_messages(file_data, None):
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
+| `--regex` | Use regular expressions for searching and filtering. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number. |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
 | `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
