@@ -927,6 +927,16 @@ def process_merged_files(
     use_streaming = not (settings.sort or settings.reverse)
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
 
+    use_colors = (
+        output_mode == 'stdout'
+        and hasattr(sys.stdout, 'isatty')
+        and sys.stdout.isatty()
+    )
+    include_header = not settings.no_header and settings.format not in ('html', 'markdown')
+    target_encoding = 'utf-8'
+    if settings.individual_files and settings.format == 'text':
+        target_encoding = settings.encoding
+
     def handle_output(parsed_message: ParsedMessage, board_dict: dict[int, str]) -> bool:
         """Process and output a single message. Returns True if processing should stop."""
         nonlocal total_matching, processed_count, estimated_bytes, potential_files
@@ -947,11 +957,6 @@ def process_merged_files(
             settings.redact_pii,
             settings.strip_ansi,
         )
-        use_colors = (
-            output_mode == 'stdout'
-            and hasattr(sys.stdout, 'isatty')
-            and sys.stdout.isatty()
-        )
 
         # Apply search highlighting to body for terminal output
         if use_colors and settings.search_term:
@@ -962,7 +967,6 @@ def process_merged_files(
                 use_colors=True
             )
 
-        include_header = not settings.no_header and settings.format not in ('html', 'markdown')
         if include_header:
             leading_newlines = 0
             text_prefix = parsed_message.text
@@ -987,9 +991,7 @@ def process_merged_files(
             processed_buffer = separator_str + processed_buffer
 
         if settings.individual_files:
-            target_encoding = 'utf-8'
             if settings.format == 'text':
-                target_encoding = settings.encoding
                 encoded_buffer = processed_buffer.encode(target_encoding)
             elif settings.format == 'json':
                 text_content = "" if settings.headers_only else processed_buffer
