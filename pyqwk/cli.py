@@ -177,7 +177,7 @@ def main() -> None:
         '--format',
         help=(
             'Choose the output format (text, json, xml, html, markdown, csv, mbox, eml, or sqlite). '
-            'If you do not choose one, it is guessed from the output filename.'
+            'If not specified, it is determined by the output filename extension.'
         ),
         default=None,
         choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
