@@ -1728,7 +1728,7 @@ def _write_markdown_index(
         md_parts.append("|---|---|---|---|---|")
         for msg in messages:
             def esc_md(text: Any) -> str:
-                return str(text or "").replace("|", "\\|")
+                return str(text or "").replace("|", "\\|").replace("[", "\\[").replace("]", "\\]")
 
             subj = esc_md(msg['subject'] or "(no subject)")
             from_name = esc_md(msg['from'])
