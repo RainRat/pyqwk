@@ -230,6 +230,13 @@ class QwkGuiApp:
         self.detail_text.tag_configure(
             "search_highlight", background="#ffff00", foreground="#000000"
         )
+        self.detail_text.tag_configure("link", foreground="blue", underline=True)
+        self.detail_text.tag_bind(
+            "link", "<Enter>", lambda e: self.detail_text.config(cursor="hand2")
+        )
+        self.detail_text.tag_bind(
+            "link", "<Leave>", lambda e: self.detail_text.config(cursor="")
+        )
 
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
@@ -296,7 +303,13 @@ class QwkGuiApp:
                 self.detail_text.insert(tk.END, f"{header.msgnum}\t", "header_value")
             if message.refnum:
                 self.detail_text.insert(tk.END, "Ref #: ", "header_label")
-                self.detail_text.insert(tk.END, f"{message.refnum}\t", "header_value")
+                self.detail_text.insert(tk.END, str(message.refnum), "link")
+                self.detail_text.insert(tk.END, "\t", "header_value")
+                self.detail_text.tag_bind(
+                    "link",
+                    "<Button-1>",
+                    lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(c, r),
+                )
             self.detail_text.insert(tk.END, "\n")
 
         header_end = self.detail_text.index(tk.INSERT)
@@ -535,6 +548,22 @@ class QwkGuiApp:
         self.detail_text.delete("1.0", tk.END)
         self.detail_text.insert(tk.END, text)
         self.detail_text.config(state=tk.DISABLED)
+
+    def jump_to_message(self, confnum: int, msgnum: int) -> None:
+        """Find and select a message by conference and message number."""
+        for i, m in enumerate(self.messages):
+            if m.header.confnum == confnum and m.header.msgnum == msgnum:
+                iid = str(i)
+                if self.message_list.exists(iid):
+                    self.message_list.selection_set(iid)
+                    self.message_list.see(iid)
+                    self.message_list.focus(iid)
+                    self.on_message_selected()
+                    return
+        messagebox.showinfo(
+            "Not Found",
+            f"Referenced message #{msgnum} was not found in the current view.",
+        )
 
     def on_message_selected(self, _event: object | None = None) -> None:
         selected_items = self.message_list.selection()

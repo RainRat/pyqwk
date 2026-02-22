@@ -408,3 +408,29 @@ class TestQwkGui:
         app.message_list.selection.return_value = ("not-an-int",)
         app.on_message_selected()
         app.detail_text.delete.assert_not_called()
+
+    def test_jump_to_message_found(self, mock_gui_deps):
+        app = get_app()
+        header1 = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        header2 = MessageHeader(' ', 2, "01-01-90", "12:05", "To", "From", "Sub", "", 1, 1, " ", 1, 1, "")
+        app.messages = [
+            ParsedMessage("Msg 1", 1, None, 1, header1),
+            ParsedMessage("Msg 2", 2, 1, 1, header2)
+        ]
+        app.message_list.exists.return_value = True
+
+        with patch.object(app, "on_message_selected") as mock_on_selected:
+            app.jump_to_message(1, 1) # Jump to conf 1, msg 1
+            mock_on_selected.assert_called_once()
+
+        app.message_list.selection_set.assert_called_with("0")
+        app.message_list.see.assert_called_with("0")
+        app.message_list.focus.assert_called_with("0")
+
+    def test_jump_to_message_not_found(self, mock_gui_deps):
+        app = get_app()
+        app.messages = []
+        app.jump_to_message(1, 999)
+        mock_gui_deps["messagebox"].showinfo.assert_called_with(
+            "Not Found", "Referenced message #999 was not found in the current view."
+        )
