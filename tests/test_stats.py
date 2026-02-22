@@ -62,6 +62,7 @@ def test_show_stats_json(capsys):
     assert len(data) == 1
     assert data[0]["total_messages"] == 1
     assert data[0]["authors"][0]["name"] == "Warren Zatwarniski"
+    assert data[0]["recipients"][0]["name"] == "Wes Kitchen"
 
 def test_show_stats_filter(capsys):
     input_path = "testdata/test2_qwk.zip"
