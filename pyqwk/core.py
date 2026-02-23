@@ -161,6 +161,7 @@ class ProcessingSettings:
     merge: bool = False
     unique: bool = False
     organize: bool = False
+    include_toc: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
@@ -1159,7 +1160,7 @@ def process_merged_files(
                 else collected_messages
             )
 
-            writers: dict[str, Callable[[list[ProcessedMessage], str | None, str], None]] = {
+            writers: dict[str, Callable[[list[ProcessedMessage], str | None, str, ProcessingSettings, BBSInfo | None], None]] = {
                 'json': _write_json,
                 'xml': _write_xml,
                 'html': _write_html,
@@ -1175,7 +1176,7 @@ def process_merged_files(
             output_encoding = 'utf-8'
             if settings.format == 'text':
                 output_encoding = settings.encoding
-            writer(ordered_messages, resolved_output_path, output_encoding)
+            writer(ordered_messages, resolved_output_path, output_encoding, settings, bbs_info_to_use)
         else:
             potential_files = 1
 
@@ -1217,7 +1218,11 @@ def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
 
 
 def _write_json(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     output_data = [_message_to_dict(msg) for msg in messages]
     output_json = json.dumps(output_data, indent=4, ensure_ascii=False)
@@ -1269,7 +1274,11 @@ def _serialize_message_xml(message: ProcessedMessage) -> str:
 
 
 def _write_xml(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     root = ET.Element('messages')
     for message in messages:
@@ -1305,9 +1314,10 @@ def _get_html_footer() -> list[str]:
     ]
 
 
-def _render_single_message_html(message: ProcessedMessage) -> list[str]:
+def _render_single_message_html(message: ProcessedMessage, msg_id: str | None = None) -> list[str]:
     parts = []
-    parts.append('<div class="message">')
+    id_attr = f' id="{msg_id}"' if msg_id else ""
+    parts.append(f'<div class="message"{id_attr}>')
 
     # Header
     header = message.header
@@ -1364,12 +1374,51 @@ def _serialize_message_markdown(message: ProcessedMessage) -> str:
 
 
 def _write_html(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
-    html_parts = _get_html_header('QWK Messages')
-    current_depth = 0
+    title = 'QWK Messages'
+    if bbs_info and bbs_info.name:
+        title = f"{bbs_info.name} Archive"
 
-    for message in messages:
+    html_parts = _get_html_header(title)
+
+    if settings and settings.include_toc:
+        html_parts.append(f"<h1>{html.escape(title)}</h1>")
+        if bbs_info:
+            html_parts.append('<div class="bbs-info">')
+            if bbs_info.sysop:
+                html_parts.append(f'<div><strong>SysOp:</strong> {html.escape(bbs_info.sysop)}</div>')
+            if bbs_info.location:
+                html_parts.append(f'<div><strong>Location:</strong> {html.escape(bbs_info.location)}</div>')
+            if bbs_info.packet_at:
+                html_parts.append(f'<div><strong>Packet Date:</strong> {html.escape(bbs_info.packet_at)}</div>')
+            html_parts.append(f'<div><strong>Total Messages:</strong> {len(messages)}</div>')
+            html_parts.append('</div>')
+
+        html_parts.append("<h2>Conferences</h2>")
+        html_parts.append("<ul>")
+        seen_confs = set()
+        for i, msg in enumerate(messages):
+            if msg.confnum not in seen_confs:
+                conf_name = msg.confname or f"Conference {msg.confnum}"
+                html_parts.append(f'<li><a href="#conf-{msg.confnum}">{html.escape(conf_name)} (Conf {msg.confnum})</a></li>')
+                seen_confs.add(msg.confnum)
+        html_parts.append("</ul>")
+        html_parts.append("<hr>")
+
+    current_depth = 0
+    seen_confs_for_headers = set()
+
+    for i, message in enumerate(messages):
+        if settings and settings.include_toc and message.confnum not in seen_confs_for_headers:
+            conf_name = message.confname or f"Conference {message.confnum}"
+            html_parts.append(f'<h2 id="conf-{message.confnum}">{html.escape(conf_name)}</h2>')
+            seen_confs_for_headers.add(message.confnum)
+
         while current_depth < message.depth:
             html_parts.append('<div class="reply">')
             current_depth += 1
@@ -1377,7 +1426,8 @@ def _write_html(
             html_parts.append('</div>')
             current_depth -= 1
 
-        html_parts.extend(_render_single_message_html(message))
+        msg_id = f"msg-{i}" if settings and settings.include_toc else None
+        html_parts.extend(_render_single_message_html(message, msg_id=msg_id))
 
     while current_depth > 0:
         html_parts.append('</div>')
@@ -1389,11 +1439,47 @@ def _write_html(
 
 
 def _write_markdown(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
-    md_parts = ["# QWK Messages\n"]
+    title = 'QWK Messages'
+    if bbs_info and bbs_info.name:
+        title = f"{bbs_info.name} Archive"
 
+    md_parts = [f"# {title}\n"]
+
+    if settings and settings.include_toc:
+        if bbs_info:
+            if bbs_info.sysop:
+                md_parts.append(f"- **SysOp:** {bbs_info.sysop}")
+            if bbs_info.location:
+                md_parts.append(f"- **Location:** {bbs_info.location}")
+            if bbs_info.packet_at:
+                md_parts.append(f"- **Packet Date:** {bbs_info.packet_at}")
+            md_parts.append(f"- **Total Messages:** {len(messages)}")
+            md_parts.append("")
+
+        md_parts.append("## Table of Contents\n")
+        seen_confs = set()
+        for msg in messages:
+            if msg.confnum not in seen_confs:
+                conf_name = msg.confname or f"Conference {msg.confnum}"
+                # Create a markdown-friendly anchor name
+                anchor = f"conf-{msg.confnum}"
+                md_parts.append(f"- [{conf_name}](#{anchor})")
+                seen_confs.add(msg.confnum)
+        md_parts.append("\n---\n")
+
+    seen_confs_for_headers = set()
     for message in messages:
+        if settings and settings.include_toc and message.confnum not in seen_confs_for_headers:
+            conf_name = message.confname or f"Conference {message.confnum}"
+            md_parts.append(f"## {conf_name} <a name=\"conf-{message.confnum}\"></a>\n")
+            seen_confs_for_headers.add(message.confnum)
+
         single_md = _render_single_message_markdown(message)
         if message.depth > 0:
             prefix = "> " * message.depth
@@ -1528,7 +1614,11 @@ def _serialize_message_eml(message: ProcessedMessage) -> str:
 
 
 def _write_mbox(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     """Write messages to an mbox file."""
     parts = []
@@ -1539,7 +1629,11 @@ def _write_mbox(
 
 
 def _write_eml(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     """Write messages as EML.
 
@@ -1554,10 +1648,43 @@ def _write_eml(
 
 
 def _write_text(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     """Write messages to text format with indentation for threads."""
     parts = []
+
+    if settings and settings.include_toc:
+        title = 'QWK Message Archive'
+        if bbs_info and bbs_info.name:
+            title = f"{bbs_info.name} Archive"
+
+        parts.append("=" * 80 + "\r\n")
+        parts.append(f"{title}\r\n")
+        parts.append("=" * 80 + "\r\n")
+        if bbs_info:
+            if bbs_info.sysop:
+                parts.append(f"SysOp:    {bbs_info.sysop}\r\n")
+            if bbs_info.location:
+                parts.append(f"Location: {bbs_info.location}\r\n")
+            if bbs_info.packet_at:
+                parts.append(f"Date:     {bbs_info.packet_at}\r\n")
+        parts.append(f"Messages: {len(messages)}\r\n\r\n")
+
+        parts.append("Conferences:\r\n")
+        seen_confs = set()
+        conf_counts = Counter(m.confnum for m in messages)
+        for msg in messages:
+            if msg.confnum not in seen_confs:
+                conf_name = msg.confname or f"Conference {msg.confnum}"
+                count = conf_counts[msg.confnum]
+                parts.append(f"  {msg.confnum:3}: {conf_name} ({count} messages)\r\n")
+                seen_confs.add(msg.confnum)
+        parts.append("-" * 80 + "\r\n\r\n")
+
     for message in messages:
         text = message.text
         if message.depth > 0:
@@ -1571,7 +1698,11 @@ def _write_text(
 
 
 def _write_csv(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     output = io.StringIO()
 
@@ -1599,7 +1730,11 @@ def _write_csv(
 
 
 def _write_sqlite(
-    messages: list[ProcessedMessage], output_path: str | None, encoding: str = 'utf-8'
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
 ) -> None:
     if output_path is None:
         raise ValueError("Output path is required for SQLite export.")
@@ -1883,6 +2018,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             "matching_messages": 0,
             "dates": {"earliest": None, "latest": None},
             "authors": [],
+            "recipients": [],
             "conferences": [],
             "subjects": [],
             "day_of_week": {},
@@ -1895,6 +2031,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
 
             author_counter = Counter()
+            recipient_counter = Counter()
             conf_counter = Counter()
             subject_counter = Counter()
             dow_counter = Counter()
@@ -1935,6 +2072,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                         latest_dt = dt
 
                     author_counter[message.header.msgfrom.strip()] += 1
+                    recipient_counter[message.header.msgto.strip()] += 1
                     conf_counter[message.confnum] += 1
                     subject_counter[_normalize_subject(message.header.msgsubject)] += 1
 
@@ -1954,6 +2092,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
             # Top 10
             stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
+            stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
             stats_entry["conferences"] = [{"number": n, "name": board_dict.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
             stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
             stats_entry["day_of_week"] = dict(dow_counter)
@@ -1972,6 +2111,11 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                     print(f"\n  {_colorize('Top Authors:', BOLD)}")
                     for auth in stats_entry["authors"]:
                         print(f"    {auth['name']:25} : {auth['count']}")
+
+                if recipient_counter:
+                    print(f"\n  {_colorize('Top Recipients:', BOLD)}")
+                    for rcpt in stats_entry["recipients"]:
+                        print(f"    {rcpt['name']:25} : {rcpt['count']}")
 
                 if conf_counter:
                     print(f"\n  {_colorize('Top Conferences:', BOLD)}")

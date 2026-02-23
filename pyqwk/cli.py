@@ -201,6 +201,12 @@ def main() -> None:
         action='store_true',
     )
     format_group.add_argument(
+        '--toc',
+        dest='include_toc',
+        help='Include a table of contents and archive summary in the output (supported for Text, HTML, and Markdown merged exports).',
+        action='store_true',
+    )
+    format_group.add_argument(
         '-m',
         '--merge',
         help='Merge multiple input archives into a single output. This allows conversations to span across different archives.',
@@ -410,6 +416,7 @@ def main() -> None:
         headers_only=args.headers_only,
         unique=args.unique,
         organize=args.organize,
+        include_toc=args.include_toc,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,
