@@ -1956,8 +1956,8 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
                 ):
                     total_messages += 1
                     conference_counts[message.confnum] += 1
-            except MessagesDatFormatError:
-                pass
+            except MessagesDatFormatError as e:
+                logger.warning(f"File {input_path} appears truncated or malformed: {e}")
 
             info_entry["total_messages"] = total_messages
             if bbs_info:
@@ -1997,7 +1997,7 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
 
             all_info.append(info_entry)
 
-        except Exception as e:
+        except PROCESSING_EXCEPTIONS as e:
             logger.error(f"Error reading info for {input_path}: {e}")
 
     if settings.format == 'json':
@@ -2144,7 +2144,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
             all_stats.append(stats_entry)
 
-        except Exception as e:
+        except PROCESSING_EXCEPTIONS as e:
             logger.error(f"Error calculating stats for {input_path}: {e}")
 
     if settings.format == 'json':

@@ -96,7 +96,7 @@ def test_process_multiple_files_error_handling(tmp_path, logger, default_setting
 
 def test_show_info_error_handling(logger, default_settings):
     with patch('pyqwk.core.load_data') as mock_load:
-        mock_load.side_effect = Exception("Mocked Error")
+        mock_load.side_effect = IOError("Mocked Error")
 
         with patch.object(logger, 'error') as mock_log_error:
             show_info(['fake.zip'], default_settings, logger)
@@ -106,7 +106,7 @@ def test_show_info_error_handling(logger, default_settings):
 
 def test_show_stats_error_handling(logger, default_settings):
     with patch('pyqwk.core.load_data') as mock_load:
-        mock_load.side_effect = Exception("Mocked Error")
+        mock_load.side_effect = IOError("Mocked Error")
 
         with patch.object(logger, 'error') as mock_log_error:
             show_stats(['fake.zip'], default_settings, logger)
