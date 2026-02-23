@@ -1039,7 +1039,8 @@ def process_merged_files(
             # Collision avoidance
             if os.path.exists(full_path):
                 short_hash = hashlib.sha1(encoded_buffer).hexdigest()[:8]
-                filename = filename.replace(".", f"-{short_hash}.")
+                base, ext = os.path.splitext(filename)
+                filename = f"{base}-{short_hash}{ext}"
                 full_path = os.path.join(target_dir, filename)
 
             estimated_bytes += len(encoded_buffer)
