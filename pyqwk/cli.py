@@ -83,7 +83,7 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Convert old QWK mail archives from the BBS era into modern formats like Text, HTML, JSON, and more."
+        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK format) into modern formats like Text, HTML, or JSON."
     )
     parser.add_argument(
         'input_paths',
@@ -102,7 +102,7 @@ def main() -> None:
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message as a separate file with a human-readable name. For HTML and Markdown formats, an index file (index.html or README.md) is automatically generated for easier browsing. This cannot be used with the --threaded option.',
+        help='Save each message as its own file. HTML and Markdown exports will also get a clickable index file. You cannot use this with --threaded.',
         action='store_true',
     )
     io_group.add_argument(
@@ -113,7 +113,7 @@ def main() -> None:
     io_group.add_argument(
         '-E',
         '--encoding',
-        help='Text character set of the input file (default: cp437).',
+        help='The text format of the input file (default is cp437).',
         default='cp437',
     )
 
@@ -127,7 +127,7 @@ def main() -> None:
         '-t',
         '--truncate-signatures',
         dest='truncatesignatures',
-        help="Stop showing the message once a signature (like '---') is found.",
+        help="Stop reading a message when a signature (like '---') is found.",
         action='store_true',
     )
     content_group.add_argument(
@@ -161,7 +161,7 @@ def main() -> None:
     content_group.add_argument(
         '-p',
         '--private',
-        help="Include messages marked as 'Private'.",
+        help="Include private messages.",
         action='store_true',
     )
     content_group.add_argument(
@@ -176,8 +176,8 @@ def main() -> None:
         '-F',
         '--format',
         help=(
-            'Choose the output format (text, json, xml, html, markdown, csv, mbox, eml, or sqlite). '
-            'If you do not choose one, it is guessed from the output filename.'
+            'Choose the output format (text, html, json, etc.). '
+            'If you leave this out, it is determined by the file extension of the output path.'
         ),
         default=None,
         choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
@@ -209,7 +209,7 @@ def main() -> None:
     format_group.add_argument(
         '-m',
         '--merge',
-        help='Merge multiple input archives into a single output. This allows conversations to span across different archives.',
+        help='Combine multiple archives into one file. This helps you follow conversations across different files.',
         action='store_true',
     )
 
@@ -279,25 +279,27 @@ def main() -> None:
     )
     filter_group.add_argument(
         '--after',
-        help='Filter messages dated on or after this date (format: YYYY-MM-DD).',
+        help='Only show messages from this date or later (YYYY-MM-DD).',
         default=None,
     )
     filter_group.add_argument(
         '-K',
         '--skip',
-        help='Skip the first [number] matching messages.',
+        metavar='NUM',
+        help='Skip this many matching messages.',
         type=int,
         default=None,
     )
     filter_group.add_argument(
         '--before',
-        help='Filter messages dated on or before this date (format: YYYY-MM-DD).',
+        help='Only show messages from this date or earlier (YYYY-MM-DD).',
         default=None,
     )
     filter_group.add_argument(
         '-L',
         '--limit',
-        help='Process only the first [number] matching messages.',
+        metavar='NUM',
+        help='Process only this many matching messages.',
         type=int,
         default=None,
     )

@@ -95,7 +95,7 @@ def _is_binary_line(
     in_uue_block: bool,
     in_base64_block: bool,
 ) -> tuple[bool, bool, bool, bool]:
-    """Detect whether a line is part of a binary payload.
+    """Detect whether a line is part of an attachment.
 
     Returns a tuple ``(should_skip, in_yenc_block, in_uue_block, in_base64_block)`` indicating whether the
     caller should exclude the line from output and the updated binary block states.
@@ -177,7 +177,7 @@ class ProcessingSettings:
 
 @dataclass
 class BBSInfo:
-    """Metadata about the BBS that generated the QWK packet."""
+    """Information about the BBS that generated the QWK packet."""
     name: str = ""
     location: str = ""
     phone: str = ""
@@ -191,7 +191,7 @@ class BBSInfo:
 
 
 class ConferenceMap(dict):
-    """A dictionary mapping conference numbers to names, with optional BBS metadata."""
+    """A dictionary mapping conference numbers to names, with optional BBS information."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bbs_info: BBSInfo | None = None
@@ -343,7 +343,7 @@ class MessageHeader:
 
         Args:
             board_dict: Mapping of conference numbers to human-readable names.
-            verbose: Whether to include extra metadata such as message numbers and reference numbers.
+            verbose: Whether to include extra information such as message numbers and reference numbers.
             include_separator: Whether to prepend the message separator line.
             use_colors: Whether to use ANSI colors for terminal output.
             highlight_term: Optional term to highlight in the header values.
@@ -458,20 +458,18 @@ class LogFormatter(logging.Formatter):
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray, dict[int, str]]:
-    """Load message and conference metadata from a QWK packet or raw file.
+    """Load message and conference information from a QWK packet or raw file.
 
     Args:
-        input_path: Path to either a ``messages.dat`` file or a QWK archive containing
-            that file (and optionally ``CONTROL.DAT``).
-        logger: Logger used to report warnings when optional metadata is missing.
-        encoding: Character encoding to use when decoding metadata.
+        input_path: Path to either a ``messages.dat`` file or a QWK archive.
+        logger: Logger used to report warnings when optional information is missing.
+        encoding: The text format to use when reading information.
 
     Returns:
-        A tuple ``(file_data, board_dict)`` where ``file_data`` is a mutable
-        ``bytearray`` containing the full contents of ``messages.dat`` and
-        ``board_dict`` maps conference numbers to their names parsed from
-        ``CONTROL.DAT``. If ``CONTROL.DAT`` is not present, the mapping will be empty
-        and conference identifiers will remain numeric.
+        A tuple ``(file_data, board_dict)`` where ``file_data`` contains the
+        contents of ``messages.dat`` and ``board_dict`` maps conference numbers
+        to their names. If conference names are not found, the names will just
+        be the conference numbers.
     """
     board_dict: dict[int, str] = {}
     if zipfile.is_zipfile(input_path):
@@ -581,19 +579,19 @@ def parse_messages(
     encoding: str = 'cp437',
     headers_only: bool = False,
 ) -> Iterator[ParsedMessage]:
-    """Parse a QWK messages.dat payload into message objects.
+    """Convert the raw data from a QWK message file into a list of messages.
 
     Args:
         file_data: Raw bytes from a messages.dat file.
-        progress_bar: Optional tqdm-compatible progress reporter to update as blocks are read.
-        encoding: Character encoding to use when decoding messages.
+        progress_bar: Optional progress reporter to update as blocks are read.
+        encoding: The text format to use when reading messages.
         headers_only: If True, skips reading the message body content.
 
     Yields:
-        ParsedMessage instances containing the message body, header, and metadata flags.
+        ParsedMessage instances containing the message body, header, and information flags.
 
     Raises:
-        MessagesDatFormatError: If the payload does not start with a valid messages.dat header.
+        MessagesDatFormatError: If the data does not start with a valid messages.dat header.
         InvalidMessageTypeError: If a message header encodes an unknown message type.
     """
     blocks_remaining = 0
@@ -677,18 +675,18 @@ def process_message(
     redact_pii: bool,
     strip_ansi: bool = False,
 ) -> str:
-    """Transform a raw message body according to processing settings.
+    """Clean up and format a raw message body.
 
     Args:
-        message_buffer: The original message text with DOS-style newlines.
-        truncate_signatures: Whether to stop output at common signature separators.
-        cut_quoting: Whether to remove quoted text and quote headers.
-        binaries_removal: Whether to remove attachments (like images or programs) encoded in the text.
-        redact_pii: Whether to hide personal information like email addresses and phone numbers.
-        strip_ansi: Whether to remove color codes and other formatting symbols from the text.
+        message_buffer: The original message text.
+        truncate_signatures: If True, stop reading when a signature is found.
+        cut_quoting: If True, remove quoted text from earlier messages.
+        binaries_removal: If True, remove attachments (like images) from the text.
+        redact_pii: If True, hide personal information like email addresses.
+        strip_ansi: If True, remove color codes and other symbols from the text.
 
     Returns:
-        The processed message text with transformations applied.
+        The cleaned message text.
     """
     message_buffer = message_buffer.lstrip('\r\n').rstrip()
     lines = message_buffer.splitlines()
@@ -1503,7 +1501,7 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
         msgtime: Time string in 'HH:MM' format.
 
     Returns:
-        A datetime object. Defaults to epoch if parsing fails.
+        A datetime object. Defaults to 1970-01-01 if the date is invalid.
     """
     try:
         # Normalize date separators
@@ -1527,7 +1525,7 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
 
 
 def _serialize_message_mbox(message: ProcessedMessage) -> str:
-    """Serialize a message to mbox format with threading and metadata.
+    """Serialize a message to mbox format with threading and extra headers.
 
     Includes standard email headers for threading (Message-ID, In-Reply-To, References)
     and custom X-QWK headers for conference names, message numbers, and statuses.
@@ -1579,7 +1577,7 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
         parts.append(f"In-Reply-To: {parent_id}")
         parts.append(f"References: {parent_id}")
 
-    # QWK Metadata headers
+    # QWK Information headers
     parts.append(f"X-QWK-Conference: {header.confnum}")
     if message.confname:
         parts.append(f"X-QWK-Conference-Name: {message.confname}")
