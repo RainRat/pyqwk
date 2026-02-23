@@ -180,13 +180,13 @@ class TestMessageHeaderFormatting:
         board_dict = {1: "General"}
         text = sample_header.format_text(board_dict, verbose=False)
 
-        assert "Conference: General" in text
-        assert "Date: 01-01-90 12:00" in text
-        assert "From: SysOp" in text
-        assert "To: All Users" in text
-        assert "Subject: Welcome!" in text
-        assert "Message number:" not in text
-        assert "Reference number:" not in text
+        assert "Conference:     General" in text
+        assert "Date:           01-01-90 12:00" in text
+        assert "From:           SysOp" in text
+        assert "To:             All Users" in text
+        assert "Subject:        Welcome!" in text
+        assert "Message #:" not in text
+        assert "Reference #:" not in text
         assert text.startswith("-" * 80)
 
     def test_format_text_conf_not_found(self, sample_header: MessageHeader) -> None:
@@ -196,21 +196,18 @@ class TestMessageHeaderFormatting:
         text = sample_header.format_text(board_dict, verbose=False)
 
         assert "Conference:" not in text
-        assert "Date: 01-01-90 12:00" in text
+        assert "Date:           01-01-90 12:00" in text
 
     def test_format_text_verbose(self, sample_header: MessageHeader) -> None:
         """Test verbose formatting."""
         board_dict = {1: "General"}
         text = sample_header.format_text(board_dict, verbose=True)
 
-        assert "Conference: General" in text
-        assert "Message number: 100" in text
-        assert "Reference number: 99" in text
-        # Check layout: Message number is followed by Date on the same line (sort of)
-        # qwk.py: header_parts.append("Message number: " + message_number + (" " * 20))
-        #         header_parts.append("Date: " + self.msgdate ...)
-        # So it should be "Message number: 100                    Date: ..."
-        assert "Message number: 100                    Date: 01-01-90 12:00" in text
+        assert "Conference:     General" in text
+        assert "Message #:      100" in text
+        assert "Reference #:    99" in text
+        # Check layout: Message number is followed by Date on the same line
+        assert "Message #:      100    Date:       01-01-90 12:00" in text
 
     def test_format_text_verbose_conf_not_found(self, sample_header: MessageHeader) -> None:
         """Test verbose formatting when conference is missing."""
@@ -218,7 +215,7 @@ class TestMessageHeaderFormatting:
         text = sample_header.format_text(board_dict, verbose=True)
 
         # verbose=True forces conference display even if not found, using the number
-        assert "Conference: 1" in text
+        assert "Conference:     1" in text
 
     def test_format_text_no_separator(self, sample_header: MessageHeader) -> None:
         """Test formatting without leading separator."""
@@ -226,7 +223,7 @@ class TestMessageHeaderFormatting:
         text = sample_header.format_text(board_dict, verbose=False, include_separator=False)
 
         assert not text.startswith("-")
-        assert "Conference: General" in text
+        assert "Conference:     General" in text
 
     def test_as_dict(self, sample_header: MessageHeader) -> None:
         """Test conversion to dictionary."""

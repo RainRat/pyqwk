@@ -39,10 +39,10 @@ def test_header_format_text_colors():
         highlight_term="Bob"
     )
 
-    # Check for bold label and highlighted value
-    assert "\x1b[1mFrom: \x1b[0m" in formatted
+    # Check for dim/grey label and highlighted value
+    assert "\x1b[90mFrom:           \x1b[0m" in formatted
     assert "\x1b[7mBob\x1b[0m" in formatted
-    assert "\x1b[1mSubject: \x1b[0mTesting" in formatted
+    assert "\x1b[90mSubject:        \x1b[0mTesting" in formatted
 
 def test_highlight_text_no_term():
     text = "Hello world"
