@@ -175,8 +175,6 @@ class QwkGuiApp:
         paned.add(list_frame, weight=1)
         paned.add(detail_frame, weight=2)
 
-        ttk.Label(list_frame, text="Messages").pack(anchor=tk.W)
-
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
@@ -211,19 +209,27 @@ class QwkGuiApp:
 
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
-        ttk.Label(detail_frame, text="Message Detail").pack(anchor=tk.W)
-        self.detail_text = tk.Text(detail_frame, wrap=tk.WORD, tabs=("2.5c", "10c"))
+        self.detail_text = tk.Text(
+            detail_frame,
+            wrap=tk.WORD,
+            tabs=("2.5c", "10c"),
+            padx=15,
+            pady=15,
+            background="#ffffff",
+            relief=tk.FLAT,
+            borderwidth=0,
+        )
         self.detail_text.pack(fill=tk.BOTH, expand=True)
         self.detail_text.config(state=tk.DISABLED)
 
         # Configure tags for visual hierarchy
         self.detail_text.tag_configure(
-            "header_label", font=("TkDefaultFont", 9, "bold"), foreground="#444444"
+            "header_label", font=("TkDefaultFont", 10, "bold"), foreground="#444444"
         )
         self.detail_text.tag_configure("header_area", background="#f9f9f9")
-        self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 9))
+        self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 10))
         self.detail_text.tag_configure(
-            "header_subject", font=("TkDefaultFont", 11, "bold")
+            "header_subject", font=("TkDefaultFont", 14, "bold")
         )
         self.detail_text.tag_configure("header_separator", foreground="#cccccc")
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
@@ -284,7 +290,7 @@ class QwkGuiApp:
         header_start = "1.0"
 
         # Subject as a prominent title
-        self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n", "header_subject")
+        self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n\n", "header_subject")
 
         def insert_field(label: str, value: str, last_in_row: bool = False) -> None:
             self.detail_text.insert(tk.END, f"{label}: ", "header_label")
