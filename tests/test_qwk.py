@@ -86,6 +86,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         limit=None,
         skip=None,
         dry_run=False,
+        oneline=False,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -103,6 +104,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         cutquoting=False,
         individualfiles=False,
         threaded=False,
+        oneline=False,
         include_toc=False,
         merge=False,
         unique=False,
