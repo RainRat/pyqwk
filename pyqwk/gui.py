@@ -298,8 +298,8 @@ class QwkGuiApp:
             if last_in_row:
                 self.detail_text.insert(tk.END, "\n")
 
-        insert_field("From", header.msgfrom)
-        insert_field("To", header.msgto, last_in_row=True)
+        insert_field("From", header.msgfrom.strip())
+        insert_field("To", header.msgto.strip(), last_in_row=True)
         insert_field("Date", f"{header.msgdate} {header.msgtime}")
         insert_field("Conf", conf_name, last_in_row=True)
 

@@ -145,6 +145,13 @@ def main() -> None:
         action='store_true',
     )
     content_group.add_argument(
+        '-x',
+        '--extract-attachments',
+        dest='extractattachments',
+        help='Extract binary attachments (UUE, yEnc, Base64) to an attachments/ folder.',
+        action='store_true',
+    )
+    content_group.add_argument(
         '-r',
         '--redact-pii',
         dest='redactpii',
@@ -430,6 +437,7 @@ def main() -> None:
         unique=args.unique,
         organize=args.organize,
         include_toc=args.include_toc,
+        extract_attachments=args.extractattachments,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,

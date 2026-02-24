@@ -157,6 +157,12 @@ qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
 qwk archive.qwk --clean -o clean.txt
 ```
 
+**Extract binary attachments (like images or programs) to a folder:**
+```bash
+qwk archive.qwk --extract-attachments -o output/
+```
+*Tip: This finds UUE, Base64, and yEnc files hidden in messages and saves them to an `attachments/` subfolder.*
+
 **Hide personal information (emails and phone numbers):**
 ```bash
 qwk archive.qwk --redact-pii -o safe.txt
@@ -282,6 +288,7 @@ for msg in parse_messages(file_data, None):
 | `--regex` | Use regular expressions for searching and filtering. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number. |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
+| `-x, --extract-attachments` | Extract binary attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
 | `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
 | `-c, --cut-quoting` | Remove text quoted from earlier messages. |
 | `-b, --binaries-removal` | Remove attachments such as images or programs. |
