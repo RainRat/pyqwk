@@ -115,6 +115,11 @@ qwk archive.qwk --format eml -o ./output_folder/
 qwk archive.qwk --format json -o data.json
 ```
 
+**Show a one-line summary for each message (great for quick scanning):**
+```bash
+qwk archive.qwk --oneline
+```
+
 **Save as Markdown:**
 ```bash
 qwk archive.qwk --format markdown -o messages.md
@@ -270,6 +275,7 @@ for msg in parse_messages(file_data, None):
 | `--organize` | Organize individual files into subfolders by conference. |
 | `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
+| `--oneline` | Show each message as a single-line summary (Conference, Date, From, Subject). |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |

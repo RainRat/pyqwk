@@ -201,6 +201,11 @@ def main() -> None:
         action='store_true',
     )
     format_group.add_argument(
+        '--oneline',
+        help='Show each message as a single line summary (Conference, Date, From, Subject).',
+        action='store_true',
+    )
+    format_group.add_argument(
         '--toc',
         dest='include_toc',
         help='Include a table of contents and archive summary in the output (supported for Text, HTML, and Markdown merged exports).',
@@ -342,6 +347,12 @@ def main() -> None:
     if args.threaded and args.individualfiles:
         parser.error("You cannot use --threaded and --individual-files at the same time.")
 
+    if args.oneline and args.individualfiles:
+        parser.error("You cannot use --oneline and --individual-files at the same time.")
+
+    if args.oneline:
+        args.headers_only = True
+
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f"'{args.loglevel}' is not a valid log level.")
@@ -435,6 +446,7 @@ def main() -> None:
         sort=args.sort,
         reverse=args.reverse,
         dry_run=args.dry_run,
+        oneline=args.oneline,
     )
 
     if args.info:

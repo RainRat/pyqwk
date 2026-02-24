@@ -173,6 +173,7 @@ class ProcessingSettings:
     skip: int | None = None
     sort: str | None = None
     reverse: bool = False
+    oneline: bool = False
 
 
 @dataclass
@@ -390,6 +391,31 @@ class MessageHeader:
             header_parts.append(fmt_line("Reference number: ", reference_number))
         header_parts.append("\r\n")
         return "".join(header_parts)
+
+    def format_oneline(
+        self,
+        board_dict: Mapping[int, str],
+        use_colors: bool = False,
+        highlight_term: str | None = None,
+        is_regex: bool = False,
+        verbose: bool = False,
+    ) -> str:
+        """Render a message header as a single line summary."""
+        conf_name = board_dict.get(self.confnum, str(self.confnum))
+        date_str = f"{self.msgdate} {self.msgtime}"
+        from_name = self.msgfrom.strip()
+        subject = self.msgsubject.strip()
+
+        if highlight_term and use_colors:
+            from_name = _highlight_text(from_name, highlight_term, is_regex, use_colors)
+            subject = _highlight_text(subject, highlight_term, is_regex, use_colors)
+            conf_name = _highlight_text(conf_name, highlight_term, is_regex, use_colors)
+
+        msgnum_part = ""
+        if verbose:
+            msgnum_part = f"{(self.msgnum or ''):<6} "
+
+        return f"{msgnum_part}{conf_name:<16} {date_str:<14} {from_name:<20} {subject}\r\n"
 
 
 class MessagesDatFormatError(Exception):
@@ -952,46 +978,55 @@ def process_merged_files(
             return True
         processed_count += 1
 
-        processed_buffer = process_message(
-            parsed_message.text,
-            settings.truncate_signatures,
-            settings.cut_quoting,
-            settings.binaries_removal,
-            settings.redact_pii,
-            settings.strip_ansi,
-        )
-
-        # Apply search highlighting to body for terminal output
-        if use_colors and settings.search_term:
-            processed_buffer = _highlight_text(
-                processed_buffer,
-                settings.search_term,
-                settings.regex,
-                use_colors=True
-            )
-
-        if include_header:
-            leading_newlines = 0
-            text_prefix = parsed_message.text
-            while text_prefix.startswith('\r\n'):
-                leading_newlines += 1
-                text_prefix = text_prefix[2:]
-            if leading_newlines and not processed_buffer.startswith('\r\n'):
-                processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
-
-            header_text = parsed_message.header.format_text(
+        if settings.oneline:
+            processed_buffer = parsed_message.header.format_oneline(
                 board_dict,
-                settings.verbose,
-                include_separator=False,
                 use_colors=use_colors,
                 highlight_term=settings.search_term,
                 is_regex=settings.regex,
+                verbose=settings.verbose,
             )
-            processed_buffer = header_text + processed_buffer
+        else:
+            processed_buffer = process_message(
+                parsed_message.text,
+                settings.truncate_signatures,
+                settings.cut_quoting,
+                settings.binaries_removal,
+                settings.redact_pii,
+                settings.strip_ansi,
+            )
 
-        # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
-        if settings.format == 'text' or include_header:
-            processed_buffer = separator_str + processed_buffer
+            # Apply search highlighting to body for terminal output
+            if use_colors and settings.search_term:
+                processed_buffer = _highlight_text(
+                    processed_buffer,
+                    settings.search_term,
+                    settings.regex,
+                    use_colors=True
+                )
+
+            if include_header:
+                leading_newlines = 0
+                text_prefix = parsed_message.text
+                while text_prefix.startswith('\r\n'):
+                    leading_newlines += 1
+                    text_prefix = text_prefix[2:]
+                if leading_newlines and not processed_buffer.startswith('\r\n'):
+                    processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+
+                header_text = parsed_message.header.format_text(
+                    board_dict,
+                    settings.verbose,
+                    include_separator=False,
+                    use_colors=use_colors,
+                    highlight_term=settings.search_term,
+                    is_regex=settings.regex,
+                )
+                processed_buffer = header_text + processed_buffer
+
+            # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
+            if settings.format == 'text' or include_header:
+                processed_buffer = separator_str + processed_buffer
 
         if settings.individual_files:
             if settings.format == 'text':
@@ -1657,6 +1692,12 @@ def _write_text(
 ) -> None:
     """Write messages to text format with indentation for threads."""
     parts = []
+
+    if settings and settings.oneline:
+        msgnum_hdr = f"{'Num':<6} " if settings.verbose else ""
+        header_line = f"{msgnum_hdr}{'Conference':<16} {'Date':<14} {'From':<20} {'Subject'}\r\n"
+        parts.append(header_line)
+        parts.append("-" * len(header_line.strip()) + "\r\n")
 
     if settings and settings.include_toc:
         title = 'QWK Message Archive'
