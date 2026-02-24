@@ -400,9 +400,9 @@ class MessageHeader:
         else:
             header_parts.append(fmt_line("Date:", self.msgdate + " " + self.msgtime))
 
-        header_parts.append(fmt_line("From:", self.msgfrom))
-        header_parts.append(fmt_line("To:", self.msgto))
-        header_parts.append(fmt_line("Subject:", self.msgsubject))
+        header_parts.append(fmt_line("From:", self.msgfrom.strip()))
+        header_parts.append(fmt_line("To:", self.msgto.strip()))
+        header_parts.append(fmt_line("Subject:", self.msgsubject.strip()))
 
         if verbose:
             reference_number = str(self.refnum) if self.refnum is not None else ""
