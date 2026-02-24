@@ -434,3 +434,68 @@ class TestQwkGui:
         mock_gui_deps["messagebox"].showinfo.assert_called_with(
             "Not Found", "Referenced message #999 was not found in the current view."
         )
+
+    def test_selection_restoration_success(self, mock_gui_deps):
+        app = get_app()
+        header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        msg = ParsedMessage("Body", 1, None, 1, header)
+        app.messages = [msg]
+
+        app.message_list.selection.return_value = ("0",)
+        app.message_list.exists.return_value = True
+
+        with patch("pyqwk.gui.load_data") as mock_load_data, \
+             patch("pyqwk.gui.parse_messages") as mock_parse_messages, \
+             patch("pyqwk.gui.matches_filters") as mock_matches_filters, \
+             patch("pyqwk.gui.process_message") as mock_process_message, \
+             patch.object(app, "on_message_selected"):
+
+            mock_load_data.return_value = (bytearray(), {1: "General"})
+            mock_parse_messages.return_value = [msg]
+            mock_matches_filters.return_value = True
+            mock_process_message.return_value = "Body"
+
+            app.load_messages("test.qwk")
+
+            app.message_list.selection_set.assert_called_with("0")
+            app.message_list.focus.assert_called_with("0")
+
+    def test_selection_restoration_fallback(self, mock_gui_deps):
+        app = get_app()
+        header1 = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub1", "", None, 1, " ", 1, 1, "")
+        header2 = MessageHeader(' ', 2, "01-01-90", "12:05", "To", "From", "Sub2", "", None, 1, " ", 1, 1, "")
+        msg1 = ParsedMessage("Body1", 1, None, 1, header1)
+        msg2 = ParsedMessage("Body2", 2, None, 1, header2)
+        app.messages = [msg1]
+
+        app.message_list.selection.return_value = ("0",)
+        app.message_list.get_children.return_value = ["0"]
+
+        with patch("pyqwk.gui.load_data") as mock_load_data, \
+             patch("pyqwk.gui.parse_messages") as mock_parse_messages, \
+             patch("pyqwk.gui.matches_filters") as mock_matches_filters, \
+             patch("pyqwk.gui.process_message") as mock_process_message, \
+             patch.object(app, "on_message_selected"):
+
+            mock_load_data.return_value = (bytearray(), {1: "General"})
+            mock_parse_messages.return_value = [msg2]
+            mock_matches_filters.return_value = True
+            mock_process_message.return_value = "Body2"
+
+            app.load_messages("test.qwk")
+
+            app.message_list.selection_set.assert_called_with("0")
+
+    def test_selection_capture_invalid_iid_type(self, mock_gui_deps):
+        app = get_app()
+        app.messages = []
+        app.message_list.selection.return_value = ("not-an-int",)
+        with patch("pyqwk.gui.load_data", return_value=(bytearray(), {})):
+            app.load_messages("test.qwk")
+
+    def test_selection_capture_out_of_range_index(self, mock_gui_deps):
+        app = get_app()
+        app.messages = []
+        app.message_list.selection.return_value = ("99",)
+        with patch("pyqwk.gui.load_data", return_value=(bytearray(), {})):
+            app.load_messages("test.qwk")
