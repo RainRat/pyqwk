@@ -362,9 +362,7 @@ class MessageHeader:
             not_found_flag = True
 
         def fmt_val(val: str) -> str:
-            if highlight_term and use_colors:
-                return _highlight_text(val, highlight_term, is_regex, use_colors)
-            return val
+            return _highlight_text(val, highlight_term, is_regex, use_colors)
 
         def fmt_line(label: str, value: str, newline: bool = True, pad: int = 16) -> str:
             suffix = "\r\n" if newline else ""
@@ -425,10 +423,9 @@ class MessageHeader:
         from_name = self.msgfrom.strip()
         subject = self.msgsubject.strip()
 
-        if highlight_term and use_colors:
-            from_name = _highlight_text(from_name, highlight_term, is_regex, use_colors)
-            subject = _highlight_text(subject, highlight_term, is_regex, use_colors)
-            conf_name = _highlight_text(conf_name, highlight_term, is_regex, use_colors)
+        from_name = _highlight_text(from_name, highlight_term, is_regex, use_colors)
+        subject = _highlight_text(subject, highlight_term, is_regex, use_colors)
+        conf_name = _highlight_text(conf_name, highlight_term, is_regex, use_colors)
 
         msgnum_part = ""
         if verbose:
@@ -1014,13 +1011,12 @@ def process_merged_files(
             )
 
             # Apply search highlighting to body for terminal output
-            if use_colors and settings.search_term:
-                processed_buffer = _highlight_text(
-                    processed_buffer,
-                    settings.search_term,
-                    settings.regex,
-                    use_colors=True
-                )
+            processed_buffer = _highlight_text(
+                processed_buffer,
+                settings.search_term,
+                settings.regex,
+                use_colors=use_colors
+            )
 
             if include_header:
                 leading_newlines = 0
