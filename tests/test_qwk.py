@@ -470,7 +470,7 @@ def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logg
     assert {message.header.is_private for message in messages} == {False}
     assert {message.header.is_password for message in messages} == {False}
     assert all(
-        "Conference: Net140.Tech"
+        "Conference:     Net140.Tech"
         in message.header.format_text(board_dict, verbose=False)
         for message in messages
     )

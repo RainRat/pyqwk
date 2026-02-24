@@ -4,6 +4,7 @@ import struct
 import re
 import hashlib
 import os
+import shutil
 import logging
 import json
 import html
@@ -365,30 +366,48 @@ class MessageHeader:
                 return _highlight_text(val, highlight_term, is_regex, use_colors)
             return val
 
-        def fmt_line(label: str, value: str, newline: bool = True) -> str:
+        def fmt_line(label: str, value: str, newline: bool = True, pad: int = 16) -> str:
             suffix = "\r\n" if newline else ""
+            label_fmt = f"{label:<{pad}}"
             if use_colors:
-                return f"\x1b[1m{label}\x1b[0m{fmt_val(value)}{suffix}"
-            return f"{label}{value}{suffix}"
+                # Use Dim (90) for labels to create better visual hierarchy
+                return f"\x1b[90m{label_fmt}\x1b[0m{fmt_val(value)}{suffix}"
+            return f"{label_fmt}{value}{suffix}"
 
         header_parts: list[str] = []
         if include_separator:
-            header_parts.append(("-" * 80) + "\r\n")
+            # Match terminal width up to 80 chars for a polished look
+            try:
+                width = shutil.get_terminal_size().columns
+            except (AttributeError, ValueError):  # pragma: no cover
+                width = 80
+            width = min(80, width)
+
+            sep = ("-" * width) + "\r\n"
+            if use_colors:
+                sep = f"\x1b[90m{sep}\x1b[0m"
+            header_parts.append(sep)
+
         if verbose or not not_found_flag:
-            header_parts.append(fmt_line("Conference: ", str(conf_name)))
+            header_parts.append(fmt_line("Conference:", str(conf_name)))
+
         if verbose:
             message_number = str(self.msgnum) if self.msgnum is not None else ""
-            # Original layout: Message number and Date on the same line
-            header_parts.append(fmt_line("Message number: ", message_number + (" " * 20), newline=False))
-        header_parts.append(
-            fmt_line("Date: ", self.msgdate + " " + self.msgtime)
-        )
-        header_parts.append(fmt_line("From: ", self.msgfrom))
-        header_parts.append(fmt_line("To: ", self.msgto))
-        header_parts.append(fmt_line("Subject: ", self.msgsubject))
+            # Message number and Date share a line in verbose mode for better information density
+            header_parts.append(fmt_line("Message #:", message_number, newline=False, pad=16))
+            header_parts.append("    ")  # Spacer between columns
+            header_parts.append(fmt_line("Date:", self.msgdate + " " + self.msgtime, pad=12))
+        else:
+            header_parts.append(fmt_line("Date:", self.msgdate + " " + self.msgtime))
+
+        header_parts.append(fmt_line("From:", self.msgfrom))
+        header_parts.append(fmt_line("To:", self.msgto))
+        header_parts.append(fmt_line("Subject:", self.msgsubject))
+
         if verbose:
             reference_number = str(self.refnum) if self.refnum is not None else ""
-            header_parts.append(fmt_line("Reference number: ", reference_number))
+            header_parts.append(fmt_line("Reference #:", reference_number))
+
         header_parts.append("\r\n")
         return "".join(header_parts)
 
@@ -1215,6 +1234,26 @@ def process_merged_files(
             writer(ordered_messages, resolved_output_path, output_encoding, settings, bbs_info_to_use)
         else:
             potential_files = 1
+
+    if not settings.dry_run and not settings.quiet:
+        BOLD = "1"
+        GREEN = "32"
+
+        count_label = "message" if processed_count == 1 else "messages"
+        msg = f"Successfully processed {processed_count} {count_label}"
+
+        if settings.individual_files:
+            msg += f" into '{resolved_output_path}'."
+        elif resolved_output_path:
+            msg += f" and saved to '{resolved_output_path}'."
+        else:
+            msg += "."
+
+        # Use a localized colorization that respects terminal settings
+        if use_colors:
+            print(f"\n\033[{BOLD};{GREEN}m{msg}\033[0m")
+        else:
+            print(f"\n{msg}")
 
     if settings.dry_run:
         CYAN = "36"

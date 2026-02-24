@@ -73,8 +73,8 @@ def test_cli_headers_only_text_output(capsys, baseline_path: Path, logger: loggi
     captured = capsys.readouterr()
 
     # Check that we see header info
-    assert "Subject: New User" in captured.out
-    assert "From: GammaO" in captured.out
+    assert "Subject:        New User" in captured.out
+    assert "From:           GammaO" in captured.out
 
     # Check that we do NOT see body text
     assert "Hello this is my first day" not in captured.out

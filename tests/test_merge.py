@@ -80,5 +80,5 @@ def test_merge_archives_threading(tmp_path):
 
     assert output_file.exists()
     content = output_file.read_text(encoding="cp437")
-    assert "Conference: Pnw.Tech" in content
-    assert "Conference: Net140.Tech" in content
+    assert "Conference:     Pnw.Tech" in content
+    assert "Conference:     Net140.Tech" in content
