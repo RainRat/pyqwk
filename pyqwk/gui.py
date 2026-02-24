@@ -81,6 +81,53 @@ class QwkGuiApp:
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Escape>", self.clear_search)
+        self.root.bind("j", lambda e: self._select_relative_message(1))
+        self.root.bind("n", lambda e: self._select_relative_message(1))
+        self.root.bind("k", lambda e: self._select_relative_message(-1))
+        self.root.bind("p", lambda e: self._select_relative_message(-1))
+
+    def _get_all_tree_items(self) -> list[str]:
+        """Return a flattened list of all item IDs currently visible in the treeview."""
+        items = []
+
+        def traverse(item_id):
+            items.append(item_id)
+            for child in self.message_list.get_children(item_id):
+                traverse(child)
+
+        for root_item in self.message_list.get_children(""):
+            traverse(root_item)
+        return items
+
+    def _select_relative_message(self, delta: int) -> None:
+        """Move the selection up or down in the treeview display order."""
+        if not self.messages:
+            return
+
+        # If the search entry has focus, don't hijack keyboard navigation
+        if self.root.focus_get() == self.search_entry:
+            return
+
+        all_items = self._get_all_tree_items()
+        if not all_items:
+            return
+
+        current_selection = self.message_list.selection()
+        if not current_selection:
+            new_item = all_items[0]
+        else:
+            current_iid = current_selection[0]
+            try:
+                current_idx = all_items.index(current_iid)
+                new_idx = max(0, min(len(all_items) - 1, current_idx + delta))
+                new_item = all_items[new_idx]
+            except ValueError:
+                new_item = all_items[0]
+
+        self.message_list.selection_set(new_item)
+        self.message_list.see(new_item)
+        self.message_list.focus(new_item)
+        self.on_message_selected()
 
     def clear_search(self, _event: object | None = None) -> None:
         self.search_var.set("")
@@ -294,7 +341,7 @@ class QwkGuiApp:
 
         def insert_field(label: str, value: str, last_in_row: bool = False) -> None:
             self.detail_text.insert(tk.END, f"{label}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{value}\t", "header_value")
+            self.detail_text.insert(tk.END, f"{value.strip()}\t", "header_value")
             if last_in_row:
                 self.detail_text.insert(tk.END, "\n")
 
