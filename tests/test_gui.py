@@ -499,3 +499,55 @@ class TestQwkGui:
         app.message_list.selection.return_value = ("99",)
         with patch("pyqwk.gui.load_data", return_value=(bytearray(), {})):
             app.load_messages("test.qwk")
+
+    def test_navigation_shortcuts(self, mock_gui_deps):
+        app = get_app()
+        header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        app.messages = [
+            ParsedMessage("Msg 1", 1, None, 1, header),
+            ParsedMessage("Msg 2", 2, None, 1, header),
+            ParsedMessage("Msg 3", 3, None, 1, header),
+        ]
+        app.message_list.get_children.side_effect = lambda parent="": ["0", "1", "2"] if parent == "" else []
+
+        # No selection initially -> select first
+        app.message_list.selection.return_value = ()
+        with patch.object(app, "on_message_selected") as mock_on_selected:
+            app._select_relative_message(1)
+            app.message_list.selection_set.assert_called_with("0")
+            mock_on_selected.assert_called_once()
+
+        # Selection at index 0 -> move to index 1
+        app.message_list.selection.return_value = ("0",)
+        app._select_relative_message(1)
+        app.message_list.selection_set.assert_called_with("1")
+
+        # Selection at index 2 -> move to next (stay at 2)
+        app.message_list.selection.return_value = ("2",)
+        app._select_relative_message(1)
+        app.message_list.selection_set.assert_called_with("2")
+
+        # Move back
+        app.message_list.selection.return_value = ("1",)
+        app._select_relative_message(-1)
+        app.message_list.selection_set.assert_called_with("0")
+
+    def test_render_message_stripping(self, mock_gui_deps):
+        app = get_app()
+        header = MessageHeader(
+            status=' ', msgnum=1, msgdate='01-01-90', msgtime='12:00',
+            msgto='All             ', msgfrom='User            ', msgsubject='Subject         ',
+            msgpassword='', refnum=None, numblocks=1, msgflag=' ',
+            confnum=1, lognum=1, nettag=''
+        )
+        app.messages = [ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)]
+        app.board_dict = {1: "General"}
+
+        app._render_message(0)
+
+        # Verify that stripped values were inserted
+        # Subject is inserted first
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Subject\n\n", "header_subject")
+        # Then From and To via insert_field
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\t", "header_value")
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\t", "header_value")
