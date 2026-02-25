@@ -133,6 +133,121 @@ def _is_binary_line(
     return False, in_yenc_block, False, in_base64_block
 
 
+def extract_binaries(text: str) -> list[tuple[str, bytes]]:
+    """Scan text for binary blocks (UUE, yEnc, Base64) and decode them.
+
+    Returns:
+        A list of (filename, data) tuples.
+    """
+    import binascii
+    import base64
+
+    lines = text.splitlines()
+    binaries: list[tuple[str, bytes]] = []
+
+    in_uue = False
+    in_base64 = False
+    in_yenc = False
+
+    current_filename = ""
+    current_data: list[str] = []
+
+    uue_begin_re = re.compile(r'^begin\s+\d{3}\s+(.+)$')
+    yenc_begin_re = re.compile(r'^=ybegin.*name=(.+)$')
+
+    for line in lines:
+        clean_line = line.strip()
+
+        if not in_uue and not in_base64 and not in_yenc:
+            # Check for UUE begin
+            uue_match = uue_begin_re.match(clean_line)
+            if uue_match:
+                in_uue = True
+                current_filename = uue_match.group(1).strip()
+                current_data = []
+                continue
+
+            # Check for yEnc begin
+            yenc_match = yenc_begin_re.match(clean_line)
+            if yenc_match:
+                in_yenc = True
+                current_filename = yenc_match.group(1).strip()
+                current_data = []
+                continue
+
+            # Check for Base64 (starts with high density line)
+            if RE_BASE64_PATTERN.match(clean_line):
+                in_base64 = True
+                current_filename = "attachment.bin"
+                current_data = [clean_line]
+                continue
+
+        elif in_uue:
+            if clean_line == 'end' or clean_line == '`':
+                try:
+                    decoded = b""
+                    for l in current_data:
+                        if not l:
+                            continue
+                        # binascii.a2b_uu expects the length character at the start
+                        decoded += binascii.a2b_uu(l)
+                    if decoded:
+                        binaries.append((current_filename, decoded))
+                except (binascii.Error, ValueError):
+                    pass
+                in_uue = False
+            else:
+                current_data.append(line)  # Use original line for UUE as spaces matter
+
+        elif in_base64:
+            if not RE_BASE64_LOOSE_PATTERN.match(clean_line) or not clean_line:
+                try:
+                    decoded = base64.b64decode("".join(current_data))
+                    if decoded:
+                        binaries.append((current_filename, decoded))
+                except (binascii.Error, ValueError, base64.binascii.Error):
+                    pass
+                in_base64 = False
+            else:
+                current_data.append(clean_line)
+
+        elif in_yenc:
+            if clean_line.startswith('=yend'):
+                try:
+                    # Simple yEnc decoder
+                    encoded_str = "".join(current_data)
+                    decoded_bytes = bytearray()
+                    escaped = False
+                    for char in encoded_str:
+                        if char == '=' and not escaped:
+                            escaped = True
+                            continue
+                        val = ord(char)
+                        if escaped:
+                            val = (val - 64) % 256
+                            escaped = False
+                        decoded_bytes.append((val - 42) % 256)
+                    if decoded_bytes:
+                        binaries.append((current_filename, bytes(decoded_bytes)))
+                except Exception:
+                    pass
+                in_yenc = False
+            else:
+                current_data.append(line)
+
+    # Handle unterminated blocks at end of text
+    if in_base64 and current_data:
+        try:
+            import base64
+            decoded = base64.b64decode("".join(current_data))
+            if decoded:
+                binaries.append((current_filename, decoded))
+        except Exception:
+            pass
+
+    return binaries
+
+
 class ProgressBar(Protocol):
     def update(self, __n: int, /) -> None:
         """Advance the progress by ``__n`` units."""
@@ -163,6 +278,7 @@ class ProcessingSettings:
     unique: bool = False
     organize: bool = False
     include_toc: bool = False
+    extract_attachments: bool = False
     conferences: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
@@ -400,9 +516,9 @@ class MessageHeader:
         else:
             header_parts.append(fmt_line("Date:", self.msgdate + " " + self.msgtime))
 
-        header_parts.append(fmt_line("From:", self.msgfrom))
-        header_parts.append(fmt_line("To:", self.msgto))
-        header_parts.append(fmt_line("Subject:", self.msgsubject))
+        header_parts.append(fmt_line("From:", self.msgfrom.strip()))
+        header_parts.append(fmt_line("To:", self.msgto.strip()))
+        header_parts.append(fmt_line("Subject:", self.msgsubject.strip()))
 
         if verbose:
             reference_number = str(self.refnum) if self.refnum is not None else ""
@@ -972,6 +1088,7 @@ def process_merged_files(
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
     collected_for_index: list[dict[str, Any]] = []
     bbs_info_to_use = None
+    total_attachments = 0
 
     use_colors = (
         output_mode == 'stdout'
@@ -994,6 +1111,43 @@ def process_merged_files(
         if settings.limit is not None and processed_count >= settings.limit:
             return True
         processed_count += 1
+
+        if settings.extract_attachments and parsed_message.text:
+            found_attachments = extract_binaries(parsed_message.text)
+            if found_attachments:
+                nonlocal total_attachments
+                # Determine attachments directory
+                if settings.individual_files:
+                    attach_base = resolved_output_path or "."
+                elif settings.output_path:
+                    if os.path.isdir(settings.output_path):
+                        attach_base = settings.output_path
+                    else:
+                        attach_base = os.path.dirname(settings.output_path) or "."
+                else:
+                    attach_base = "."
+
+                attach_dir = os.path.join(attach_base, "attachments")
+
+                if not settings.dry_run:
+                    os.makedirs(attach_dir, exist_ok=True)
+                    for filename, data in found_attachments:
+                        # Sanitize filename to prevent path traversal
+                        filename = os.path.basename(filename)
+                        if not filename:
+                            filename = "attachment.bin"
+
+                        total_attachments += 1
+                        base, ext = os.path.splitext(filename)
+                        target_path = os.path.join(attach_dir, filename)
+                        counter = 1
+                        while os.path.exists(target_path):
+                            target_path = os.path.join(attach_dir, f"{base}_{counter}{ext}")
+                            counter += 1
+                        with open(target_path, 'wb') as f:
+                            f.write(data)
+                else:
+                    total_attachments += len(found_attachments)
 
         if settings.oneline:
             processed_buffer = parsed_message.header.format_oneline(
@@ -1240,6 +1394,10 @@ def process_merged_files(
         count_label = "message" if processed_count == 1 else "messages"
         msg = f"Successfully processed {processed_count} {count_label}"
 
+        if total_attachments > 0:
+            attach_label = "attachment" if total_attachments == 1 else "attachments"
+            msg += f" and extracted {total_attachments} {attach_label}"
+
         if settings.individual_files:
             msg += f" into '{resolved_output_path}'."
         elif resolved_output_path:
@@ -1259,6 +1417,8 @@ def process_merged_files(
         print(f"\n{_colorize('--- Dry Run Summary ---', BOLD, CYAN)}")
         print(f"Archives processed: {len(input_paths)}")
         print(f"Matching messages:  {processed_count}")
+        if total_attachments > 0:
+            print(f"Attachments:        {total_attachments}")
         if settings.individual_files:
             print(f"Files to create:    {potential_files}")
         else:
@@ -2100,6 +2260,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             "recipients": [],
             "conferences": [],
             "subjects": [],
+            "attachments_count": 0,
             "day_of_week": {},
             "hour_of_day": {},
             "private_count": 0,
@@ -2119,6 +2280,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             earliest_dt = None
             latest_dt = None
             private_count = 0
+            attachments_count = 0
             matching_count = 0
             total_count = 0
             processed_count = 0
@@ -2161,9 +2323,15 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                     if message.header.is_private:
                         private_count += 1
 
+                    # Check for attachments in the full message
+                    if message.text:
+                        found_binaries = extract_binaries(message.text)
+                        attachments_count += len(found_binaries)
+
             stats_entry["total_messages"] = total_count
             stats_entry["matching_messages"] = processed_count
             stats_entry["private_count"] = private_count
+            stats_entry["attachments_count"] = attachments_count
 
             if earliest_dt:
                 stats_entry["dates"]["earliest"] = earliest_dt.isoformat()
@@ -2180,6 +2348,9 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             if settings.format != 'json':
                 print(f"Statistics for: {_colorize(input_path, CYAN)}")
                 print(f"  {_colorize('Messages:', BOLD)} {processed_count} matching / {total_count} total")
+
+                if attachments_count > 0:
+                    print(f"  {_colorize('Attachments:', BOLD)} {attachments_count} files detected")
 
                 if earliest_dt:
                     print(f"  {_colorize('Date Range:', BOLD)} {earliest_dt.strftime('%Y-%m-%d')} to {latest_dt.strftime('%Y-%m-%d')}")
