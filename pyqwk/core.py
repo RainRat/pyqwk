@@ -96,10 +96,11 @@ def _is_binary_line(
     in_uue_block: bool,
     in_base64_block: bool,
 ) -> tuple[bool, bool, bool, bool]:
-    """Detect whether a line is part of an attachment.
+    """Check if a line of text is part of an attachment (like an image).
 
-    Returns a tuple ``(should_skip, in_yenc_block, in_uue_block, in_base64_block)`` indicating whether the
-    caller should exclude the line from output and the updated binary block states.
+    Returns a group of four values:
+    - A boolean that is True if the line should be hidden.
+    - Three booleans representing if we are currently inside a specific type of attachment (yEnc, UUE, or Base64).
     """
     if in_base64_block:
         if RE_BASE64_LOOSE_PATTERN.match(line):
@@ -354,10 +355,12 @@ class MessageHeader:
 
     @property
     def is_private(self) -> bool:
+        """Return True if the message is marked as private."""
         return self.status not in (' ', '-')
 
     @property
     def is_password(self) -> bool:
+        """Return True if the message is protected by a password."""
         return self.status in ('%', '^', '!', '#', '$')
 
     @property
@@ -1022,7 +1025,7 @@ def matches_filters(
 
 
 def _slugify(text: str, default: str) -> str:
-    """Create a URL-friendly slug from text."""
+    """Create a safe name for a file or folder by removing special characters."""
     slug = re.sub(r'[^a-zA-Z0-9]+', '_', text).strip('_').lower()[:30]
     return slug if slug else default
 
@@ -1042,6 +1045,11 @@ def process_merged_files(
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> None:
+    """Read multiple archives, filter and clean the messages, and save the results.
+
+    This function handles the main workflow of finding messages, applying filters,
+    cleaning the text, and writing the output to files or the screen.
+    """
     output_mode = settings.output_mode
     resolved_output_path = settings.output_path
 
@@ -1728,14 +1736,9 @@ def _write_markdown(
 
 
 def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
-    """Parse QWK date (MM-DD-YY) and time (HH:MM) into a datetime object.
+    """Convert a QWK date and time into a standard Python date object.
 
-    Args:
-        msgdate: Date string in 'MM-DD-YY' format.
-        msgtime: Time string in 'HH:MM' format.
-
-    Returns:
-        A datetime object. Defaults to 1970-01-01 if the date is invalid.
+    If the date is invalid, it returns a default date of 1970-01-01.
     """
     try:
         # Normalize date separators
