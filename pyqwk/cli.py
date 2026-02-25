@@ -332,6 +332,11 @@ def main() -> None:
         help='Reverse the order of the results.',
         action='store_true',
     )
+    filter_group.add_argument(
+        '--has-attachments',
+        help='Only show messages that contain binary attachments (UUE, yEnc, Base64).',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -457,6 +462,7 @@ def main() -> None:
         reverse=args.reverse,
         dry_run=args.dry_run,
         oneline=args.oneline,
+        has_attachments=args.has_attachments,
     )
 
     if args.info:

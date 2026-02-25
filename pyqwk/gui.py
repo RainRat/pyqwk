@@ -44,6 +44,7 @@ class QwkGuiApp:
         self.ansi_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
         self.regex_var = tk.BooleanVar(value=False)
+        self.has_attach_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -208,6 +209,7 @@ class QwkGuiApp:
             ("Hide Personal Info", self.redact_var),
             ("Remove Colors", self.ansi_var),
             ("Threaded", self.threaded_var),
+            ("Has Attachments", self.has_attach_var),
         ]:
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=self.reload_messages
@@ -322,6 +324,7 @@ class QwkGuiApp:
             quiet=True,
             search_term=search_val if search_val else None,
             conferences=conferences,
+            has_attachments=self.has_attach_var.get(),
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -364,6 +367,10 @@ class QwkGuiApp:
                     lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(c, r),
                 )
             self.detail_text.insert(tk.END, "\n")
+
+        if message.attachments:
+            self.detail_text.insert(tk.END, "Attachments: ", "header_label")
+            self.detail_text.insert(tk.END, ", ".join(message.attachments) + "\n", "header_value")
 
         header_end = self.detail_text.index(tk.INSERT)
         self.detail_text.tag_add("header_area", header_start, header_end)

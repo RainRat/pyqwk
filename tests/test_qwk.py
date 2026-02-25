@@ -88,6 +88,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         dry_run=False,
         oneline=False,
         extract_attachments=False,
+        has_attachments=False,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -136,6 +137,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         stats=False,
         dry_run=False,
         extractattachments=False,
+        has_attachments=False,
     )
     base.update(overrides)
     return argparse.Namespace(**base)

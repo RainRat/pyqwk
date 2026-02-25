@@ -13,7 +13,7 @@ import io
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 from collections.abc import Iterator, Mapping
-from dataclasses import asdict, dataclass, fields, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 from contextlib import contextmanager, nullcontext
 from typing import Any, Callable, Protocol
 import datetime
@@ -292,6 +292,7 @@ class ProcessingSettings:
     sort: str | None = None
     reverse: bool = False
     oneline: bool = False
+    has_attachments: bool = False
 
 
 @dataclass
@@ -329,6 +330,7 @@ class ParsedMessage:
     confname: str | None = None
     bbs_name: str | None = None
     source_file: str | None = None
+    attachments: list[str] | None = None
 
 
 
@@ -459,6 +461,7 @@ class MessageHeader:
         use_colors: bool = False,
         highlight_term: str | None = None,
         is_regex: bool = False,
+        attachments: list[str] | None = None,
     ) -> str:
         """Render a message header into readable text.
 
@@ -524,6 +527,9 @@ class MessageHeader:
         if verbose:
             reference_number = str(self.refnum) if self.refnum is not None else ""
             header_parts.append(fmt_line("Reference #:", reference_number))
+
+            if attachments:
+                header_parts.append(fmt_line("Attachments:", ", ".join(attachments)))
 
         header_parts.append("\r\n")
         return "".join(header_parts)
@@ -1018,6 +1024,15 @@ def matches_filters(
         if settings.before and msg_dt > settings.before:
             return False
 
+    # 7. Attachment Filter
+    if settings.has_attachments or settings.extract_attachments:
+        if message.text and message.attachments is None:
+            found = extract_binaries(message.text)
+            message.attachments = [name for name, data in found]
+
+        if settings.has_attachments and not message.attachments:
+            return False
+
     return True
 
 
@@ -1118,7 +1133,15 @@ def process_merged_files(
         processed_count += 1
 
         if settings.extract_attachments and parsed_message.text:
-            found_attachments = extract_binaries(parsed_message.text)
+            if parsed_message.attachments is not None:
+                # We already have filenames, but we need data to extract.
+                # extract_binaries is fast enough for re-scanning if we need data.
+                # However, for consistency and avoiding double work, we re-run only if needed.
+                found_attachments = extract_binaries(parsed_message.text)
+            else:
+                found_attachments = extract_binaries(parsed_message.text)
+                parsed_message.attachments = [name for name, data in found_attachments]
+
             if found_attachments:
                 nonlocal total_attachments
                 # Determine attachments directory
@@ -1196,6 +1219,7 @@ def process_merged_files(
                     use_colors=use_colors,
                     highlight_term=settings.search_term,
                     is_regex=settings.regex,
+                    attachments=parsed_message.attachments,
                 )
                 processed_buffer = header_text + processed_buffer
 
@@ -1451,6 +1475,7 @@ def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
         'depth': message.depth,
         'thread_id': message.thread_id,
         'parent_msgnum': message.parent_msgnum,
+        'attachments': message.attachments or [],
     }
 
 
@@ -1495,6 +1520,11 @@ def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
 
     text_element = ET.SubElement(msg_element, 'text')
     text_element.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
+
+    if message.attachments:
+        attachments_element = ET.SubElement(msg_element, 'attachments')
+        for filename in message.attachments:
+            ET.SubElement(attachments_element, 'attachment').text = filename
 
     return msg_element
 
@@ -1947,7 +1977,8 @@ def _write_csv(
     header_fields = [f.name for f in fields(MessageHeader)]
     fieldnames = header_fields + [
         'conference_name', 'bbs_name', 'source_file',
-        'text', 'depth', 'thread_id', 'parent_msgnum'
+        'text', 'depth', 'thread_id', 'parent_msgnum',
+        'attachments'
     ]
 
     writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -1962,6 +1993,7 @@ def _write_csv(
         row['depth'] = message.depth
         row['thread_id'] = message.thread_id
         row['parent_msgnum'] = message.parent_msgnum
+        row['attachments'] = ";".join(message.attachments or [])
         writer.writerow(row)
 
     _write_text_output(output.getvalue(), output_path, encoding=encoding)
@@ -1997,7 +2029,8 @@ def _write_sqlite(
             parent_message_number INTEGER,
             conference_name TEXT,
             bbs_name TEXT,
-            source_file TEXT
+            source_file TEXT,
+            attachments TEXT
         )
     ''')
 
@@ -2010,8 +2043,9 @@ def _write_sqlite(
             INSERT INTO messages (
                 conference_number, message_number, date, author, recipient,
                 subject, status, text, reference_number, thread_id, depth,
-                parent_message_number, conference_name, bbs_name, source_file
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                parent_message_number, conference_name, bbs_name, source_file,
+                attachments
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             header.confnum,
             header.msgnum,
@@ -2027,7 +2061,8 @@ def _write_sqlite(
             msg.parent_msgnum,
             msg.confname,
             msg.bbs_name,
-            msg.source_file
+            msg.source_file,
+            ";".join(msg.attachments or [])
         ))
 
     conn.commit()

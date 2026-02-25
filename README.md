@@ -65,7 +65,7 @@ qwk-gui
 
 **Key Features:**
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text.
-- **Filtering:** View messages from specific conferences or include private messages.
+**Filtering:** View messages from specific conferences, include private messages, or filter by the presence of attachments.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 
@@ -231,6 +231,12 @@ Find messages from a specific date range (use YYYY-MM-DD).
 qwk archive.qwk --after 2023-01-01 --before 2023-12-31
 ```
 
+**Filter by Attachments:**
+Only show messages that contain binary attachments (UUE, yEnc, Base64).
+```bash
+qwk archive.qwk --has-attachments
+```
+
 **Dry Run:**
 Preview exactly how many messages match your filters and how many files will be created without actually making any changes.
 ```bash
@@ -312,6 +318,7 @@ for msg in parse_messages(file_data, None):
 | `-K, --skip [num]` | Skip the first this many matching messages. |
 | `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, or `conference`. |
 | `--reverse` | Reverse the order of the output. |
+| `--has-attachments` | Only show messages that contain binary attachments (UUE, yEnc, Base64). |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show detailed statistics about the messages and exit. |
 | `-V, --version` | Show the version number and exit. |
