@@ -2,7 +2,10 @@
 import pytest
 import logging
 from dataclasses import replace
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader, load_data, parse_messages
+from pyqwk.core import (
+    process_file, ProcessingSettings, ParsedMessage, MessageHeader,
+    load_data, parse_messages, matches_filters
+)
 
 @pytest.fixture
 def mock_logger():
@@ -426,3 +429,51 @@ def test_filtering_combined_criteria(tmp_path, mock_messages, mock_board_dict, m
     assert "Msg 1 in Conf 1" in content
     assert "Msg 2 in Conf 2" not in content
     assert "Msg 3 in Conf 3" not in content
+
+def test_filtering_by_author_no_match():
+    # Direct test for line 992
+    header = MessageHeader(
+        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
+        msgto='Recipient', msgfrom='Author', msgsubject='Subject', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=1, lognum=1, nettag=''
+    )
+    message = ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=False, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", authors=["SomeoneElse"]
+    )
+    assert matches_filters(message, settings, set()) is False
+
+def test_filtering_by_recipient_no_match():
+    # Direct test for line 996
+    header = MessageHeader(
+        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
+        msgto='Recipient', msgfrom='Author', msgsubject='Subject', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=1, lognum=1, nettag=''
+    )
+    message = ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=False, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", recipients=["Other"]
+    )
+    assert matches_filters(message, settings, set()) is False
+
+def test_filtering_by_subject_no_match():
+    # Direct test for line 1000
+    header = MessageHeader(
+        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
+        msgto='Recipient', msgfrom='Author', msgsubject='Subject', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=1, lognum=1, nettag=''
+    )
+    message = ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=False, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", subjects=["Other"]
+    )
+    assert matches_filters(message, settings, set()) is False
