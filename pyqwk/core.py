@@ -184,19 +184,22 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
 
         elif in_uue:
             if clean_line == 'end' or clean_line == '`':
-                try:
-                    decoded = b""
-                    for l in current_data:
-                        if not l:
-                            continue
+                decoded = b""
+                for l in current_data:
+                    if not l:
+                        continue
+                    try:
                         # binascii.a2b_uu expects the length character at the start
                         decoded += binascii.a2b_uu(l)
-                    if decoded:
-                        binaries.append((current_filename, decoded))
-                except (binascii.Error, ValueError):
-                    pass
+                    except (binascii.Error, ValueError):
+                        continue
+                if decoded:
+                    binaries.append((current_filename, decoded))
                 in_uue = False
             else:
+                # Basic check: if it looks like a UUE line (starts with M and has decent length)
+                # or is a common last line (length character at start matches line length)
+                # we add it.
                 current_data.append(line)  # Use original line for UUE as spaces matter
 
         elif in_base64:
@@ -241,6 +244,37 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
             decoded = base64.b64decode("".join(current_data))
             if decoded:
                 binaries.append((current_filename, decoded))
+        except Exception:
+            pass
+    elif in_uue and current_data:
+        decoded = b""
+        for l in current_data:
+            if not l:
+                continue
+            try:
+                # binascii.a2b_uu expects the length character at the start
+                decoded += binascii.a2b_uu(l)
+            except (binascii.Error, ValueError):
+                continue
+        if decoded:
+            binaries.append((current_filename, decoded))
+    elif in_yenc and current_data:
+        try:
+            # Simple yEnc decoder
+            encoded_str = "".join(current_data)
+            decoded_bytes = bytearray()
+            escaped = False
+            for char in encoded_str:
+                if char == '=' and not escaped:
+                    escaped = True
+                    continue
+                val = ord(char)
+                if escaped:
+                    val = (val - 64) % 256
+                    escaped = False
+                decoded_bytes.append((val - 42) % 256)
+            if decoded_bytes:
+                binaries.append((current_filename, bytes(decoded_bytes)))
         except Exception:
             pass
 
@@ -2326,9 +2360,11 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
             desc = f"Analyzing {os.path.basename(input_path)}"
             # Use a progress bar for statistics gathering
+            # We must NOT use headers_only if we need to filter by content (search or attachments)
+            need_body = bool(settings.has_attachments or settings.search_term)
             with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
                 for message in parse_messages(
-                    file_data, progress_bar, settings.encoding, headers_only=True
+                    file_data, progress_bar, settings.encoding, headers_only=not need_body
                 ):
                     total_count += 1
 
