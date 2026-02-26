@@ -205,7 +205,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
                     decoded = base64.b64decode("".join(current_data))
                     if decoded:
                         binaries.append((current_filename, decoded))
-                except (binascii.Error, ValueError, base64.binascii.Error):
+                except (binascii.Error, ValueError):
                     pass
                 in_base64 = False
             else:
