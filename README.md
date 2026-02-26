@@ -294,7 +294,7 @@ for msg in parse_messages(file_data, None):
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
 | `--regex` | Use regular expressions for searching and filtering. |
-| `-C`, `--conference [id]` | Only show messages from this conference name or number. |
+| `-C`, `--conference [id]` | Only show messages from this conference name or number (can be used multiple times). |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Extract binary attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
 | `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
@@ -304,9 +304,9 @@ for msg in parse_messages(file_data, None):
 | `-H, --headers-only` | Show only message headers and skip the message text. |
 | `-E, --encoding [name]` | Set the text character set (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
-| `-f, --from [name]` | Only show messages from this author. |
-| `--to [name]` | Only show messages to this recipient. |
-| `-s, --subject [text]` | Only show messages with this word in the subject. |
+| `-f, --from [name]` | Only show messages from this author (can be used multiple times). |
+| `--to [name]` | Only show messages to this recipient (can be used multiple times). |
+| `-s, --subject [text]` | Only show messages with this word in the subject (can be used multiple times). |
 | `--after [date]` | Only show messages from this date or later (YYYY-MM-DD). |
 | `--before [date]` | Only show messages from this date or earlier (YYYY-MM-DD). |
 | `-n, --noheader` | Do not include the message header information in the text. |
@@ -315,14 +315,14 @@ for msg in parse_messages(file_data, None):
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
 | `-q`, `--quiet` | Hide the progress bar and extra information. |
 | `--dry-run` | Preview actions without writing files to disk. |
-| `--loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR). |
+| `-l, --loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
 | `-L, --limit [num]` | Stop after processing this many messages. |
 | `-K, --skip [num]` | Skip the first this many matching messages. |
 | `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, or `conference`. |
 | `--reverse` | Reverse the order of the output. |
 | `--has-attachments` | Only show messages that contain binary attachments (UUE, yEnc, Base64). |
-| `-I, --info` | Show a summary of the archive and exit. |
-| `--stats` | Show detailed statistics about the messages and exit. |
+| `-I, --info` | Show a summary of the archive and exit. Use `--format json` for JSON output. |
+| `--stats` | Show detailed statistics about the messages and exit. Use `--format json` for JSON output. |
 | `-V, --version` | Show the version number and exit. |
 
 Run `qwk --help` to see all available options.

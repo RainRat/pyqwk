@@ -251,3 +251,54 @@ def test_write_text_output_stdout_with_newline(capsys):
     _write_text_output("Has newline\n", None)
     captured = capsys.readouterr()
     assert captured.out == "Has newline\n"
+
+def test_individual_files_triple_collision(tmp_path, logger, default_settings):
+    """Test collision handling when three messages would have the same filename."""
+    output_dir = tmp_path / "triple_collision"
+    output_dir.mkdir()
+
+    def make_msg(text):
+        h = MagicMock(spec=MessageHeader)
+        h.is_private = False
+        h.is_password = False
+        h.msgnum = 1
+        h.confnum = 1
+        h.msgfrom = "User"
+        h.msgto = "All"
+        h.msgdate = "01-01-23"
+        h.msgtime = "12:00"
+        h.msgsubject = "Collision"
+        h.format_text.return_value = ""
+        # Mock as_dict which is used in handle_output for some formats
+        h.as_dict = {
+            'confnum': 1, 'msgnum': 1, 'msgdate': '01-01-23', 'msgtime': '12:00',
+            'msgto': 'All', 'msgfrom': 'User', 'msgsubject': 'Collision',
+            'msgpassword': '', 'refnum': None, 'numblocks': 1, 'msgflag': '',
+            'lognum': 1, 'nettag': ''
+        }
+        return ParsedMessage(text=text, msgnum=1, refnum=None, confnum=1, header=h)
+
+    # Three messages with identical content and metadata -> same base filename AND same hash
+    msg1 = make_msg("Duplicate Body")
+    msg2 = make_msg("Duplicate Body")
+    msg3 = make_msg("Duplicate Body")
+
+    settings = replace(
+        default_settings,
+        individual_files=True,
+        format='text',
+        output_mode='file',
+        output_path=str(output_dir),
+        no_header=True
+    )
+
+    with patch('pyqwk.core.load_data') as mock_load:
+        mock_load.return_value = (bytearray(b'Produced '), {1: "General"})
+        with patch('pyqwk.core.parse_messages') as mock_parse:
+            mock_parse.return_value = [msg1, msg2, msg3]
+            process_merged_files(['archive.qwk'], settings, logger)
+
+    files = list(output_dir.iterdir())
+    # If the logic is buggy (no loop), it will only have 2 files because the 3rd overwrote the 2nd
+    # or failed to be unique.
+    assert len(files) == 3, f"Expected 3 files, found {len(files)}: {[f.name for f in files]}"
