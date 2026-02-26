@@ -19,6 +19,8 @@ from typing import Any, Callable, Protocol
 import datetime
 import email.utils
 import sqlite3
+import binascii
+import base64
 
 __version__ = "0.1.0"
 
@@ -140,9 +142,6 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     Returns:
         A list of (filename, data) tuples.
     """
-    import binascii
-    import base64
-
     lines = text.splitlines()
     binaries: list[tuple[str, bytes]] = []
 
@@ -201,7 +200,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
                 current_data.append(line)  # Use original line for UUE as spaces matter
 
         elif in_base64:
-            if not RE_BASE64_LOOSE_PATTERN.match(clean_line) or not clean_line:
+            if not RE_BASE64_LOOSE_PATTERN.match(clean_line):
                 try:
                     decoded = base64.b64decode("".join(current_data))
                     if decoded:
@@ -239,7 +238,6 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     # Handle unterminated blocks at end of text
     if in_base64 and current_data:
         try:
-            import base64
             decoded = base64.b64decode("".join(current_data))
             if decoded:
                 binaries.append((current_filename, decoded))
@@ -1782,7 +1780,7 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
                 year += 1900
 
         return datetime.datetime(year, month, day, hour, minute)
-    except (ValueError, IndexError):
+    except ValueError:
         # Fallback for invalid dates
         return datetime.datetime(1970, 1, 1, 0, 0)
 
