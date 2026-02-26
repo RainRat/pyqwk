@@ -1979,7 +1979,7 @@ def _write_csv(
         'attachments'
     ]
 
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar='\\')
     writer.writeheader()
 
     for message in messages:
