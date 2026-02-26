@@ -190,6 +190,14 @@ def main() -> None:
         choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
     )
     format_group.add_argument(
+        '-j',
+        '--json',
+        action='store_const',
+        const='json',
+        dest='format',
+        help='A shortcut for --format json.',
+    )
+    format_group.add_argument(
         '--separator',
         choices=['auto', 'none', 'dashes', 'blank'],
         default='auto',
@@ -208,6 +216,7 @@ def main() -> None:
         action='store_true',
     )
     format_group.add_argument(
+        '-1',
         '--oneline',
         help='Show each message as a single line summary (Conference, Date, From, Subject).',
         action='store_true',
@@ -239,6 +248,7 @@ def main() -> None:
         action='store_true',
     )
     control_group.add_argument(
+        '-d',
         '--dry-run',
         action='store_true',
         help='Do everything except actually writing files. Useful for testing filters.',
