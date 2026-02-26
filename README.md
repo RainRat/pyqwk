@@ -14,15 +14,18 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
-- **Batch Processing:** Convert many archives at once or merge them into a single file.
+- **Process many files:** Convert many archives at once or merge them into a single file.
 - **Dry Run Mode:** Preview the results of a conversion without writing any files to disk.
 - **Built-in Reader:** A simple graphical interface to read messages without converting them. It includes search and filtering tools.
 
 ## Prerequisites
 
 - You need **Python 3.10** or newer.
-- (Optional) You need **Tkinter** for the graphical reader. Python usually includes it, but Linux users may need to install it separately (for example: `sudo apt install python3-tk`).
-- (Optional) Install the **tqdm** package for a progress bar: `pip install tqdm`
+- (Optional) You need **Tkinter** for the graphical reader. Most Python installations include it. If you use Linux, you may need to install it manually:
+  - **Ubuntu/Debian:** `sudo apt install python3-tk`
+  - **Fedora:** `sudo dnf install python3-tkinter`
+  - **Arch Linux:** `sudo pacman -S tk`
+- (Optional) Install the **tqdm** package for a progress bar: `python -m pip install tqdm`
 
 ## Quick Start
 
@@ -38,7 +41,7 @@ You can install `pyqwk` to use it from any folder on your computer.
 1. Open your terminal in the project folder.
 2. Install the package:
    ```bash
-   pip install .
+   python -m pip install .
    ```
 3. Now you can use the `qwk` command anywhere:
    ```bash
