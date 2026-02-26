@@ -67,10 +67,10 @@ def mock_gui_deps():
             "combo": mock_combo,
         }
 
-def get_app():
+def get_app(initial_path=None):
     from pyqwk.gui import QwkGuiApp
     root = MagicMock()
-    return QwkGuiApp(root)
+    return QwkGuiApp(root, initial_path=initial_path)
 
 class TestQwkGui:
     def test_initialization(self, mock_gui_deps):
@@ -551,6 +551,33 @@ class TestQwkGui:
         # Then From and To via insert_field
         app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\t", "header_value")
         app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\t", "header_value")
+
+    def test_initial_path_loading(self, mock_gui_deps):
+        """Test that passing an initial path to the constructor triggers loading."""
+        with patch("pyqwk.gui.QwkGuiApp.load_messages") as mock_load:
+            app = get_app(initial_path="initial.qwk")
+            assert app.current_path == "initial.qwk"
+            # Since we use self.root.after, we need to check that it was scheduled
+            app.root.after.assert_called_with(100, ANY)
+
+    def test_title_update(self, mock_gui_deps):
+        """Test that the window title is updated when a message is loaded."""
+        app = get_app()
+        with patch("pyqwk.gui.load_data") as mock_load_data, \
+             patch("pyqwk.gui.parse_messages") as mock_parse_messages:
+
+            mock_board_dict = MagicMock(spec=dict)
+            mock_board_dict.get.return_value = "General"
+            mock_board_dict.items.return_value = {1: "General"}.items()
+            bbs_info = MagicMock()
+            bbs_info.name = "Test BBS"
+            mock_board_dict.bbs_info = bbs_info
+
+            mock_load_data.return_value = (bytearray(), mock_board_dict)
+            mock_parse_messages.return_value = []
+
+            app.load_messages("test.qwk")
+            app.root.title.assert_called_with("Test BBS (test.qwk) - PyQWK Reader")
 
     def test_conference_discovery(self, mock_gui_deps):
         """Test that conferences found in messages.dat but not in CONTROL.DAT are discovered."""
