@@ -242,3 +242,11 @@ class TestMessageHeaderFormatting:
         d = sample_header.as_dict
         assert d['msgnum'] == ""
         assert d['refnum'] == ""
+
+    def test_format_text_with_attachments(self, sample_header: MessageHeader) -> None:
+        """Test formatting with attachments."""
+        board_dict = {1: "General"}
+        attachments = ["file1.txt", "file2.jpg"]
+        text = sample_header.format_text(board_dict, verbose=True, attachments=attachments)
+
+        assert "Attachments:    file1.txt, file2.jpg" in text

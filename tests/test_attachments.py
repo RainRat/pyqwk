@@ -165,6 +165,40 @@ def test_process_merged_files_with_attachments():
             pyqwk.core.load_data = original_load_data
             pyqwk.core.parse_messages = original_parse_messages
 
+
+def test_uue_unterminated_at_end():
+    text = "begin 644 test.txt\n#0V%T"
+    binaries = extract_binaries(text)
+    assert len(binaries) == 1
+    assert binaries[0][0] == "test.txt"
+    assert binaries[0][1] == b"Cat"
+
+
+def test_yenc_unterminated_at_end():
+    text = "=ybegin name=test.txt\n*+,/"
+    binaries = extract_binaries(text)
+    assert len(binaries) == 1
+    assert binaries[0][0] == "test.txt"
+    # yEnc decode: (val - 42) % 256
+    # '*'=42 -> 0, '+'=43 -> 1, ','=44 -> 2, '/'=47 -> 5
+    assert binaries[0][1] == b"\x00\x01\x02\x05"
+
+
+def test_uue_invalid_data():
+    # Trigger (binascii.Error, ValueError) in _decode_uue
+    text_invalid = "begin 644 test.txt\n\x00\x00\x00\nend"
+    binaries = extract_binaries(text_invalid)
+    assert len(binaries) == 0
+
+
+def test_base64_unterminated_invalid():
+    # Trigger (binascii.Error, ValueError) in _decode_base64 at end of text
+    long_line = "A" * 64
+    invalid_data = "A" * 61  # 125 chars total, invalid length
+    text = f"{long_line}\n{invalid_data}"
+    binaries = extract_binaries(text)
+    assert len(binaries) == 0
+
 def test_collision_avoidance():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = os.path.join(tmpdir, "output.txt")
