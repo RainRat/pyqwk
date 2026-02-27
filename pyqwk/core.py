@@ -1244,6 +1244,21 @@ def process_merged_files(
                 processed_buffer = separator_str + processed_buffer
 
         if settings.individual_files:
+            assert output_dir is not None
+
+            target_dir = output_dir
+            conf_dir = ""
+            if settings.organize:
+                conf_name = parsed_message.confname or "unknown"
+                conf_slug = _slugify(conf_name, "conference")
+                conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
+                target_dir = os.path.join(output_dir, conf_dir)
+                os.makedirs(target_dir, exist_ok=True)
+
+            attachment_prefix = None
+            if settings.extract_attachments:
+                attachment_prefix = "../attachments/" if settings.organize else "attachments/"
+
             if settings.format == 'text':
                 encoded_buffer = processed_buffer.encode(target_encoding)
             elif settings.format == 'json':
@@ -1258,10 +1273,14 @@ def process_merged_files(
                 encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
             elif settings.format == 'html':
                 temp_msg = replace(parsed_message, text=processed_buffer)
-                encoded_buffer = _serialize_message_html(temp_msg).encode(target_encoding)
+                encoded_buffer = _serialize_message_html(
+                    temp_msg, attachment_prefix=attachment_prefix
+                ).encode(target_encoding)
             elif settings.format == 'markdown':
                 temp_msg = replace(parsed_message, text=processed_buffer)
-                encoded_buffer = _serialize_message_markdown(temp_msg).encode(target_encoding)
+                encoded_buffer = _serialize_message_markdown(
+                    temp_msg, attachment_prefix=attachment_prefix
+                ).encode(target_encoding)
             elif settings.format == 'mbox':
                 text_content = "" if settings.headers_only else processed_buffer
                 temp_msg = replace(parsed_message, text=text_content)
@@ -1272,16 +1291,6 @@ def process_merged_files(
                 encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
             else:
                 encoded_buffer = processed_buffer.encode(target_encoding)
-
-            assert output_dir is not None
-
-            target_dir = output_dir
-            if settings.organize:
-                conf_name = parsed_message.confname or "unknown"
-                conf_slug = _slugify(conf_name, "conference")
-                conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
-                target_dir = os.path.join(output_dir, conf_dir)
-                os.makedirs(target_dir, exist_ok=True)
 
             filename = _generate_safe_filename(parsed_message, settings.format, processed_count)
             full_path = os.path.join(target_dir, filename)
@@ -1313,7 +1322,8 @@ def process_merged_files(
                     'date': f"{parsed_message.header.msgdate} {parsed_message.header.msgtime}",
                     'conf_num': parsed_message.confnum,
                     'conf_name': parsed_message.confname or f"Conference {parsed_message.confnum}",
-                    'msgnum': parsed_message.header.msgnum
+                    'msgnum': parsed_message.header.msgnum,
+                    'attachments': parsed_message.attachments,
                 })
 
             if not settings.dry_run:
@@ -1604,7 +1614,11 @@ def _get_html_footer() -> list[str]:
     ]
 
 
-def _render_single_message_html(message: ProcessedMessage, msg_id: str | None = None) -> list[str]:
+def _render_single_message_html(
+    message: ProcessedMessage,
+    msg_id: str | None = None,
+    attachment_prefix: str | None = None,
+) -> list[str]:
     parts = []
     id_attr = f' id="{msg_id}"' if msg_id else ""
     parts.append(f'<div class="message"{id_attr}>')
@@ -1616,10 +1630,27 @@ def _render_single_message_html(message: ProcessedMessage, msg_id: str | None = 
     parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
     parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
     parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
-    # Conference number is always present as an int
-    parts.append(f'<div><strong>Conference:</strong> {header.confnum}</div>')
+
+    conf_name = message.confname or f"Conference {header.confnum}"
+    parts.append(f'<div><strong>Conference:</strong> {html.escape(conf_name)} ({header.confnum})</div>')
+
+    if message.bbs_name:
+        parts.append(f'<div><strong>BBS:</strong> {html.escape(message.bbs_name)}</div>')
+    if message.source_file:
+        parts.append(f'<div><strong>Source:</strong> {html.escape(message.source_file)}</div>')
+
     if header.msgnum is not None:
         parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
+
+    if message.attachments:
+        links = []
+        for filename in message.attachments:
+            if attachment_prefix:
+                links.append(f'<a href="{attachment_prefix}{html.escape(filename)}">{html.escape(filename)}</a>')
+            else:
+                links.append(html.escape(filename))
+        parts.append(f'<div><strong>Attachments:</strong> {", ".join(links)}</div>')
+
     parts.append('</div>')
 
     # Body
@@ -1632,24 +1663,49 @@ def _render_single_message_html(message: ProcessedMessage, msg_id: str | None = 
     return parts
 
 
-def _serialize_message_html(message: ProcessedMessage) -> str:
+def _serialize_message_html(
+    message: ProcessedMessage, attachment_prefix: str | None = None
+) -> str:
     html_parts = _get_html_header('QWK Message')
-    html_parts.extend(_render_single_message_html(message))
+    html_parts.extend(
+        _render_single_message_html(message, attachment_prefix=attachment_prefix)
+    )
     html_parts.extend(_get_html_footer())
 
     return '\n'.join(html_parts)
 
 
-def _render_single_message_markdown(message: ProcessedMessage) -> list[str]:
+def _render_single_message_markdown(
+    message: ProcessedMessage, attachment_prefix: str | None = None
+) -> list[str]:
     header = message.header
     parts = []
     parts.append(f"## {header.msgsubject}")
     parts.append(f"- **Date:** {header.msgdate} {header.msgtime}")
     parts.append(f"- **From:** {header.msgfrom}")
     parts.append(f"- **To:** {header.msgto}")
-    parts.append(f"- **Conference:** {header.confnum}")
+
+    conf_name = message.confname or f"Conference {header.confnum}"
+    parts.append(f"- **Conference:** {conf_name} ({header.confnum})")
+
+    if message.bbs_name:
+        parts.append(f"- **BBS:** {message.bbs_name}")
+    if message.source_file:
+        parts.append(f"- **Source:** {message.source_file}")
+
     if header.msgnum is not None:
         parts.append(f"- **Number:** {header.msgnum}")
+
+    if message.attachments:
+        links = []
+        for filename in message.attachments:
+            if attachment_prefix:
+                # Markdown link format [label](url)
+                links.append(f"[{filename}]({attachment_prefix}{filename})")
+            else:
+                links.append(filename)
+        parts.append(f"- **Attachments:** {', '.join(links)}")
+
     parts.append("")
     parts.append(message.text.replace('\r\n', '\n'))
     parts.append("")
@@ -1657,9 +1713,13 @@ def _render_single_message_markdown(message: ProcessedMessage) -> list[str]:
     return parts
 
 
-def _serialize_message_markdown(message: ProcessedMessage) -> str:
+def _serialize_message_markdown(
+    message: ProcessedMessage, attachment_prefix: str | None = None
+) -> str:
     md_parts = ["# QWK Message\n"]
-    md_parts.extend(_render_single_message_markdown(message))
+    md_parts.extend(
+        _render_single_message_markdown(message, attachment_prefix=attachment_prefix)
+    )
     return '\n'.join(md_parts)
 
 
@@ -1675,6 +1735,7 @@ def _write_html(
         title = f"{bbs_info.name} Archive"
 
     html_parts = _get_html_header(title)
+    attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
 
     if settings and settings.include_toc:
         html_parts.append(f"<h1>{html.escape(title)}</h1>")
@@ -1717,7 +1778,11 @@ def _write_html(
             current_depth -= 1
 
         msg_id = f"msg-{i}" if settings and settings.include_toc else None
-        html_parts.extend(_render_single_message_html(message, msg_id=msg_id))
+        html_parts.extend(
+            _render_single_message_html(
+                message, msg_id=msg_id, attachment_prefix=attachment_prefix
+            )
+        )
 
     while current_depth > 0:
         html_parts.append('</div>')
@@ -1740,6 +1805,7 @@ def _write_markdown(
         title = f"{bbs_info.name} Archive"
 
     md_parts = [f"# {title}\n"]
+    attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
 
     if settings and settings.include_toc:
         if bbs_info:
@@ -1770,7 +1836,9 @@ def _write_markdown(
             md_parts.append(f"## {conf_name} <a name=\"conf-{message.confnum}\"></a>\n")
             seen_confs_for_headers.add(message.confnum)
 
-        single_md = _render_single_message_markdown(message)
+        single_md = _render_single_message_markdown(
+            message, attachment_prefix=attachment_prefix
+        )
         if message.depth > 0:
             prefix = "> " * message.depth
             indented_md = []
@@ -2128,7 +2196,7 @@ def _write_html_index(
     for (conf_num, conf_name), messages in sorted(by_conf.items()):
         html_parts.append(f"<h2>{html.escape(conf_name)} (Conference {conf_num})</h2>")
         html_parts.append("<table>")
-        html_parts.append("<thead><tr><th>#</th><th>Date</th><th>From</th><th>To</th><th>Subject</th></tr></thead>")
+        html_parts.append("<thead><tr><th>#</th><th>Date</th><th>From</th><th>To</th><th>Subject</th><th>Attach</th></tr></thead>")
         html_parts.append("<tbody>")
         for msg in messages:
             html_parts.append("<tr>")
@@ -2137,6 +2205,8 @@ def _write_html_index(
             html_parts.append(f"<td>{html.escape(msg['from'])}</td>")
             html_parts.append(f"<td>{html.escape(msg['to'])}</td>")
             html_parts.append(f'<td><a href="{html.escape(msg["path"])}">{html.escape(msg["subject"] or "(no subject)")}</a></td>')
+            attach_count = len(msg['attachments']) if msg.get('attachments') else 0
+            html_parts.append(f"<td>{attach_count if attach_count > 0 else ''}</td>")
             html_parts.append("</tr>")
         html_parts.append("</tbody></table>")
 
@@ -2155,8 +2225,8 @@ def _write_markdown_index(
 
     for (conf_num, conf_name), messages in sorted(by_conf.items()):
         md_parts.append(f"## {conf_name} (Conference {conf_num})\n")
-        md_parts.append("| # | Date | From | To | Subject |")
-        md_parts.append("|---|---|---|---|---|")
+        md_parts.append("| # | Date | From | To | Subject | Attach |")
+        md_parts.append("|---|---|---|---|---|---|")
         for msg in messages:
             def esc_md(text: Any) -> str:
                 return str(text or "").replace("|", "\\|").replace("[", "\\[").replace("]", "\\]")
@@ -2164,7 +2234,9 @@ def _write_markdown_index(
             subj = esc_md(msg['subject'] or "(no subject)")
             from_name = esc_md(msg['from'])
             to_name = esc_md(msg['to'])
-            md_parts.append(f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | [{subj}]({msg['path']}) |")
+            attach_count = len(msg['attachments']) if msg.get('attachments') else 0
+            attach_str = str(attach_count) if attach_count > 0 else ""
+            md_parts.append(f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | [{subj}]({msg['path']}) | {attach_str} |")
         md_parts.append("")
 
     index_path = os.path.join(output_dir, "README.md")
