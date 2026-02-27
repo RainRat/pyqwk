@@ -2431,8 +2431,8 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
             desc = f"Analyzing {os.path.basename(input_path)}"
             # Use a progress bar for statistics gathering
-            # We must NOT use headers_only if we need to filter by content (search or attachments)
-            need_body = bool(settings.has_attachments or settings.search_term)
+            # We must read message bodies to accurately count attachments
+            need_body = True
             with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
                 for message in parse_messages(
                     file_data, progress_bar, settings.encoding, headers_only=not need_body
