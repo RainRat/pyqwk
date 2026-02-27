@@ -37,10 +37,17 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     msg1.thread_id = "1"
     msg1.depth = 0
     msg1.parent_msgnum = None
+    msg1.confname = "Main Board"
+    msg1.bbs_name = "MyBBS"
+    msg1.source_file = "archive.qwk"
+    msg1.attachments = ["file1.txt", "file2.jpg"]
 
     msg2.thread_id = "1"
     msg2.depth = 1
     msg2.parent_msgnum = 1
+    msg2.confname = "Main Board"
+    msg2.bbs_name = "MyBBS"
+    msg2.source_file = "archive.qwk"
 
     messages = [msg1, msg2]
 
@@ -63,7 +70,9 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert len(rows) == 2
 
     # Row 1 (msg1)
-    # id, conference_number, message_number, date, author, recipient, subject, status, text, reference_number, thread_id, depth, parent_message_number
+    # id, conference_number, message_number, date, author, recipient, subject, status, text,
+    # reference_number, thread_id, depth, parent_message_number, conference_name,
+    # bbs_name, source_file, attachments
     r1 = rows[0]
     assert r1[1] == 1  # conference_number
     assert r1[2] == 1  # message_number
@@ -78,6 +87,10 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert r1[10] == "1"    # thread_id
     assert r1[11] == 0      # depth
     assert r1[12] is None   # parent_message_number
+    assert r1[13] == "Main Board"
+    assert r1[14] == "MyBBS"
+    assert r1[15] == "archive.qwk"
+    assert r1[16] == "file1.txt;file2.jpg"
 
     # Row 2 (msg2)
     r2 = rows[1]
@@ -93,6 +106,10 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert r2[10] == "1"    # thread_id
     assert r2[11] == 1      # depth
     assert r2[12] == 1      # parent_message_number
+    assert r2[13] == "Main Board"
+    assert r2[14] == "MyBBS"
+    assert r2[15] == "archive.qwk"
+    assert r2[16] == ""
 
     conn.close()
 
