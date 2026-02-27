@@ -40,6 +40,44 @@ FORMAT_EXTENSIONS = {
     'eml': '.eml',
 }
 
+
+def resolve_output_format(
+    output_format: str | None,
+    output_path: str | None,
+    output_mode: str,
+) -> str:
+    """Determine the output format based on the user's choice or the file extension.
+
+    Args:
+        output_format: The format explicitly requested by the user (e.g., 'json', 'html').
+        output_path: The path where the output will be saved.
+        output_mode: Whether the output is going to a 'file' or 'stdout'.
+
+    Returns:
+        The resolved format name (e.g., 'text', 'json', 'html').
+    """
+    if output_format is None:
+        if output_path and output_mode == 'file':
+            ext = os.path.splitext(output_path)[1].lower()
+            if ext == '.json':
+                return 'json'
+            if ext == '.xml':
+                return 'xml'
+            if ext == '.html':
+                return 'html'
+            if ext == '.csv':
+                return 'csv'
+            if ext == '.mbox':
+                return 'mbox'
+            if ext == '.eml':
+                return 'eml'
+            if ext in ('.md', '.markdown'):
+                return 'markdown'
+            if ext in ('.sqlite', '.db'):
+                return 'sqlite'
+        return 'text'
+    return output_format
+
 RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s\d{3}\s')
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
@@ -1442,24 +1480,9 @@ def process_merged_files(
                 if settings.threaded
                 else collected_messages
             )
-
-            writers: dict[str, Callable[[list[ProcessedMessage], str | None, str, ProcessingSettings, BBSInfo | None], None]] = {
-                'json': _write_json,
-                'xml': _write_xml,
-                'html': _write_html,
-                'markdown': _write_markdown,
-                'text': _write_text,
-                'csv': _write_csv,
-                'mbox': _write_mbox,
-                'eml': _write_eml,
-                'sqlite': _write_sqlite,
-            }
-
-            writer = writers.get(settings.format, _write_text)
-            output_encoding = 'utf-8'
-            if settings.format == 'text':
-                output_encoding = settings.encoding
-            writer(ordered_messages, resolved_output_path, output_encoding, settings, bbs_info_to_use)
+            write_messages(
+                ordered_messages, resolved_output_path, settings, bbs_info_to_use
+            )
         else:
             potential_files = 1
 
@@ -2173,6 +2196,43 @@ def _write_sqlite(
 
     conn.commit()
     conn.close()
+
+
+def write_messages(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    settings: ProcessingSettings,
+    bbs_info: BBSInfo | None = None,
+) -> None:
+    """Save a list of messages to a file or print them to the screen.
+
+    This function selects the appropriate writer based on the settings and
+    handles the encoding for the output.
+    """
+    writers: dict[
+        str,
+        Callable[
+            [list[ProcessedMessage], str | None, str, ProcessingSettings, BBSInfo | None],
+            None,
+        ],
+    ] = {
+        'json': _write_json,
+        'xml': _write_xml,
+        'html': _write_html,
+        'markdown': _write_markdown,
+        'text': _write_text,
+        'csv': _write_csv,
+        'mbox': _write_mbox,
+        'eml': _write_eml,
+        'sqlite': _write_sqlite,
+    }
+
+    writer = writers.get(settings.format, _write_text)
+    output_encoding = 'utf-8'
+    if settings.format == 'text':
+        output_encoding = settings.encoding
+
+    writer(messages, output_path, output_encoding, settings, bbs_info)
 
 
 def _write_index(

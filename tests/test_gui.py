@@ -78,6 +78,7 @@ class TestQwkGui:
         assert app.root is not None
         assert hasattr(app, 'message_list')
         app.root.bind.assert_any_call("<Control-o>", app.open_file)
+        app.root.bind.assert_any_call("<Control-s>", app.export_messages)
         app.root.bind.assert_any_call("<Escape>", app.clear_search)
 
     def test_current_settings(self, mock_gui_deps):
@@ -576,6 +577,43 @@ class TestQwkGui:
 
             app.load_messages("test.qwk")
             app.root.title.assert_called_with("Test BBS (test.qwk) - PyQWK Reader")
+
+    def test_export_messages_success(self, mock_gui_deps):
+        app = get_app()
+        header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        app.messages = [ParsedMessage("Body", 1, None, 1, header)]
+
+        def mock_traverse(item_id):
+            return [item_id]
+
+        with patch.object(app, "_get_all_tree_items", return_value=["0"]):
+            mock_gui_deps["filedialog"].asksaveasfilename.return_value = "export.json"
+
+            with patch("pyqwk.gui.write_messages") as mock_write:
+                app.export_messages()
+
+                mock_write.assert_called_once()
+                args, _ = mock_write.call_args
+                assert args[0] == app.messages
+                assert args[1] == "export.json"
+                assert args[2].format == "json"
+                mock_gui_deps["messagebox"].showinfo.assert_called()
+
+    def test_export_messages_no_messages(self, mock_gui_deps):
+        app = get_app()
+        app.messages = []
+        app.export_messages()
+        mock_gui_deps["messagebox"].showwarning.assert_called_with("Export", "No messages to export.")
+
+    def test_export_messages_cancel(self, mock_gui_deps):
+        app = get_app()
+        header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        app.messages = [ParsedMessage("Body", 1, None, 1, header)]
+        mock_gui_deps["filedialog"].asksaveasfilename.return_value = ""
+
+        with patch("pyqwk.gui.write_messages") as mock_write:
+            app.export_messages()
+            mock_write.assert_not_called()
 
     def test_conference_discovery(self, mock_gui_deps):
         """Test that conferences found in messages.dat but not in CONTROL.DAT are discovered."""

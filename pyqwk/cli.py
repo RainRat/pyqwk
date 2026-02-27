@@ -12,37 +12,10 @@ from pyqwk.core import (
     process_file,
     process_merged_files,
     process_multiple_files,
+    resolve_output_format,
     show_info,
     show_stats,
 )
-
-
-def _resolve_output_format(
-    output_format: str | None,
-    output_path: str | None,
-    output_mode: str,
-) -> str:
-    if output_format is None:
-        if output_path and output_mode == 'file':
-            ext = os.path.splitext(output_path)[1].lower()
-            if ext == '.json':
-                return 'json'
-            if ext == '.xml':
-                return 'xml'
-            if ext == '.html':
-                return 'html'
-            if ext == '.csv':
-                return 'csv'
-            if ext == '.mbox':
-                return 'mbox'
-            if ext == '.eml':
-                return 'eml'
-            if ext == '.md' or ext == '.markdown':
-                return 'markdown'
-            if ext == '.sqlite' or ext == '.db':
-                return 'sqlite'
-        return 'text'
-    return output_format
 
 
 def _expand_directories(paths: list[str]) -> list[str]:
@@ -415,7 +388,7 @@ def main() -> None:
         output_mode = 'stdout' if not output_path else 'file'
         resolved_output_path = output_path
 
-    output_format = _resolve_output_format(args.format, output_path, output_mode)
+    output_format = resolve_output_format(args.format, output_path, output_mode)
 
     # Default to individual files for EML format if an output path is provided
     if output_format == 'eml' and not args.individualfiles and output_path:
