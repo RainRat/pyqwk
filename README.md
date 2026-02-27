@@ -69,7 +69,7 @@ qwk-gui
 **Key Features:**
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text.
 - **Filtering:** View messages from specific conferences, include private messages, or filter by the presence of attachments.
-- **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (redacts emails and phone numbers), and **Remove Colors**.
+- **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (hides emails and phone numbers), and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 
@@ -162,7 +162,7 @@ qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
 qwk archive.qwk --clean -o clean.txt
 ```
 
-**Extract binary attachments (like images or programs) to a folder:**
+**Extract attachments (like images or files) to a folder:**
 ```bash
 qwk archive.qwk --extract-attachments -o output/
 ```
@@ -213,7 +213,7 @@ Search using advanced patterns (regex) by adding the `--regex` flag.
 qwk archive.qwk --search "BBS|Board" --regex
 ```
 
-**Pagination:**
+**Processing in Chunks:**
 Skip a number of messages or limit the total results. This is useful for processing large archives in chunks.
 ```bash
 # Skip the first 100 messages and process the next 50
@@ -237,7 +237,7 @@ qwk archive.qwk --after 2023-01-01 --before 2023-12-31
 ```
 
 **Filter by Attachments:**
-Only show messages that contain binary attachments (UUE, yEnc, Base64).
+Only show messages that contain attachments (UUE, yEnc, Base64).
 ```bash
 qwk archive.qwk --has-attachments
 ```
@@ -299,13 +299,13 @@ for msg in parse_messages(file_data, None):
 | `--regex` | Use regular expressions for searching and filtering. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number (can be used multiple times). |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
-| `-x, --extract-attachments` | Extract binary attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
+| `-x, --extract-attachments` | Extract attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
 | `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
 | `-c, --cut-quoting` | Remove text quoted from earlier messages. |
 | `-b, --binaries-removal` | Remove attachments such as images or programs. |
 | `-r, --redact-pii` | Hide personal information like email addresses and phone numbers. |
 | `-H, --headers-only` | Show only message headers and skip the message text. |
-| `-E, --encoding [name]` | Set the text character set (default is `cp437`). |
+| `-E, --encoding [name]` | Set the text format (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
 | `-f, --from [name]` | Only show messages from this author (can be used multiple times). |
 | `--to [name]` | Only show messages to this recipient (can be used multiple times). |
@@ -323,7 +323,7 @@ for msg in parse_messages(file_data, None):
 | `-K, --skip [num]` | Skip the first this many matching messages. |
 | `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, or `conference`. |
 | `--reverse` | Reverse the order of the output. |
-| `--has-attachments` | Only show messages that contain binary attachments (UUE, yEnc, Base64). |
+| `--has-attachments` | Only show messages that contain attachments (UUE, yEnc, Base64). |
 | `-I, --info` | Show a summary of the archive and exit. Use `--format json` for JSON output. |
 | `--stats` | Show detailed statistics about the messages and exit. Use `--format json` for JSON output. |
 | `-V, --version` | Show the version number and exit. |
@@ -333,7 +333,7 @@ Run `qwk --help` to see all available options.
 ## Troubleshooting
 
 - **Unsupported Compression:** Some old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
-- **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's character set.
+- **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
 - **Option Conflict:** You cannot use the `--threaded` and `--individual-files` options together.
 
 ## Contributing
