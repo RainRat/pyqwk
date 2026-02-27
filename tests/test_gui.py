@@ -421,7 +421,6 @@ class TestQwkGui:
 
         with patch.object(app, "on_message_selected") as mock_on_selected:
             app.jump_to_message(1, 1) # Jump to conf 1, msg 1
-            mock_on_selected.assert_called_once()
 
         app.message_list.selection_set.assert_called_with("0")
         app.message_list.see.assert_called_with("0")
@@ -515,7 +514,6 @@ class TestQwkGui:
         with patch.object(app, "on_message_selected") as mock_on_selected:
             app._select_relative_message(1)
             app.message_list.selection_set.assert_called_with("0")
-            mock_on_selected.assert_called_once()
 
         # Selection at index 0 -> move to index 1
         app.message_list.selection.return_value = ("0",)

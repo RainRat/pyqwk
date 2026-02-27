@@ -200,59 +200,65 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     for line in lines:
         clean_line = line.strip()
 
-        if not in_uue and not in_base64 and not in_yenc:
-            # Check for UUE begin
-            uue_match = uue_begin_re.match(clean_line)
-            if uue_match:
-                in_uue = True
-                current_filename = uue_match.group(1).strip()
-                current_data = []
-                continue
-
-            # Check for yEnc begin
-            yenc_match = yenc_begin_re.match(clean_line)
-            if yenc_match:
-                in_yenc = True
-                current_filename = yenc_match.group(1).strip()
-                current_data = []
-                continue
-
-            # Check for Base64 (starts with high density line)
-            if RE_BASE64_PATTERN.match(clean_line):
-                in_base64 = True
-                current_filename = "attachment.bin"
-                current_data = [clean_line]
-                continue
-
-        elif in_uue:
+        if in_uue:
             if clean_line == 'end' or clean_line == '`':
                 decoded = _decode_uue(current_data)
                 if decoded:
                     binaries.append((current_filename, decoded))
                 in_uue = False
+                continue
             else:
                 # Basic check: if it looks like a UUE line (starts with M and has decent length)
                 # or is a common last line (length character at start matches line length)
                 # we add it.
                 current_data.append(line)  # Use original line for UUE as spaces matter
+                continue
 
-        elif in_base64:
+        if in_base64:
             if not RE_BASE64_LOOSE_PATTERN.match(clean_line):
                 decoded = _decode_base64(current_data)
                 if decoded:
                     binaries.append((current_filename, decoded))
                 in_base64 = False
+                # Fall through to check if this line starts another block
             else:
                 current_data.append(clean_line)
+                continue
 
-        elif in_yenc:
+        if in_yenc:
             if clean_line.startswith('=yend'):
                 decoded = _decode_yenc(current_data)
                 if decoded:
                     binaries.append((current_filename, decoded))
                 in_yenc = False
+                continue
             else:
                 current_data.append(line)
+                continue
+
+        # Check for block starts
+        # Check for UUE begin
+        uue_match = uue_begin_re.match(clean_line)
+        if uue_match:
+            in_uue = True
+            current_filename = uue_match.group(1).strip()
+            current_data = []
+            continue
+
+        # Check for yEnc begin
+        yenc_match = yenc_begin_re.match(clean_line)
+        if yenc_match:
+            in_yenc = True
+            current_filename = yenc_match.group(1).strip()
+            current_data = []
+            continue
+
+        # Check for Base64 (starts with high density line)
+        if RE_BASE64_PATTERN.match(clean_line):
+            in_base64 = True
+            current_filename = "attachment.bin"
+            current_data = [clean_line]
+            continue
 
     # Handle unterminated blocks at end of text
     if in_base64 and current_data:
@@ -1193,16 +1199,10 @@ def process_merged_files(
                 else:
                     total_attachments += len(found_attachments)
 
-        if settings.oneline:
-            processed_buffer = parsed_message.header.format_oneline(
-                board_dict,
-                use_colors=use_colors,
-                highlight_term=settings.search_term,
-                is_regex=settings.regex,
-                verbose=settings.verbose,
-            )
-        else:
-            processed_buffer = process_message(
+        # Pre-process the body if we are not in headers-only mode
+        cleaned_body = ""
+        if not settings.headers_only and parsed_message.text:
+            cleaned_body = process_message(
                 parsed_message.text,
                 settings.truncate_signatures,
                 settings.cut_quoting,
@@ -1212,12 +1212,23 @@ def process_merged_files(
             )
 
             # Apply search highlighting to body for terminal output
-            processed_buffer = _highlight_text(
-                processed_buffer,
+            cleaned_body = _highlight_text(
+                cleaned_body,
                 settings.search_term,
                 settings.regex,
                 use_colors=use_colors
             )
+
+        if settings.oneline:
+            processed_buffer = parsed_message.header.format_oneline(
+                board_dict,
+                use_colors=use_colors,
+                highlight_term=settings.search_term,
+                is_regex=settings.regex,
+                verbose=settings.verbose,
+            )
+        else:
+            processed_buffer = cleaned_body
 
             if include_header:
                 leading_newlines = 0
@@ -1259,34 +1270,35 @@ def process_merged_files(
             if settings.extract_attachments:
                 attachment_prefix = "../attachments/" if settings.organize else "attachments/"
 
+            # Structured formats use the cleaned_body (if oneline) or processed_buffer
             if settings.format == 'text':
                 encoded_buffer = processed_buffer.encode(target_encoding)
             elif settings.format == 'json':
-                text_content = "" if settings.headers_only else processed_buffer
+                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = json.dumps(
                     _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                 ).encode(target_encoding)
             elif settings.format == 'xml':
-                text_content = "" if settings.headers_only else processed_buffer
+                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
             elif settings.format == 'html':
-                temp_msg = replace(parsed_message, text=processed_buffer)
+                temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
                 encoded_buffer = _serialize_message_html(
                     temp_msg, attachment_prefix=attachment_prefix
                 ).encode(target_encoding)
             elif settings.format == 'markdown':
-                temp_msg = replace(parsed_message, text=processed_buffer)
+                temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
                 encoded_buffer = _serialize_message_markdown(
                     temp_msg, attachment_prefix=attachment_prefix
                 ).encode(target_encoding)
             elif settings.format == 'mbox':
-                text_content = "" if settings.headers_only else processed_buffer
+                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
             elif settings.format == 'eml':
-                text_content = "" if settings.headers_only else processed_buffer
+                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
             else:
@@ -1333,9 +1345,12 @@ def process_merged_files(
             estimated_bytes += len(processed_buffer.encode('utf-8'))
             if not settings.dry_run:
                 text_content = processed_buffer
-                if settings.headers_only:
-                    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox'):
-                        text_content = ""
+                # For structured formats, we prefer the cleaned body (if oneline) or processed_buffer
+                # (which might contain headers or terminal highlighting)
+                if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml'):
+                    text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
+                elif settings.format in ('html', 'markdown') and settings.oneline:
+                    text_content = cleaned_body
 
                 collected_messages.append(
                     replace(
@@ -1762,13 +1777,13 @@ def _write_html(
         html_parts.append("<hr>")
 
     current_depth = 0
-    seen_confs_for_headers = set()
+    last_confnum = None
 
     for i, message in enumerate(messages):
-        if settings and settings.include_toc and message.confnum not in seen_confs_for_headers:
+        if settings and settings.include_toc and message.confnum != last_confnum:
             conf_name = message.confname or f"Conference {message.confnum}"
             html_parts.append(f'<h2 id="conf-{message.confnum}">{html.escape(conf_name)}</h2>')
-            seen_confs_for_headers.add(message.confnum)
+            last_confnum = message.confnum
 
         while current_depth < message.depth:
             html_parts.append('<div class="reply">')
@@ -1829,12 +1844,12 @@ def _write_markdown(
                 seen_confs.add(msg.confnum)
         md_parts.append("\n---\n")
 
-    seen_confs_for_headers = set()
+    last_confnum = None
     for message in messages:
-        if settings and settings.include_toc and message.confnum not in seen_confs_for_headers:
+        if settings and settings.include_toc and message.confnum != last_confnum:
             conf_name = message.confname or f"Conference {message.confnum}"
             md_parts.append(f"## {conf_name} <a name=\"conf-{message.confnum}\"></a>\n")
-            seen_confs_for_headers.add(message.confnum)
+            last_confnum = message.confnum
 
         single_md = _render_single_message_markdown(
             message, attachment_prefix=attachment_prefix

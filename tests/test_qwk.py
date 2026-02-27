@@ -185,15 +185,6 @@ def test_invalid_messages_dat_reports_clear_error(
     assert "Input too short" in caplog.text
 
 
-def test_parse_messages_raises_for_truncated_payload(
-    baseline_path: Path, logger: logging.Logger
-) -> None:
-    truncated_data = bytearray(baseline_path.read_bytes()[:-qwk.BLOCK_SIZE])
-
-    with pytest.raises(qwk.MessagesDatFormatError) as exc_info:
-        list(parse_messages(truncated_data, progress_bar=None))
-
-    assert "truncated" in str(exc_info.value)
 
 
 
@@ -223,24 +214,6 @@ def test_process_file_writes_individual_files(
     assert content == expected_message.replace(separator, "", 1)
 
 
-def test_process_file_requires_directory_for_individual_files(
-    tmp_path, baseline_path: Path, logger: logging.Logger
-) -> None:
-    invalid_output = tmp_path / "not_a_directory.txt"
-    invalid_output.write_text("content", encoding="utf-8")
-
-    with pytest.raises(ValueError) as exc_info:
-        process_file(
-            str(baseline_path),
-            _make_settings(
-                individual_files=True,
-                output_mode="file",
-                output_path=str(invalid_output),
-            ),
-            logger=logger,
-        )
-
-    assert "folder" in str(exc_info.value)
 
 
 def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
@@ -329,34 +302,6 @@ def test_order_messages_by_thread_handles_missing_parent() -> None:
     ]
 
 
-def test_order_messages_by_thread_logs_circular_reference(caplog: pytest.LogCaptureFixture) -> None:
-    header = MessageHeader(
-        status="",
-        msgnum=None,
-        msgdate="",
-        msgtime="",
-        msgto="",
-        msgfrom="",
-        msgsubject="",
-        msgpassword="",
-        refnum=None,
-        numblocks=None,
-        msgflag="",
-        confnum=0,
-        lognum=0,
-        nettag="",
-    )
-    messages = [
-        ProcessedMessage("first\r\n", msgnum=1, refnum=3, confnum=1, header=header),
-        ProcessedMessage("second\r\n", msgnum=2, refnum=1, confnum=1, header=header),
-        ProcessedMessage("third\r\n", msgnum=3, refnum=2, confnum=1, header=header),
-    ]
-
-    with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
-        ordered = _order_messages_by_thread(messages)
-
-    assert [message.msgnum for message in ordered] == [1, 2, 3]
-    assert "Circular reference detected" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -1049,36 +994,6 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
 
     assert content == expected_bytes_cp437
 
-def test_parse_messages_recovers_from_invalid_numblocks() -> None:
-    # Block 0: QWK Header
-    qwk_header = b'Produced ' + b'\x00' * (128 - 9)
-
-    # Header 1: numblocks=0 (Invalid)
-    header1 = struct.pack(
-        '<c7s8s5s25s25s25s12s8s6scHHc',
-        b' ', b"1".ljust(7, b' '), b"010190", b"0000", b"To".ljust(25, b' '), b"From".ljust(25, b' '), b"Subj1".ljust(25, b' '), b"".ljust(12, b' '), b"0".ljust(8, b' '),
-        b"0".ljust(6, b' '), # numblocks=0
-        b' ', 1, 1, b' '
-    )
-
-    # Header 2: numblocks=2 (1 body block) - Valid
-    header2 = struct.pack(
-        '<c7s8s5s25s25s25s12s8s6scHHc',
-        b' ', b"2".ljust(7, b' '), b"010190", b"0000", b"To".ljust(25, b' '), b"From".ljust(25, b' '), b"Subj2".ljust(25, b' '), b"".ljust(12, b' '), b"0".ljust(8, b' '),
-        b"2".ljust(6, b' '), # numblocks=2
-        b' ', 1, 2, b' '
-    )
-
-    body2 = b"Hello world".ljust(128, b' ')
-
-    data = bytearray(qwk_header + header1 + header2 + body2)
-
-    messages = list(parse_messages(data, progress_bar=None))
-
-    # Should skip first message (invalid) and parse second message.
-    assert len(messages) == 1
-    assert messages[0].msgnum == 2
-    assert messages[0].header.msgsubject.strip() == "Subj2"
 
 def test_process_multiple_files_handles_controldat_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger

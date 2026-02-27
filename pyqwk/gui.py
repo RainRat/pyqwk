@@ -133,7 +133,6 @@ class QwkGuiApp:
         self.message_list.selection_set(new_item)
         self.message_list.see(new_item)
         self.message_list.focus(new_item)
-        self.on_message_selected()
 
     def clear_search(self, _event: object | None = None) -> None:
         self.search_var.set("")
@@ -602,7 +601,6 @@ class QwkGuiApp:
                 self.message_list.selection_set(item_to_select)
                 self.message_list.focus(item_to_select)
                 self.message_list.see(item_to_select)
-                self.on_message_selected()
             else:
                 self._set_detail_text("No messages found.")
         except Exception as exc:
@@ -624,7 +622,6 @@ class QwkGuiApp:
                     self.message_list.selection_set(iid)
                     self.message_list.see(iid)
                     self.message_list.focus(iid)
-                    self.on_message_selected()
                     return
         messagebox.showinfo(
             "Not Found",
