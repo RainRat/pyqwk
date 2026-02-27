@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import tkinter as tk
@@ -17,7 +18,7 @@ from pyqwk.core import (
 
 
 class QwkGuiApp:
-    def __init__(self, root: tk.Tk) -> None:
+    def __init__(self, root: tk.Tk, initial_path: str | None = None) -> None:
         self.root = root
         self.root.title("PyQWK Reader")
         self.root.geometry("1100x650")
@@ -54,6 +55,10 @@ class QwkGuiApp:
         self._build_toolbar()
         self._build_status_bar()
         self._build_layout()
+
+        if initial_path:
+            self.current_path = initial_path
+            self.root.after(100, lambda: self.load_messages(initial_path))
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
@@ -578,6 +583,7 @@ class QwkGuiApp:
             self.status_label.config(
                 text=f"Showing {len(self.messages)} of {total_count} messages from {source_display}"
             )
+            self.root.title(f"{source_display} - PyQWK Reader")
 
             # Restore selection if possible
             new_iid_to_select = None
@@ -707,9 +713,15 @@ class QwkGuiApp:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="PyQWK Graphical Reader")
+    parser.add_argument(
+        "path", nargs="?", help="Path to a QWK archive or messages.dat file"
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
     root = tk.Tk()
-    QwkGuiApp(root)
+    QwkGuiApp(root, initial_path=args.path)
     root.mainloop()
 
 
