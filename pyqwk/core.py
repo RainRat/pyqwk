@@ -1323,12 +1323,18 @@ def process_merged_files(
             elif settings.format == 'html':
                 temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
                 encoded_buffer = _serialize_message_html(
-                    temp_msg, attachment_prefix=attachment_prefix
+                    temp_msg,
+                    attachment_prefix=attachment_prefix,
+                    search_term=settings.search_term,
+                    is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'markdown':
                 temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
                 encoded_buffer = _serialize_message_markdown(
-                    temp_msg, attachment_prefix=attachment_prefix
+                    temp_msg,
+                    attachment_prefix=attachment_prefix,
+                    search_term=settings.search_term,
+                    is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'mbox':
                 text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
@@ -1655,26 +1661,33 @@ def _render_single_message_html(
     message: ProcessedMessage,
     msg_id: str | None = None,
     attachment_prefix: str | None = None,
+    search_term: str | None = None,
+    is_regex: bool = False,
 ) -> list[str]:
     parts = []
     id_attr = f' id="{msg_id}"' if msg_id else ""
     parts.append(f'<div class="message"{id_attr}>')
 
+    def h_esc(text: str) -> str:
+        return _apply_highlighting(
+            text, search_term, is_regex, "<mark>", "</mark>", escape_func=html.escape
+        )
+
     # Header
     header = message.header
     parts.append('<div class="header">')
     parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
-    parts.append(f'<div><strong>From:</strong> {html.escape(header.msgfrom)}</div>')
-    parts.append(f'<div><strong>To:</strong> {html.escape(header.msgto)}</div>')
-    parts.append(f'<div><strong>Subject:</strong> {html.escape(header.msgsubject)}</div>')
+    parts.append(f'<div><strong>From:</strong> {h_esc(header.msgfrom)}</div>')
+    parts.append(f'<div><strong>To:</strong> {h_esc(header.msgto)}</div>')
+    parts.append(f'<div><strong>Subject:</strong> {h_esc(header.msgsubject)}</div>')
 
     conf_name = message.confname or f"Conference {header.confnum}"
-    parts.append(f'<div><strong>Conference:</strong> {html.escape(conf_name)} ({header.confnum})</div>')
+    parts.append(f'<div><strong>Conference:</strong> {h_esc(conf_name)} ({header.confnum})</div>')
 
     if message.bbs_name:
-        parts.append(f'<div><strong>BBS:</strong> {html.escape(message.bbs_name)}</div>')
+        parts.append(f'<div><strong>BBS:</strong> {h_esc(message.bbs_name)}</div>')
     if message.source_file:
-        parts.append(f'<div><strong>Source:</strong> {html.escape(message.source_file)}</div>')
+        parts.append(f'<div><strong>Source:</strong> {h_esc(message.source_file)}</div>')
 
     if header.msgnum is not None:
         parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
@@ -1691,7 +1704,7 @@ def _render_single_message_html(
     parts.append('</div>')
 
     # Body
-    escaped_text = html.escape(message.text.replace('\r\n', '\n'))
+    escaped_text = h_esc(message.text.replace('\r\n', '\n'))
     parts.append('<pre class="body">')
     parts.append(escaped_text)
     parts.append('</pre>')
@@ -1701,11 +1714,20 @@ def _render_single_message_html(
 
 
 def _serialize_message_html(
-    message: ProcessedMessage, attachment_prefix: str | None = None
+    message: ProcessedMessage,
+    attachment_prefix: str | None = None,
+    search_term: str | None = None,
+    is_regex: bool = False,
 ) -> str:
-    html_parts = _get_html_header('QWK Message')
+    title = f"Search Results for '{search_term}'" if search_term else 'QWK Message'
+    html_parts = _get_html_header(title)
     html_parts.extend(
-        _render_single_message_html(message, attachment_prefix=attachment_prefix)
+        _render_single_message_html(
+            message,
+            attachment_prefix=attachment_prefix,
+            search_term=search_term,
+            is_regex=is_regex,
+        )
     )
     html_parts.extend(_get_html_footer())
 
@@ -1713,22 +1735,31 @@ def _serialize_message_html(
 
 
 def _render_single_message_markdown(
-    message: ProcessedMessage, attachment_prefix: str | None = None
+    message: ProcessedMessage,
+    attachment_prefix: str | None = None,
+    search_term: str | None = None,
+    is_regex: bool = False,
 ) -> list[str]:
     header = message.header
     parts = []
-    parts.append(f"## {header.msgsubject}")
+
+    def md_high(text: str) -> str:
+        return _apply_highlighting(
+            text, search_term, is_regex, "**", "**"
+        )
+
+    parts.append(f"## {md_high(header.msgsubject)}")
     parts.append(f"- **Date:** {header.msgdate} {header.msgtime}")
-    parts.append(f"- **From:** {header.msgfrom}")
-    parts.append(f"- **To:** {header.msgto}")
+    parts.append(f"- **From:** {md_high(header.msgfrom)}")
+    parts.append(f"- **To:** {md_high(header.msgto)}")
 
     conf_name = message.confname or f"Conference {header.confnum}"
-    parts.append(f"- **Conference:** {conf_name} ({header.confnum})")
+    parts.append(f"- **Conference:** {md_high(conf_name)} ({header.confnum})")
 
     if message.bbs_name:
-        parts.append(f"- **BBS:** {message.bbs_name}")
+        parts.append(f"- **BBS:** {md_high(message.bbs_name)}")
     if message.source_file:
-        parts.append(f"- **Source:** {message.source_file}")
+        parts.append(f"- **Source:** {md_high(message.source_file)}")
 
     if header.msgnum is not None:
         parts.append(f"- **Number:** {header.msgnum}")
@@ -1744,18 +1775,27 @@ def _render_single_message_markdown(
         parts.append(f"- **Attachments:** {', '.join(links)}")
 
     parts.append("")
-    parts.append(message.text.replace('\r\n', '\n'))
+    parts.append(md_high(message.text.replace('\r\n', '\n')))
     parts.append("")
     parts.append("---")
     return parts
 
 
 def _serialize_message_markdown(
-    message: ProcessedMessage, attachment_prefix: str | None = None
+    message: ProcessedMessage,
+    attachment_prefix: str | None = None,
+    search_term: str | None = None,
+    is_regex: bool = False,
 ) -> str:
-    md_parts = ["# QWK Message\n"]
+    title = f"Search Results for '{search_term}'" if search_term else 'QWK Message'
+    md_parts = [f"# {title}\n"]
     md_parts.extend(
-        _render_single_message_markdown(message, attachment_prefix=attachment_prefix)
+        _render_single_message_markdown(
+            message,
+            attachment_prefix=attachment_prefix,
+            search_term=search_term,
+            is_regex=is_regex,
+        )
     )
     return '\n'.join(md_parts)
 
@@ -1770,6 +1810,12 @@ def _write_html(
     title = 'QWK Messages'
     if bbs_info and bbs_info.name:
         title = f"{bbs_info.name} Archive"
+
+    if settings and settings.search_term:
+        title = f"Search Results for '{settings.search_term}' - {title}"
+
+    search_term = settings.search_term if settings else None
+    is_regex = settings.regex if settings else False
 
     html_parts = _get_html_header(title)
     attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
@@ -1817,7 +1863,11 @@ def _write_html(
         msg_id = f"msg-{i}" if settings and settings.include_toc else None
         html_parts.extend(
             _render_single_message_html(
-                message, msg_id=msg_id, attachment_prefix=attachment_prefix
+                message,
+                msg_id=msg_id,
+                attachment_prefix=attachment_prefix,
+                search_term=search_term,
+                is_regex=is_regex,
             )
         )
 
@@ -1840,6 +1890,12 @@ def _write_markdown(
     title = 'QWK Messages'
     if bbs_info and bbs_info.name:
         title = f"{bbs_info.name} Archive"
+
+    if settings and settings.search_term:
+        title = f"Search Results for '{settings.search_term}' - {title}"
+
+    search_term = settings.search_term if settings else None
+    is_regex = settings.regex if settings else False
 
     md_parts = [f"# {title}\n"]
     attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
@@ -1874,7 +1930,10 @@ def _write_markdown(
             last_confnum = message.confnum
 
         single_md = _render_single_message_markdown(
-            message, attachment_prefix=attachment_prefix
+            message,
+            attachment_prefix=attachment_prefix,
+            search_term=search_term,
+            is_regex=is_regex,
         )
         if message.depth > 0:
             prefix = "> " * message.depth
@@ -2345,15 +2404,57 @@ def _highlight_text(
     if not term or not use_colors:
         return text
 
+    return _apply_highlighting(
+        text, term, is_regex, start_tag="\x1b[7m", end_tag="\x1b[0m"
+    )
+
+
+def _apply_highlighting(
+    text: str,
+    term: str | None,
+    is_regex: bool = False,
+    start_tag: str = "",
+    end_tag: str = "",
+    escape_func: Callable[[str], str] | None = None,
+) -> str:
+    """Apply highlighting to matching terms in text, optionally escaping parts.
+
+    Args:
+        text: The input text.
+        term: The search term or pattern.
+        is_regex: Whether the term is a regular expression.
+        start_tag: The string to prepend to matches.
+        end_tag: The string to append to matches.
+        escape_func: Optional function to escape both matching and non-matching parts.
+
+    Returns:
+        The text with highlighting applied.
+    """
+    if not term:
+        return escape_func(text) if escape_func else text
+
     flags = re.IGNORECASE
     pattern_str = term if is_regex else re.escape(term)
     try:
-        pattern = re.compile(pattern_str, flags)
+        pattern = re.compile(f"({pattern_str})", flags)
     except re.error:
-        return text
+        return escape_func(text) if escape_func else text
 
-    # Apply reverse video (\x1b[7m) to matches
-    return pattern.sub(lambda m: f"\x1b[7m{m.group(0)}\x1b[0m", text)
+    # Use re.split with a capture group to get both matches and non-matches
+    parts = pattern.split(text)
+    result = []
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        # Even indices are non-matches, odd indices are matches (due to capture group)
+        is_match = i % 2 == 1
+        processed_part = escape_func(part) if escape_func else part
+        if is_match:
+            result.append(f"{start_tag}{processed_part}{end_tag}")
+        else:
+            result.append(processed_part)
+
+    return "".join(result)
 
 
 def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
