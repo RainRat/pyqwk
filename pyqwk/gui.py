@@ -171,7 +171,9 @@ class QwkGuiApp:
         # Actions group
         actions_frame = ttk.Frame(toolbar)
         actions_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Button(actions_frame, text="Open QWK", command=self.open_file).pack(side=tk.LEFT)
+        ttk.Label(actions_frame, text="File:").pack(side=tk.LEFT)
+        ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
