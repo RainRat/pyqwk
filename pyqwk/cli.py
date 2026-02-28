@@ -148,7 +148,7 @@ def main() -> None:
         '-x',
         '--extract-attachments',
         dest='extractattachments',
-        help='Extract binary attachments (UUE, yEnc, Base64) to an attachments/ folder.',
+        help='Extract attachments (UUE, yEnc, Base64) to an attachments/ folder.',
         action='store_true',
     )
     content_group.add_argument(
@@ -344,7 +344,7 @@ def main() -> None:
     )
     filter_group.add_argument(
         '--has-attachments',
-        help='Only show messages that contain binary attachments (UUE, yEnc, Base64).',
+        help='Only show messages that contain attachments (UUE, yEnc, Base64).',
         action='store_true',
     )
 

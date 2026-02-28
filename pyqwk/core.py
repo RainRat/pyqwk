@@ -179,7 +179,7 @@ def _decode_yenc(data: list[str]) -> bytes:
 
 
 def extract_binaries(text: str) -> list[tuple[str, bytes]]:
-    """Scan text for binary blocks (UUE, yEnc, Base64) and decode them.
+    """Scan text for attachment blocks (UUE, yEnc, Base64) and decode them.
 
     Returns:
         A list of (filename, data) tuples.
