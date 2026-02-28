@@ -81,6 +81,11 @@ class TestQwkGui:
         app.root.bind.assert_any_call("<Control-s>", app.export_messages)
         app.root.bind.assert_any_call("<Escape>", app.clear_search)
 
+        # Verify toolbar elements
+        mock_gui_deps["ttk"].Label.assert_any_call(ANY, text="File:")
+        mock_gui_deps["ttk"].Button.assert_any_call(ANY, text="Open", command=app.open_file)
+        mock_gui_deps["ttk"].Button.assert_any_call(ANY, text="Export", command=app.export_messages)
+
     def test_current_settings(self, mock_gui_deps):
         app = get_app()
         app.clean_var.get.return_value = True
