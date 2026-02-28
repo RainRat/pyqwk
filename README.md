@@ -63,18 +63,20 @@ If you prefer a visual interface, you can use the built-in reader. It allows you
 
 **To start the reader:**
 ```bash
-qwk-gui
+qwk-gui [archive.qwk]
 ```
 
 **Key Features:**
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text.
 - **Filtering:** View messages from specific conferences, include private messages, or filter by the presence of attachments.
+- **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (hides emails and phone numbers), and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 
 **Keyboard Shortcuts:**
 - **Ctrl + O**: Open a QWK archive.
+- **Ctrl + S**: Export the current view to a file.
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + Q**: Exit the application.
 - **j / k** or **n / p**: Move to the next or previous message in the list.
