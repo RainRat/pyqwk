@@ -2436,23 +2436,29 @@ def _apply_highlighting(
     flags = re.IGNORECASE
     pattern_str = term if is_regex else re.escape(term)
     try:
-        pattern = re.compile(f"({pattern_str})", flags)
+        pattern = re.compile(pattern_str, flags)
     except re.error:
         return escape_func(text) if escape_func else text
 
-    # Use re.split with a capture group to get both matches and non-matches
-    parts = pattern.split(text)
     result = []
-    for i, part in enumerate(parts):
-        if not part:
-            continue
-        # Even indices are non-matches, odd indices are matches (due to capture group)
-        is_match = i % 2 == 1
-        processed_part = escape_func(part) if escape_func else part
-        if is_match:
-            result.append(f"{start_tag}{processed_part}{end_tag}")
-        else:
-            result.append(processed_part)
+    last_end = 0
+    for match in pattern.finditer(text):
+        start, end = match.span()
+        # Non-matching part
+        non_match = text[last_end:start]
+        if non_match:
+            result.append(escape_func(non_match) if escape_func else non_match)
+        
+        # Matching part
+        match_text = match.group(0)
+        processed_match = escape_func(match_text) if escape_func else match_text
+        result.append(f"{start_tag}{processed_match}{end_tag}")
+        last_end = end
+    
+    # Remaining non-matching part
+    remaining = text[last_end:]
+    if remaining:
+        result.append(escape_func(remaining) if escape_func else remaining)
 
     return "".join(result)
 

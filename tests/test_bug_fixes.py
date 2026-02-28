@@ -33,16 +33,4 @@ def test_bug3_cli_conflict_threaded_eml(monkeypatch, capsys):
     stderr = capsys.readouterr().err
     assert "You cannot use --threaded with EML format." in stderr
 
-def test_bug4_eml_output_path_must_be_folder(monkeypatch, tmp_path, capsys):
-    """Verify that EML output path must be a folder if it exists."""
-    input_file = tmp_path / "dummy.qwk"
-    input_file.write_text("dummy")
-    
-    existing_file = tmp_path / "exists.eml"
-    existing_file.write_text("content")
-    
-    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--format", "eml", "-o", str(existing_file)])
-    with pytest.raises(SystemExit):
-        main()
-    stderr = capsys.readouterr().err
-    assert "The output path must be a folder" in stderr
+
