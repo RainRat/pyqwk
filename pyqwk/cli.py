@@ -390,12 +390,18 @@ def main() -> None:
 
     output_format = resolve_output_format(args.format, output_path, output_mode)
 
+    if args.threaded and output_format == 'eml':
+        parser.error("You cannot use --threaded with EML format.")
+
     # Default to individual files for EML format if an output path is provided
     if output_format == 'eml' and not args.individualfiles and output_path:
         args.individualfiles = True
-        # Re-verify output mode logic if we changed individualfiles
-        if os.path.exists(output_path) and not os.path.isdir(output_path):
+        # If the user provided an output path that looks like a file (has an extension),
+        # but EML forces individual files (directory), it's confusing.
+        # However, the core logic requires output_path to be a directory for individual files.
+        if output_path and os.path.exists(output_path) and not os.path.isdir(output_path):
             parser.error("The output path must be a folder when saving messages as individual EML files.")
+        
         output_mode = 'file'
         resolved_output_path = output_path
 

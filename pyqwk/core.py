@@ -466,8 +466,13 @@ class MessageHeader:
         ) = header_data
 
         def decode_clean(b: bytes, strip_whitespace: bool = True) -> str:
-            s = b.decode(encoding).split('\x00')[0]
-            return s.strip() if strip_whitespace else s
+            try:
+                s = b.decode(encoding).split('\x00')[0]
+                return s.strip() if strip_whitespace else s
+            except UnicodeDecodeError as e:
+                raise MessagesDatFormatError(
+                    f"Failed to decode header field with encoding '{encoding}'."
+                ) from e
 
         msgnum_text = decode_clean(raw_msgnum)
         msgnum = int(msgnum_text) if msgnum_text.isdigit() else None
@@ -1633,7 +1638,7 @@ def _get_html_header(title: str) -> list[str]:
         '<html lang="en">',
         '<head>',
         '<meta charset="utf-8" />',
-        f'<title>{title}</title>',
+        f'<title>{html.escape(title)}</title>',
         '<style>',
         '.reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }',
         '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',

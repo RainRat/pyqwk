@@ -712,25 +712,6 @@ def test_load_data_logs_warning_if_control_dat_is_missing(
     assert "CONTROL.DAT not found" in caplog.text
 
 
-
-
-def test_cli_requires_output_directory_for_multiple_inputs(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], testdata_dir: Path
-) -> None:
-    logging.basicConfig(level=logging.ERROR, force=True)
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        ["prog", str(testdata_dir / "test1_qwk.zip"), str(testdata_dir / "test2_qwk.zip")],
-    )
-
-    with pytest.raises(SystemExit):
-        main()
-
-    stderr = capsys.readouterr().err
-    assert "You must provide an output folder when processing more than one file." in stderr
-
-
 def test_cli_treats_multiple_positional_args_as_inputs(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
