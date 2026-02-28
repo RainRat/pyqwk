@@ -235,15 +235,26 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     uue_begin_re = re.compile(r'^begin\s+\d{3}\s+(.+)$')
     yenc_begin_re = re.compile(r'^=ybegin.*name=(.+)$')
 
+    def _flush_binary():
+        nonlocal in_uue, in_base64, in_yenc
+        decoded = b""
+        if in_uue:
+            decoded = _decode_uue(current_data)
+        elif in_base64:
+            decoded = _decode_base64(current_data)
+        elif in_yenc:
+            decoded = _decode_yenc(current_data)
+
+        if decoded:
+            binaries.append((current_filename, decoded))
+        in_uue = in_base64 = in_yenc = False
+
     for line in lines:
         clean_line = line.strip()
 
         if in_uue:
             if clean_line == 'end' or clean_line == '`':
-                decoded = _decode_uue(current_data)
-                if decoded:
-                    binaries.append((current_filename, decoded))
-                in_uue = False
+                _flush_binary()
                 continue
             else:
                 # Basic check: if it looks like a UUE line (starts with M and has decent length)
@@ -254,10 +265,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
 
         if in_base64:
             if not RE_BASE64_LOOSE_PATTERN.match(clean_line):
-                decoded = _decode_base64(current_data)
-                if decoded:
-                    binaries.append((current_filename, decoded))
-                in_base64 = False
+                _flush_binary()
                 # Fall through to check if this line starts another block
             else:
                 current_data.append(clean_line)
@@ -265,10 +273,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
 
         if in_yenc:
             if clean_line.startswith('=yend'):
-                decoded = _decode_yenc(current_data)
-                if decoded:
-                    binaries.append((current_filename, decoded))
-                in_yenc = False
+                _flush_binary()
                 continue
             else:
                 current_data.append(line)
@@ -299,18 +304,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
             continue
 
     # Handle unterminated blocks at end of text
-    if in_base64 and current_data:
-        decoded = _decode_base64(current_data)
-        if decoded:
-            binaries.append((current_filename, decoded))
-    elif in_uue and current_data:
-        decoded = _decode_uue(current_data)
-        if decoded:
-            binaries.append((current_filename, decoded))
-    elif in_yenc and current_data:
-        decoded = _decode_yenc(current_data)
-        if decoded:
-            binaries.append((current_filename, decoded))
+    _flush_binary()
 
     return binaries
 
