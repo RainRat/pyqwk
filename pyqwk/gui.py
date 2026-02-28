@@ -14,6 +14,8 @@ from pyqwk.core import (
     matches_filters,
     get_allowed_conferences,
     _parse_qwk_date,
+    resolve_output_format,
+    write_messages,
 )
 
 
@@ -66,6 +68,11 @@ class QwkGuiApp:
         file_menu.add_command(
             label="Open...", command=self.open_file, accelerator="Ctrl+O"
         )
+        file_menu.add_command(
+            label="Export Current View...",
+            command=self.export_messages,
+            accelerator="Ctrl+S",
+        )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
         menubar.add_cascade(label="File", menu=file_menu)
@@ -85,6 +92,7 @@ class QwkGuiApp:
 
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
+        self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Escape>", self.clear_search)
         self.root.bind("j", lambda e: self._select_relative_message(1))
@@ -618,6 +626,68 @@ class QwkGuiApp:
         self.detail_text.delete("1.0", tk.END)
         self.detail_text.insert(tk.END, text)
         self.detail_text.config(state=tk.DISABLED)
+
+    def export_messages(self, _event: object | None = None) -> None:
+        """Export the currently filtered and sorted messages to a file."""
+        if not self.messages:
+            messagebox.showwarning("Export", "No messages to export.")
+            return
+
+        filetypes = [
+            ("Text files", "*.txt"),
+            ("HTML files", "*.html"),
+            ("Markdown files", "*.md"),
+            ("JSON files", "*.json"),
+            ("mbox files", "*.mbox"),
+            ("EML files", "*.eml"),
+            ("CSV files", "*.csv"),
+            ("SQLite database", "*.db"),
+            ("XML files", "*.xml"),
+            ("All files", "*.*"),
+        ]
+
+        path = filedialog.asksaveasfilename(
+            title="Export Messages",
+            filetypes=filetypes,
+            defaultextension=".txt",
+        )
+
+        if not path:
+            return
+
+        try:
+            # Determine format from extension
+            fmt = resolve_output_format(None, path, "file")
+
+            # Update settings for export
+            settings = self._current_settings()
+            settings = replace(
+                settings,
+                format=fmt,
+                output_mode="file",
+                output_path=path,
+                no_header=False,  # We want headers in the export
+            )
+
+            # Use messages in their current display order from the treeview
+            ordered_item_ids = self._get_all_tree_items()
+            export_list = []
+            for iid in ordered_item_ids:
+                try:
+                    idx = int(iid)
+                    export_list.append(self.messages[idx])
+                except (ValueError, IndexError):
+                    continue
+
+            bbs_info = getattr(self.board_dict, "bbs_info", None)
+            write_messages(export_list, path, settings, bbs_info)
+
+            messagebox.showinfo(
+                "Export Successful",
+                f"Successfully exported {len(export_list)} messages to {os.path.basename(path)}",
+            )
+        except Exception as exc:
+            messagebox.showerror("Export Failed", str(exc))
 
     def jump_to_message(self, confnum: int, msgnum: int) -> None:
         """Find and select a message by conference and message number."""

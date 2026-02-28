@@ -1,6 +1,7 @@
 import pytest
 import datetime
-from pyqwk.cli import _parse_cli_date, _resolve_output_format
+from pyqwk.cli import _parse_cli_date
+from pyqwk.core import resolve_output_format as _resolve_output_format
 
 def test_parse_cli_date_valid():
     assert _parse_cli_date("2023-01-01") == datetime.datetime(2023, 1, 1)
