@@ -272,7 +272,13 @@ class QwkGuiApp:
             relief=tk.FLAT,
             borderwidth=0,
         )
-        self.detail_text.pack(fill=tk.BOTH, expand=True)
+        detail_scrollbar = ttk.Scrollbar(
+            detail_frame, orient=tk.VERTICAL, command=self.detail_text.yview
+        )
+        self.detail_text.configure(yscrollcommand=detail_scrollbar.set)
+
+        detail_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.detail_text.config(state=tk.DISABLED)
 
         # Configure tags for visual hierarchy
