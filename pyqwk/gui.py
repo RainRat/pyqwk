@@ -475,6 +475,12 @@ class QwkGuiApp:
             )
 
     def load_messages(self, path: str) -> None:
+        # Save current state for potential restoration on failure
+        old_messages = self.messages
+        old_board_dict = self.board_dict
+        old_cache = self._cache
+        old_path = self.current_path
+
         try:
             self.status_label.config(text="Loading...")
             self.root.update_idletasks()
@@ -556,6 +562,7 @@ class QwkGuiApp:
 
             self.messages = messages
             self.board_dict = board_dict
+            self.current_path = path
 
             self.message_list.delete(*self.message_list.get_children())
             parent_at_depth = {-1: ""}
@@ -620,7 +627,22 @@ class QwkGuiApp:
             else:
                 self._set_detail_text("No messages found.")
         except Exception as exc:
-            self.status_label.config(text="Error")
+            # Restore previous state on failure
+            self.messages = old_messages
+            self.board_dict = old_board_dict
+            self._cache = old_cache
+            self.current_path = old_path
+            
+            # Reset status and show error
+            if self.current_path:
+                source_display = self.root.title().split(" - ")[0]
+                self.status_label.config(
+                    text=f"Showing {len(self.messages)} messages from {source_display}"
+                )
+            else:
+                self.status_label.config(text="Ready")
+                self.root.title("PyQWK Reader")
+                
             messagebox.showerror("Failed to load QWK", str(exc))
 
     def _set_detail_text(self, text: str) -> None:
