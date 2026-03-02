@@ -37,6 +37,7 @@ class QwkGuiApp:
             "#0": "Subject",
             "Num": "Num",
             "From": "From",
+            "To": "To",
             "Date": "Date",
             "Conference": "Conference",
         }
@@ -241,21 +242,23 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Num", "From", "Date", "Conference"),
+            columns=("Num", "From", "To", "Date", "Conference"),
             selectmode="browse",
         )
 
         for col, label in self.column_labels.items():
+            header_anchor = tk.E if col == "Num" else tk.W
             self.message_list.heading(
                 col,
                 text=label,
-                anchor=tk.W,
+                anchor=header_anchor,
                 command=lambda c=col: self.sort_column(c, False),
             )
 
         self.message_list.column("#0", minwidth=200, width=300)
         self.message_list.column("Num", minwidth=50, width=60, anchor=tk.E)
         self.message_list.column("From", minwidth=80, width=120)
+        self.message_list.column("To", minwidth=80, width=120)
         self.message_list.column("Date", minwidth=80, width=120)
         self.message_list.column("Conference", minwidth=80, width=100)
 
@@ -468,9 +471,11 @@ class QwkGuiApp:
     def _reset_column_headers(self) -> None:
         """Reset all column headers to their original labels without sort indicators."""
         for col, label in self.column_labels.items():
+            header_anchor = tk.E if col == "Num" else tk.W
             self.message_list.heading(
                 col,
                 text=label,
+                anchor=header_anchor,
                 command=lambda c=col: self.sort_column(c, False)
             )
 
@@ -585,7 +590,8 @@ class QwkGuiApp:
                     text=subject,
                     values=(
                         header.msgnum if header.msgnum is not None else "",
-                        header.msgfrom,
+                        header.msgfrom.strip(),
+                        header.msgto.strip(),
                         f"{header.msgdate} {header.msgtime}",
                         conf_name,
                     ),
@@ -831,9 +837,11 @@ class QwkGuiApp:
                 # If we click a different column, it should start as ascending
                 next_reverse = False
 
+            header_anchor = tk.E if c == "Num" else tk.W
             self.message_list.heading(
                 c,
                 text=label,
+                anchor=header_anchor,
                 command=lambda _c=c, _r=next_reverse: self.sort_column(_c, _r)
             )
 
