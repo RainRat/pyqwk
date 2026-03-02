@@ -154,15 +154,16 @@ def test_decode_yenc_exception_coverage():
     assert _decode_yenc(None) == b""
 
 def test_eml_serialize_no_from_header_coverage(message_factory):
-    # Coverage for line 2062
     from pyqwk.core import _serialize_message_eml
 
     msg = message_factory(1, None, "Test")
     msg.text = "Body"
 
-    with patch('pyqwk.core._serialize_message_mbox', return_value="Just headers\nBody"):
-        result = _serialize_message_eml(msg)
-        assert result == "Just headers\nBody"
+    result = _serialize_message_eml(msg)
+    # _serialize_message_eml does not have the mbox "From " separator
+    assert not result.startswith("From ")
+    assert "From: " in result
+    assert "Subject: Test" in result
 
 def test_oneline_html_markdown_text_content_coverage(message_factory, default_settings, logger):
     # Coverage for line 1396

@@ -2037,8 +2037,8 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
         return datetime.datetime(1970, 1, 1, 0, 0)
 
 
-def _serialize_message_mbox(message: ProcessedMessage) -> str:
-    """Serialize a message to mbox format with threading and extra headers.
+def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = True) -> str:
+    """Serialize a message to RFC 822 (Email) format with optional MBOX header.
 
     Includes standard email headers for threading (Message-ID, In-Reply-To, References)
     and custom X-QWK headers for conference names, message numbers, and statuses.
@@ -2055,13 +2055,6 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
     from_line_date = dt.ctime()
     rfc_date = email.utils.format_datetime(dt)
 
-    if "@" in header.msgfrom:
-        sender_addr = header.msgfrom
-    else:
-        # Create a safe address from the name
-        safe_name = re.sub(r'[^A-Za-z0-9]', '.', header.msgfrom).strip('.')
-        sender_addr = f"{safe_name}@example.com"
-
     # Escape "From " lines in body
     body_lines = []
     for line in message.text.splitlines():
@@ -2071,9 +2064,18 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
             body_lines.append(line)
     body = "\n".join(body_lines)
 
-    # Construct mbox entry
-    # From <sender> <date>
-    parts = [f"From {sender_addr} {from_line_date}"]
+    parts = []
+    if include_mbox_header:
+        if "@" in header.msgfrom:
+            sender_addr = header.msgfrom
+        else:
+            # Create a safe address from the name
+            safe_name = re.sub(r'[^A-Za-z0-9]', '.', header.msgfrom).strip('.')
+            sender_addr = f"{safe_name}@example.com"
+        # Construct mbox entry
+        # From <sender> <date>
+        parts.append(f"From {sender_addr} {from_line_date}")
+
     parts.append(f"From: {header.msgfrom}")
     parts.append(f"To: {header.msgto}")
     parts.append(f"Subject: {header.msgsubject}")
@@ -2110,19 +2112,19 @@ def _serialize_message_mbox(message: ProcessedMessage) -> str:
 
     parts.append("")  # Separator before body
     parts.append(body)
-    parts.append("")  # Trailing newline required by mbox
+    parts.append("")  # Trailing newline required by mbox/eml
 
     return "\n".join(parts)
 
 
+def _serialize_message_mbox(message: ProcessedMessage) -> str:
+    """Serialize a message to mbox format with threading and extra headers."""
+    return _serialize_rfc822(message, include_mbox_header=True)
+
+
 def _serialize_message_eml(message: ProcessedMessage) -> str:
     """Serialize a message to EML format (RFC 822)."""
-    mbox_str = _serialize_message_mbox(message)
-    # Remove the first "From " line which is specific to mbox
-    lines = mbox_str.splitlines()
-    if lines and lines[0].startswith("From "):
-        return "\n".join(lines[1:])
-    return mbox_str
+    return _serialize_rfc822(message, include_mbox_header=False)
 
 
 def _write_mbox(
