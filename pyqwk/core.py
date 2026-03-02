@@ -712,6 +712,10 @@ def load_data(
         contents of ``messages.dat`` and ``board_dict`` maps conference numbers
         to their names. If conference names are not found, the names will just
         be the conference numbers.
+
+        Note: If you provide a path to a raw ``MESSAGES.DAT`` file, this function
+        will also look for a sidecar ``CONTROL.DAT`` file in the same directory
+        to automatically load conference information.
     """
     board_dict: dict[int, str] = {}
     if zipfile.is_zipfile(input_path):
@@ -792,6 +796,30 @@ def load_data(
     else:
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())
+
+        # If the file is MESSAGES.DAT, look for a sidecar CONTROL.DAT in the same folder
+        if os.path.basename(input_path).lower() == MESSAGES_FILENAME:
+            parent_dir = os.path.dirname(input_path)
+            control_path = os.path.join(parent_dir, CONTROL_FILENAME)
+
+            # Check for case-insensitive CONTROL.DAT
+            if not os.path.exists(control_path):
+                # Try all files in the directory to find a match
+                if os.path.isdir(parent_dir or '.'):
+                    for filename in os.listdir(parent_dir or '.'):
+                        if filename.lower() == CONTROL_FILENAME:
+                            control_path = os.path.join(parent_dir, filename)
+                            break
+
+            if os.path.exists(control_path) and not os.path.isdir(control_path):
+                try:
+                    with open(control_path, 'rb') as f:
+                        control_data = f.read().splitlines()
+                    board_dict = _parse_control_dat(control_data, logger, encoding)
+                    logger.info("Found sidecar %s; loaded conference names.", os.path.basename(control_path))
+                except Exception as e:
+                    logger.warning("Found sidecar CONTROL.DAT but failed to parse it: %s", str(e))
+
     return file_data, board_dict
 
 
