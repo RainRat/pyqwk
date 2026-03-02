@@ -33,6 +33,28 @@ def _expand_directories(paths: list[str]) -> list[str]:
     return sorted(expanded_paths)
 
 
+def _parse_msgnum_ranges(msgnum_str: str | None) -> set[int] | None:
+    """Parse a message number filter string like '100,200-300' into a set of integers."""
+    if not msgnum_str:
+        return None
+
+    msgnums = set()
+    for part in msgnum_str.split(','):
+        part = part.strip()
+        if '-' in part:
+            try:
+                start, end = map(int, part.split('-'))
+                msgnums.update(range(start, end + 1))
+            except ValueError:
+                raise ValueError(f"Invalid message number range: '{part}'")
+        else:
+            try:
+                msgnums.add(int(part))
+            except ValueError:
+                raise ValueError(f"Invalid message number: '{part}'")
+    return msgnums
+
+
 def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.datetime | None:
     """Parse a date string from the command line into a datetime object.
 
@@ -291,6 +313,12 @@ def main() -> None:
         default=None,
     )
     filter_group.add_argument(
+        '-N',
+        '--msgnum',
+        dest='msgnum_filter',
+        help="Only show messages with these numbers (e.g., '100', '200-300', '10,20,50-100').",
+    )
+    filter_group.add_argument(
         '-L',
         '--limit',
         metavar='NUM',
@@ -408,6 +436,7 @@ def main() -> None:
     try:
         after_date = _parse_cli_date(args.after)
         before_date = _parse_cli_date(args.before, end_of_day=True)
+        msgnum_filters = _parse_msgnum_ranges(args.msgnum_filter)
     except ValueError as e:
         parser.error(str(e))
 
@@ -429,6 +458,7 @@ def main() -> None:
         organize=args.organize,
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
+        msgnum_filters=msgnum_filters,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,

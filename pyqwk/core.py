@@ -340,6 +340,7 @@ class ProcessingSettings:
     organize: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
+    msgnum_filters: set[int] | None = None
     conferences: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
@@ -1046,6 +1047,11 @@ def matches_filters(
     # 2. Conference Filter
     if settings.conferences and message.confnum not in allowed_conferences:
         return False
+
+    # 3. Message Number Filter
+    if settings.msgnum_filters and message.msgnum is not None:
+        if message.msgnum not in settings.msgnum_filters:
+            return False
 
     def check_str_match(pattern: str, text: str) -> bool:
         if settings.regex:

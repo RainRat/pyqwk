@@ -238,6 +238,14 @@ Find messages from a specific date range (use YYYY-MM-DD).
 qwk archive.qwk --after 2023-01-01 --before 2023-12-31
 ```
 
+**Filter by Message Number:**
+Find specific messages or ranges of messages by their BBS number.
+```bash
+qwk archive.qwk --msgnum 100
+qwk archive.qwk --msgnum 100-200
+qwk archive.qwk --msgnum 10,20,50-100
+```
+
 **Filter by Attachments:**
 Only show messages that contain attachments (UUE, yEnc, Base64).
 ```bash
@@ -314,6 +322,7 @@ for msg in parse_messages(file_data, None):
 | `-s, --subject [text]` | Only show messages with this word in the subject (can be used multiple times). |
 | `--after [date]` | Only show messages from this date or later (YYYY-MM-DD). |
 | `--before [date]` | Only show messages from this date or earlier (YYYY-MM-DD). |
+| `-N, --msgnum [list]` | Only show messages with these numbers (e.g., '100', '200-300', '10,20,50-100'). |
 | `-n, --noheader` | Do not include the message header information in the text. |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `--separator [type]` | How to separate messages (`auto`, `none`, `dashes`, `blank`). |
