@@ -613,15 +613,22 @@ class MessageHeader:
         from_name = self.msgfrom.strip()
         subject = self.msgsubject.strip()
 
-        from_name = _highlight_text(from_name, highlight_term, is_regex, use_colors)
-        subject = _highlight_text(subject, highlight_term, is_regex, use_colors)
-        conf_name = _highlight_text(conf_name, highlight_term, is_regex, use_colors)
+        def prepare_field(text: str, width: int, highlight: bool = True) -> str:
+            truncated = text[:width]
+            display_len = len(truncated)
+            if highlight:
+                truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
+            return truncated + (" " * (width - display_len))
+
+        conf_part = prepare_field(conf_name, 16)
+        from_part = prepare_field(from_name, 20)
+        subject_part = _highlight_text(subject, highlight_term, is_regex, use_colors)
 
         msgnum_part = ""
         if verbose:
             msgnum_part = f"{(self.msgnum or ''):<6} "
 
-        return f"{msgnum_part}{conf_name:<16} {date_str:<14} {from_name:<20} {subject}\r\n"
+        return f"{msgnum_part}{conf_part} {date_str:<14} {from_part} {subject_part}\r\n"
 
 
 class MessagesDatFormatError(Exception):
@@ -2103,9 +2110,28 @@ def _write_text(
 
     if settings and settings.oneline:
         msgnum_hdr = f"{'Num':<6} " if settings.verbose else ""
-        header_line = f"{msgnum_hdr}{'Conference':<16} {'Date':<14} {'From':<20} {'Subject'}\r\n"
+        conf_hdr = f"{'Conference':<16}"
+        date_hdr = f"{'Date':<14}"
+        from_hdr = f"{'From':<20}"
+        subj_hdr = "Subject"
+
+        use_colors = (
+            not output_path
+            and hasattr(sys.stdout, 'isatty')
+            and sys.stdout.isatty()
+        )
+
+        if use_colors:
+            BOLD = "1"
+            def b(t): return f"\033[{BOLD}m{t}\033[0m"
+            header_line = f"{b(msgnum_hdr)}{b(conf_hdr)} {b(date_hdr)} {b(from_hdr)} {b(subj_hdr)}\r\n"
+        else:
+            header_line = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {subj_hdr}\r\n"
+
         parts.append(header_line)
-        parts.append("-" * len(header_line.strip()) + "\r\n")
+        # Calculate separator length from the plain text header
+        plain_header = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {subj_hdr}"
+        parts.append("-" * len(plain_header) + "\r\n")
 
     if settings and settings.include_toc:
         title = 'QWK Message Archive'
