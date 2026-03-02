@@ -345,7 +345,10 @@ Run `qwk --help` to see all available options.
 
 - **Unsupported Compression:** Some old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
 - **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
-- **Option Conflict:** You cannot use the `--threaded` and `--individual-files` options together.
+- **Option Conflict:** Some options cannot be used together. You will get an error if you try to use:
+  - `--threaded` and `--individual-files`
+  - `--oneline` and `--individual-files`
+  - `--threaded` and `--format eml`
 
 ## Contributing
 
