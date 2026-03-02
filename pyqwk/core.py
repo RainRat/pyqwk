@@ -1017,14 +1017,6 @@ def get_allowed_conferences(
     return allowed
 
 
-def _regex_match(pattern: str, text: str) -> bool:
-    """Helper for case-insensitive regex matching with error handling."""
-    try:
-        return bool(re.search(pattern, text, re.IGNORECASE))
-    except re.error:
-        return False
-
-
 def matches_filters(
     message: ParsedMessage,
     settings: ProcessingSettings,
@@ -1050,7 +1042,10 @@ def matches_filters(
 
     def check_str_match(pattern: str, text: str) -> bool:
         if settings.regex:
-            return _regex_match(pattern, text)
+            try:
+                return bool(re.search(pattern, text, re.IGNORECASE))
+            except re.error:
+                return False
         return pattern.lower() in text.lower()
 
     def any_match(patterns: list[str] | None, text: str) -> bool:
