@@ -109,7 +109,7 @@ qwk archive.qwk --format html -o messages.html
 ```bash
 qwk archive.qwk --format mbox -o messages.mbox
 ```
-*Tip: Use `--threaded` to include standard email threading headers for better organization in your mail app.*
+*Tip: Use `--threaded` to help your mail app group messages into conversations.*
 
 **Convert to EML files (individual messages for mail apps):**
 ```bash
