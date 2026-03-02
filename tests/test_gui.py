@@ -133,7 +133,11 @@ class TestQwkGui:
 
             app.load_messages("test.qwk")
             assert len(app.messages) == 1
-            app.message_list.insert.assert_called()
+            app.message_list.insert.assert_called_with(
+                '', 'end', iid='0', text='Subject',
+                values=(1, 'User', 'All', '01-01-90 12:00', 'General'),
+                open=True, tags=()
+            )
 
             # Verify status bar contains BBS name
             calls = app.status_label.config.call_args_list
@@ -300,7 +304,11 @@ class TestQwkGui:
         app.message_list.set.return_value = "Val"
         app.threaded_var.get.return_value = False
         app.sort_column("From", False)
-        app.message_list.heading.assert_any_call("From", text="From ▲", command=ANY)
+        app.message_list.heading.assert_any_call("From", text="From ▲", anchor="w", command=ANY)
+
+        # Verify Num header is right-aligned even when sorted
+        app.sort_column("Num", False)
+        app.message_list.heading.assert_any_call("Num", text="Num ▲", anchor="e", command=ANY)
 
     def test_status_bar_counts(self, mock_gui_deps):
         app = get_app()
