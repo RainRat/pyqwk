@@ -1,5 +1,7 @@
 import sys
 import zipfile
+import subprocess
+import tempfile
 import struct
 import re
 import hashlib
@@ -715,25 +717,78 @@ def load_data(
     if zipfile.is_zipfile(input_path):
         messages_name = ''
         control_name = ''
-        with zipfile.ZipFile(input_path) as myzip:
-            file_list = myzip.namelist()
-            for file_name in file_list:
-                if file_name.lower() == MESSAGES_FILENAME:
-                    messages_name = file_name
-                if file_name.lower() == CONTROL_FILENAME:
-                    control_name = file_name
-            if not messages_name:
-                raise FileNotFoundError(
-                    f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}."
-                )
-            with myzip.open(messages_name) as f:
-                file_data = bytearray(f.read())
-            if control_name:
-                with myzip.open(control_name) as f:
-                    control_data = f.read().splitlines()
-                board_dict = _parse_control_dat(control_data, logger, encoding)
-            else:
-                logger.warning("CONTROL.DAT not found, conference names will not be available.")
+        
+        # First try using Python's built-in zipfile
+        try:
+            with zipfile.ZipFile(input_path) as myzip:
+                file_list = myzip.namelist()
+                for file_name in file_list:
+                    if file_name.lower() == MESSAGES_FILENAME:
+                        messages_name = file_name
+                    if file_name.lower() == CONTROL_FILENAME:
+                        control_name = file_name
+                
+                if not messages_name:
+                    raise FileNotFoundError(
+                        f"Error: '{MESSAGES_FILENAME}' not found in the zip archive {input_path}."
+                    )
+                
+                # Check if we can actually read the messages file
+                with myzip.open(messages_name) as f:
+                    file_data = bytearray(f.read())
+                
+                if control_name:
+                    with myzip.open(control_name) as f:
+                        control_data = f.read().splitlines()
+                    board_dict = _parse_control_dat(control_data, logger, encoding)
+                else:
+                    logger.warning("CONTROL.DAT not found, conference names will not be available.")
+                    
+        except (RuntimeError, NotImplementedError, zipfile.BadZipFile) as e:
+            # Fallback to system 'unzip' if built-in zipfile fails (e.g., unsupported compression)
+            logger.info("Built-in zipfile failed (%s); attempting fallback to system 'unzip'.", str(e))
+            
+            abs_input_path = os.path.abspath(input_path)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                try:
+                    # Extract everything to temp_dir to handle case sensitivity and unsupported methods
+                    cmd = ['unzip', '-o', '-j', abs_input_path]
+                    
+                    # We allow exit code 1 (warnings) and 11 (some files not matched - though we don't specify any here)
+                    # But status 0 is preferred. unzip -j extracts all files into the current dir.
+                    result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
+                    
+                    if result.returncode not in (0, 1):
+                         raise RuntimeError(f"unzip failed with return code {result.returncode}: {result.stderr}")
+                    
+                    # Find extracted files (case-insensitive search in temp_dir)
+                    extracted_files = os.listdir(temp_dir)
+                    extracted_messages = None
+                    extracted_control = None
+                    
+                    for f_name in extracted_files:
+                        if f_name.lower() == MESSAGES_FILENAME:
+                            extracted_messages = os.path.join(temp_dir, f_name)
+                        if f_name.lower() == CONTROL_FILENAME:
+                            extracted_control = os.path.join(temp_dir, f_name)
+                            
+                    if not extracted_messages or not os.path.exists(extracted_messages):
+                        raise FileNotFoundError(f"Could not extract {MESSAGES_FILENAME} from {input_path}")
+                        
+                    with open(extracted_messages, 'rb') as f:
+                        file_data = bytearray(f.read())
+                        
+                    if extracted_control and os.path.exists(extracted_control):
+                        with open(extracted_control, 'rb') as f:
+                            control_data = f.read().splitlines()
+                        board_dict = _parse_control_dat(control_data, logger, encoding)
+                    else:
+                        logger.warning("CONTROL.DAT not found in the zip archive.")
+                        
+                except subprocess.CalledProcessError as sub_e:
+                    raise RuntimeError(f"Failed to extract older ZIP archive using 'unzip': {sub_e.stderr}") from sub_e
+                except Exception as final_e:
+                    raise RuntimeError(f"An error occurred while handling older ZIP archive: {str(final_e)}") from final_e
     else:
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())

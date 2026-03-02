@@ -673,15 +673,44 @@ class QwkGuiApp:
 
             # Use messages in their current display order from the treeview
             ordered_item_ids = self._get_all_tree_items()
+            
+            # Prepare messages for export (add headers if needed, clean text)
             export_list = []
+            bbs_info = getattr(self.board_dict, "bbs_info", None)
+            
             for iid in ordered_item_ids:
                 try:
                     idx = int(iid)
-                    export_list.append(self.messages[idx])
+                    msg = self.messages[idx]
+                    
+                    # Clean the body text using standard processing
+                    cleaned_body = process_message(
+                        msg.text,
+                        settings.truncate_signatures,
+                        settings.cut_quoting,
+                        settings.binaries_removal,
+                        settings.redact_pii,
+                        settings.strip_ansi,
+                    )
+                    
+                    # If text format and headers requested, prepend them
+                    if settings.format == 'text' and not settings.no_header:
+                        header_text = msg.header.format_text(
+                            self.board_dict,
+                            settings.verbose,
+                            include_separator=True,
+                            attachments=msg.attachments,
+                        )
+                        processed_text = header_text + cleaned_body
+                    else:
+                        processed_text = cleaned_body
+                        
+                    # Create a processed version of the message for the writer
+                    export_msg = replace(msg, text=processed_text)
+                    export_list.append(export_msg)
                 except (ValueError, IndexError):
                     continue
 
-            bbs_info = getattr(self.board_dict, "bbs_info", None)
             write_messages(export_list, path, settings, bbs_info)
 
             messagebox.showinfo(

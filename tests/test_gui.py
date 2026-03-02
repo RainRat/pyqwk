@@ -588,21 +588,50 @@ class TestQwkGui:
         header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
         app.messages = [ParsedMessage("Body", 1, None, 1, header)]
 
-        def mock_traverse(item_id):
-            return [item_id]
-
         with patch.object(app, "_get_all_tree_items", return_value=["0"]):
             mock_gui_deps["filedialog"].asksaveasfilename.return_value = "export.json"
 
-            with patch("pyqwk.gui.write_messages") as mock_write:
+            with patch("pyqwk.gui.write_messages") as mock_write, \
+                 patch("pyqwk.gui.process_message", return_value="Processed Body") as mock_process:
                 app.export_messages()
 
+                mock_process.assert_called_once()
                 mock_write.assert_called_once()
                 args, _ = mock_write.call_args
-                assert args[0] == app.messages
+                
+                # Verify that the exported message has the processed text
+                exported_msgs = args[0]
+                assert len(exported_msgs) == 1
+                assert exported_msgs[0].text == "Processed Body"
                 assert args[1] == "export.json"
                 assert args[2].format == "json"
                 mock_gui_deps["messagebox"].showinfo.assert_called()
+
+    def test_export_messages_text_with_headers(self, mock_gui_deps):
+        app = get_app()
+        mock_header = MagicMock()
+        mock_header.format_text.return_value = "HEADER\n"
+        app.messages = [ParsedMessage("Body", 1, None, 1, mock_header)]
+
+        with patch.object(app, "_get_all_tree_items", return_value=["0"]):
+            mock_gui_deps["filedialog"].asksaveasfilename.return_value = "export.txt"
+
+            with patch("pyqwk.gui.write_messages") as mock_write, \
+                 patch("pyqwk.gui.process_message", return_value="Processed Body") as mock_process:
+                app.export_messages()
+
+                mock_process.assert_called_once()
+                mock_header.format_text.assert_called_once()
+                mock_write.assert_called_once()
+                args, _ = mock_write.call_args
+                
+                exported_msgs = args[0]
+                assert len(exported_msgs) == 1
+                # Should contain both header and body
+                assert exported_msgs[0].text == "HEADER\nProcessed Body"
+                assert args[1] == "export.txt"
+                assert args[2].format == "text"
+                assert args[2].no_header is False
 
     def test_export_messages_no_messages(self, mock_gui_deps):
         app = get_app()
