@@ -376,6 +376,48 @@ def test_load_data_skips_invalid_conference_number(
     assert board_dict == {}
 
 
+def test_load_data_finds_sidecar_control_dat(
+    tmp_path: Path,
+    testdata_dir: Path,
+    logger: logging.Logger,
+) -> None:
+    # Setup: a directory with MESSAGES.DAT and CONTROL.DAT
+    pkg_dir = tmp_path / "packet"
+    pkg_dir.mkdir()
+
+    # Copy baseline MESSAGES.DAT
+    messages_path = pkg_dir / "MESSAGES.DAT"
+    messages_path.write_bytes((testdata_dir / "messages.dat").read_bytes())
+
+    # Create a custom CONTROL.DAT
+    control_lines = [
+        b"Test BBS",
+        b"Location",
+        b"123-4567",
+        b"SysOp Name",
+        b"0 ,TESTID",
+        b"01-01-1990,12:00:00",
+        b"User Name",
+        b"",
+        b"0",
+        b"0",
+        b"0",
+        b"100",
+        b"Sidecar Conference",
+    ]
+    control_path = pkg_dir / "CONTROL.DAT"
+    control_path.write_bytes(b"\r\n".join(control_lines) + b"\r\n")
+
+    # Execute: load data from the MESSAGES.DAT file
+    file_data, board_dict = load_data(str(messages_path), logger)
+
+    # Verify
+    assert isinstance(file_data, bytearray)
+    assert 100 in board_dict
+    assert board_dict[100] == "Sidecar Conference"
+    assert board_dict.bbs_info.name == "Test BBS"
+
+
 def test_load_data_warns_truncated_control_dat(
     tmp_path: Path,
     testdata_dir: Path,
