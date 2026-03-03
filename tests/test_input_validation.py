@@ -51,7 +51,8 @@ def test_load_data_raises_if_messages_dat_missing_in_zip(
         load_data(str(zip_path), logger)
 
     assert MESSAGES_FILENAME in str(exc_info.value)
-    assert "not found in the zip archive" in str(exc_info.value)
+    assert "Neither" in str(exc_info.value)
+    assert "found in the zip archive" in str(exc_info.value)
 
 def test_process_file_raises_if_stdout_with_output_path(
     tmp_path: Path, logger: logging.Logger

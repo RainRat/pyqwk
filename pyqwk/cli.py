@@ -78,7 +78,7 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK format) into modern formats like Text, HTML, or JSON."
+        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK and REP formats) into modern formats like Text, HTML, or JSON."
     )
     parser.add_argument(
         'input_paths',
