@@ -715,7 +715,7 @@ def load_data(
         be the conference numbers.
 
         Note: If you provide a path to a raw ``MESSAGES.DAT`` file, this function
-        will also look for a sidecar ``CONTROL.DAT`` file in the same directory
+        will also look for an accompanying ``CONTROL.DAT`` file in the same directory
         to automatically load conference information.
     """
     board_dict: dict[int, str] = {}
@@ -798,7 +798,7 @@ def load_data(
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())
 
-        # If the file is MESSAGES.DAT, look for a sidecar CONTROL.DAT in the same folder
+        # If the file is MESSAGES.DAT, look for an accompanying CONTROL.DAT in the same folder
         if os.path.basename(input_path).lower() == MESSAGES_FILENAME:
             parent_dir = os.path.dirname(input_path)
             control_path = os.path.join(parent_dir, CONTROL_FILENAME)
@@ -817,9 +817,9 @@ def load_data(
                     with open(control_path, 'rb') as f:
                         control_data = f.read().splitlines()
                     board_dict = _parse_control_dat(control_data, logger, encoding)
-                    logger.info("Found sidecar %s; loaded conference names.", os.path.basename(control_path))
+                    logger.info("Found accompanying %s; loaded conference names.", os.path.basename(control_path))
                 except Exception as e:
-                    logger.warning("Found sidecar CONTROL.DAT but failed to parse it: %s", str(e))
+                    logger.warning("Found accompanying CONTROL.DAT but failed to parse it: %s", str(e))
 
     return file_data, board_dict
 
@@ -2513,7 +2513,7 @@ def _highlight_text(
     is_regex: bool = False,
     use_colors: bool = False,
 ) -> str:
-    """Apply reverse-video highlighting to matching terms in text for terminal output."""
+    """Apply inverted colors highlighting to matching terms in text for terminal output."""
     if not term or not use_colors:
         return text
 
