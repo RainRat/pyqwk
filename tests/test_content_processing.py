@@ -232,3 +232,18 @@ def test_process_message_strips_ansi_escapes() -> None:
         strip_ansi=False,
     )
     assert processed_disabled == "Intro\r\n\x1b[31mRed Text\x1b[0m\r\nOutro\r\n"
+
+def test_process_message_removes_base64_with_trailing_space() -> None:
+    # A valid base64 line (60+ chars) with a trailing space
+    b64_line = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz"
+    message = f"Intro\r\n{b64_line} \r\nEnd of message\r\n"
+
+    processed = process_message(
+        message,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=True,
+        redact_pii=False,
+    )
+
+    assert processed == "Intro\r\nEnd of message\r\n"

@@ -144,29 +144,30 @@ def _is_binary_line(
     - A boolean that is True if the line should be hidden.
     - Three booleans representing if we are currently inside a specific type of attachment (yEnc, UUE, or Base64).
     """
+    stripped_line = line.strip()
     if in_base64_block:
-        if RE_BASE64_LOOSE_PATTERN.match(line):
+        if RE_BASE64_LOOSE_PATTERN.match(stripped_line):
             return True, in_yenc_block, in_uue_block, True
         in_base64_block = False
 
-    is_yenc_marker = RE_YENC_PATTERN.match(line)
+    is_yenc_marker = RE_YENC_PATTERN.match(stripped_line)
 
     if is_yenc_marker:
-        return True, not line.startswith('=yend'), in_uue_block, in_base64_block
+        return True, not stripped_line.startswith('=yend'), in_uue_block, in_base64_block
 
     if in_yenc_block:
         return True, True, in_uue_block, in_base64_block
 
     if in_uue_block:
-        if line.strip() == 'end':
+        if stripped_line == 'end':
             return True, in_yenc_block, False, in_base64_block
         return True, in_yenc_block, True, in_base64_block
 
-    if RE_BASE64_PATTERN.match(line):
+    if RE_BASE64_PATTERN.match(stripped_line):
         return True, in_yenc_block, in_uue_block, True
-    elif RE_UUE_DATA_PATTERN.match(line) or RE_UUE_PATTERN.match(line):
+    elif RE_UUE_DATA_PATTERN.match(stripped_line) or RE_UUE_PATTERN.match(stripped_line):
         return True, in_yenc_block, True, in_base64_block
-    elif RE_UUE_LOOSE_PATTERN.match(line):
+    elif RE_UUE_LOOSE_PATTERN.match(stripped_line):
         if previous_line and (
             RE_UUE_DATA_PATTERN.match(previous_line)
             or RE_UUE_PATTERN.match(previous_line)
