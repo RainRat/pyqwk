@@ -1,12 +1,12 @@
 # pyqwk
 
-pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, XML, CSV, mbox, and SQLite.
+pyqwk is a tool to convert old `.QWK` and `.REP` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, XML, CSV, mbox, and SQLite.
 
-## What is a QWK file?
+## What are QWK and REP files?
 
-QWK is a file format created in the late 1980s for Bulletin Board Systems (BBS). In the days before the modern internet, it allowed users to download all their new messages in a single "packet." They could then disconnect their phone line, read the messages at their own pace, and write replies without keeping the BBS's phone line busy. Once finished, they would upload their replies back to the BBS.
+QWK is a file format created in the late 1980s for Bulletin Board Systems (BBS). In the days before the modern internet, it allowed users to download all their new messages in a single "packet." They could then disconnect their phone line, read the messages at their own pace, and write replies without keeping the BBS's phone line busy. Once finished, they would upload their replies back to the BBS in a `.REP` packet.
 
-Today, these files are valuable pieces of digital history. `pyqwk` helps you open these archives and convert them into modern, easy-to-read formats.
+Today, these files are valuable pieces of digital history. `pyqwk` helps you open both downloaded archives and your own sent replies, converting them into modern, easy-to-read formats.
 
 ## Features
 
@@ -29,9 +29,10 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Quick Start
 
-Run the script on any QWK archive:
+Run the script on any QWK or REP archive:
 ```bash
 python qwk.py archive.qwk
+python qwk.py replies.rep
 ```
 
 ## Installation
@@ -63,7 +64,7 @@ If you prefer a visual interface, you can use the built-in reader. It allows you
 
 **To start the reader:**
 ```bash
-qwk-gui [archive.qwk]
+qwk-gui [archive.qwk|replies.rep]
 ```
 
 **Key Features:**
@@ -75,7 +76,7 @@ qwk-gui [archive.qwk]
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 
 **Keyboard Shortcuts:**
-- **Ctrl + O**: Open a QWK archive.
+- **Ctrl + O**: Open a QWK or REP archive.
 - **Ctrl + S**: Export the current view to a file.
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + Q**: Exit the application.
@@ -343,7 +344,7 @@ Run `qwk --help` to see all available options.
 
 ## Troubleshooting
 
-- **Unsupported Compression:** Some old QWK packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **Unsupported Compression:** Some old QWK or REP packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` (or `reply.dat`) file inside.
 - **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
 - **Option Conflict:** Some options cannot be used together. You will get an error if you try to use:
   - `--threaded` and `--individual-files`

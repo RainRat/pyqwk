@@ -125,8 +125,16 @@ class TestParserEdgeCases:
 
     def test_parse_messages_invalid_produced_header(self):
         """
-        Verify that data that doesn't start with 'Produced ' raises MessagesDatFormatError.
+        Verify that data that doesn't start with 'Produced ' or seem like a REP
+        packet raises MessagesDatFormatError (legacy behavior for MESSAGES.DAT).
+        Actually, with the relaxation for REP, it should just try to parse.
+        However, if there are NO messages (no valid headers found),
+        it might still pass but return empty iterator.
+
+        The current implementation of parse_messages removed the explicit
+        'Produced ' check, so this test needs to be updated or removed.
         """
         data = bytearray(b"X" * 128)
-        with pytest.raises(MessagesDatFormatError, match="Input does not start with 'Produced '"):
-            list(parse_messages(data, progress_bar=None))
+        # Should not raise exception anymore, but should yield no messages
+        messages = list(parse_messages(data, progress_bar=None))
+        assert len(messages) == 0
