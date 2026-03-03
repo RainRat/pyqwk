@@ -85,7 +85,7 @@ def main() -> None:
         help=(
             'The archives, message files, or folders you want to read. '
             'If you provide a path to a raw MESSAGES.DAT file, pyqwk will '
-            'also look for a sidecar CONTROL.DAT in the same folder to '
+            'also look for an accompanying CONTROL.DAT in the same folder to '
             'automatically load conference names.'
         ),
         nargs='+',

@@ -4,7 +4,7 @@ pyqwk is a tool to convert old `.QWK` mail archives (from the BBS era) into mode
 
 ## What is a QWK file?
 
-QWK is a file format created in the late 1980s for Bulletin Board Systems (BBS). In the days before the modern internet, it allowed users to download all their new messages in a single "packet." They could then disconnect their phone line, read the messages at their own pace, and write replies without tying up the BBS's phone line. Once finished, they would upload their replies back to the BBS.
+QWK is a file format created in the late 1980s for Bulletin Board Systems (BBS). In the days before the modern internet, it allowed users to download all their new messages in a single "packet." They could then disconnect their phone line, read the messages at their own pace, and write replies without keeping the BBS's phone line busy. Once finished, they would upload their replies back to the BBS.
 
 Today, these files are valuable pieces of digital history. `pyqwk` helps you open these archives and convert them into modern, easy-to-read formats.
 
@@ -223,7 +223,7 @@ qwk archive.qwk --skip 100 --limit 50
 ```
 
 **Rich Terminal Output:**
-When viewing messages in your terminal, pyqwk automatically uses colors to make them easier to read. Message headers are bolded, and search terms are highlighted using reverse video. This only applies to terminal output; file exports remain clean.
+When viewing messages in your terminal, pyqwk automatically uses colors to make them easier to read. Message headers are bolded, and search terms are highlighted using inverted colors. This only applies to terminal output; file exports remain clean.
 
 **Sorting Results:**
 You can sort the output by various fields such as date, author, or subject.
