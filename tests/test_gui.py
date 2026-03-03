@@ -689,3 +689,32 @@ class TestQwkGui:
             # Should NOT crash and still load messages
             app.load_messages("test.qwk")
             assert len(app.messages) == 1
+
+    def test_search_bar_navigation(self, mock_gui_deps):
+        app = get_app()
+        with patch.object(app, "_select_relative_message") as mock_select:
+            # Simulate <Up> key event in search entry
+            up_binding = None
+            for call_args in app.search_entry.bind.call_args_list:
+                if call_args[0][0] == "<Up>":
+                    up_binding = call_args[0][1]
+                    break
+            assert up_binding is not None
+            up_binding(MagicMock())
+            mock_select.assert_called_with(-1, force=True)
+
+            # Simulate <Down> key event in search entry
+            down_binding = None
+            for call_args in app.search_entry.bind.call_args_list:
+                if call_args[0][0] == "<Down>":
+                    down_binding = call_args[0][1]
+                    break
+            assert down_binding is not None
+            down_binding(MagicMock())
+            mock_select.assert_called_with(1, force=True)
+
+    def test_focus_search(self, mock_gui_deps):
+        app = get_app()
+        app._focus_search()
+        app.search_entry.focus_set.assert_called_once()
+        app.search_entry.selection_range.assert_called_with(0, mock_gui_deps["tk"].END)

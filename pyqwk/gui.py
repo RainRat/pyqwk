@@ -81,7 +81,7 @@ class QwkGuiApp:
         edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(
             label="Find",
-            command=lambda: self.search_entry.focus_set(),
+            command=self._focus_search,
             accelerator="Ctrl+F",
         )
         edit_menu.add_command(
@@ -114,13 +114,13 @@ class QwkGuiApp:
             traverse(root_item)
         return items
 
-    def _select_relative_message(self, delta: int) -> None:
+    def _select_relative_message(self, delta: int, force: bool = False) -> None:
         """Move the selection up or down in the treeview display order."""
         if not self.messages:
             return
 
-        # If the search entry has focus, don't hijack keyboard navigation
-        if self.root.focus_get() == self.search_entry:
+        # If the search entry has focus, don't hijack keyboard navigation unless forced
+        if not force and self.root.focus_get() == self.search_entry:
             return
 
         all_items = self._get_all_tree_items()
@@ -146,6 +146,11 @@ class QwkGuiApp:
     def clear_search(self, _event: object | None = None) -> None:
         self.search_var.set("")
         self.message_list.focus_set()
+
+    def _focus_search(self, _event: object | None = None) -> None:
+        """Focus the search bar and select all text for quick replacement."""
+        self.search_entry.focus_set()
+        self.search_entry.selection_range(0, tk.END)
 
     def clear_conf_filter(self, _event: object | None = None) -> None:
         """Reset the conference filter to show all conferences."""
@@ -195,7 +200,9 @@ class QwkGuiApp:
 
         self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
-        self.root.bind("<Control-f>", lambda e: self.search_entry.focus_set())
+        self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
+        self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
+        self.root.bind("<Control-f>", self._focus_search)
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
