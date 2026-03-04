@@ -344,6 +344,8 @@ class TestQwkGui:
         app._render_message(0)
         # Check that tag_add was called with correct start and end positions
         app.detail_text.tag_add.assert_any_call("search_highlight", "1.10", "1.10+9c")
+        # Verify that auto-scroll was triggered for the first match
+        app.detail_text.see.assert_called_with("1.10")
 
     def test_search_invalid_regex(self, mock_gui_deps):
         app = get_app()
