@@ -419,6 +419,8 @@ class QwkGuiApp:
             start_pos = "1.0"
             is_regex = self.regex_var.get()
             count_var = tk.IntVar()
+            first_match_pos = None
+
             while True:
                 try:
                     start_pos = self.detail_text.search(
@@ -430,6 +432,10 @@ class QwkGuiApp:
                     break
                 if not start_pos:
                     break
+
+                if first_match_pos is None:
+                    first_match_pos = start_pos
+
                 match_count = count_var.get()
                 if match_count == 0:  # Avoid infinite loop on zero-width match
                     start_pos = f"{start_pos}+1c"
@@ -437,7 +443,10 @@ class QwkGuiApp:
                 end_pos = f"{start_pos}+{match_count}c"
                 self.detail_text.tag_add("search_highlight", start_pos, end_pos)
                 start_pos = end_pos
+
             self.detail_text.tag_raise("search_highlight")
+            if first_match_pos:
+                self.detail_text.see(first_match_pos)
 
         self.detail_text.config(state=tk.DISABLED)
 
