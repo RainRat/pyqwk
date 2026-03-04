@@ -4,7 +4,7 @@ import os
 import logging
 from pathlib import Path
 import pytest
-from pyqwk.core import load_data, parse_messages, ProcessingSettings, process_file
+from pyqwk.core import load_data, parse_messages, ProcessingSettings, process_file, show_info
 
 def create_rep_packet(path, bbs_id=b"TESTBBS", msg_count=1):
     # Header record
@@ -94,3 +94,32 @@ def test_rep_with_lowercase_filename(tmp_path):
     logger = logging.getLogger("pyqwk.test")
     file_data, _ = load_data(str(rep_path), logger)
     assert len(file_data) == 128
+
+def test_show_info_rep_packet(tmp_path, capsys):
+    rep_path = tmp_path / "test.rep"
+    create_rep_packet(rep_path, msg_count=3)
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=True,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True
+    )
+
+    logger = logging.getLogger("pyqwk.test")
+    show_info([str(rep_path)], settings, logger)
+
+    captured = capsys.readouterr()
+    assert "Total Messages: 3" in captured.out
+    assert "Not a valid QWK messages.dat file." not in captured.out
