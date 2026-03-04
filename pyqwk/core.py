@@ -831,9 +831,9 @@ def load_data(
                     with open(control_path, 'rb') as f:
                         control_data = f.read().splitlines()
                     board_dict = _parse_control_dat(control_data, logger, encoding)
-                    logger.info("Found accompanying %s; loaded conference names.", os.path.basename(control_path))
+                    logger.info("Found sidecar %s; loaded conference names.", os.path.basename(control_path))
                 except Exception as e:
-                    logger.warning("Found accompanying CONTROL.DAT but failed to parse it: %s", str(e))
+                    logger.warning("Found sidecar CONTROL.DAT but failed to parse it: %s", str(e))
 
     return file_data, board_dict
 
@@ -1168,19 +1168,19 @@ def matches_filters(
             return True
         return any(check_str_match(p, text) for p in patterns)
 
-    # 3. Author Filter
+    # 4. Author Filter
     if settings.authors and not any_match(settings.authors, message.header.msgfrom):
         return False
 
-    # 4. Recipient Filter
+    # 5. Recipient Filter
     if settings.recipients and not any_match(settings.recipients, message.header.msgto):
         return False
 
-    # 5. Subject Filter
+    # 6. Subject Filter
     if settings.subjects and not any_match(settings.subjects, message.header.msgsubject):
         return False
 
-    # 6. Full-Text Search
+    # 7. Full-Text Search
     if settings.search_term:
         found = (
             check_str_match(settings.search_term, message.header.msgfrom)
@@ -1191,7 +1191,7 @@ def matches_filters(
         if not found:
             return False
 
-    # 6. Date Filter
+    # 8. Date Filter
     if settings.after or settings.before:
         msg_dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
         if settings.after and msg_dt < settings.after:
@@ -1199,7 +1199,7 @@ def matches_filters(
         if settings.before and msg_dt > settings.before:
             return False
 
-    # 7. Attachment Filter
+    # 9. Attachment Filter
     if settings.has_attachments or settings.extract_attachments:
         if message.text and message.attachments is None:
             found = extract_binaries(message.text)
