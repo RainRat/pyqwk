@@ -49,6 +49,7 @@ class QwkGuiApp:
         self.threaded_var = tk.BooleanVar(value=False)
         self.regex_var = tk.BooleanVar(value=False)
         self.has_attach_var = tk.BooleanVar(value=False)
+        self.mine_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -232,6 +233,7 @@ class QwkGuiApp:
             ("Remove Colors", self.ansi_var),
             ("Threaded", self.threaded_var),
             ("Has Attachments", self.has_attach_var),
+            ("My Messages", self.mine_var),
         ]:
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=self.reload_messages
@@ -355,6 +357,7 @@ class QwkGuiApp:
             search_term=search_val if search_val else None,
             conferences=conferences,
             has_attachments=self.has_attach_var.get(),
+            mine=self.mine_var.get(),
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -563,9 +566,12 @@ class QwkGuiApp:
             messages = []
             total_count = 0
             allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            user_name = bbs_info.user_name if bbs_info else None
+
             for parsed_message in parse_messages(file_data, None, settings.encoding):
                 total_count += 1
-                if not matches_filters(parsed_message, settings, allowed_conferences):
+                if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
                     continue
 
                 processed_buffer = process_message(

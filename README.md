@@ -69,7 +69,7 @@ qwk-gui [archive.qwk|replies.rep]
 
 **Key Features:**
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text.
-- **Filtering:** View messages from specific conferences, include private messages, or filter by the presence of attachments.
+- **Filtering:** View messages from specific conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
 - **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (hides emails and phone numbers), and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
@@ -253,6 +253,12 @@ Only show messages that contain attachments (UUE, yEnc, Base64).
 qwk archive.qwk --has-attachments
 ```
 
+**Filter Your Own Messages:**
+Only show messages from or to your user name (as defined in the archive's information).
+```bash
+qwk archive.qwk --mine
+```
+
 **Dry Run:**
 Preview exactly how many messages match your filters and how many files will be created without actually making any changes.
 ```bash
@@ -336,6 +342,7 @@ for msg in parse_messages(file_data, None):
 | `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, or `conference`. |
 | `--reverse` | Reverse the order of the output. |
 | `--has-attachments` | Only show messages that contain attachments (UUE, yEnc, Base64). |
+| `--mine` | Only show messages from or to your user name. |
 | `-I, --info` | Show a summary of the archive and exit. Use `--format json` for JSON output. |
 | `--stats` | Show detailed statistics about the messages and exit. Use `--format json` for JSON output. |
 | `-V, --version` | Show the version number and exit. |
