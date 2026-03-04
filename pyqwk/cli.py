@@ -353,6 +353,11 @@ def main() -> None:
         help='Only show messages that contain attachments (UUE, yEnc, Base64).',
         action='store_true',
     )
+    filter_group.add_argument(
+        '--mine',
+        help='Only show messages from or to your user name (as defined in the archive).',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -484,6 +489,7 @@ def main() -> None:
         dry_run=args.dry_run,
         oneline=args.oneline,
         has_attachments=args.has_attachments,
+        mine=args.mine,
     )
 
     if args.info:

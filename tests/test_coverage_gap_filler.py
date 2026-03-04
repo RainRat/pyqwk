@@ -21,7 +21,7 @@ def test_load_data_sidecar_control_dat_corrupt(tmp_path, caplog):
     logger = logging.getLogger("pyqwk.test")
     with caplog.at_level(logging.WARNING):
         load_data(str(messages_path), logger)
-        assert "Found sidecar CONTROL.DAT but failed to parse it" in caplog.text
+        assert "Found accompanying CONTROL.DAT but failed to parse it" in caplog.text
 
 @patch('zipfile.is_zipfile', return_value=True)
 @patch('zipfile.ZipFile')

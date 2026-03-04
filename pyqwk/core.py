@@ -358,6 +358,7 @@ class ProcessingSettings:
     reverse: bool = False
     oneline: bool = False
     has_attachments: bool = False
+    mine: bool = False
 
 
 @dataclass
@@ -1131,6 +1132,7 @@ def matches_filters(
     message: ParsedMessage,
     settings: ProcessingSettings,
     allowed_conferences: set[int],
+    user_name: str | None = None,
 ) -> bool:
     """Check if a message satisfies all configured processing filters.
 
@@ -1138,6 +1140,7 @@ def matches_filters(
         message: The message to evaluate.
         settings: Processing settings containing filter criteria.
         allowed_conferences: Pre-computed set of allowed conference numbers.
+        user_name: The user's name to use for the "mine" filter.
 
     Returns:
         True if the message matches all filters, False otherwise.
@@ -1149,6 +1152,13 @@ def matches_filters(
     # 2. Conference Filter
     if settings.conferences and message.confnum not in allowed_conferences:
         return False
+
+    # 2b. Mine Filter
+    if settings.mine and user_name:
+        is_from_me = user_name.lower() in message.header.msgfrom.lower()
+        is_to_me = user_name.lower() in message.header.msgto.lower()
+        if not (is_from_me or is_to_me):
+            return False
 
     # 3. Message Number Filter
     if settings.msgnum_filters and message.msgnum is not None:
@@ -1516,6 +1526,7 @@ def process_merged_files(
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, 'bbs_info', None)
+        user_name = bbs_info.user_name if bbs_info else None
         if bbs_info and not bbs_info_to_use:
             bbs_info_to_use = bbs_info
         bbs_key = f"{bbs_info.name}|{bbs_info.bbs_id}" if bbs_info else ""
@@ -1536,7 +1547,7 @@ def process_merged_files(
                     bbs_name=bbs_info.name if bbs_info else None,
                     source_file=os.path.basename(input_path),
                 )
-                if not matches_filters(parsed_message, settings, allowed_conferences):
+                if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
                     continue
 
                 if settings.unique:
@@ -2709,6 +2720,8 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, 'bbs_info', None)
+            user_name = bbs_info.user_name if bbs_info else None
             allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
 
             author_counter = Counter()
@@ -2736,7 +2749,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                 ):
                     total_count += 1
 
-                    if not matches_filters(message, settings, allowed_conferences):
+                    if not matches_filters(message, settings, allowed_conferences, user_name):
                         continue
 
                     matching_count += 1
