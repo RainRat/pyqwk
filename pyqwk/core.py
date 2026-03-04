@@ -2616,13 +2616,10 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
             if bbs_info:
                 info_entry["bbs_info"] = asdict(bbs_info)
 
-            if len(file_data) < BLOCK_SIZE or not file_data.startswith(b'Produced '):
+            if len(file_data) < BLOCK_SIZE:
                 if settings.format != 'json':
                     print(f"File: {_colorize(input_path, CYAN)}")
-                    if len(file_data) < BLOCK_SIZE:
-                        print("  Invalid or empty file.")
-                    else:
-                        print("  Not a valid QWK messages.dat file.")
+                    print("  Invalid or empty file.")
                 all_info.append(info_entry)
                 continue
 

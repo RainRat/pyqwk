@@ -66,17 +66,6 @@ def test_show_info_invalid_file(capsys, mock_logger, default_settings):
         captured = capsys.readouterr()
         assert "Invalid or empty file" in captured.out
 
-def test_show_info_not_messages_dat(capsys, mock_logger, default_settings):
-    # Mock load_data to return data with wrong header
-    with patch('pyqwk.core.load_data') as mock_load:
-        # Return enough bytes but wrong header
-        bad_data = bytearray(b'X' * 128)
-        mock_load.return_value = (bad_data, {})
-
-        show_info(['fake.zip'], default_settings, mock_logger)
-
-        captured = capsys.readouterr()
-        assert "Not a valid QWK messages.dat file" in captured.out
 
 
 def test_show_info_colors_enabled(capsys, mock_logger, default_settings):
