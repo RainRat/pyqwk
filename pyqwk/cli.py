@@ -358,6 +358,11 @@ def main() -> None:
         help='Only show messages from or to your user name (as defined in the archive).',
         action='store_true',
     )
+    filter_group.add_argument(
+        '--on-this-day',
+        help='Only show messages sent on this same month and day in any year.',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -490,6 +495,7 @@ def main() -> None:
         oneline=args.oneline,
         has_attachments=args.has_attachments,
         mine=args.mine,
+        on_this_day=args.on_this_day,
     )
 
     if args.info:

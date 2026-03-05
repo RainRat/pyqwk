@@ -50,6 +50,7 @@ class QwkGuiApp:
         self.regex_var = tk.BooleanVar(value=False)
         self.has_attach_var = tk.BooleanVar(value=False)
         self.mine_var = tk.BooleanVar(value=False)
+        self.on_this_day_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -234,6 +235,7 @@ class QwkGuiApp:
             ("Threaded", self.threaded_var),
             ("Has Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
+            ("On This Day", self.on_this_day_var),
         ]:
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=self.reload_messages
@@ -358,6 +360,7 @@ class QwkGuiApp:
             conferences=conferences,
             has_attachments=self.has_attach_var.get(),
             mine=self.mine_var.get(),
+            on_this_day=self.on_this_day_var.get(),
         )
 
     def _render_message(self, message_index: int) -> None:

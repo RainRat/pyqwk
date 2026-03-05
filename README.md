@@ -259,6 +259,12 @@ Only show messages from or to your user name (as defined in the archive's inform
 qwk archive.qwk --mine
 ```
 
+**Filter by Anniversary (On This Day):**
+Only show messages sent on this same month and day in any year. This is a great way to explore what was happening on the BBS in previous years.
+```bash
+qwk archive.qwk --on-this-day
+```
+
 **Dry Run:**
 Preview exactly how many messages match your filters and how many files will be created without actually making any changes.
 ```bash
@@ -343,6 +349,7 @@ for msg in parse_messages(file_data, None):
 | `--reverse` | Reverse the order of the output. |
 | `--has-attachments` | Only show messages that contain attachments (UUE, yEnc, Base64). |
 | `--mine` | Only show messages from or to your user name. |
+| `--on-this-day` | Only show messages sent on this same month and day in any year. |
 | `-I, --info` | Show a summary of the archive and exit. Use `--format json` for JSON output. |
 | `--stats` | Show detailed statistics about the messages and exit. Use `--format json` for JSON output. |
 | `-V, --version` | Show the version number and exit. |
