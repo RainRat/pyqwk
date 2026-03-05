@@ -832,9 +832,9 @@ def load_data(
                     with open(control_path, 'rb') as f:
                         control_data = f.read().splitlines()
                     board_dict = _parse_control_dat(control_data, logger, encoding)
-                    logger.info("Found sidecar %s; loaded conference names.", os.path.basename(control_path))
+                    logger.info("Found accompanying %s; loaded conference names.", os.path.basename(control_path))
                 except Exception as e:
-                    logger.warning("Found sidecar CONTROL.DAT but failed to parse it: %s", str(e))
+                    logger.warning("Found accompanying CONTROL.DAT but failed to parse it: %s", str(e))
 
     return file_data, board_dict
 
