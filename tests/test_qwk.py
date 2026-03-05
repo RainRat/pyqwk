@@ -91,6 +91,8 @@ def _make_settings(**overrides) -> ProcessingSettings:
         has_attachments=False,
         msgnum_filters=None,
         mine=False,
+        on_this_day=False,
+        reference_date=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -142,6 +144,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         has_attachments=False,
         msgnum_filter=None,
         mine=False,
+        on_this_day=False,
     )
     base.update(overrides)
     return argparse.Namespace(**base)

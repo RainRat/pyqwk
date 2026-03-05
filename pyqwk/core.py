@@ -359,6 +359,8 @@ class ProcessingSettings:
     oneline: bool = False
     has_attachments: bool = False
     mine: bool = False
+    on_this_day: bool = False
+    reference_date: datetime.datetime | None = None
 
 
 @dataclass
@@ -1202,12 +1204,16 @@ def matches_filters(
             return False
 
     # 8. Date Filter
-    if settings.after or settings.before:
+    if settings.after or settings.before or settings.on_this_day:
         msg_dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
         if settings.after and msg_dt < settings.after:
             return False
         if settings.before and msg_dt > settings.before:
             return False
+        if settings.on_this_day:
+            ref = settings.reference_date or datetime.datetime.now()
+            if msg_dt.month != ref.month or msg_dt.day != ref.day:
+                return False
 
     # 9. Attachment Filter
     if settings.has_attachments or settings.extract_attachments:
