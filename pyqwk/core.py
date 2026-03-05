@@ -1439,7 +1439,7 @@ def process_merged_files(
             elif settings.format == 'xml':
                 text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
-                encoded_buffer = _serialize_message_xml(temp_msg).encode(target_encoding)
+                encoded_buffer = _xml_element_to_str(_message_to_xml_element(temp_msg)).encode(target_encoding)
             elif settings.format == 'html':
                 temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
                 encoded_buffer = _serialize_message_html(
@@ -1731,10 +1731,6 @@ def _xml_element_to_str(element: ET.Element) -> str:
     ET.indent(element, space='  ')
     return ET.tostring(element, encoding='unicode')
 
-
-def _serialize_message_xml(message: ProcessedMessage) -> str:
-    root = _message_to_xml_element(message)
-    return _xml_element_to_str(root)
 
 
 def _write_xml(
