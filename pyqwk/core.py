@@ -832,9 +832,9 @@ def load_data(
                     with open(control_path, 'rb') as f:
                         control_data = f.read().splitlines()
                     board_dict = _parse_control_dat(control_data, logger, encoding)
-                    logger.info("Found sidecar %s; loaded conference names.", os.path.basename(control_path))
+                    logger.info("Found accompanying %s; loaded conference names.", os.path.basename(control_path))
                 except Exception as e:
-                    logger.warning("Found sidecar CONTROL.DAT but failed to parse it: %s", str(e))
+                    logger.warning("Found accompanying CONTROL.DAT but failed to parse it: %s", str(e))
 
     return file_data, board_dict
 
@@ -949,7 +949,7 @@ def parse_messages(
     # QWK packets (MESSAGES.DAT) start with 'Produced '.
     # REP packets (REPLY.DAT) start with the BBS ID.
     # We relax the check to allow REPLY.DAT as long as it has at least one record.
-    # We still check for 'Produced ' as a sanity check for MESSAGES.DAT,
+    # We still check for 'Produced ' as a basic check for MESSAGES.DAT,
     # but we also accept files that don't have it if they seem like valid record-based files.
     # For now, we'll just ensure it's not obviously wrong.
     # Most REPLY.DAT files just start with the BBS ID in the first 128-byte block.
