@@ -949,7 +949,7 @@ def parse_messages(
     # QWK packets (MESSAGES.DAT) start with 'Produced '.
     # REP packets (REPLY.DAT) start with the BBS ID.
     # We relax the check to allow REPLY.DAT as long as it has at least one record.
-    # We still check for 'Produced ' as a sanity check for MESSAGES.DAT,
+    # We still check for 'Produced ' as a basic check for MESSAGES.DAT,
     # but we also accept files that don't have it if they seem like valid record-based files.
     # For now, we'll just ensure it's not obviously wrong.
     # Most REPLY.DAT files just start with the BBS ID in the first 128-byte block.

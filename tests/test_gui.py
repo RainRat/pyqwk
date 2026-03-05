@@ -154,12 +154,16 @@ class TestQwkGui:
             app.load_messages("bad.qwk")
             mock_gui_deps["messagebox"].showerror.assert_called_with("Failed to load QWK", "Load failed")
 
-    def test_clear_conf_filter(self, mock_gui_deps):
+    def test_clear_filters(self, mock_gui_deps):
         app = get_app()
         app.conf_combo.set("1: General")
+        app.has_attach_var.get.return_value = True
+        app.mine_var.get.return_value = True
         with patch.object(app, 'reload_messages') as mock_reload:
-            app.clear_conf_filter()
+            app.clear_filters()
             app.conf_combo.set.assert_called_with("All Conferences")
+            app.has_attach_var.set.assert_called_with(False)
+            app.mine_var.set.assert_called_with(False)
             mock_reload.assert_called_once()
             app.message_list.focus_set.assert_called_once()
 

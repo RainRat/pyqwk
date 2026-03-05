@@ -153,9 +153,11 @@ class QwkGuiApp:
         self.search_entry.focus_set()
         self.search_entry.selection_range(0, tk.END)
 
-    def clear_conf_filter(self, _event: object | None = None) -> None:
-        """Reset the conference filter to show all conferences."""
+    def clear_filters(self, _event: object | None = None) -> None:
+        """Reset all filters to their default state."""
         self.conf_combo.set("All Conferences")
+        self.has_attach_var.set(False)
+        self.mine_var.set(False)
         self.reload_messages()
         self.message_list.focus_set()
 
@@ -210,15 +212,24 @@ class QwkGuiApp:
         # Filters group
         filters_frame = ttk.Frame(toolbar)
         filters_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(filters_frame, text="Conf:").pack(side=tk.LEFT)
+        ttk.Label(filters_frame, text="Filters:").pack(side=tk.LEFT)
         self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
         self.conf_combo.pack(side=tk.LEFT, padx=(5, 2))
-        ttk.Button(filters_frame, text="×", width=2, command=self.clear_conf_filter).pack(
+
+        for text, var in [
+            ("Attachments", self.has_attach_var),
+            ("My Messages", self.mine_var),
+        ]:
+            ttk.Checkbutton(
+                filters_frame, text=text, variable=var, command=self.reload_messages
+            ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(filters_frame, text="×", width=2, command=self.clear_filters).pack(
             side=tk.LEFT
         )
 
         self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
-        self.conf_combo.bind("<Escape>", lambda e: self.clear_conf_filter())
+        self.conf_combo.bind("<Escape>", lambda e: self.clear_filters())
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
@@ -228,12 +239,10 @@ class QwkGuiApp:
         ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
 
         for text, var in [
+            ("Threaded", self.threaded_var),
             ("Clean", self.clean_var),
             ("Hide Personal Info", self.redact_var),
             ("Remove Colors", self.ansi_var),
-            ("Threaded", self.threaded_var),
-            ("Has Attachments", self.has_attach_var),
-            ("My Messages", self.mine_var),
         ]:
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=self.reload_messages
