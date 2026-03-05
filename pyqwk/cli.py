@@ -12,6 +12,7 @@ from pyqwk.core import (
     process_file,
     process_merged_files,
     process_multiple_files,
+    organize_by_bbs,
     resolve_output_format,
     show_info,
     show_stats,
@@ -108,6 +109,12 @@ def main() -> None:
     io_group.add_argument(
         '--organize',
         help='Organize individual files into folders by conference.',
+        action='store_true',
+    )
+    io_group.add_argument(
+        '--organize-by-bbs',
+        dest='organize_by_bbs',
+        help='Organize QWK files into folders named after their BBS.',
         action='store_true',
     )
     io_group.add_argument(
@@ -409,7 +416,10 @@ def main() -> None:
         logger.error("No valid QWK files were found in the paths you provided.")
         sys.exit(1)
 
-    if args.info:
+    if args.organize_by_bbs:
+        output_mode = 'file'
+        resolved_output_path = None
+    elif args.info:
         output_mode = 'stdout'
         resolved_output_path = None
     elif args.individualfiles:
@@ -471,6 +481,7 @@ def main() -> None:
         headers_only=args.headers_only,
         unique=args.unique,
         organize=args.organize,
+        organize_by_bbs=args.organize_by_bbs,
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
         msgnum_filters=msgnum_filters,
@@ -497,6 +508,10 @@ def main() -> None:
         mine=args.mine,
         on_this_day=args.on_this_day,
     )
+
+    if args.organize_by_bbs:
+        organize_by_bbs(input_paths, settings, logger)
+        sys.exit(0)
 
     if args.info:
         show_info(input_paths, settings, logger)

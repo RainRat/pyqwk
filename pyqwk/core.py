@@ -342,6 +342,7 @@ class ProcessingSettings:
     merge: bool = False
     unique: bool = False
     organize: bool = False
+    organize_by_bbs: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
     msgnum_filters: set[int] | None = None
@@ -3045,3 +3046,37 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
             visit_iterative(idx)
 
     return ordered_messages
+
+
+def organize_by_bbs(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+    """Organize QWK files into directories based on their BBS name."""
+    for input_path in input_paths:
+        if not os.path.isfile(input_path):
+            continue
+
+        if not input_path.lower().endswith('.qwk'):
+            continue
+
+        try:
+            _, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, 'bbs_info', None)
+            if bbs_info and bbs_info.name:
+                bbs_name = bbs_info.name.strip()
+                safe_bbs_name = "".join([c for c in bbs_name if c.isalnum() or c in (' ', '.', '_', '-')]).strip()
+                
+                if not safe_bbs_name:
+                    safe_bbs_name = "Unknown_BBS"
+                
+                if settings.dry_run:
+                    logger.info("Dry run: Would move %s to %s/", input_path, safe_bbs_name)
+                    continue
+
+                if not os.path.exists(safe_bbs_name):
+                    os.makedirs(safe_bbs_name)
+                
+                shutil.move(input_path, os.path.join(safe_bbs_name, os.path.basename(input_path)))
+                logger.info("Moved %s to %s/", input_path, safe_bbs_name)
+            else:
+                logger.warning("Could not find BBS name in %s", input_path)
+        except Exception as e:
+            logger.error("Error processing %s: %s", input_path, e)
