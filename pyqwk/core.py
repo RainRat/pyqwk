@@ -1051,6 +1051,8 @@ def process_message(
         if cut_quoting:
             if RE_QUOTE_PATTERN.match(line):
                 continue
+            # Remove lines between two quoted lines to handle quotes that were broken
+            # across lines by the original BBS software.
             elif j > 0 and j < (len(lines) - 1) \
                 and RE_QUOTE_PATTERN.match(lines[j - 1]) \
                 and RE_QUOTE_PATTERN.match(lines[j + 1]):

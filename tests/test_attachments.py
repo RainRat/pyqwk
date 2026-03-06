@@ -20,7 +20,7 @@ def _make_settings(**kwargs):
         quiet=False, headers_only=False, oneline=False,
         extract_attachments=False, limit=None, skip=None,
         sort=None, reverse=False, merge=False, unique=False, organize=False,
-        include_toc=False
+        organize_by_bbs=False, include_toc=False
     )
     defaults.update(kwargs)
     field_names = {f.name for f in dataclasses.fields(ProcessingSettings)}
