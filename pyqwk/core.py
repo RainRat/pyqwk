@@ -1244,6 +1244,22 @@ def _generate_safe_filename(message: ParsedMessage, output_format: str, count: i
     return f"{message.confnum:03d}-{msg_num:05d}-{slug}{ext}"
 
 
+def _get_message_text_for_format(
+    settings: ProcessingSettings,
+    processed_buffer: str,
+    cleaned_body: str,
+) -> str:
+    """Determine the appropriate text content for a message based on the output format."""
+    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml'):
+        if settings.headers_only:
+            return ""
+
+    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml', 'html', 'markdown'):
+        return cleaned_body if settings.oneline else processed_buffer
+
+    return processed_buffer
+
+
 def process_merged_files(
     input_paths: list[str],
     settings: ProcessingSettings,
@@ -1434,21 +1450,21 @@ def process_merged_files(
             if settings.extract_attachments:
                 attachment_prefix = "../attachments/" if settings.organize else "attachments/"
 
-            # Structured formats use the cleaned_body (if oneline) or processed_buffer
+            # Determine appropriate text content for structured formats
+            text_content = _get_message_text_for_format(settings, processed_buffer, cleaned_body)
+
             if settings.format == 'text':
                 encoded_buffer = processed_buffer.encode(target_encoding)
             elif settings.format == 'json':
-                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = json.dumps(
                     _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                 ).encode(target_encoding)
             elif settings.format == 'xml':
-                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _xml_element_to_str(_message_to_xml_element(temp_msg)).encode(target_encoding)
             elif settings.format == 'html':
-                temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
+                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_html(
                     temp_msg,
                     attachment_prefix=attachment_prefix,
@@ -1456,7 +1472,7 @@ def process_merged_files(
                     is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'markdown':
-                temp_msg = replace(parsed_message, text=cleaned_body if settings.oneline else processed_buffer)
+                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_markdown(
                     temp_msg,
                     attachment_prefix=attachment_prefix,
@@ -1464,11 +1480,9 @@ def process_merged_files(
                     is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'mbox':
-                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
             elif settings.format == 'eml':
-                text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
                 temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
             else:
@@ -1514,13 +1528,7 @@ def process_merged_files(
         else:
             estimated_bytes += len(processed_buffer.encode('utf-8'))
             if not settings.dry_run:
-                text_content = processed_buffer
-                # For structured formats, we prefer the cleaned body (if oneline) or processed_buffer
-                # (which might contain headers or terminal highlighting)
-                if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml'):
-                    text_content = "" if settings.headers_only else (processed_buffer if not settings.oneline else cleaned_body)
-                elif settings.format in ('html', 'markdown') and settings.oneline:
-                    text_content = cleaned_body
+                text_content = _get_message_text_for_format(settings, processed_buffer, cleaned_body)
 
                 collected_messages.append(
                     replace(
