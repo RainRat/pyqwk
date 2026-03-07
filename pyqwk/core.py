@@ -640,6 +640,7 @@ class MessageHeader:
         conf_name = board_dict.get(self.confnum, str(self.confnum))
         date_str = f"{self.msgdate} {self.msgtime}"
         from_name = self.msgfrom.strip()
+        to_name = self.msgto.strip()
         subject = self.msgsubject.strip()
 
         def prepare_field(text: str, width: int, highlight: bool = True) -> str:
@@ -649,15 +650,16 @@ class MessageHeader:
                 truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
             return truncated + (" " * (width - display_len))
 
-        conf_part = prepare_field(conf_name, 16)
-        from_part = prepare_field(from_name, 20)
+        conf_part = prepare_field(conf_name, 12)
+        from_part = prepare_field(from_name, 15)
+        to_part = prepare_field(to_name, 15)
         subject_part = _highlight_text(subject, highlight_term, is_regex, use_colors)
 
         msgnum_part = ""
         if verbose:
             msgnum_part = f"{(self.msgnum or ''):<6} "
 
-        return f"{msgnum_part}{conf_part} {date_str:<14} {from_part} {subject_part}\r\n"
+        return f"{msgnum_part}{conf_part} {date_str:<14} {from_part} {to_part} {subject_part}\r\n"
 
 
 class MessagesDatFormatError(Exception):
@@ -2338,9 +2340,10 @@ def _write_text(
 
     if settings and settings.oneline:
         msgnum_hdr = f"{'Num':<6} " if settings.verbose else ""
-        conf_hdr = f"{'Conference':<16}"
+        conf_hdr = f"{'Conference':<12}"
         date_hdr = f"{'Date':<14}"
-        from_hdr = f"{'From':<20}"
+        from_hdr = f"{'From':<15}"
+        to_hdr = f"{'To':<15}"
         subj_hdr = "Subject"
 
         use_colors = (
@@ -2352,13 +2355,13 @@ def _write_text(
         if use_colors:
             BOLD = "1"
             def b(t): return f"\033[{BOLD}m{t}\033[0m"
-            header_line = f"{b(msgnum_hdr)}{b(conf_hdr)} {b(date_hdr)} {b(from_hdr)} {b(subj_hdr)}\r\n"
+            header_line = f"{b(msgnum_hdr)}{b(conf_hdr)} {b(date_hdr)} {b(from_hdr)} {b(to_hdr)} {b(subj_hdr)}\r\n"
         else:
-            header_line = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {subj_hdr}\r\n"
+            header_line = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}\r\n"
 
         parts.append(header_line)
         # Calculate separator length from the plain text header
-        plain_header = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {subj_hdr}"
+        plain_header = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}"
         parts.append("-" * len(plain_header) + "\r\n")
 
     if settings and settings.include_toc:
