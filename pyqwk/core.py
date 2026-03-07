@@ -1500,6 +1500,10 @@ def process_merged_files(
             if settings.format == 'text' or include_header:
                 processed_buffer = separator_str + processed_buffer
 
+        # Determine appropriate text content for structured formats
+        text_content = _get_message_text_for_format(settings, processed_buffer, cleaned_body)
+        temp_msg = replace(parsed_message, text=text_content)
+
         if settings.individual_files:
             assert output_dir is not None
 
@@ -1516,21 +1520,15 @@ def process_merged_files(
             if settings.extract_attachments:
                 attachment_prefix = "../attachments/" if settings.organize else "attachments/"
 
-            # Determine appropriate text content for structured formats
-            text_content = _get_message_text_for_format(settings, processed_buffer, cleaned_body)
-
             if settings.format == 'text':
                 encoded_buffer = processed_buffer.encode(target_encoding)
             elif settings.format == 'json':
-                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = json.dumps(
                     _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                 ).encode(target_encoding)
             elif settings.format == 'xml':
-                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _xml_element_to_str(_message_to_xml_element(temp_msg)).encode(target_encoding)
             elif settings.format == 'html':
-                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_html(
                     temp_msg,
                     attachment_prefix=attachment_prefix,
@@ -1538,7 +1536,6 @@ def process_merged_files(
                     is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'markdown':
-                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_markdown(
                     temp_msg,
                     attachment_prefix=attachment_prefix,
@@ -1546,10 +1543,8 @@ def process_merged_files(
                     is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'mbox':
-                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
             elif settings.format == 'eml':
-                temp_msg = replace(parsed_message, text=text_content)
                 encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
             else:
                 encoded_buffer = processed_buffer.encode(target_encoding)
@@ -1594,14 +1589,7 @@ def process_merged_files(
         else:
             estimated_bytes += len(processed_buffer.encode('utf-8'))
             if not settings.dry_run:
-                text_content = _get_message_text_for_format(settings, processed_buffer, cleaned_body)
-
-                collected_messages.append(
-                    replace(
-                        parsed_message,
-                        text=text_content,
-                    )
-                )
+                collected_messages.append(temp_msg)
         return False
 
     for input_path in input_paths:
