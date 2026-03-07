@@ -527,6 +527,26 @@ class MessageHeader:
 
         return header
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "MessageHeader":
+        """Reconstruct a MessageHeader from a dictionary."""
+        # Convert numeric fields that might be strings
+        def to_int(v):
+            if v is None or v == "": return None
+            try: return int(v)
+            except (ValueError, TypeError): return None
+
+        kwargs = {}
+        for field_info in fields(cls):
+            name = field_info.name
+            val = data.get(name)
+            if name in ('msgnum', 'refnum', 'numblocks', 'confnum', 'lognum'):
+                kwargs[name] = to_int(val)
+            else:
+                kwargs[name] = val if val is not None else ""
+
+        return cls(**kwargs)
+
     def format_text(
         self,
         board_dict: Mapping[int, str],
@@ -703,9 +723,34 @@ class LogFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
+    """Convert a list of dictionaries into ParsedMessage objects."""
+    messages = []
+    for entry in data:
+        header_dict = entry.get('header', {})
+        header = MessageHeader.from_dict(header_dict)
+
+        msg = ParsedMessage(
+            text=entry.get('text', ""),
+            msgnum=header.msgnum,
+            refnum=header.refnum,
+            confnum=header.confnum,
+            header=header,
+            depth=entry.get('depth', 0),
+            thread_id=entry.get('thread_id'),
+            parent_msgnum=entry.get('parent_msgnum'),
+            confname=entry.get('conference'),
+            bbs_name=entry.get('bbs_name'),
+            source_file=entry.get('source_file'),
+            attachments=entry.get('attachments'),
+        )
+        messages.append(msg)
+    return messages
+
+
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
-) -> tuple[bytearray, dict[int, str]]:
+) -> tuple[bytearray | list[ParsedMessage], dict[int, str]]:
     """Load message and conference information from a QWK packet or raw file.
 
     Args:
@@ -724,6 +769,25 @@ def load_data(
         to automatically load conference information.
     """
     board_dict: dict[int, str] = {}
+    if input_path.lower().endswith('.json'):
+        with open(input_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError("JSON archive must be a list of messages.")
+            messages = _parse_json_messages(data)
+
+            # Reconstruct board_dict and bbs_info if possible
+            board_dict = ConferenceMap()
+            bbs_info = BBSInfo()
+            for msg in messages:
+                if msg.confnum is not None and msg.confname:
+                    board_dict[msg.confnum] = msg.confname
+                if msg.bbs_name:
+                    bbs_info.name = msg.bbs_name
+
+            board_dict.bbs_info = bbs_info
+            return messages, board_dict
+
     if zipfile.is_zipfile(input_path):
         messages_name = ''
         reply_name = ''
@@ -1551,13 +1615,43 @@ def process_merged_files(
         allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
 
         desc = f"Processing {os.path.basename(input_path)}"
-        with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
-            for parsed_message in parse_messages(
+
+        if isinstance(file_data, list):
+            # For pre-parsed messages (JSON), we iterate directly
+            messages_to_process = file_data
+            total_progress = len(file_data)
+            progress_unit = 'msg'
+        else:
+            # For raw data, we use parse_messages
+            messages_to_process = parse_messages(
                 file_data,
-                progress_bar,
+                None, # Will be set below
                 settings.encoding,
                 settings.headers_only,
-            ):
+            )
+            total_progress = len(file_data)
+            progress_unit = 'B'
+
+        with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+            if progress_bar is not None:
+                if progress_unit == 'msg':
+                    # tqdm settings for message count
+                    progress_bar.unit = 'msg'
+                    progress_bar.unit_scale = False
+                else:
+                    # If it's a bytearray and we're using parse_messages,
+                    # we need to pass the progress bar to it.
+                    messages_to_process = parse_messages(
+                        file_data,
+                        progress_bar,
+                        settings.encoding,
+                        settings.headers_only,
+                    )
+
+            for parsed_message in messages_to_process:
+                if isinstance(file_data, list) and progress_bar is not None:
+                    progress_bar.update(1)
+
                 parsed_message = replace(
                     parsed_message,
                     confname=board_dict.get(parsed_message.confnum),
@@ -2640,20 +2734,24 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
             if bbs_info:
                 info_entry["bbs_info"] = asdict(bbs_info)
 
-            if len(file_data) < BLOCK_SIZE:
-                if settings.format != 'json':
-                    print(f"File: {_colorize(input_path, CYAN)}")
-                    print("  Invalid or empty file.")
-                all_info.append(info_entry)
-                continue
+            if isinstance(file_data, list):
+                messages_to_process = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    if settings.format != 'json':
+                        print(f"File: {_colorize(input_path, CYAN)}")
+                        print("  Invalid or empty file.")
+                    all_info.append(info_entry)
+                    continue
+                messages_to_process = parse_messages(
+                    file_data, None, settings.encoding, headers_only=True
+                )
 
             total_messages = 0
             conference_counts = defaultdict(int)
 
             try:
-                for message in parse_messages(
-                    file_data, None, settings.encoding, headers_only=True
-                ):
+                for message in messages_to_process:
                     total_messages += 1
                     conference_counts[message.confnum] += 1
             except MessagesDatFormatError as e:
@@ -2753,10 +2851,31 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             # Use a progress bar for statistics gathering
             # We must read message bodies to accurately count attachments
             need_body = True
-            with _create_progress_bar(len(file_data), settings.quiet, desc=desc) as progress_bar:
-                for message in parse_messages(
-                    file_data, progress_bar, settings.encoding, headers_only=not need_body
-                ):
+
+            if isinstance(file_data, list):
+                messages_to_process = file_data
+                total_progress = len(file_data)
+                progress_unit = 'msg'
+            else:
+                messages_to_process = parse_messages(
+                    file_data, None, settings.encoding, headers_only=not need_body
+                )
+                total_progress = len(file_data)
+                progress_unit = 'B'
+
+            with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+                if progress_bar is not None:
+                    if progress_unit == 'msg':
+                        progress_bar.unit = 'msg'
+                        progress_bar.unit_scale = False
+                    else:
+                        messages_to_process = parse_messages(
+                            file_data, progress_bar, settings.encoding, headers_only=not need_body
+                        )
+
+                for message in messages_to_process:
+                    if isinstance(file_data, list) and progress_bar is not None:
+                        progress_bar.update(1)
                     total_count += 1
 
                     if not matches_filters(message, settings, allowed_conferences, user_name):

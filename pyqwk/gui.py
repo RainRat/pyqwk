@@ -476,6 +476,7 @@ class QwkGuiApp:
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
             ("QWK archives", "*.qwk"),
+            ("JSON archives", "*.json"),
             ("messages.dat", "messages.dat"),
             ("All files", "*.*"),
         ]

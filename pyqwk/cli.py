@@ -27,7 +27,7 @@ def _expand_directories(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -79,12 +79,13 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK and REP formats) into modern formats like Text, HTML, or JSON."
+        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK, REP, and JSON formats) into modern formats like Text, HTML, or JSON."
     )
     parser.add_argument(
         'input_paths',
         help=(
             'The archives, message files, or folders you want to read. '
+            'Supported formats include QWK, REP, and JSON. '
             'If you provide a path to a raw MESSAGES.DAT file, pyqwk will '
             'also look for an accompanying CONTROL.DAT in the same folder to '
             'automatically load conference names.'
