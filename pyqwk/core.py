@@ -723,6 +723,62 @@ class LogFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+def _parse_sqlite_messages(db_path: str) -> list[ParsedMessage]:
+    """Import messages from a pyqwk SQLite database."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM messages")
+    except sqlite3.OperationalError as e:
+        conn.close()
+        raise ValueError(f"SQLite database is missing the 'messages' table: {e}")
+
+    messages = []
+    for row in cursor.fetchall():
+        # Reconstruct header dict
+        header_dict = {
+            'confnum': row['conference_number'],
+            'msgnum': row['message_number'],
+            'msgdate': row['date'],
+            'msgtime': "", # ISO date in SQLite includes time
+            'msgfrom': row['author'],
+            'msgto': row['recipient'],
+            'msgsubject': row['subject'],
+            'status': row['status'],
+            'refnum': row['reference_number']
+        }
+
+        # Add remaining fields with defaults
+        for f in fields(MessageHeader):
+            if f.name not in header_dict:
+                header_dict[f.name] = ""
+
+        header = MessageHeader.from_dict(header_dict)
+
+        attachments = row['attachments'].split(';') if row['attachments'] else []
+
+        msg = ParsedMessage(
+            text=row['text'],
+            msgnum=header.msgnum,
+            refnum=header.refnum,
+            confnum=header.confnum,
+            header=header,
+            depth=row['depth'],
+            thread_id=row['thread_id'],
+            parent_msgnum=row['parent_message_number'],
+            confname=row['conference_name'],
+            bbs_name=row['bbs_name'],
+            source_file=row['source_file'],
+            attachments=attachments,
+        )
+        messages.append(msg)
+
+    conn.close()
+    return messages
+
+
 def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
     """Convert a list of dictionaries into ParsedMessage objects."""
     messages = []
@@ -769,6 +825,26 @@ def load_data(
         to automatically load conference information.
     """
     board_dict: dict[int, str] = {}
+
+    if input_path.lower().endswith(('.db', '.sqlite')):
+        try:
+            messages = _parse_sqlite_messages(input_path)
+        except Exception as e:
+            raise ValueError(f"Failed to load SQLite archive: {e}")
+
+        # Reconstruct board_dict and bbs_info
+        board_dict = ConferenceMap()
+        bbs_info = BBSInfo()
+        for msg in messages:
+            if msg.confnum is not None:
+                if msg.confnum not in board_dict or (not board_dict[msg.confnum] and msg.confname):
+                    board_dict[msg.confnum] = msg.confname or f"Conference {msg.confnum}"
+            if msg.bbs_name:
+                bbs_info.name = msg.bbs_name
+
+        board_dict.bbs_info = bbs_info
+        return messages, board_dict
+
     if input_path.lower().endswith('.json'):
         with open(input_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -2182,6 +2258,10 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
     If the date is invalid, it returns a default date of 1970-01-01.
     """
     try:
+        # Handle ISO 8601 format (used in SQLite exports)
+        if 'T' in msgdate:
+            return datetime.datetime.fromisoformat(msgdate)
+
         # Normalize date separators
         msgdate = msgdate.replace('/', '-')
 
