@@ -184,7 +184,7 @@ class TestQwkGui:
         app.messages = [ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)]
         app.message_list.selection.return_value = ("0",)
         app.on_message_selected()
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Body", "body")
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Body", ("body",))
 
     def test_open_file_cancel(self, mock_gui_deps):
         app = get_app()
@@ -350,6 +350,19 @@ class TestQwkGui:
         app.detail_text.tag_add.assert_any_call("search_highlight", "1.10", "1.10+9c")
         # Verify that auto-scroll was triggered for the first match
         app.detail_text.see.assert_called_with("1.10")
+
+    def test_render_message_quotes(self, mock_gui_deps):
+        app = get_app()
+        header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        msg = ParsedMessage("Normal line\n> Quoted line\n", 1, None, 1, header)
+        app.messages = [msg]
+        app.board_dict = {1: "General"}
+        app._render_message(0)
+
+        # Verify normal line
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Normal line\n", ("body",))
+        # Verify quoted line has both 'body' and 'quote' tags
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "> Quoted line\n", ("body", "quote"))
 
     def test_search_invalid_regex(self, mock_gui_deps):
         app = get_app()

@@ -12,6 +12,7 @@ from pyqwk.core import (
     parse_messages,
     process_message,
     matches_filters,
+    RE_QUOTE_PATTERN,
     get_allowed_conferences,
     _parse_qwk_date,
     resolve_output_format,
@@ -326,6 +327,7 @@ class QwkGuiApp:
         )
         self.detail_text.tag_configure("header_separator", foreground="#cccccc")
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
+        self.detail_text.tag_configure("quote", foreground="#4e9a06")
         self.detail_text.tag_configure(
             "search_highlight", background="#ffff00", foreground="#000000"
         )
@@ -427,7 +429,12 @@ class QwkGuiApp:
         self.detail_text.window_create(tk.END, window=separator, stretch=True)
         self.detail_text.insert(tk.END, "\n\n")
 
-        self.detail_text.insert(tk.END, message.text, "body")
+        # Insert body with quote highlighting
+        for line in message.text.splitlines(keepends=True):
+            tags = ["body"]
+            if RE_QUOTE_PATTERN.match(line):
+                tags.append("quote")
+            self.detail_text.insert(tk.END, line, tuple(tags))
 
         # Highlight search terms if present
         search_term = self.search_var.get().strip()
