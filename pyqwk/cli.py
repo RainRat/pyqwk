@@ -264,8 +264,10 @@ def main() -> None:
     control_group.add_argument(
         '-l',
         '--loglevel',
-        help='Choose how much detail to show in logs (DEBUG, INFO, WARNING, ERROR).',
+        help='Set the amount of detail shown in logs (DEBUG, INFO, WARNING, ERROR, CRITICAL).',
         default='INFO',
+        type=str.upper,
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     )
 
     filter_group = parser.add_argument_group('Filtering Options')
@@ -398,9 +400,7 @@ def main() -> None:
     if args.oneline and args.individualfiles:
         parser.error("You cannot use --oneline and --individual-files at the same time.")
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError(f"'{args.loglevel}' is not a valid log level.")
+    numeric_level = getattr(logging, args.loglevel)
 
     use_colors = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
     handler = logging.StreamHandler()
