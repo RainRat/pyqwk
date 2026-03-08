@@ -816,13 +816,19 @@ def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
 
 
 def test_cli_rejects_invalid_log_level(
-    monkeypatch: pytest.MonkeyPatch, baseline_path: Path
+    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    namespace = _make_cli_namespace(input_paths=[str(baseline_path)], loglevel="NOPE")
-    monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: namespace)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", str(baseline_path), "--loglevel", "NOPE"],
+    )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(SystemExit):
         main()
+
+    stderr = capsys.readouterr().err
+    assert "invalid choice: 'NOPE'" in stderr
 
 
 def test_cli_reports_missing_file(
