@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a tool to convert old `.QWK` and `.REP` mail archives (from the BBS era) into modern formats like Text, HTML, JSON, XML, CSV, mbox, and SQLite.
+pyqwk is a tool to convert old `.QWK`, `.REP`, `.JSON`, and SQLite mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
 
 ## What are QWK and REP files?
 
@@ -29,10 +29,12 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Quick Start
 
-Run the script on any QWK or REP archive:
+Run the script on any QWK, REP, JSON, or SQLite archive:
 ```bash
 python qwk.py archive.qwk
 python qwk.py replies.rep
+python qwk.py archive.json
+python qwk.py messages.db
 ```
 
 ## Installation
@@ -60,11 +62,15 @@ python -m pyqwk.gui
 
 ## Graphical Reader
 
-If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations.
+If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, and SQLite).
 
 **To start the reader:**
 ```bash
-qwk-gui [archive.qwk|replies.rep]
+# Open the reader and select a file from the menu
+qwk-gui
+
+# Or open a specific file immediately
+qwk-gui archive.qwk
 ```
 
 **Key Features:**
