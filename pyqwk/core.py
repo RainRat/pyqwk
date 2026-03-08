@@ -1467,7 +1467,7 @@ def process_merged_files(
         and hasattr(sys.stdout, 'isatty')
         and sys.stdout.isatty()
     )
-    include_header = not settings.no_header and settings.format not in ('html', 'markdown')
+    include_header = not settings.no_header and settings.format == 'text'
     target_encoding = 'utf-8'
     if settings.individual_files and settings.format == 'text':
         target_encoding = settings.encoding

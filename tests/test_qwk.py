@@ -505,10 +505,11 @@ def test_process_file_writes_json(
     assert "header" in message
     assert "text" in message
     expected_message = _read_expected(expected_output_path)
-    # Structured output should NOT contain the separator line
+    # Structured output should NOT contain the separator line or text headers
     separator = ("-" * 80) + "\r\n"
     assert separator not in message["text"]
-    assert message["text"] == expected_message.replace(separator, "", 1)
+    assert "From:" not in message["text"]
+    assert message["text"] == "Hello this is my first day in the wonderful world of BBSing and I need some\r\nhelp.\r\n"
     assert message["header"]["msgnum"] == 28
 
 
@@ -596,10 +597,11 @@ def test_process_file_writes_xml(
     assert '<header>' in content
     assert '<msgnum>28' in content
     expected_message = _read_expected(expected_output_path)
-    # Structured output should NOT contain the separator line
+    # Structured output should NOT contain the separator line or text headers
     separator = ("-" * 80) + "\r\n"
-    expected_content = expected_message.replace(separator, "", 1).replace('\r\n', '\n')
-    assert expected_content in content
+    assert separator not in content
+    assert "<text>Date:" not in content
+    assert "<text>Hello this is my first day in the wonderful world of BBSing and I need some\nhelp.\n</text>" in content
     assert ("-" * 80) not in content
 
 

@@ -41,8 +41,9 @@ def test_sqlite_no_separator_by_default(tmp_path, logger):
     conn.close()
 
     assert not text.startswith("-" * 80)
-    # It should start with the header if no_header is False
-    assert text.startswith("Date:")
+    # It should NOT start with the text header in structured formats even if no_header is False
+    assert not text.startswith("Date:")
+    assert text == "Hello this is my first day in the wonderful world of BBSing and I need some\r\nhelp.\r\n"
 
 def test_mbox_no_separator_by_default(tmp_path, logger):
     input_path = Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
