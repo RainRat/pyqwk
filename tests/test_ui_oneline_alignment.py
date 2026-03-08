@@ -22,28 +22,32 @@ def test_oneline_alignment_long_names():
 
     oneline = header.format_oneline(board_dict)
 
-    # Expected truncation:
-    # Conf: "A Very Long Conf" (16 chars)
-    # From: "A Very Long Author N" (20 chars)
+    # Expected truncation (New widths):
+    # Conf: "A Very Long " (12 chars)
     # Date: "01-01-24 12:00" (14 chars)
+    # From: "A Very Long Aut" (15 chars)
+    # To:   "Recipient      " (15 chars)
 
-    assert "A Very Long Conf " in oneline
+    assert "A Very Long  " in oneline
     assert "01-01-24 12:00 " in oneline
-    assert "A Very Long Author N " in oneline
+    assert "A Very Long Aut" in oneline
+    assert "Recipient      " in oneline
 
     # Check total length of fixed parts
     # msgnum_part: ""
-    # conf_part: 16
+    # conf_part: 12
     # space: 1
     # date_part: 14
     # space: 1
-    # from_part: 20
+    # from_part: 15
     # space: 1
-    # total before subject: 16+1+14+1+20+1 = 53
+    # to_part: 15
+    # space: 1
+    # total before subject: 12+1+14+1+15+1+15+1 = 60
 
-    prefix = oneline[:53]
-    assert len(prefix) == 53
-    assert prefix.endswith("A Very Long Author N ")
+    prefix = oneline[:60]
+    assert len(prefix) == 60
+    assert prefix.endswith("Recipient       ")
 
 def test_oneline_alignment_with_highlighting():
     header = MessageHeader(
@@ -81,21 +85,22 @@ def test_oneline_alignment_with_highlighting():
     # The prepare_field function calculates display_len WITHOUT the ANSI codes
     # because it truncates first, then highlights, but it adds padding based on display_len.
 
-    # "Author Name" is 11 chars. Truncated to 20 is still 11 chars.
+    # "Author Name" is 11 chars. Truncated to 15 is still 11 chars.
     # display_len = 11.
     # Highlighted "Auth" -> "\x1b[7mAuth\x1b[0mor Name"
-    # Padding = 20 - 11 = 9 spaces.
+    # Padding = 15 - 11 = 4 spaces.
 
-    assert "Author Name         " in oneline.replace("\x1b[7m", "").replace("\x1b[0m", "")
+    assert "Author Name    " in oneline.replace("\x1b[7m", "").replace("\x1b[0m", "")
 
     # Check the whole line structure
     plain_line = oneline.replace("\x1b[7m", "").replace("\x1b[0m", "")
-    # Conf (16) + space (1) + Date (14) + space (1) + From (20) + space (1) + Subject
-    # "Conference      " (16)
+    # Conf (12) + space (1) + Date (14) + space (1) + From (15) + space (1) + To (15) + space (1) + Subject
+    # "Conference  " (12)
     # "01-01-24 12:00 " (14+1)
-    # "Author Name         " (20)
+    # "Author Name    " (15)
+    # "Recipient      " (15)
     # " " (1)
     # "Subject"
 
-    expected_start = "Conference       01-01-24 12:00 Author Name          Subject"
+    expected_start = "Conference   01-01-24 12:00 Author Name     Recipient       Subject"
     assert plain_line.startswith(expected_start)
