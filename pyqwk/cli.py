@@ -27,7 +27,7 @@ def _expand_directories(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.db', '.sqlite')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -85,7 +85,7 @@ def main() -> None:
         'input_paths',
         help=(
             'The archives, message files, or folders you want to read. '
-            'Supported formats include QWK, REP, JSON, and SQLite. '
+            'Supported formats include QWK, REP, JSON, CSV, and SQLite. '
             'If you provide a path to a raw MESSAGES.DAT file, pyqwk will '
             'also look for an accompanying CONTROL.DAT in the same folder to '
             'automatically load conference names.'

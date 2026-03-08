@@ -806,6 +806,40 @@ def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
     return messages
 
 
+def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
+    """Convert CSV rows into ParsedMessage objects."""
+    messages = []
+    header_fields = {f.name for f in fields(MessageHeader)}
+
+    def to_int(v):
+        if v is None or v == "": return None
+        try: return int(v)
+        except (ValueError, TypeError): return None
+
+    for row in data:
+        header_dict = {k: v for k, v in row.items() if k in header_fields}
+        header = MessageHeader.from_dict(header_dict)
+
+        attachments = row.get('attachments', "").split(';') if row.get('attachments') else []
+
+        msg = ParsedMessage(
+            text=row.get('text', ""),
+            msgnum=header.msgnum,
+            refnum=header.refnum,
+            confnum=header.confnum,
+            header=header,
+            depth=to_int(row.get('depth', 0)),
+            thread_id=row.get('thread_id'),
+            parent_msgnum=to_int(row.get('parent_msgnum')),
+            confname=row.get('conference_name') or row.get('conference'),
+            bbs_name=row.get('bbs_name'),
+            source_file=row.get('source_file'),
+            attachments=attachments,
+        )
+        messages.append(msg)
+    return messages
+
+
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray | list[ParsedMessage], dict[int, str]]:
@@ -853,6 +887,23 @@ def load_data(
             if not isinstance(data, list):
                 raise ValueError("JSON archive must be a list of messages.")
             messages = _parse_json_messages(data)
+
+            # Reconstruct board_dict and bbs_info if possible
+            board_dict = ConferenceMap()
+            bbs_info = BBSInfo()
+            for msg in messages:
+                if msg.confnum is not None and msg.confname:
+                    board_dict[msg.confnum] = msg.confname
+                if msg.bbs_name:
+                    bbs_info.name = msg.bbs_name
+
+            board_dict.bbs_info = bbs_info
+            return messages, board_dict
+
+    if input_path.lower().endswith('.csv'):
+        with open(input_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            messages = _parse_csv_messages(reader)
 
             # Reconstruct board_dict and bbs_info if possible
             board_dict = ConferenceMap()
