@@ -6,10 +6,13 @@ from unittest.mock import MagicMock, patch, mock_open
 from pyqwk.cli import main
 from pyqwk.core import load_data, ProcessingSettings
 
-def test_cli_invalid_loglevel(monkeypatch):
+def test_cli_invalid_loglevel(monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["qwk", "test.qwk", "--loglevel", "INVALID"])
-    with pytest.raises(ValueError, match="is not a valid log level"):
+    with pytest.raises(SystemExit) as exc:
         main()
+    assert exc.value.code == 2
+    stderr = capsys.readouterr().err
+    assert "invalid choice: 'INVALID'" in stderr
 
 def test_load_data_sidecar_control_dat_corrupt(tmp_path, caplog):
     messages_path = tmp_path / "MESSAGES.DAT"
