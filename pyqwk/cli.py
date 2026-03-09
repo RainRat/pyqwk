@@ -302,7 +302,7 @@ def main() -> None:
         '-S',
         '--search',
         dest='search_term',
-        help='Search for a keyword in author, subject, and message body.',
+        help='Search for a keyword in author, recipient, subject, and message body.',
     )
     filter_group.add_argument(
         '--regex',

@@ -217,7 +217,7 @@ qwk archive.qwk --to "Alice"
 ```
 
 **Keyword Search:**
-Search for keywords in the author, subject, and message body. Results are highlighted in the terminal for easy identification.
+Search for keywords in the author, recipient, subject, and message body. Results are highlighted in the terminal for easy identification.
 ```bash
 qwk archive.qwk --search "BBS"
 ```
@@ -330,7 +330,7 @@ for msg in parse_messages(file_data, None):
 | `--oneline` | Show each message as a single-line summary (Conference, Date, From, Subject). |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
-| `-S`, `--search [term]` | Search for a keyword in author, subject, and message text. |
+| `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message text. |
 | `--regex` | Use regular expressions for searching and filtering. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number (can be used multiple times). |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
