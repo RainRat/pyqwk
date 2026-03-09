@@ -37,16 +37,31 @@ def test_individual_files_output_not_a_directory(monkeypatch, tmp_path, testdata
     stderr = capsys.readouterr().err
     assert "The output path must be a folder when saving messages as individual files." in stderr
 
-def test_individual_files_missing_output_path(monkeypatch, testdata_dir, capsys):
-    input_file = testdata_dir / "messages.dat"
-    # --individual-files but no -o
-    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--individual-files"])
+def test_individual_files_missing_output_path_multiple_inputs(monkeypatch, testdata_dir, capsys):
+    input1 = testdata_dir / "test1_qwk.zip"
+    input2 = testdata_dir / "test2_qwk.zip"
+    # --individual-files but no -o with multiple inputs should still error
+    monkeypatch.setattr(sys, "argv", ["qwk", str(input1), str(input2), "--individual-files"])
 
     with pytest.raises(SystemExit):
         main()
 
     stderr = capsys.readouterr().err
     assert "You must provide an output folder when saving messages as individual files." in stderr
+
+def test_individual_files_default_output_path(monkeypatch, testdata_dir, capsys):
+    input_file = testdata_dir / "test1_qwk.zip"
+    # --individual-files but no -o with single input should succeed and use default folder
+    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--individual-files", "--dry-run"])
+
+    # Mock process_merged_files to avoid actual dry run logic if needed,
+    # but here we just want to see if it reaches the processing stage without exiting
+    import pyqwk.cli as cli
+    with monkeypatch.context() as m:
+        m.setattr(cli, "process_merged_files", lambda *args: None)
+        main()
+
+    # Verify we didn't exit with error
 
 def test_multiple_inputs_without_output_directory(monkeypatch, testdata_dir, capsys):
     input1 = testdata_dir / "test1_qwk.zip"

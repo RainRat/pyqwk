@@ -11,8 +11,7 @@ def test_cli_invalid_loglevel(monkeypatch, capsys):
     with pytest.raises(SystemExit) as exc:
         main()
     assert exc.value.code == 2
-    stderr = capsys.readouterr().err
-    assert "invalid choice: 'INVALID'" in stderr
+    assert "invalid choice: 'INVALID'" in capsys.readouterr().err
 
 def test_load_data_sidecar_control_dat_corrupt(tmp_path, caplog):
     messages_path = tmp_path / "MESSAGES.DAT"

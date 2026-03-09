@@ -425,7 +425,11 @@ def main() -> None:
         resolved_output_path = None
     elif args.individualfiles:
         if output_path is None:
-            parser.error("You must provide an output folder when saving messages as individual files.")
+            if len(args.input_paths) == 1 and not has_directory_input:
+                output_path = os.path.splitext(os.path.basename(args.input_paths[0]))[0]
+                logger.info("No output path provided. Using default folder: %s/", output_path)
+            else:
+                parser.error("You must provide an output folder when saving messages as individual files.")
         if os.path.exists(output_path) and not os.path.isdir(output_path):
             parser.error("The output path must be a folder when saving messages as individual files.")
         output_mode = 'file'
