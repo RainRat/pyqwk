@@ -530,18 +530,12 @@ class MessageHeader:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "MessageHeader":
         """Reconstruct a MessageHeader from a dictionary."""
-        # Convert numeric fields that might be strings
-        def to_int(v):
-            if v is None or v == "": return None
-            try: return int(v)
-            except (ValueError, TypeError): return None
-
         kwargs = {}
         for field_info in fields(cls):
             name = field_info.name
             val = data.get(name)
             if name in ('msgnum', 'refnum', 'numblocks', 'confnum', 'lognum'):
-                kwargs[name] = to_int(val)
+                kwargs[name] = _safe_to_int(val)
             else:
                 kwargs[name] = val if val is not None else ""
 
@@ -806,15 +800,64 @@ def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
     return messages
 
 
+def _safe_to_int(v: Any) -> int | None:
+    """Safely convert a value to an integer, returning None on failure."""
+    if v is None or v == "":
+        return None
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return None
+
+
+def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
+    """Convert an XML tree into ParsedMessage objects."""
+    messages = []
+    header_fields = {f.name for f in fields(MessageHeader)}
+
+    for entry in root.findall('message'):
+        header_el = entry.find('header')
+        header_dict = {}
+        if header_el is not None:
+            for field_el in header_el:
+                if field_el.tag in header_fields:
+                    header_dict[field_el.tag] = field_el.text
+
+        header = MessageHeader.from_dict(header_dict)
+
+        attachments_el = entry.find('attachments')
+        attachments = []
+        if attachments_el is not None:
+            for attach_el in attachments_el.findall('attachment'):
+                if attach_el.text:
+                    attachments.append(attach_el.text)
+
+        def get_text(tag):
+            el = entry.find(tag)
+            return el.text if el is not None and el.text is not None else ""
+
+        msg = ParsedMessage(
+            text=get_text('text'),
+            msgnum=header.msgnum,
+            refnum=header.refnum,
+            confnum=header.confnum,
+            header=header,
+            depth=_safe_to_int(get_text('depth') or 0) or 0,
+            thread_id=get_text('thread_id') or None,
+            parent_msgnum=_safe_to_int(get_text('parent_msgnum')),
+            confname=get_text('conference_name') or get_text('conference'),
+            bbs_name=get_text('bbs_name'),
+            source_file=get_text('source_file'),
+            attachments=attachments or None,
+        )
+        messages.append(msg)
+    return messages
+
+
 def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     """Convert CSV rows into ParsedMessage objects."""
     messages = []
     header_fields = {f.name for f in fields(MessageHeader)}
-
-    def to_int(v):
-        if v is None or v == "": return None
-        try: return int(v)
-        except (ValueError, TypeError): return None
 
     for row in data:
         header_dict = {k: v for k, v in row.items() if k in header_fields}
@@ -828,9 +871,9 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
             refnum=header.refnum,
             confnum=header.confnum,
             header=header,
-            depth=to_int(row.get('depth', 0)),
+            depth=_safe_to_int(row.get('depth', 0)) or 0,
             thread_id=row.get('thread_id'),
-            parent_msgnum=to_int(row.get('parent_msgnum')),
+            parent_msgnum=_safe_to_int(row.get('parent_msgnum')),
             confname=row.get('conference_name') or row.get('conference'),
             bbs_name=row.get('bbs_name'),
             source_file=row.get('source_file'),
@@ -899,6 +942,26 @@ def load_data(
 
             board_dict.bbs_info = bbs_info
             return messages, board_dict
+
+    if input_path.lower().endswith('.xml'):
+        try:
+            tree = ET.parse(input_path)
+            root = tree.getroot()
+            messages = _parse_xml_messages(root)
+        except Exception as e:
+            raise ValueError(f"Failed to load XML archive: {e}")
+
+        # Reconstruct board_dict and bbs_info if possible
+        board_dict = ConferenceMap()
+        bbs_info = BBSInfo()
+        for msg in messages:
+            if msg.confnum is not None and msg.confname:
+                board_dict[msg.confnum] = msg.confname
+            if msg.bbs_name:
+                bbs_info.name = msg.bbs_name
+
+        board_dict.bbs_info = bbs_info
+        return messages, board_dict
 
     if input_path.lower().endswith('.csv'):
         with open(input_path, 'r', encoding='utf-8') as f:
