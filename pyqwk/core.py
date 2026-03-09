@@ -44,6 +44,16 @@ FORMAT_EXTENSIONS = {
 }
 
 
+def _safe_to_int(v: Any) -> int | None:
+    """Safely convert a value to an integer or return None."""
+    if v is None or v == "":
+        return None
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return None
+
+
 def resolve_output_format(
     output_format: str | None,
     output_path: str | None,
@@ -531,17 +541,12 @@ class MessageHeader:
     def from_dict(cls, data: dict[str, Any]) -> "MessageHeader":
         """Reconstruct a MessageHeader from a dictionary."""
         # Convert numeric fields that might be strings
-        def to_int(v):
-            if v is None or v == "": return None
-            try: return int(v)
-            except (ValueError, TypeError): return None
-
         kwargs = {}
         for field_info in fields(cls):
             name = field_info.name
             val = data.get(name)
             if name in ('msgnum', 'refnum', 'numblocks', 'confnum', 'lognum'):
-                kwargs[name] = to_int(val)
+                kwargs[name] = _safe_to_int(val)
             else:
                 kwargs[name] = val if val is not None else ""
 
@@ -811,11 +816,6 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     messages = []
     header_fields = {f.name for f in fields(MessageHeader)}
 
-    def to_int(v):
-        if v is None or v == "": return None
-        try: return int(v)
-        except (ValueError, TypeError): return None
-
     for row in data:
         header_dict = {k: v for k, v in row.items() if k in header_fields}
         header = MessageHeader.from_dict(header_dict)
@@ -828,9 +828,9 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
             refnum=header.refnum,
             confnum=header.confnum,
             header=header,
-            depth=to_int(row.get('depth', 0)),
+            depth=_safe_to_int(row.get('depth', 0)),
             thread_id=row.get('thread_id'),
-            parent_msgnum=to_int(row.get('parent_msgnum')),
+            parent_msgnum=_safe_to_int(row.get('parent_msgnum')),
             confname=row.get('conference_name') or row.get('conference'),
             bbs_name=row.get('bbs_name'),
             source_file=row.get('source_file'),
