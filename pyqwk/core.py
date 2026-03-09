@@ -635,9 +635,12 @@ class MessageHeader:
         highlight_term: str | None = None,
         is_regex: bool = False,
         verbose: bool = False,
+        depth: int = 0,
+        conf_name: str | None = None,
     ) -> str:
         """Render a message header as a single line summary."""
-        conf_name = board_dict.get(self.confnum, str(self.confnum))
+        if conf_name is None:
+            conf_name = board_dict.get(self.confnum, str(self.confnum))
         date_str = f"{self.msgdate} {self.msgtime}"
         from_name = self.msgfrom.strip()
         to_name = self.msgto.strip()
@@ -653,6 +656,11 @@ class MessageHeader:
         conf_part = prepare_field(conf_name, 12)
         from_part = prepare_field(from_name, 15)
         to_part = prepare_field(to_name, 15)
+
+        # Apply threading indent to subject
+        if depth > 0:
+            indent = "  " * (depth - 1)
+            subject = f"{indent}└ {subject}"
         subject_part = _highlight_text(subject, highlight_term, is_regex, use_colors)
 
         msgnum_part = ""
@@ -1601,6 +1609,8 @@ def process_merged_files(
                 highlight_term=settings.search_term,
                 is_regex=settings.regex,
                 verbose=settings.verbose,
+                depth=parsed_message.depth,
+                conf_name=parsed_message.confname,
             )
         else:
             processed_buffer = cleaned_body
@@ -2513,7 +2523,8 @@ def _write_text(
 
     for message in messages:
         text = message.text
-        if message.depth > 0:
+        # Apply indentation only if NOT in oneline mode (oneline mode handles depth internally)
+        if message.depth > 0 and not (settings and settings.oneline):
             indent = "  " * message.depth
             lines = text.splitlines(keepends=True)
             indented_lines = [indent + line for line in lines]
