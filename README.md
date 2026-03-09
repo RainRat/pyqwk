@@ -10,7 +10,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite.
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, or SQLite.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
@@ -71,6 +71,7 @@ qwk-gui
 
 # Or open a specific file immediately
 qwk-gui archive.qwk
+qwk-gui archive.csv
 ```
 
 **Key Features:**
@@ -190,6 +191,11 @@ qwk archive.qwk --format sqlite -o messages.db
 **Export to a spreadsheet-friendly format (CSV):**
 ```bash
 qwk archive.qwk --format csv -o messages.csv
+```
+
+**Import from a CSV file (spreadsheet):**
+```bash
+qwk messages.csv -o updated.html
 ```
 
 *Note for Windows users: If you use symbols like `*` (wildcards) to select multiple files, use PowerShell instead of the standard Command Prompt.*

@@ -475,8 +475,12 @@ class QwkGuiApp:
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
+            ("All supported formats", "*.qwk *.rep *.json *.csv *.db *.sqlite"),
             ("QWK archives", "*.qwk"),
+            ("REP archives", "*.rep"),
             ("JSON archives", "*.json"),
+            ("CSV archives", "*.csv"),
+            ("SQLite databases", "*.db *.sqlite"),
             ("messages.dat", "messages.dat"),
             ("All files", "*.*"),
         ]
