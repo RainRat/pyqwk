@@ -891,6 +891,21 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     return messages
 
 
+def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
+    """Reconstruct board_dict and bbs_info from a list of messages."""
+    board_dict = ConferenceMap()
+    bbs_info = BBSInfo()
+    for msg in messages:
+        if msg.confnum is not None:
+            if msg.confnum not in board_dict or (not board_dict[msg.confnum] and msg.confname):
+                board_dict[msg.confnum] = msg.confname or f"Conference {msg.confnum}"
+        if msg.bbs_name:
+            bbs_info.name = msg.bbs_name
+
+    board_dict.bbs_info = bbs_info
+    return board_dict
+
+
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray | list[ParsedMessage], dict[int, str]]:
@@ -919,17 +934,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load SQLite archive: {e}")
 
-        # Reconstruct board_dict and bbs_info
-        board_dict = ConferenceMap()
-        bbs_info = BBSInfo()
-        for msg in messages:
-            if msg.confnum is not None:
-                if msg.confnum not in board_dict or (not board_dict[msg.confnum] and msg.confname):
-                    board_dict[msg.confnum] = msg.confname or f"Conference {msg.confnum}"
-            if msg.bbs_name:
-                bbs_info.name = msg.bbs_name
-
-        board_dict.bbs_info = bbs_info
+        board_dict = _reconstruct_metadata(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.json'):
@@ -939,16 +944,7 @@ def load_data(
                 raise ValueError("JSON archive must be a list of messages.")
             messages = _parse_json_messages(data)
 
-            # Reconstruct board_dict and bbs_info if possible
-            board_dict = ConferenceMap()
-            bbs_info = BBSInfo()
-            for msg in messages:
-                if msg.confnum is not None and msg.confname:
-                    board_dict[msg.confnum] = msg.confname
-                if msg.bbs_name:
-                    bbs_info.name = msg.bbs_name
-
-            board_dict.bbs_info = bbs_info
+            board_dict = _reconstruct_metadata(messages)
             return messages, board_dict
 
     if input_path.lower().endswith('.xml'):
@@ -959,16 +955,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load XML archive: {e}")
 
-        # Reconstruct board_dict and bbs_info if possible
-        board_dict = ConferenceMap()
-        bbs_info = BBSInfo()
-        for msg in messages:
-            if msg.confnum is not None and msg.confname:
-                board_dict[msg.confnum] = msg.confname
-            if msg.bbs_name:
-                bbs_info.name = msg.bbs_name
-
-        board_dict.bbs_info = bbs_info
+        board_dict = _reconstruct_metadata(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.csv'):
@@ -976,16 +963,7 @@ def load_data(
             reader = csv.DictReader(f)
             messages = _parse_csv_messages(reader)
 
-            # Reconstruct board_dict and bbs_info if possible
-            board_dict = ConferenceMap()
-            bbs_info = BBSInfo()
-            for msg in messages:
-                if msg.confnum is not None and msg.confname:
-                    board_dict[msg.confnum] = msg.confname
-                if msg.bbs_name:
-                    bbs_info.name = msg.bbs_name
-
-            board_dict.bbs_info = bbs_info
+            board_dict = _reconstruct_metadata(messages)
             return messages, board_dict
 
     if zipfile.is_zipfile(input_path):
