@@ -27,7 +27,7 @@ def _expand_directories(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite', '.xml')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
