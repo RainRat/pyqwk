@@ -104,3 +104,39 @@ def test_oneline_alignment_with_highlighting():
 
     expected_start = "Conference   01-01-24 12:00 Author Name     Recipient       Subject"
     assert plain_line.startswith(expected_start)
+
+def test_threaded_oneline_indentation():
+    header = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-24",
+        msgtime="12:00",
+        msgto="Recipient",
+        msgfrom="Author",
+        msgsubject="Threaded Subject",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=0,
+        nettag="",
+    )
+    board_dict = {1: "Conference"}
+
+    # Depth 1: Subject should start with "└ "
+    oneline_d1 = header.format_oneline(board_dict, depth=1)
+    assert "└ Threaded Subject" in oneline_d1
+    # Verify metadata alignment (should be the same as depth 0)
+    # 12 (Conf) + 1 + 14 (Date) + 1 + 15 (From) + 1 + 15 (To) + 1 = 60 chars before subject
+    prefix_d1 = oneline_d1[:60]
+    assert prefix_d1 == "Conference   01-01-24 12:00 Author          Recipient       "
+    assert oneline_d1[60:].startswith("└ Threaded Subject")
+
+    # Depth 2: Subject should start with "  └ "
+    oneline_d2 = header.format_oneline(board_dict, depth=2)
+    assert "  └ Threaded Subject" in oneline_d2
+    # Verify metadata alignment remains consistent
+    prefix_d2 = oneline_d2[:60]
+    assert prefix_d2 == "Conference   01-01-24 12:00 Author          Recipient       "
+    assert oneline_d2[60:].startswith("  └ Threaded Subject")
