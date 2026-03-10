@@ -1560,6 +1560,12 @@ def process_merged_files(
     collected_messages: list[ParsedMessage] = []
     seen_ids: set[tuple[str, int, int | str]] = set()
 
+    use_colors = (
+        output_mode == 'stdout'
+        and hasattr(sys.stdout, 'isatty')
+        and sys.stdout.isatty()
+    )
+
     separator_mode = settings.separator
     if separator_mode == 'auto':
         if settings.individual_files or settings.format in (
@@ -1571,6 +1577,9 @@ def process_merged_files(
     separator_str = ""
     if separator_mode == 'dashes':
         separator_str = ("-" * 80) + "\r\n"
+        if use_colors:
+            # ANSI Dim (90)
+            separator_str = f"\x1b[90m{separator_str}\x1b[0m"
     elif separator_mode == 'blank':
         separator_str = "\r\n"
 
@@ -1584,11 +1593,6 @@ def process_merged_files(
     bbs_info_to_use = None
     total_attachments = 0
 
-    use_colors = (
-        output_mode == 'stdout'
-        and hasattr(sys.stdout, 'isatty')
-        and sys.stdout.isatty()
-    )
     include_header = not settings.no_header and settings.format == 'text'
     target_encoding = 'utf-8'
     if settings.individual_files and settings.format == 'text':
@@ -1656,6 +1660,9 @@ def process_merged_files(
                 settings.redact_pii,
                 settings.strip_ansi,
             )
+
+            # Apply quote highlighting for terminal output
+            cleaned_body = _highlight_quotes(cleaned_body, use_colors)
 
             # Apply search highlighting to body for terminal output
             cleaned_body = _highlight_text(
@@ -2530,6 +2537,12 @@ def _write_text(
     """Write messages to text format with indentation for threads."""
     parts = []
 
+    use_colors = (
+        not output_path
+        and hasattr(sys.stdout, 'isatty')
+        and sys.stdout.isatty()
+    )
+
     if settings and settings.oneline:
         msgnum_hdr = f"{'Num':<6} " if settings.verbose else ""
         conf_hdr = f"{'Conference':<12}"
@@ -2537,12 +2550,6 @@ def _write_text(
         from_hdr = f"{'From':<15}"
         to_hdr = f"{'To':<15}"
         subj_hdr = "Subject"
-
-        use_colors = (
-            not output_path
-            and hasattr(sys.stdout, 'isatty')
-            and sys.stdout.isatty()
-        )
 
         if use_colors:
             BOLD = "1"
@@ -2554,7 +2561,11 @@ def _write_text(
         parts.append(header_line)
         # Calculate separator length from the plain text header
         plain_header = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}"
-        parts.append("-" * len(plain_header) + "\r\n")
+        separator_line = "-" * len(plain_header) + "\r\n"
+        if use_colors:
+            # ANSI Dim (90)
+            separator_line = f"\x1b[90m{separator_line}\x1b[0m"
+        parts.append(separator_line)
 
     if settings and settings.include_toc:
         title = 'QWK Message Archive'
@@ -2582,10 +2593,18 @@ def _write_text(
                 count = conf_counts[msg.confnum]
                 parts.append(f"  {msg.confnum:3}: {conf_name} ({count} messages)\r\n")
                 seen_confs.add(msg.confnum)
-        parts.append("-" * 80 + "\r\n\r\n")
+        separator_line = "-" * 80 + "\r\n\r\n"
+        if use_colors:
+            # ANSI Dim (90)
+            separator_line = f"\x1b[90m{separator_line}\x1b[0m"
+        parts.append(separator_line)
 
     for message in messages:
         text = message.text
+
+        # Apply quote highlighting for terminal output
+        text = _highlight_quotes(text, use_colors)
+
         # Apply indentation only if NOT in oneline mode (oneline mode handles depth internally)
         if message.depth > 0 and not (settings and settings.oneline):
             indent = "  " * message.depth
@@ -2837,6 +2856,25 @@ def _colorize(text: str, *attributes: str) -> str:
     if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
         return f"\033[{';'.join(attributes)}m{text}\033[0m"
     return text
+
+
+def _highlight_quotes(text: str, use_colors: bool) -> str:
+    """Apply green coloring to quoted lines in text for terminal output."""
+    if not use_colors:
+        return text
+
+    lines = text.splitlines(keepends=True)
+    highlighted_lines = []
+    for line in lines:
+        if RE_QUOTE_PATTERN.match(line):
+            # Strip trailing newlines to place the reset code before them.
+            content = line.rstrip('\r\n')
+            ending = line[len(content):]
+            # ANSI Green (32)
+            highlighted_lines.append(f"\x1b[32m{content}\x1b[0m{ending}")
+        else:
+            highlighted_lines.append(line)
+    return "".join(highlighted_lines)
 
 
 def _highlight_text(
