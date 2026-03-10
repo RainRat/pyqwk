@@ -475,7 +475,7 @@ class QwkGuiApp:
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
-            ("All supported formats", "*.qwk *.rep *.json *.csv *.db *.sqlite *.xml"),
+            ("All supported formats", "*.qwk *.rep *.json *.csv *.db *.sqlite *.xml *.mbox *.eml"),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
             ("JSON archives", "*.json"),

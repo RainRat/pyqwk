@@ -16,6 +16,8 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 from collections.abc import Iterator, Mapping
 from dataclasses import asdict, dataclass, field, fields, replace
+import mailbox
+import email
 from contextlib import contextmanager, nullcontext
 from typing import Any, Callable, Protocol
 import datetime
@@ -891,7 +893,7 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     return messages
 
 
-def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
+<def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
     """Reconstruct board_dict and bbs_info from a list of messages."""
     board_dict = ConferenceMap()
     bbs_info = BBSInfo()
@@ -904,6 +906,112 @@ def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
 
     board_dict.bbs_info = bbs_info
     return board_dict
+
+
+def _message_from_email(msg_obj: Any) -> ParsedMessage:
+    """Convert an email message object to a ParsedMessage."""
+    # Extract headers
+    def get_hdr(name: str) -> str:
+        return str(msg_obj.get(name, ""))
+
+    # QWK specific headers (if they exist)
+    conf_num = _safe_to_int(get_hdr('X-QWK-Conference')) or 0
+    msg_num = _safe_to_int(get_hdr('X-QWK-Message-Number'))
+    ref_num = _safe_to_int(get_hdr('X-QWK-Reference'))
+    status = get_hdr('X-QWK-Status') or " "
+    msg_flag = get_hdr('X-QWK-Flags') or " "
+    conf_name = get_hdr('X-QWK-Conference-Name')
+    bbs_name = get_hdr('X-QWK-BBS-Name')
+    source_file = get_hdr('X-QWK-Source-File')
+
+    # Attachments
+    attachments = None
+    attach_hdr = get_hdr('X-QWK-Attachments')
+    if attach_hdr:
+        attachments = [a.strip() for a in attach_hdr.split(';') if a.strip()]
+
+    # Standard Email headers
+    msg_to = get_hdr('To')
+    msg_from = get_hdr('From')
+    msg_subject = get_hdr('Subject')
+
+    # Date/Time
+    date_hdr = get_hdr('Date')
+    if date_hdr:
+        try:
+            dt = email.utils.parsedate_to_datetime(date_hdr)
+            msg_date = dt.strftime('%m-%d-%y')
+            msg_time = dt.strftime('%H:%M')
+        except (ValueError, TypeError):
+            msg_date = "01-01-70"
+            msg_time = "00:00"
+    else:
+        msg_date = "01-01-70"
+        msg_time = "00:00"
+
+    # Message body
+    body = ""
+    if msg_obj.is_multipart():
+        for part in msg_obj.walk():
+            if part.get_content_type() == "text/plain":
+                payload = part.get_payload(decode=True)
+                if payload:
+                    body = payload.decode('utf-8', errors='replace')
+                break
+    else:
+        payload = msg_obj.get_payload(decode=True)
+        if payload:
+            body = payload.decode('utf-8', errors='replace')
+
+    # Construct MessageHeader
+    header = MessageHeader(
+        status=status[:1] if status else " ",
+        msgnum=msg_num,
+        msgdate=msg_date,
+        msgtime=msg_time,
+        msgto=msg_to,
+        msgfrom=msg_from,
+        msgsubject=msg_subject,
+        msgpassword="",
+        refnum=ref_num,
+        numblocks=None,
+        msgflag=msg_flag[:1] if msg_flag else " ",
+        confnum=conf_num,
+        lognum=0,
+        nettag="",
+    )
+
+    return ParsedMessage(
+        text=body,
+        msgnum=msg_num,
+        refnum=ref_num,
+        confnum=conf_num,
+        header=header,
+        depth=_safe_to_int(get_hdr('X-QWK-Depth') or 0) or 0,
+        thread_id=get_hdr('X-QWK-Thread-ID') or None,
+        parent_msgnum=_safe_to_int(get_hdr('X-QWK-Parent-Msgnum')),
+        confname=conf_name or None,
+        bbs_name=bbs_name or None,
+        source_file=source_file or None,
+        attachments=attachments,
+    )
+
+
+def _parse_mbox_messages(path: str) -> list[ParsedMessage]:
+    """Import messages from an mbox file."""
+    messages = []
+    mbox = mailbox.mbox(path)
+    for msg_obj in mbox:
+        messages.append(_message_from_email(msg_obj))
+    return messages
+
+
+def _parse_eml_messages(path: str) -> list[ParsedMessage]:
+    """Import messages from an EML file."""
+    with open(path, 'rb') as f:
+        msg_obj = email.message_from_binary_file(f)
+    return [_message_from_email(msg_obj)]
+
 
 
 def load_data(
@@ -946,6 +1054,24 @@ def load_data(
 
             board_dict = _reconstruct_metadata(messages)
             return messages, board_dict
+
+    if input_path.lower().endswith('.mbox'):
+        try:
+            messages = _parse_mbox_messages(input_path)
+        except Exception as e:
+            raise ValueError(f"Failed to load mbox archive: {e}")
+
+        board_dict = _reconstruct_metadata(messages)
+        return messages, board_dict
+
+    if input_path.lower().endswith('.eml'):
+        try:
+            messages = _parse_eml_messages(input_path)
+        except Exception as e:
+            raise ValueError(f"Failed to load EML file: {e}")
+
+        board_dict = _reconstruct_metadata(messages)
+        return messages, board_dict
 
     if input_path.lower().endswith('.xml'):
         try:
@@ -2450,6 +2576,16 @@ def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = Tru
         parts.append(f"X-QWK-Status: {header.status}")
     if header.msgflag.strip():
         parts.append(f"X-QWK-Flags: {header.msgflag}")
+    if header.refnum is not None:
+        parts.append(f"X-QWK-Reference: {header.refnum}")
+    if message.attachments:
+        parts.append(f"X-QWK-Attachments: {';'.join(message.attachments)}")
+    if message.depth > 0:
+        parts.append(f"X-QWK-Depth: {message.depth}")
+    if message.thread_id:
+        parts.append(f"X-QWK-Thread-ID: {message.thread_id}")
+    if message.parent_msgnum is not None:
+        parts.append(f"X-QWK-Parent-Msgnum: {message.parent_msgnum}")
 
     parts.append("Content-Type: text/plain; charset=utf-8")
     parts.append("Content-Transfer-Encoding: 8bit")
