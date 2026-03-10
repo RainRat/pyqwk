@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a tool to convert old `.QWK`, `.REP`, `.JSON`, and SQLite mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
+pyqwk is a tool to convert old `.QWK`, `.REP`, `.JSON`, `.CSV`, `.XML`, and SQLite mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
 
 ## What are QWK and REP files?
 
@@ -10,7 +10,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, or SQLite.
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, XML, or SQLite.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
@@ -34,6 +34,8 @@ Run the script on any QWK, REP, JSON, or SQLite archive:
 python qwk.py archive.qwk
 python qwk.py replies.rep
 python qwk.py archive.json
+python qwk.py archive.csv
+python qwk.py archive.xml
 python qwk.py messages.db
 ```
 
@@ -62,7 +64,7 @@ python -m pyqwk.gui
 
 ## Graphical Reader
 
-If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, and SQLite).
+If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, CSV, XML, and SQLite).
 
 **To start the reader:**
 ```bash
@@ -72,6 +74,7 @@ qwk-gui
 # Or open a specific file immediately
 qwk-gui archive.qwk
 qwk-gui archive.csv
+qwk-gui archive.xml
 ```
 
 **Key Features:**
@@ -196,6 +199,11 @@ qwk archive.qwk --format csv -o messages.csv
 **Import from a CSV file (spreadsheet):**
 ```bash
 qwk messages.csv -o updated.html
+```
+
+**Import from an XML file:**
+```bash
+qwk archive.xml -o messages.html
 ```
 
 *Note for Windows users: If you use symbols like `*` (wildcards) to select multiple files, use PowerShell instead of the standard Command Prompt.*
