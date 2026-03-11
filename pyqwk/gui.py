@@ -3,7 +3,7 @@ import logging
 import os
 import tkinter as tk
 from dataclasses import replace
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, simpledialog
 
 from pyqwk.core import (
     ProcessingSettings,
@@ -88,6 +88,11 @@ class QwkGuiApp:
             accelerator="Ctrl+F",
         )
         edit_menu.add_command(
+            label="Go to Message...",
+            command=self.prompt_jump_to_message,
+            accelerator="Ctrl+G",
+        )
+        edit_menu.add_command(
             label="Clear Search", command=self.clear_search, accelerator="Esc"
         )
         menubar.add_cascade(label="Edit", menu=edit_menu)
@@ -97,6 +102,7 @@ class QwkGuiApp:
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-s>", self.export_messages)
+        self.root.bind("<Control-g>", self.prompt_jump_to_message)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Escape>", self.clear_search)
         self.root.bind("j", lambda e: self._select_relative_message(1))
@@ -796,16 +802,55 @@ class QwkGuiApp:
         except Exception as exc:
             messagebox.showerror("Export Failed", str(exc))
 
+    def prompt_jump_to_message(self, _event: object | None = None) -> None:
+        """Prompt the user for a message number and jump to it."""
+        if not self.messages:
+            return
+
+        msgnum = simpledialog.askinteger("Jump to Message", "Enter message number:")
+        if msgnum is None:
+            return
+
+        # Try to find it in the current conference first if something is selected
+        current_conf = None
+        current_selection = self.message_list.selection()
+        if current_selection:
+            try:
+                idx = int(current_selection[0])
+                current_conf = self.messages[idx].header.confnum
+            except (ValueError, IndexError):
+                pass
+
+        if current_conf is not None:
+            for i, m in enumerate(self.messages):
+                if m.header.msgnum == msgnum and m.header.confnum == current_conf:
+                    self._select_by_index(i)
+                    return
+
+        # Otherwise just find the first match
+        for i, m in enumerate(self.messages):
+            if m.header.msgnum == msgnum:
+                self._select_by_index(i)
+                return
+
+        messagebox.showinfo(
+            "Not Found", f"Message #{msgnum} was not found in the current view."
+        )
+
+    def _select_by_index(self, index: int) -> None:
+        """Select a message by its index in the current message list."""
+        iid = str(index)
+        if self.message_list.exists(iid):
+            self.message_list.selection_set(iid)
+            self.message_list.see(iid)
+            self.message_list.focus(iid)
+
     def jump_to_message(self, confnum: int, msgnum: int) -> None:
         """Find and select a message by conference and message number."""
         for i, m in enumerate(self.messages):
             if m.header.confnum == confnum and m.header.msgnum == msgnum:
-                iid = str(i)
-                if self.message_list.exists(iid):
-                    self.message_list.selection_set(iid)
-                    self.message_list.see(iid)
-                    self.message_list.focus(iid)
-                    return
+                self._select_by_index(i)
+                return
         messagebox.showinfo(
             "Not Found",
             f"Referenced message #{msgnum} was not found in the current view.",

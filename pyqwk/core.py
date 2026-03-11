@@ -893,7 +893,7 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     return messages
 
 
-<def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
+def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
     """Reconstruct board_dict and bbs_info from a list of messages."""
     board_dict = ConferenceMap()
     bbs_info = BBSInfo()
