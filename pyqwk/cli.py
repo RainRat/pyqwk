@@ -420,7 +420,7 @@ def main() -> None:
     if args.organize_by_bbs:
         output_mode = 'file'
         resolved_output_path = None
-    elif args.info:
+    elif args.info or args.stats:
         output_mode = 'stdout'
         resolved_output_path = None
     elif args.individualfiles:
