@@ -3526,34 +3526,40 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
 
 
 def organize_by_bbs(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
-    """Organize QWK files into directories based on their BBS name."""
+    """Organize archive files into directories based on their BBS name and ID."""
+    supported_extensions = ('.qwk', '.rep', '.json', '.csv', '.xml', '.db', '.sqlite', '.mbox', '.eml')
+
     for input_path in input_paths:
         if not os.path.isfile(input_path):
             continue
 
-        if not input_path.lower().endswith('.qwk'):
+        if not input_path.lower().endswith(supported_extensions) and os.path.basename(input_path).lower() != 'messages.dat':
             continue
 
         try:
             _, board_dict = load_data(input_path, logger, settings.encoding)
             bbs_info = getattr(board_dict, 'bbs_info', None)
-            if bbs_info and bbs_info.name:
-                bbs_name = bbs_info.name.strip()
-                safe_bbs_name = "".join([c for c in bbs_name if c.isalnum() or c in (' ', '.', '_', '-')]).strip()
+
+            if bbs_info and (bbs_info.name or bbs_info.bbs_id):
+                name_part = bbs_info.name.strip() if bbs_info.name else "Unknown BBS"
+                id_part = f" ({bbs_info.bbs_id.strip()})" if bbs_info.bbs_id else ""
+
+                folder_name = f"{name_part}{id_part}"
+                safe_folder_name = "".join([c for c in folder_name if c.isalnum() or c in (' ', '.', '_', '-', '(', ')')]).strip()
                 
-                if not safe_bbs_name:
-                    safe_bbs_name = "Unknown_BBS"
+                if not safe_folder_name:
+                    safe_folder_name = "Unknown_BBS"
                 
                 if settings.dry_run:
-                    logger.info("Dry run: Would move %s to %s/", input_path, safe_bbs_name)
+                    logger.info("Dry run: Would move %s to %s/", input_path, safe_folder_name)
                     continue
 
-                if not os.path.exists(safe_bbs_name):
-                    os.makedirs(safe_bbs_name)
+                if not os.path.exists(safe_folder_name):
+                    os.makedirs(safe_folder_name)
                 
-                shutil.move(input_path, os.path.join(safe_bbs_name, os.path.basename(input_path)))
-                logger.info("Moved %s to %s/", input_path, safe_bbs_name)
+                shutil.move(input_path, os.path.join(safe_folder_name, os.path.basename(input_path)))
+                logger.info("Moved %s to %s/", input_path, safe_folder_name)
             else:
-                logger.warning("Could not find BBS name in %s", input_path)
+                logger.warning("Could not find BBS information in %s", input_path)
         except Exception as e:
-            logger.error("Error processing %s: %s", input_path, e)
+            logger.error("Error organizing %s: %s", input_path, e)
