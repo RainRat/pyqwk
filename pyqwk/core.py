@@ -1614,22 +1614,6 @@ def _generate_safe_filename(message: ParsedMessage, output_format: str, count: i
     return f"{message.confnum:03d}-{msg_num:05d}-{slug}{ext}"
 
 
-def _get_message_text_for_format(
-    settings: ProcessingSettings,
-    processed_buffer: str,
-    cleaned_body: str,
-) -> str:
-    """Determine the appropriate text content for a message based on the output format."""
-    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml'):
-        if settings.headers_only:
-            return ""
-
-    if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml', 'html', 'markdown'):
-        return cleaned_body if settings.oneline else processed_buffer
-
-    return processed_buffer
-
-
 def process_merged_files(
     input_paths: list[str],
     settings: ProcessingSettings,
@@ -1814,7 +1798,16 @@ def process_merged_files(
                 processed_buffer = separator_str + processed_buffer
 
         # Determine appropriate text content for structured formats
-        text_content = _get_message_text_for_format(settings, processed_buffer, cleaned_body)
+        if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml') and settings.headers_only:
+            text_content = ""
+        elif (
+            settings.oneline
+            and settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml', 'html', 'markdown')
+        ):
+            text_content = cleaned_body
+        else:
+            text_content = processed_buffer
+
         temp_msg = replace(parsed_message, text=text_content)
 
         if settings.individual_files:
