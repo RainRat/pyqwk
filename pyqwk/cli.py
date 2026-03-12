@@ -439,9 +439,13 @@ def main() -> None:
         resolved_output_path = output_path
     elif len(input_paths) > 1 or has_directory_input:
         if not output_path:
-            parser.error("You must provide an output folder when processing more than one file.")
-        output_mode = 'file'
-        resolved_output_path = output_path
+            args.merge = True
+            output_mode = 'stdout'
+            resolved_output_path = None
+            logger.info("Multiple archives provided without an output path. Merging results to the screen.")
+        else:
+            output_mode = 'file'
+            resolved_output_path = output_path
     else:
         output_mode = 'stdout' if not output_path else 'file'
         resolved_output_path = output_path

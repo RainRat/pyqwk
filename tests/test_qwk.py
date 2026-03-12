@@ -5,6 +5,7 @@ import sys
 import json
 import zipfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -780,17 +781,17 @@ def test_cli_treats_multiple_positional_args_as_inputs(
     logging.basicConfig(level=logging.ERROR, force=True)
     output_path = tmp_path / "output.txt"
     # This simulates passing two files: baseline_path and output.txt (as a second input)
+    # This no longer errors but defaults to stdout merge
     monkeypatch.setattr(
         sys,
         "argv",
         ["prog", str(baseline_path), str(output_path)],
     )
 
-    with pytest.raises(SystemExit):
+    import pyqwk.cli as cli
+    with monkeypatch.context() as m:
+        m.setattr(cli, "process_merged_files", MagicMock())
         main()
-
-    stderr = capsys.readouterr().err
-    assert "You must provide an output folder when processing more than one file." in stderr
 
 
 def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
@@ -799,6 +800,7 @@ def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
     logging.basicConfig(level=logging.ERROR, force=True)
     output_dir = tmp_path / "output"
     # This simulates passing three inputs, the last one being the intended output dir but treated as input
+    # This no longer errors but defaults to stdout merge
     monkeypatch.setattr(
         sys,
         "argv",
@@ -810,11 +812,10 @@ def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
         ],
     )
 
-    with pytest.raises(SystemExit):
+    import pyqwk.cli as cli
+    with monkeypatch.context() as m:
+        m.setattr(cli, "process_merged_files", MagicMock())
         main()
-
-    stderr = capsys.readouterr().err
-    assert "You must provide an output folder when processing more than one file." in stderr
 
 
 def test_cli_rejects_invalid_log_level(
