@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a tool to convert old `.QWK`, `.REP`, `.JSON`, `.CSV`, `.XML`, and SQLite mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
+pyqwk is a tool to convert `.QWK`, `.REP`, `.JSON`, `.CSV`, `.XML`, SQLite, `.mbox`, and `.eml` mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
 
 ## What are QWK and REP files?
 
@@ -10,7 +10,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, XML, or SQLite.
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, XML, SQLite, mbox, or EML.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
@@ -29,13 +29,15 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Quick Start
 
-Run the script on any QWK, REP, JSON, or SQLite archive:
+Run the script on any supported message archive:
 ```bash
 python qwk.py archive.qwk
 python qwk.py replies.rep
 python qwk.py archive.json
 python qwk.py archive.csv
 python qwk.py archive.xml
+python qwk.py archive.mbox
+python qwk.py archive.eml
 python qwk.py messages.db
 ```
 
@@ -64,7 +66,7 @@ python -m pyqwk.gui
 
 ## Graphical Reader
 
-If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, CSV, XML, and SQLite).
+If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, CSV, XML, SQLite, mbox, and EML).
 
 **To start the reader:**
 ```bash
@@ -75,6 +77,8 @@ qwk-gui
 qwk-gui archive.qwk
 qwk-gui archive.csv
 qwk-gui archive.xml
+qwk-gui archive.mbox
+qwk-gui archive.eml
 ```
 
 **Key Features:**
@@ -86,7 +90,7 @@ qwk-gui archive.xml
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 
 **Keyboard Shortcuts:**
-- **Ctrl + O**: Open a QWK or REP archive.
+- **Ctrl + O**: Open any supported message archive.
 - **Ctrl + S**: Export the current view to a file.
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + Q**: Exit the application.
@@ -304,10 +308,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyqwk")
 
 # Load the archive and conference list
+# file_data can be a bytearray (for QWK/REP) or a list of messages (for JSON/CSV/etc.)
 file_data, board_dict = load_data("archive.qwk", logger)
 
+# Determine if we need to parse raw data or use pre-parsed messages
+if isinstance(file_data, list):
+    messages = file_data
+else:
+    messages = parse_messages(file_data, None)
+
 # Loop through all messages
-for msg in parse_messages(file_data, None):
+for msg in messages:
     # Clean the message content (remove signatures, quotes, and attachments)
     clean_text = process_message(
         msg.text,
