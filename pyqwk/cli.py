@@ -79,15 +79,15 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK, REP, and JSON formats) into modern formats like Text, HTML, or JSON."
+        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite) into modern formats like Text, HTML, Markdown, CSV, and more."
     )
     parser.add_argument(
         'input_paths',
         help=(
             'The archives, message files, or folders you want to read. '
-            'Supported formats include QWK, REP, JSON, CSV, and SQLite. '
+            'Supported formats include QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite. '
             'If you provide a path to a raw MESSAGES.DAT file, pyqwk will '
-            'also look for an accompanying CONTROL.DAT in the same folder to '
+            'look for a CONTROL.DAT file in the same folder to '
             'automatically load conference names.'
         ),
         nargs='+',
@@ -104,7 +104,7 @@ def main() -> None:
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message as its own file. HTML and Markdown exports will also get a clickable index file. You cannot use this with --threaded.',
+        help='Save each message as a separate file. For HTML and Markdown, this also creates a clickable index file. A new folder will be created if needed. You cannot use this with --threaded.',
         action='store_true',
     )
     io_group.add_argument(
@@ -149,7 +149,7 @@ def main() -> None:
         '-b',
         '--binaries-removal',
         dest='binariesremoval',
-        help='Remove attachments such as images or programs encoded in the text.',
+        help='Remove attachments like images or programs that are included in the message text.',
         action='store_true',
     )
     content_group.add_argument(
@@ -232,7 +232,7 @@ def main() -> None:
     format_group.add_argument(
         '--toc',
         dest='include_toc',
-        help='Include a table of contents and archive summary in the output (supported for Text, HTML, and Markdown merged exports).',
+        help='Include a table of contents and a summary of the archive in the output. This works for Text, HTML, and Markdown when merging files.',
         action='store_true',
     )
     format_group.add_argument(
