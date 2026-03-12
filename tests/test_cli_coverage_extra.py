@@ -3,6 +3,7 @@ import os
 import pytest
 import logging
 from pathlib import Path
+from unittest.mock import MagicMock
 from pyqwk.cli import main
 
 @pytest.fixture
@@ -67,14 +68,20 @@ def test_multiple_inputs_without_output_directory(monkeypatch, testdata_dir, cap
     input1 = testdata_dir / "test1_qwk.zip"
     input2 = testdata_dir / "test2_qwk.zip"
 
-    # Missing -o option
+    # Missing -o option should now default to merging to stdout
     monkeypatch.setattr(sys, "argv", ["qwk", str(input1), str(input2)])
 
-    with pytest.raises(SystemExit):
+    import pyqwk.cli as cli
+    with monkeypatch.context() as m:
+        # Mock process_merged_files to avoid actual processing
+        mock_merge = MagicMock()
+        m.setattr(cli, "process_merged_files", mock_merge)
         main()
 
-    stderr = capsys.readouterr().err
-    assert "You must provide an output folder when processing more than one file." in stderr
+        mock_merge.assert_called_once()
+        settings = mock_merge.call_args[0][1]
+        assert settings.merge is True
+        assert settings.output_mode == 'stdout'
 
 def test_individual_eml_output_not_a_directory(monkeypatch, tmp_path, testdata_dir, capsys):
     input_file = testdata_dir / "messages.dat"

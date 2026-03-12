@@ -434,12 +434,13 @@ def main() -> None:
             parser.error("The output path must be a folder when saving messages as individual files.")
         output_mode = 'file'
         resolved_output_path = output_path
-    elif args.merge:
+    elif args.merge or (not output_path and (len(input_paths) > 1 or has_directory_input)):
+        if not args.merge:
+            args.merge = True
+            logger.info("Multiple archives provided without an output path. Merging results to the screen.")
         output_mode = 'stdout' if not output_path else 'file'
         resolved_output_path = output_path
     elif len(input_paths) > 1 or has_directory_input:
-        if not output_path:
-            parser.error("You must provide an output folder when processing more than one file.")
         output_mode = 'file'
         resolved_output_path = output_path
     else:
