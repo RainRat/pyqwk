@@ -488,6 +488,8 @@ class QwkGuiApp:
             ("CSV archives", "*.csv"),
             ("SQLite databases", "*.db *.sqlite"),
             ("XML archives", "*.xml"),
+            ("mbox files", "*.mbox"),
+            ("EML files", "*.eml"),
             ("messages.dat", "messages.dat"),
             ("All files", "*.*"),
         ]
@@ -567,10 +569,14 @@ class QwkGuiApp:
                 # even if CONTROL.DAT is missing or incomplete.
                 try:
                     found_confs = set()
-                    for parsed_message in parse_messages(
-                        file_data, None, settings.encoding, headers_only=True
-                    ):
-                        found_confs.add(parsed_message.confnum)
+                    if isinstance(file_data, list):
+                        for parsed_message in file_data:
+                            found_confs.add(parsed_message.confnum)
+                    else:
+                        for parsed_message in parse_messages(
+                            file_data, None, settings.encoding, headers_only=True
+                        ):
+                            found_confs.add(parsed_message.confnum)
 
                     for cid in sorted(found_confs):
                         if cid not in board_dict:
@@ -601,7 +607,12 @@ class QwkGuiApp:
             bbs_info = getattr(board_dict, "bbs_info", None)
             user_name = bbs_info.user_name if bbs_info else None
 
-            for parsed_message in parse_messages(file_data, None, settings.encoding):
+            if isinstance(file_data, list):
+                messages_to_process = file_data
+            else:
+                messages_to_process = parse_messages(file_data, None, settings.encoding)
+
+            for parsed_message in messages_to_process:
                 total_count += 1
                 if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
                     continue
