@@ -1858,9 +1858,9 @@ def process_merged_files(
                     is_regex=settings.regex,
                 ).encode(target_encoding)
             elif settings.format == 'mbox':
-                encoded_buffer = _serialize_message_mbox(temp_msg).encode(target_encoding)
+                encoded_buffer = _serialize_rfc822(temp_msg, include_mbox_header=True).encode(target_encoding)
             elif settings.format == 'eml':
-                encoded_buffer = _serialize_message_eml(temp_msg).encode(target_encoding)
+                encoded_buffer = _serialize_rfc822(temp_msg, include_mbox_header=False).encode(target_encoding)
             else:
                 encoded_buffer = processed_buffer.encode(target_encoding)
 
@@ -2604,16 +2604,6 @@ def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = Tru
     return "\n".join(parts)
 
 
-def _serialize_message_mbox(message: ProcessedMessage) -> str:
-    """Serialize a message to mbox format with threading and extra headers."""
-    return _serialize_rfc822(message, include_mbox_header=True)
-
-
-def _serialize_message_eml(message: ProcessedMessage) -> str:
-    """Serialize a message to EML format (RFC 822)."""
-    return _serialize_rfc822(message, include_mbox_header=False)
-
-
 def _write_mbox(
     messages: list[ProcessedMessage],
     output_path: str | None,
@@ -2624,7 +2614,7 @@ def _write_mbox(
     """Write messages to an mbox file."""
     parts = []
     for message in messages:
-        parts.append(_serialize_message_mbox(message))
+        parts.append(_serialize_rfc822(message, include_mbox_header=True))
 
     _write_text_output("\n".join(parts), output_path, encoding=encoding)
 
@@ -2643,7 +2633,7 @@ def _write_eml(
     """
     parts = []
     for message in messages:
-        parts.append(_serialize_message_eml(message))
+        parts.append(_serialize_rfc822(message, include_mbox_header=False))
 
     _write_text_output("\n\n".join(parts), output_path, encoding=encoding)
 
