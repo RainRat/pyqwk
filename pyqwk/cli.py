@@ -79,7 +79,28 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite) into modern formats like Text, HTML, Markdown, CSV, and more."
+        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite) into modern formats like Text, HTML, Markdown, CSV, and more.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+examples:
+  # Show a one-line summary of all messages in an archive
+  qwk archive.qwk --oneline
+
+  # Convert an archive to a single, searchable HTML file
+  qwk archive.qwk --format html -o messages.html
+
+  # Save each message as an individual EML file in a folder
+  qwk archive.qwk --format eml -o ./output/
+
+  # Search for a keyword and show matching messages with headers only
+  qwk archive.qwk --search "vintage computing" --headers-only
+
+  # Extract attachments (UUE, yEnc, Base64) to an attachments/ folder
+  qwk archive.qwk --extract-attachments
+
+  # Show detailed statistics about an archive
+  qwk archive.qwk --stats
+""",
     )
     parser.add_argument(
         'input_paths',
