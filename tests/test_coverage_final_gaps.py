@@ -154,13 +154,13 @@ def test_decode_yenc_exception_coverage():
     assert _decode_yenc(None) == b""
 
 def test_eml_serialize_no_from_header_coverage(message_factory):
-    from pyqwk.core import _serialize_message_eml
+    from pyqwk.core import _serialize_rfc822
 
     msg = message_factory(1, None, "Test")
     msg.text = "Body"
 
-    result = _serialize_message_eml(msg)
-    # _serialize_message_eml does not have the mbox "From " separator
+    result = _serialize_rfc822(msg, include_mbox_header=False)
+    # RFC 822 (EML) serialization does not have the mbox "From " separator
     assert not result.startswith("From ")
     assert "From: " in result
     assert "Subject: Test" in result
