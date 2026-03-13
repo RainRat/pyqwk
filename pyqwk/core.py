@@ -400,6 +400,7 @@ class ParsedMessage:
     parent_msgnum: int | None = None
     confname: str | None = None
     bbs_name: str | None = None
+    bbs_id: str | None = None
     source_file: str | None = None
     attachments: list[str] | None = None
 
@@ -776,6 +777,7 @@ def _parse_sqlite_messages(db_path: str) -> list[ParsedMessage]:
             parent_msgnum=row['parent_message_number'],
             confname=row['conference_name'],
             bbs_name=row['bbs_name'],
+            bbs_id=row['bbs_id'] if 'bbs_id' in row.keys() else None,
             source_file=row['source_file'],
             attachments=attachments,
         )
@@ -803,6 +805,7 @@ def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
             parent_msgnum=entry.get('parent_msgnum'),
             confname=entry.get('conference'),
             bbs_name=entry.get('bbs_name'),
+            bbs_id=entry.get('bbs_id'),
             source_file=entry.get('source_file'),
             attachments=entry.get('attachments'),
         )
@@ -857,6 +860,7 @@ def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
             parent_msgnum=_safe_to_int(get_text('parent_msgnum')),
             confname=get_text('conference_name') or get_text('conference'),
             bbs_name=get_text('bbs_name'),
+            bbs_id=get_text('bbs_id'),
             source_file=get_text('source_file'),
             attachments=attachments or None,
         )
@@ -886,6 +890,7 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
             parent_msgnum=_safe_to_int(row.get('parent_msgnum')),
             confname=row.get('conference_name') or row.get('conference'),
             bbs_name=row.get('bbs_name'),
+            bbs_id=row.get('bbs_id'),
             source_file=row.get('source_file'),
             attachments=attachments,
         )
@@ -903,6 +908,8 @@ def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
                 board_dict[msg.confnum] = msg.confname or f"Conference {msg.confnum}"
         if msg.bbs_name:
             bbs_info.name = msg.bbs_name
+        if msg.bbs_id:
+            bbs_info.bbs_id = msg.bbs_id
 
     board_dict.bbs_info = bbs_info
     return board_dict
@@ -922,6 +929,7 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
     msg_flag = get_hdr('X-QWK-Flags') or " "
     conf_name = get_hdr('X-QWK-Conference-Name')
     bbs_name = get_hdr('X-QWK-BBS-Name')
+    bbs_id = get_hdr('X-QWK-BBS-ID')
     source_file = get_hdr('X-QWK-Source-File')
 
     # Attachments
@@ -992,6 +1000,7 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
         parent_msgnum=_safe_to_int(get_hdr('X-QWK-Parent-Msgnum')),
         confname=conf_name or None,
         bbs_name=bbs_name or None,
+        bbs_id=bbs_id or None,
         source_file=source_file or None,
         attachments=attachments,
     )
@@ -2072,6 +2081,7 @@ def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
         'header': message.header.as_dict,
         'conference': message.confname,
         'bbs_name': message.bbs_name,
+        'bbs_id': message.bbs_id,
         'source_file': message.source_file,
         'text': message.text,
         'depth': message.depth,
@@ -2111,6 +2121,8 @@ def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
         ET.SubElement(msg_element, 'conference_name').text = message.confname
     if message.bbs_name:
         ET.SubElement(msg_element, 'bbs_name').text = message.bbs_name
+    if message.bbs_id:
+        ET.SubElement(msg_element, 'bbs_id').text = message.bbs_id
     if message.source_file:
         ET.SubElement(msg_element, 'source_file').text = message.source_file
 
@@ -2561,6 +2573,8 @@ def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = Tru
         parts.append(f"X-QWK-Conference-Name: {message.confname}")
     if message.bbs_name:
         parts.append(f"X-QWK-BBS-Name: {message.bbs_name}")
+    if message.bbs_id:
+        parts.append(f"X-QWK-BBS-ID: {message.bbs_id}")
     if message.source_file:
         parts.append(f"X-QWK-Source-File: {message.source_file}")
     if header.msgnum is not None:
@@ -2734,7 +2748,7 @@ def _write_csv(
 
     header_fields = [f.name for f in fields(MessageHeader)]
     fieldnames = header_fields + [
-        'conference_name', 'bbs_name', 'source_file',
+        'conference_name', 'bbs_name', 'bbs_id', 'source_file',
         'text', 'depth', 'thread_id', 'parent_msgnum',
         'attachments'
     ]
@@ -2746,6 +2760,7 @@ def _write_csv(
         row = message.header.as_dict
         row['conference_name'] = message.confname
         row['bbs_name'] = message.bbs_name
+        row['bbs_id'] = message.bbs_id
         row['source_file'] = message.source_file
         row['text'] = message.text
         row['depth'] = message.depth
@@ -2787,6 +2802,7 @@ def _write_sqlite(
             parent_message_number INTEGER,
             conference_name TEXT,
             bbs_name TEXT,
+            bbs_id TEXT,
             source_file TEXT,
             attachments TEXT
         )
@@ -2801,9 +2817,9 @@ def _write_sqlite(
             INSERT INTO messages (
                 conference_number, message_number, date, author, recipient,
                 subject, status, text, reference_number, thread_id, depth,
-                parent_message_number, conference_name, bbs_name, source_file,
+                parent_message_number, conference_name, bbs_name, bbs_id, source_file,
                 attachments
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             header.confnum,
             header.msgnum,
@@ -2819,6 +2835,7 @@ def _write_sqlite(
             msg.parent_msgnum,
             msg.confname,
             msg.bbs_name,
+            msg.bbs_id,
             msg.source_file,
             ";".join(msg.attachments or [])
         ))

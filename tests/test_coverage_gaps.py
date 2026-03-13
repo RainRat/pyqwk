@@ -206,6 +206,7 @@ def test_xml_serialization_with_parent():
     msg.text = "Body"
     msg.confname = "Conf"
     msg.bbs_name = "BBS"
+    msg.bbs_id = "BBSID"
     msg.source_file = "file.qwk"
 
     element = _message_to_xml_element(msg)
@@ -216,6 +217,7 @@ def test_xml_serialization_with_parent():
     assert "<parent_msgnum>456</parent_msgnum>" in xml_str
     assert "<conference_name>Conf</conference_name>" in xml_str
     assert "<bbs_name>BBS</bbs_name>" in xml_str
+    assert "<bbs_id>BBSID</bbs_id>" in xml_str
     assert "<source_file>file.qwk</source_file>" in xml_str
 
 def test_parse_messages_progress_bar():

@@ -89,8 +89,9 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert r1[12] is None   # parent_message_number
     assert r1[13] == "Main Board"
     assert r1[14] == "MyBBS"
-    assert r1[15] == "archive.qwk"
-    assert r1[16] == "file1.txt;file2.jpg"
+    assert r1[15] is None  # bbs_id
+    assert r1[16] == "archive.qwk"
+    assert r1[17] == "file1.txt;file2.jpg"
 
     # Row 2 (msg2)
     r2 = rows[1]
@@ -108,8 +109,9 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert r2[12] == 1      # parent_message_number
     assert r2[13] == "Main Board"
     assert r2[14] == "MyBBS"
-    assert r2[15] == "archive.qwk"
-    assert r2[16] == ""
+    assert r2[15] is None  # bbs_id
+    assert r2[16] == "archive.qwk"
+    assert r2[17] == ""
 
     conn.close()
 
