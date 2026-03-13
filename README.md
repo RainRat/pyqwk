@@ -346,7 +346,7 @@ for msg in messages:
 | `--organize` | Organize individual files into subfolders by conference. |
 | `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
-| `--oneline` | Show each message as a single-line summary (Conference, Date, From, Subject). |
+| `--oneline` | Show each message as a single-line summary (Conference, Date, From, To, Subject). |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message text. |

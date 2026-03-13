@@ -226,7 +226,7 @@ def main() -> None:
     format_group.add_argument(
         '-1',
         '--oneline',
-        help='Show each message as a single line summary (Conference, Date, From, Subject).',
+        help='Show each message as a single line summary (Conference, Date, From, To, Subject).',
         action='store_true',
     )
     format_group.add_argument(
