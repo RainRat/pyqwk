@@ -1561,15 +1561,15 @@ def matches_filters(
         return any(check_str_match(p, text) for p in patterns)
 
     # 4. Author Filter
-    if settings.authors and not any_match(settings.authors, message.header.msgfrom):
+    if not any_match(settings.authors, message.header.msgfrom):
         return False
 
     # 5. Recipient Filter
-    if settings.recipients and not any_match(settings.recipients, message.header.msgto):
+    if not any_match(settings.recipients, message.header.msgto):
         return False
 
     # 6. Subject Filter
-    if settings.subjects and not any_match(settings.subjects, message.header.msgsubject):
+    if not any_match(settings.subjects, message.header.msgsubject):
         return False
 
     # 7. Full-Text Search
