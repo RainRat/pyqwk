@@ -65,6 +65,40 @@ class QwkGuiApp:
         if initial_path:
             self.current_path = initial_path
             self.root.after(100, lambda: self.load_messages(initial_path))
+        else:
+            self.root.after(100, self._render_welcome_screen)
+
+    def _render_welcome_screen(self) -> None:
+        """Render a welcome screen with instructions and shortcuts."""
+        self.detail_text.config(state=tk.NORMAL)
+        self.detail_text.delete("1.0", tk.END)
+
+        self.detail_text.insert(tk.END, "Welcome to PyQWK\n\n", "header_subject")
+
+        self.detail_text.insert(tk.END, "Getting Started:\n", "header_label")
+        self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
+
+        self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
+        formats = "QWK, REP, JSON, CSV, SQLite (.db), XML, mbox, EML, and MESSAGES.DAT"
+        self.detail_text.insert(tk.END, f"{formats}\n\n", "body")
+
+        self.detail_text.insert(tk.END, "Keyboard Shortcuts:\n", "header_label")
+        shortcuts = [
+            ("Ctrl + O", "Open Archive"),
+            ("Ctrl + S", "Export Current View"),
+            ("Ctrl + F", "Search / Find"),
+            ("Ctrl + G", "Go to Message Number"),
+            ("Ctrl + Q", "Quit Application"),
+            ("Esc", "Clear Search / Filters"),
+            ("J / N", "Next Message"),
+            ("K / P", "Previous Message"),
+        ]
+
+        for key, desc in shortcuts:
+            self.detail_text.insert(tk.END, f"{key:<12}", "header_label")
+            self.detail_text.insert(tk.END, f"{desc}\n", "body")
+
+        self.detail_text.config(state=tk.DISABLED)
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
