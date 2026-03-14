@@ -62,16 +62,11 @@ def test_cli_main_version():
         assert e.value.code == 0
 
 def test_any_match_empty_patterns():
-    # Line 1551: if not patterns: return True
-    # To hit this, we need one of settings.authors/recipients/subjects to be truthy but empty.
-    # The CLI currently doesn't allow this easily as it appends values.
-    # But we can test matches_filters directly.
-    class TruthyEmpty:
-        def __bool__(self): return True
-        def __len__(self): return 0
-        def __iter__(self): return iter([])
-
-    settings = _make_settings(authors=TruthyEmpty())
+    # Line 1560: if not patterns: return True
+    # By removing the 'if settings.authors and' check in matches_filters,
+    # we can now hit the 'if not patterns' branch in any_match
+    # by passing an empty list (which is the default).
+    settings = _make_settings(authors=[])
     header = MessageHeader(
         status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
         msgto='ToUser', msgfrom='FromUser', msgsubject='Subj', msgpassword='',
