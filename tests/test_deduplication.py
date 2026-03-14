@@ -14,44 +14,29 @@ def test_deduplication_by_msgnum(tmp_path):
     )
 
     # Message 1
-    h1 = MagicMock(spec=MessageHeader)
-    h1.is_private = False
-    h1.is_password = False
-    h1.msgfrom = "User1"
-    h1.msgdate = "01-01-23"
-    h1.msgtime = "12:00"
-    h1.msgsubject = "Subj1"
-    h1.msgnum = 1
-    h1.confnum = 100
-    h1.format_text.return_value = ""
+    h1 = MessageHeader(
+        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+    )
 
     msg1 = ParsedMessage(text="Message 1", msgnum=1, refnum=None, confnum=100, header=h1)
 
     # Message 2 (Duplicate of 1 by msgnum)
-    h2 = MagicMock(spec=MessageHeader)
-    h2.is_private = False
-    h2.is_password = False
-    h2.msgfrom = "User1"
-    h2.msgdate = "01-01-23"
-    h2.msgtime = "12:00"
-    h2.msgsubject = "Subj1"
-    h2.msgnum = 1
-    h2.confnum = 100
-    h2.format_text.return_value = ""
+    h2 = MessageHeader(
+        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+    )
 
     msg2 = ParsedMessage(text="Message 1 Duplicate", msgnum=1, refnum=None, confnum=100, header=h2)
 
     # Message 3 (Different msgnum)
-    h3 = MagicMock(spec=MessageHeader)
-    h3.is_private = False
-    h3.is_password = False
-    h3.msgfrom = "User1"
-    h3.msgdate = "01-01-23"
-    h3.msgtime = "12:05"
-    h3.msgsubject = "Subj2"
-    h3.msgnum = 2
-    h3.confnum = 100
-    h3.format_text.return_value = ""
+    h3 = MessageHeader(
+        status=' ', msgnum=2, msgdate='01-01-23', msgtime='12:05',
+        msgto='All', msgfrom='User1', msgsubject='Subj2', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+    )
 
     msg3 = ParsedMessage(text="Message 2", msgnum=2, refnum=None, confnum=100, header=h3)
 
@@ -82,32 +67,29 @@ def test_deduplication_by_content_hash(tmp_path):
     )
 
     # Message 1 (No msgnum)
-    h1 = MagicMock(spec=MessageHeader)
-    h1.is_private = False
-    h1.is_password = False
-    h1.msgnum = None
-    h1.confnum = 100
-    h1.format_text.return_value = ""
+    h1 = MessageHeader(
+        status=' ', msgnum=None, msgdate='01-01-23', msgtime='12:00',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+    )
 
     msg1 = ParsedMessage(text="Message Content", msgnum=None, refnum=None, confnum=100, header=h1)
 
     # Message 2 (Same content, no msgnum)
-    h2 = MagicMock(spec=MessageHeader)
-    h2.is_private = False
-    h2.is_password = False
-    h2.msgnum = None
-    h2.confnum = 100
-    h2.format_text.return_value = ""
+    h2 = MessageHeader(
+        status=' ', msgnum=None, msgdate='01-01-23', msgtime='12:00',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+    )
 
     msg2 = ParsedMessage(text="Message Content", msgnum=None, refnum=None, confnum=100, header=h2)
 
     # Message 3 (Different content)
-    h3 = MagicMock(spec=MessageHeader)
-    h3.is_private = False
-    h3.is_password = False
-    h3.msgnum = None
-    h3.confnum = 100
-    h3.format_text.return_value = ""
+    h3 = MessageHeader(
+        status=' ', msgnum=None, msgdate='01-01-23', msgtime='12:05',
+        msgto='All', msgfrom='User1', msgsubject='Subj2', msgpassword='',
+        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+    )
 
     msg3 = ParsedMessage(text="Different Content", msgnum=None, refnum=None, confnum=100, header=h3)
 

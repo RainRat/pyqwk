@@ -22,7 +22,7 @@ def test_no_valid_qwk_files_found(monkeypatch, tmp_path, caplog):
             main()
 
     assert exc.value.code == 1
-    assert "No valid QWK files were found" in caplog.text
+    assert "No supported message archives were found" in caplog.text
 
 def test_individual_files_output_not_a_directory(monkeypatch, tmp_path, testdata_dir, capsys):
     input_file = testdata_dir / "messages.dat"
