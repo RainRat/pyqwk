@@ -16,7 +16,7 @@ def test_deduplication_by_msgnum(tmp_path):
     # Message 1
     h1 = MessageHeader(
         status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
-        msgto='ToUser', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
         refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
     )
 
@@ -25,7 +25,7 @@ def test_deduplication_by_msgnum(tmp_path):
     # Message 2 (Duplicate of 1 by msgnum)
     h2 = MessageHeader(
         status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
-        msgto='ToUser', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
         refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
     )
 
@@ -34,7 +34,7 @@ def test_deduplication_by_msgnum(tmp_path):
     # Message 3 (Different msgnum)
     h3 = MessageHeader(
         status=' ', msgnum=2, msgdate='01-01-23', msgtime='12:05',
-        msgto='ToUser', msgfrom='User1', msgsubject='Subj2', msgpassword='',
+        msgto='All', msgfrom='User1', msgsubject='Subj2', msgpassword='',
         refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
     )
 
@@ -69,7 +69,7 @@ def test_deduplication_by_content_hash(tmp_path):
     # Message 1 (No msgnum)
     h1 = MessageHeader(
         status=' ', msgnum=None, msgdate='01-01-23', msgtime='12:00',
-        msgto='ToUser', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
         refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
     )
 
@@ -78,7 +78,7 @@ def test_deduplication_by_content_hash(tmp_path):
     # Message 2 (Same content, no msgnum)
     h2 = MessageHeader(
         status=' ', msgnum=None, msgdate='01-01-23', msgtime='12:00',
-        msgto='ToUser', msgfrom='User1', msgsubject='Subj1', msgpassword='',
+        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
         refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
     )
 
@@ -87,7 +87,7 @@ def test_deduplication_by_content_hash(tmp_path):
     # Message 3 (Different content)
     h3 = MessageHeader(
         status=' ', msgnum=None, msgdate='01-01-23', msgtime='12:05',
-        msgto='ToUser', msgfrom='User1', msgsubject='Subj2', msgpassword='',
+        msgto='All', msgfrom='User1', msgsubject='Subj2', msgpassword='',
         refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
     )
 

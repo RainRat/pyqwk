@@ -953,7 +953,9 @@ class QwkGuiApp:
 def main() -> None:
     parser = argparse.ArgumentParser(description="PyQWK Graphical Reader")
     parser.add_argument(
-        "path", nargs="?", help="Path to a QWK archive or messages.dat file"
+        "path",
+        nargs="?",
+        help="Path to a supported message archive (QWK, REP, JSON, CSV, XML, MBOX, EML, or SQLite) or a MESSAGES.DAT file."
     )
     args = parser.parse_args()
 

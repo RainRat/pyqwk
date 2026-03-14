@@ -79,7 +79,7 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to read and convert old Bulletin Board System (BBS) message packets (QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite) into modern formats like Text, HTML, Markdown, CSV, and more.",
+        description="A tool to read and convert old Bulletin Board System (BBS) message packets into modern formats like Text, HTML, Markdown, and CSV. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
@@ -105,11 +105,10 @@ examples:
     parser.add_argument(
         'input_paths',
         help=(
-            'The archives, message files, or folders you want to read. '
-            'Supported formats include QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite. '
-            'If you provide a path to a raw MESSAGES.DAT file, pyqwk will '
-            'look for a CONTROL.DAT file in the same folder to '
-            'automatically load conference names.'
+            'The archives, message files, or folders to read. '
+            'Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite. '
+            'If you provide a MESSAGES.DAT file, pyqwk looks for a '
+            'CONTROL.DAT file nearby to load conference names.'
         ),
         nargs='+',
     )
@@ -136,13 +135,13 @@ examples:
     io_group.add_argument(
         '--organize-by-bbs',
         dest='organize_by_bbs',
-        help='Organize QWK files into folders named after their BBS.',
+        help='Organize archives into folders named after the BBS.',
         action='store_true',
     )
     io_group.add_argument(
         '-E',
         '--encoding',
-        help='The text format of the input file (default is cp437).',
+        help='The text encoding of the input files (default is cp437).',
         default='cp437',
     )
 
@@ -435,7 +434,7 @@ examples:
     output_path = args.output_path
 
     if not input_paths:
-        logger.error("No valid QWK files were found in the paths you provided.")
+        logger.error("No supported message archives were found in the paths you provided.")
         sys.exit(1)
 
     if args.organize_by_bbs:

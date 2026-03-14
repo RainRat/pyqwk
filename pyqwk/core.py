@@ -1558,7 +1558,13 @@ def matches_filters(
     def any_match(patterns: list[str] | None, text: str) -> bool:
         if not patterns:
             return True
-        return any(check_str_match(p, text) for p in patterns)
+
+        # Check for empty collection even if truthy (like TruthyEmpty in tests)
+        pattern_list = list(patterns)
+        if not pattern_list:
+            return True
+
+        return any(check_str_match(p, text) for p in pattern_list)
 
     # 4. Author Filter
     if not any_match(settings.authors, message.header.msgfrom):
