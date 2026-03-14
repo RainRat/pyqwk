@@ -1959,6 +1959,7 @@ def process_merged_files(
                     parsed_message,
                     confname=board_dict.get(parsed_message.confnum),
                     bbs_name=bbs_info.name if bbs_info else None,
+                    bbs_id=bbs_info.bbs_id if bbs_info else None,
                     source_file=os.path.basename(input_path),
                 )
                 if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
