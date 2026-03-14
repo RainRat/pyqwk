@@ -1,8 +1,7 @@
 import os
 import shutil
 import tempfile
-import pytest
-from pyqwk.core import extract_binaries, ProcessingSettings, process_merged_files, ParsedMessage, MessageHeader
+from pyqwk.core import extract_binaries, ProcessingSettings, ParsedMessage, MessageHeader
 from unittest.mock import MagicMock
 import dataclasses
 

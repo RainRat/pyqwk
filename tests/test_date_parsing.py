@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import pytest
 import datetime
 
 # Ensure the root directory is in sys.path so we can import pyqwk.

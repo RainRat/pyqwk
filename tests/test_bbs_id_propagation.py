@@ -1,7 +1,6 @@
 import logging
 import json
-import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pyqwk.core import (
     ProcessingSettings,
     process_merged_files,

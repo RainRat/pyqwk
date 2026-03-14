@@ -5,8 +5,7 @@ from pyqwk.core import (
     load_data,
     process_file,
     ProcessingSettings,
-    ParsedMessage,
-    MessageHeader
+    ParsedMessage
 )
 
 @pytest.fixture

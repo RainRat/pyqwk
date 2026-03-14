@@ -1,14 +1,11 @@
 
-import sys
 import logging
-from unittest.mock import MagicMock, patch
-import pytest
+from unittest.mock import patch
 from pyqwk.core import (
     MessageHeader,
     ProcessingSettings,
     ParsedMessage,
-    process_merged_files,
-    _highlight_text
+    process_merged_files
 )
 
 def test_format_oneline_highlighting():

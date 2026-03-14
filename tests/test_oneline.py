@@ -1,6 +1,4 @@
-import pytest
-import logging
-from pyqwk.core import MessageHeader, ProcessingSettings, process_file, _write_text, ParsedMessage
+from pyqwk.core import MessageHeader, ProcessingSettings, _write_text, ParsedMessage
 from io import StringIO
 import sys
 
@@ -98,7 +96,6 @@ def test_cli_oneline(tmp_path):
     # This is a bit harder to test without running the actual CLI,
     # but we can check if the settings are correctly populated.
     from pyqwk.cli import main
-    import sys
     from unittest.mock import patch
 
     test_qwk = "testdata/test1_qwk.zip"

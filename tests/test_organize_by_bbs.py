@@ -1,8 +1,7 @@
 import os
-import shutil
 import logging
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from pyqwk.core import organize_by_bbs, ProcessingSettings, ConferenceMap, BBSInfo
 
 @pytest.fixture

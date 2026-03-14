@@ -4,7 +4,7 @@ import logging
 from dataclasses import replace
 from pyqwk.core import (
     process_file, ProcessingSettings, ParsedMessage, MessageHeader,
-    load_data, parse_messages, matches_filters
+    matches_filters
 )
 
 @pytest.fixture

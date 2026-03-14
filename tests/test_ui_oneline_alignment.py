@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import MessageHeader
 
 def test_oneline_alignment_long_names():

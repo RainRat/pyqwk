@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from pyqwk.core import load_data, _write_text, ProcessingSettings, ParsedMessage, MessageHeader, matches_filters
-import sys
 import io
 
 def _make_settings(**kwargs):

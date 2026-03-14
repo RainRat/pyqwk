@@ -1,6 +1,5 @@
 import argparse
 import logging
-import struct
 import sys
 import json
 import zipfile
@@ -13,7 +12,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import pyqwk.core as qwk
-import html
 
 from pyqwk.core import (
     ProcessingSettings,
@@ -21,11 +19,9 @@ from pyqwk.core import (
     ProcessedMessage,
     MessageHeader,
     ControlDatFormatError,
-    InvalidMessageTypeError,
     _order_messages_by_thread,
     load_data,
     parse_messages,
-    process_message,
     process_file,
     _write_xml,
     _write_html,

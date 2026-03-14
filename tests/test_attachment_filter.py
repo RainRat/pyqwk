@@ -1,7 +1,5 @@
-import pytest
 import json
 import io
-import os
 from pyqwk.core import (
     MessageHeader, ParsedMessage, ProcessingSettings,
     matches_filters, process_merged_files, _message_to_dict
@@ -76,7 +74,6 @@ def test_attachment_metadata_in_json():
     assert '"attachments": ["file.txt"]' in json_out
 
 def test_attachment_metadata_in_csv():
-    import csv
     header = MessageHeader(
         status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
         msgto='All', msgfrom='Author', msgsubject='Test', msgpassword='',

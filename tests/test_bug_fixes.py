@@ -1,8 +1,6 @@
 import pytest
 import sys
-import os
 import html
-from pathlib import Path
 from pyqwk.core import MessageHeader, MessagesDatFormatError, _get_html_header
 from pyqwk.cli import main
 

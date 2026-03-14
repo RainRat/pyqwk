@@ -1,14 +1,13 @@
 
 import sys
 import struct
-import pytest
 from pathlib import Path
 
 # Ensure the root directory is in sys.path so we can import pyqwk.
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import parse_messages, MessageHeader, InvalidMessageTypeError
+from pyqwk.core import parse_messages
 
 def build_header_bytes(**kwargs) -> bytes:
     defaults = {

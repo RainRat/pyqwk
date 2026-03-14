@@ -15,10 +15,10 @@ import io
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 from collections.abc import Iterator, Mapping
-from dataclasses import asdict, dataclass, field, fields, replace
+from dataclasses import asdict, dataclass, fields, replace
 import mailbox
 import email
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 from typing import Any, Callable, Protocol
 import datetime
 import email.utils
@@ -2068,7 +2068,7 @@ def process_merged_files(
         if settings.individual_files:
             print(f"Files to create:    {potential_files}")
         else:
-            print(f"Files to create:    1 (merged)")
+            print("Files to create:    1 (merged)")
 
         size_str = f"{estimated_bytes / 1024:.1f} KB" if estimated_bytes < 1024 * 1024 else f"{estimated_bytes / (1024 * 1024):.1f} MB"
         print(f"Estimated size:     {size_str}")

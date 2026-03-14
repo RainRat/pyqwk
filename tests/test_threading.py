@@ -1,7 +1,6 @@
 import pytest
 import logging
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -9,8 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import (
-    ProcessedMessage,
-    MessageHeader,
     _order_messages_by_thread,
     _write_text,
     _write_html,
@@ -18,7 +15,7 @@ from pyqwk.core import (
     _write_xml,
     _normalize_subject,
 )
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 def test_threading_depth_and_structure(message_factory):
     msgs = [

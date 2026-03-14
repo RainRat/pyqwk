@@ -1,9 +1,7 @@
 
-import pytest
 from pyqwk.core import _highlight_quotes, ProcessingSettings, ParsedMessage, MessageHeader, process_merged_files
 import logging
 import io
-import sys
 from unittest.mock import MagicMock, patch
 
 def test_highlight_quotes_no_colors():

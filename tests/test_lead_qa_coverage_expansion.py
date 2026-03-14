@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import (
     _reconstruct_metadata, ParsedMessage, MessageHeader, _serialize_rfc822,
     _order_messages_by_thread

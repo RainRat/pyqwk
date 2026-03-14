@@ -1,6 +1,5 @@
 import csv
 import io
-import pytest
 from pyqwk.core import _write_csv, MessageHeader, ProcessedMessage
 
 def test_write_csv_output():

@@ -1,6 +1,5 @@
 import pytest
 import sys
-import os
 from pyqwk.cli import main
 
 def test_stats_multiple_files_no_output(monkeypatch, capsys):

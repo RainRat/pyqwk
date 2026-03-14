@@ -8,7 +8,6 @@ import logging
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import pyqwk.core as qwk
 from pyqwk.core import process_file, ProcessingSettings
 
 @pytest.fixture

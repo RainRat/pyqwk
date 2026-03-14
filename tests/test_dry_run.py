@@ -1,7 +1,7 @@
 import pytest
 import sys
 from pathlib import Path
-from pyqwk.core import process_file, ProcessingSettings, load_data, parse_messages
+from pyqwk.core import process_file, ProcessingSettings
 from pyqwk.cli import main
 import logging
 

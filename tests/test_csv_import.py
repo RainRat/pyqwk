@@ -1,7 +1,6 @@
 import os
 import csv
 import logging
-import pytest
 from pyqwk.core import (
     ProcessingSettings,
     write_messages,

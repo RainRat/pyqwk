@@ -1,5 +1,4 @@
 import logging
-import os
 import sqlite3
 import pytest
 from pathlib import Path

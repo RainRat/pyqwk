@@ -1,5 +1,4 @@
 import sys
-import os
 import pytest
 import logging
 from pathlib import Path

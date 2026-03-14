@@ -2,7 +2,6 @@ import sys
 import logging
 from pathlib import Path
 import pytest
-from dataclasses import replace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))

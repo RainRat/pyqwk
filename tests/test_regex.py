@@ -1,6 +1,3 @@
-import pytest
-import re
-from datetime import datetime
 from pyqwk.core import ProcessingSettings, ParsedMessage, MessageHeader, matches_filters
 
 def test_matches_filters_regex():

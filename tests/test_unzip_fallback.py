@@ -1,8 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
-import zipfile
-import subprocess
-import os
 import pyqwk.core as core
 
 class TestUnzipFallback(unittest.TestCase):

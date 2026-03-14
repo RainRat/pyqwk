@@ -1,6 +1,6 @@
 import sqlite3
 import pytest
-from pyqwk.core import _write_sqlite, ProcessedMessage, MessageHeader
+from pyqwk.core import _write_sqlite
 
 def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     db_path = tmp_path / "test.sqlite"

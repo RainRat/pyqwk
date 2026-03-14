@@ -930,18 +930,18 @@ class QwkGuiApp:
 
     def sort_column(self, col: str, reverse: bool) -> None:
         """Sort the treeview contents by the given column."""
-        l = []
+        items = []
         try:
-            l = [
+            items = [
                 (self.message_list.set(k, col), k)
                 if col != "#0"
                 else (self.message_list.item(k, "text"), k)
                 for k in self.message_list.get_children("")
             ]
-            if not l:
+            if not items:
                 return
             if col == "Num":
-                l.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
+                items.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
             elif col == "Date":
                 # QWK date is MM-DD-YY HH:MM. Sort chronologically.
                 def get_date_key(date_str):
@@ -949,16 +949,16 @@ class QwkGuiApp:
                     date_part = parts[0] if len(parts) > 0 else ""
                     time_part = parts[1] if len(parts) > 1 else "00:00"
                     return _parse_qwk_date(date_part, time_part)
-                l.sort(key=lambda item_tuple: get_date_key(item_tuple[0]), reverse=reverse)
+                items.sort(key=lambda item_tuple: get_date_key(item_tuple[0]), reverse=reverse)
             else:
-                l.sort(key=lambda t: t[0].lower(), reverse=reverse)
+                items.sort(key=lambda t: t[0].lower(), reverse=reverse)
         except Exception:
             # Fallback if sorting fails
-            if l:
-                l.sort(key=lambda t: t[0], reverse=reverse)
+            if items:
+                items.sort(key=lambda t: t[0], reverse=reverse)
 
         # Rearrange items in sorted positions
-        for index, (_, k) in enumerate(l):
+        for index, (_, k) in enumerate(items):
             self.message_list.move(k, "", index)
 
         # Re-apply alternating tags after sorting to maintain zebra striping

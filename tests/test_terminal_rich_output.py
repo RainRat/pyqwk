@@ -1,6 +1,4 @@
 
-import sys
-import re
 from pyqwk.core import _highlight_text, MessageHeader
 
 def test_highlight_text_no_colors():

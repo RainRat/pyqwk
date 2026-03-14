@@ -1,15 +1,13 @@
-import os
 import sys
 import logging
 import pytest
 import datetime
 import sqlite3
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from pyqwk.cli import main
 from pyqwk.core import (
-    _parse_qwk_date, matches_filters, ProcessingSettings,
-    ParsedMessage, MessageHeader, _order_messages_by_thread,
+    _parse_qwk_date, ParsedMessage, MessageHeader, _order_messages_by_thread,
     load_data
 )
 

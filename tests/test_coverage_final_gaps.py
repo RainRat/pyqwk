@@ -1,21 +1,15 @@
-import os
-import json
 import logging
 import pytest
-import hashlib
 import html
-from pathlib import Path
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import patch, mock_open
 from pyqwk.core import (
     show_stats,
     ProcessingSettings,
     ParsedMessage,
     MessageHeader,
     process_merged_files,
-    _write_sqlite,
     _write_html,
     _write_markdown,
-    _order_messages_by_thread,
     _decode_yenc,
     _write_xml
 )
@@ -140,7 +134,6 @@ def test_filename_collision_safety_break_coverage(tmp_path, default_settings, lo
             output_path=str(output_dir)
         )
 
-        import pyqwk.core
         with patch('pyqwk.core.load_data', return_value=(bytearray(b'Produced '), {1: "General"})):
             with patch('pyqwk.core.parse_messages', return_value=[msg]):
                 with patch('pyqwk.core.open', mock_open()):
@@ -177,7 +170,6 @@ def test_oneline_html_markdown_text_content_coverage(message_factory, default_se
         output_mode='stdout'
     )
 
-    import pyqwk.core
     with patch('pyqwk.core.load_data', return_value=(bytearray(b'Produced '), {1: "General"})):
         with patch('pyqwk.core.parse_messages', return_value=[msg]):
             with patch('pyqwk.core._write_html') as mock_html:

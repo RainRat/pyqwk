@@ -1,6 +1,5 @@
 import pytest
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -16,7 +15,6 @@ def logger() -> logging.Logger:
     return logger
 
 def test_main_auto_detects_json(monkeypatch, tmp_path, baseline_path):
-    import sys
     from pyqwk.cli import main
 
     output_path = tmp_path / "output.json"
@@ -41,7 +39,6 @@ def test_main_auto_detects_json(monkeypatch, tmp_path, baseline_path):
     assert captured_settings[0].format == 'json'
 
 def test_main_auto_detects_html(monkeypatch, tmp_path, baseline_path):
-    import sys
     from pyqwk.cli import main
 
     output_path = tmp_path / "output.html"
@@ -61,7 +58,6 @@ def test_main_auto_detects_html(monkeypatch, tmp_path, baseline_path):
     assert captured_settings[0].format == 'html'
 
 def test_main_defaults_to_text_unknown_extension(monkeypatch, tmp_path, baseline_path):
-    import sys
     from pyqwk.cli import main
 
     output_path = tmp_path / "output.foo"
@@ -81,7 +77,6 @@ def test_main_defaults_to_text_unknown_extension(monkeypatch, tmp_path, baseline
     assert captured_settings[0].format == 'text'
 
 def test_main_respects_explicit_format(monkeypatch, tmp_path, baseline_path):
-    import sys
     from pyqwk.cli import main
 
     output_path = tmp_path / "output.json"

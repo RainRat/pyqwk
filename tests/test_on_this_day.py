@@ -1,5 +1,4 @@
 import datetime
-import pytest
 from pyqwk.core import ProcessingSettings, ParsedMessage, MessageHeader, matches_filters
 
 def _make_msg(date_str, month, day):

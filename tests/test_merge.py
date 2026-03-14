@@ -1,6 +1,4 @@
-import os
-import pytest
-from pyqwk.core import ProcessingSettings, process_merged_files, load_data, parse_messages
+from pyqwk.core import ProcessingSettings, process_merged_files
 import logging
 
 def test_merge_archives(tmp_path):

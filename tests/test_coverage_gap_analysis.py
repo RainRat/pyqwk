@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 import pytest
@@ -7,13 +6,10 @@ from unittest.mock import MagicMock, patch, mock_open
 from pyqwk.core import (
     MessageHeader,
     load_data,
-    matches_filters,
     ProcessingSettings,
     process_merged_files,
     show_info,
-    show_stats,
-    _order_messages_by_thread,
-    ParsedMessage
+    show_stats
 )
 from dataclasses import replace
 

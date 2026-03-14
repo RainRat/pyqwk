@@ -1,8 +1,4 @@
-import os
-import json
 import logging
-import hashlib
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
 from dataclasses import replace
@@ -13,7 +9,6 @@ from pyqwk.core import (
     show_info,
     show_stats,
     ProcessingSettings,
-    PROCESSING_EXCEPTIONS,
     ParsedMessage,
     MessageHeader,
     process_merged_files,

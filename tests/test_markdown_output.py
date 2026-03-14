@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from pyqwk.core import _write_markdown, MessageHeader, ProcessedMessage
 

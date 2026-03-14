@@ -1,10 +1,8 @@
-import os
 import logging
 import pytest
-import subprocess
 from unittest.mock import MagicMock, patch, mock_open
 from pyqwk.cli import main
-from pyqwk.core import load_data, ProcessingSettings
+from pyqwk.core import load_data
 
 def test_cli_invalid_loglevel(monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["qwk", "test.qwk", "--loglevel", "INVALID"])

@@ -1,5 +1,4 @@
 import logging
-import pytest
 from pyqwk.core import _order_messages_by_thread
 
 def test_threading_circular_reference(message_factory, caplog):

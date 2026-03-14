@@ -1,9 +1,6 @@
 import struct
 import zipfile
-import os
 import logging
-from pathlib import Path
-import pytest
 from pyqwk.core import load_data, parse_messages, ProcessingSettings, process_file, show_info
 
 def create_rep_packet(path, bbs_id=b"TESTBBS", msg_count=1):

@@ -1,7 +1,5 @@
-import os
 import sys
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import patch
 from pyqwk.cli import main
 
 def test_cli_multi_input_no_output_defaults_to_merge_stdout(capsys):

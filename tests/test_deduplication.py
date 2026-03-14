@@ -1,7 +1,5 @@
-import pytest
 from unittest.mock import MagicMock, patch
 from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
-import hashlib
 
 def test_deduplication_by_msgnum(tmp_path):
     output_path = tmp_path / "output.txt"
