@@ -2718,17 +2718,29 @@ def _write_text(
         parts.append(separator_line)
 
     for message in messages:
-        text = message.text
+        if settings and settings.oneline:
+            # Re-format oneline summary to account for threading depth
+            text = message.header.format_oneline(
+                {},  # board_dict not needed when conf_name is provided
+                use_colors=use_colors,
+                highlight_term=settings.search_term,
+                is_regex=settings.regex,
+                verbose=settings.verbose,
+                depth=message.depth,
+                conf_name=message.confname,
+            )
+        else:
+            text = message.text
 
-        # Apply quote highlighting for terminal output
-        text = _highlight_quotes(text, use_colors)
+            # Apply quote highlighting for terminal output
+            text = _highlight_quotes(text, use_colors)
 
-        # Apply indentation only if NOT in oneline mode (oneline mode handles depth internally)
-        if message.depth > 0 and not (settings and settings.oneline):
-            indent = "  " * message.depth
-            lines = text.splitlines(keepends=True)
-            indented_lines = [indent + line for line in lines]
-            text = "".join(indented_lines)
+            # Apply indentation for threads
+            if message.depth > 0:
+                indent = "  " * message.depth
+                lines = text.splitlines(keepends=True)
+                indented_lines = [indent + line for line in lines]
+                text = "".join(indented_lines)
         parts.append(text)
 
     _write_text_output("".join(parts), output_path, encoding=encoding)
