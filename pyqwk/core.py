@@ -1665,6 +1665,7 @@ def process_merged_files(
 
     use_colors = (
         output_mode == 'stdout'
+        and settings.format == 'text'
         and hasattr(sys.stdout, 'isatty')
         and sys.stdout.isatty()
     )
