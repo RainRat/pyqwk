@@ -838,7 +838,7 @@ class QwkGuiApp:
                 except (ValueError, IndexError):
                     continue
 
-            write_messages(export_list, path, settings, bbs_info)
+            write_messages(export_list, path, settings, bbs_info, self.board_dict)
 
             messagebox.showinfo(
                 "Export Successful",
