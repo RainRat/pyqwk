@@ -17,6 +17,7 @@ from pyqwk.core import (
     _parse_qwk_date,
     resolve_output_format,
     write_messages,
+    extract_binaries,
 )
 
 
@@ -36,6 +37,7 @@ class QwkGuiApp:
 
         self.column_labels = {
             "#0": "Subject",
+            "Flags": "!",
             "Num": "Num",
             "From": "From",
             "To": "To",
@@ -304,12 +306,18 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Num", "From", "To", "Date", "Conference"),
+            columns=("Flags", "Num", "From", "To", "Date", "Conference"),
             selectmode="browse",
         )
 
         for col, label in self.column_labels.items():
-            header_anchor = tk.E if col == "Num" else tk.W
+            if col == "Num":
+                header_anchor = tk.E
+            elif col == "Flags":
+                header_anchor = tk.CENTER
+            else:
+                header_anchor = tk.W
+
             self.message_list.heading(
                 col,
                 text=label,
@@ -318,9 +326,10 @@ class QwkGuiApp:
             )
 
         self.message_list.column("#0", minwidth=200, width=300)
+        self.message_list.column("Flags", minwidth=40, width=45, anchor=tk.CENTER)
         self.message_list.column("Num", minwidth=50, width=60, anchor=tk.E)
-        self.message_list.column("From", minwidth=80, width=120)
-        self.message_list.column("To", minwidth=80, width=120)
+        self.message_list.column("From", minwidth=80, width=150)
+        self.message_list.column("To", minwidth=80, width=150)
         self.message_list.column("Date", minwidth=80, width=120)
         self.message_list.column("Conference", minwidth=80, width=100)
 
@@ -332,8 +341,9 @@ class QwkGuiApp:
         self.message_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Alternating row colors for better visual hierarchy
+        # Tags for visual hierarchy
         self.message_list.tag_configure("even", background="#f7f7f7")
+        self.message_list.tag_configure("private", font=("TkDefaultFont", 10, "italic"))
 
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
@@ -558,7 +568,13 @@ class QwkGuiApp:
     def _reset_column_headers(self) -> None:
         """Reset all column headers to their original labels without sort indicators."""
         for col, label in self.column_labels.items():
-            header_anchor = tk.E if col == "Num" else tk.W
+            if col == "Num":
+                header_anchor = tk.E
+            elif col == "Flags":
+                header_anchor = tk.CENTER
+            else:
+                header_anchor = tk.W
+
             self.message_list.heading(
                 col,
                 text=label,
@@ -659,7 +675,14 @@ class QwkGuiApp:
                     settings.redact_pii,
                     settings.strip_ansi,
                 )
-                messages.append(replace(parsed_message, text=processed_buffer))
+
+                # Ensure attachments are detected for the status icon
+                attachments = parsed_message.attachments
+                if attachments is None and parsed_message.text:
+                    found = extract_binaries(parsed_message.text)
+                    attachments = [name for name, data in found]
+
+                messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
 
             if settings.threaded:
                 messages = _order_messages_by_thread(messages)
@@ -676,18 +699,30 @@ class QwkGuiApp:
                 conf_name = self.board_dict.get(header.confnum, str(header.confnum))
                 subject = header.msgsubject.strip() or "(no subject)"
 
+                flags = ""
+                if header.is_private:
+                    flags += "🔒"
+                if message.attachments:
+                    flags += "📎"
+
                 parent_iid = ""
                 if settings.threaded:
                     parent_iid = parent_at_depth.get(message.depth - 1, "")
 
                 iid = str(index)
-                tags = ("even",) if index % 2 != 0 else ()
+                item_tags = []
+                if index % 2 != 0:
+                    item_tags.append("even")
+                if header.is_private:
+                    item_tags.append("private")
+
                 self.message_list.insert(
                     parent_iid,
                     tk.END,
                     iid=iid,
                     text=subject,
                     values=(
+                        flags,
                         header.msgnum if header.msgnum is not None else "",
                         header.msgfrom.strip(),
                         header.msgto.strip(),
@@ -695,7 +730,7 @@ class QwkGuiApp:
                         conf_name,
                     ),
                     open=True,  # Expand by default
-                    tags=tags
+                    tags=tuple(item_tags)
                 )
 
                 if settings.threaded:
@@ -917,8 +952,14 @@ class QwkGuiApp:
     def _apply_zebra_striping(self) -> None:
         """Re-apply alternating 'even' tags to all items in their current display order."""
         def traverse(item_id, count):
-            tags = ("even",) if count % 2 != 0 else ()
-            self.message_list.item(item_id, tags=tags)
+            current_tags = list(self.message_list.item(item_id, "tags"))
+            # Filter out the 'even' tag to start fresh
+            new_tags = [t for t in current_tags if t != "even"]
+
+            if count % 2 != 0:
+                new_tags.append("even")
+
+            self.message_list.item(item_id, tags=tuple(new_tags))
             count += 1
             for child in self.message_list.get_children(item_id):
                 count = traverse(child, count)
@@ -975,7 +1016,13 @@ class QwkGuiApp:
                 # If we click a different column, it should start as ascending
                 next_reverse = False
 
-            header_anchor = tk.E if c == "Num" else tk.W
+            if c == "Num":
+                header_anchor = tk.E
+            elif c == "Flags":
+                header_anchor = tk.CENTER
+            else:
+                header_anchor = tk.W
+
             self.message_list.heading(
                 c,
                 text=label,

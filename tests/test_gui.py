@@ -133,7 +133,7 @@ class TestQwkGui:
             assert len(app.messages) == 1
             app.message_list.insert.assert_called_with(
                 '', 'end', iid='0', text='Subject',
-                values=(1, 'User', 'All', '01-01-90 12:00', 'General'),
+                values=('', 1, 'User', 'All', '01-01-90 12:00', 'General'),
                 open=True, tags=()
             )
 
@@ -208,8 +208,10 @@ class TestQwkGui:
 
         # Test sorting by Subject (#0)
         def mock_item(k, attr=None, **kwargs):
-            if attr:
-                return {"text": "Subject B" if k == "item1" else "Subject A"}[attr]
+            if attr == "text":
+                return "Subject B" if k == "item1" else "Subject A"
+            if attr == "tags":
+                return ()
             return None
 
         app.message_list.item.side_effect = mock_item
