@@ -3312,19 +3312,25 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
                 if author_counter:
                     print(f"\n  {_colorize('Top Authors:', BOLD)}")
+                    max_author_count = max(author_counter.values())
                     for auth in stats_entry["authors"]:
-                        print(f"    {auth['name']:25} : {auth['count']}")
+                        bar = "#" * int(auth['count'] * 40 / max_author_count) if max_author_count > 0 else ""
+                        print(f"    {auth['name']:25} : {auth['count']:4} {bar}")
 
                 if recipient_counter:
                     print(f"\n  {_colorize('Top Recipients:', BOLD)}")
+                    max_recipient_count = max(recipient_counter.values())
                     for rcpt in stats_entry["recipients"]:
-                        print(f"    {rcpt['name']:25} : {rcpt['count']}")
+                        bar = "#" * int(rcpt['count'] * 40 / max_recipient_count) if max_recipient_count > 0 else ""
+                        print(f"    {rcpt['name']:25} : {rcpt['count']:4} {bar}")
 
                 if conf_counter:
                     print(f"\n  {_colorize('Top Conferences:', BOLD)}")
+                    max_conf_count = max(conf_counter.values())
                     for conf in stats_entry["conferences"]:
                         conf_name = conf['name'][:21]
-                        print(f"    {conf['number']:3} {conf_name:21} : {conf['count']}")
+                        bar = "#" * int(conf['count'] * 40 / max_conf_count) if max_conf_count > 0 else ""
+                        print(f"    {conf['number']:3} {conf_name:21} : {conf['count']:4} {bar}")
 
                 if dow_counter:
                     print(f"\n  {_colorize('Day of Week Distribution:', BOLD)}")
