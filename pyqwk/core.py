@@ -2525,7 +2525,7 @@ def _write_markdown(
 
 
 def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
-    """Convert a QWK date and time into a standard Python date object.
+    """Convert a QWK date and time into a standard Python datetime object.
 
     If the date is invalid, it returns a default date of 1970-01-01.
     """
@@ -2540,8 +2540,9 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
         month, day, year = map(int, msgdate.split('-'))
         hour, minute = map(int, msgtime.split(':'))
 
-        # Handle Year 2000 problem (sliding window)
-        # If year is < 80, assume 2000s, else 1900s
+        # Handle Year 2000 problem using a sliding window.
+        # BBS activity peaked in the 1980s and 1990s. We use 80 as a cutoff:
+        # years 80-99 are 1980-1999, while 00-79 are 2000-2079.
         if year < 100:
             if year < 80:
                 year += 2000
