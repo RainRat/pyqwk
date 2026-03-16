@@ -730,8 +730,8 @@ class LogFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def _parse_sqlite_messages(db_path: str) -> list[ParsedMessage]:
-    """Import messages from a pyqwk SQLite database."""
+def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], ConferenceMap]:
+    """Import messages and metadata from a pyqwk SQLite database."""
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -742,6 +742,29 @@ def _parse_sqlite_messages(db_path: str) -> list[ParsedMessage]:
         conn.close()
         raise ValueError(f"SQLite database is missing the 'messages' table: {e}")
 
+    # Try to load BBS Info
+    bbs_info = BBSInfo()
+    try:
+        cursor.execute("SELECT * FROM bbs_info LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            for field in fields(BBSInfo):
+                if field.name in row.keys():
+                    setattr(bbs_info, field.name, row[field.name])
+    except sqlite3.OperationalError:
+        pass
+
+    # Try to load Conferences
+    board_dict = ConferenceMap()
+    board_dict.bbs_info = bbs_info
+    try:
+        cursor.execute("SELECT * FROM conferences")
+        for row in cursor.fetchall():
+            board_dict[row['number']] = row['name']
+    except sqlite3.OperationalError:
+        pass
+
+    cursor.execute("SELECT * FROM messages")
     messages = []
     for row in cursor.fetchall():
         # Reconstruct header dict
@@ -776,15 +799,20 @@ def _parse_sqlite_messages(db_path: str) -> list[ParsedMessage]:
             thread_id=row['thread_id'],
             parent_msgnum=row['parent_message_number'],
             confname=row['conference_name'],
-            bbs_name=row['bbs_name'],
-            bbs_id=row['bbs_id'] if 'bbs_id' in row.keys() else None,
+            bbs_name=row['bbs_name'] or bbs_info.name,
+            bbs_id=(row['bbs_id'] if 'bbs_id' in row.keys() else None) or bbs_info.bbs_id,
             source_file=row['source_file'],
             attachments=attachments,
         )
         messages.append(msg)
 
     conn.close()
-    return messages
+
+    # If board_dict is empty, we reconstruct it from messages for backward compatibility
+    if not board_dict:
+        board_dict = _reconstruct_metadata(messages)
+
+    return messages, board_dict
 
 
 def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
@@ -1047,11 +1075,10 @@ def load_data(
 
     if input_path.lower().endswith(('.db', '.sqlite')):
         try:
-            messages = _parse_sqlite_messages(input_path)
+            messages, board_dict = _parse_sqlite_messages(input_path)
         except Exception as e:
             raise ValueError(f"Failed to load SQLite archive: {e}")
 
-        board_dict = _reconstruct_metadata(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.json'):
@@ -1695,6 +1722,7 @@ def process_merged_files(
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
     collected_for_index: list[dict[str, Any]] = []
     bbs_info_to_use = None
+    board_dict_to_use = None
     total_attachments = 0
 
     include_header = not settings.no_header and settings.format == 'text'
@@ -1920,6 +1948,8 @@ def process_merged_files(
         user_name = bbs_info.user_name if bbs_info else None
         if bbs_info and not bbs_info_to_use:
             bbs_info_to_use = bbs_info
+        if board_dict and not board_dict_to_use:
+            board_dict_to_use = board_dict
         bbs_key = f"{bbs_info.name}|{bbs_info.bbs_id}" if bbs_info else ""
 
         allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
@@ -2029,7 +2059,7 @@ def process_merged_files(
                 else collected_messages
             )
             write_messages(
-                ordered_messages, resolved_output_path, settings, bbs_info_to_use
+                ordered_messages, resolved_output_path, settings, bbs_info_to_use, board_dict_to_use
             )
         else:
             potential_files = 1
@@ -2105,6 +2135,7 @@ def _write_json(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     output_data = [_message_to_dict(msg) for msg in messages]
     output_json = json.dumps(output_data, indent=4, ensure_ascii=False)
@@ -2164,6 +2195,7 @@ def _write_xml(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     root = ET.Element('messages')
     for message in messages:
@@ -2348,6 +2380,7 @@ def _write_html(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     title = 'QWK Messages'
     if bbs_info and bbs_info.name:
@@ -2428,6 +2461,7 @@ def _write_markdown(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     title = 'QWK Messages'
     if bbs_info and bbs_info.name:
@@ -2618,6 +2652,7 @@ def _write_mbox(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     """Write messages to an mbox file."""
     parts = []
@@ -2633,6 +2668,7 @@ def _write_eml(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     """Write messages as EML.
 
@@ -2652,6 +2688,7 @@ def _write_text(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     """Write messages to text format with indentation for threads."""
     parts = []
@@ -2753,6 +2790,7 @@ def _write_csv(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     output = io.StringIO()
 
@@ -2788,6 +2826,7 @@ def _write_sqlite(
     encoding: str = 'utf-8',
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     if output_path is None:
         raise ValueError("Output path is required for SQLite export.")
@@ -2817,6 +2856,54 @@ def _write_sqlite(
             attachments TEXT
         )
     ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS bbs_info (
+            name TEXT,
+            location TEXT,
+            phone TEXT,
+            sysop TEXT,
+            serial_number TEXT,
+            bbs_id TEXT,
+            user_name TEXT,
+            packet_at TEXT,
+            total_messages INTEGER,
+            num_conferences INTEGER
+        )
+    ''')
+
+    if bbs_info:
+        c.execute('''
+            INSERT INTO bbs_info (
+                name, location, phone, sysop, serial_number, bbs_id,
+                user_name, packet_at, total_messages, num_conferences
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            bbs_info.name,
+            bbs_info.location,
+            bbs_info.phone,
+            bbs_info.sysop,
+            bbs_info.serial_number,
+            bbs_info.bbs_id,
+            bbs_info.user_name,
+            bbs_info.packet_at,
+            bbs_info.total_messages,
+            bbs_info.num_conferences,
+        ))
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS conferences (
+            number INTEGER PRIMARY KEY,
+            name TEXT
+        )
+    ''')
+
+    if board_dict:
+        for conf_num, conf_name in board_dict.items():
+            c.execute('''
+                INSERT OR REPLACE INTO conferences (number, name)
+                VALUES (?, ?)
+            ''', (conf_num, conf_name))
 
     for msg in messages:
         header = msg.header
@@ -2859,6 +2946,7 @@ def write_messages(
     output_path: str | None,
     settings: ProcessingSettings,
     bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
 ) -> None:
     """Save a list of messages to a file or print them to the screen.
 
@@ -2868,7 +2956,7 @@ def write_messages(
     writers: dict[
         str,
         Callable[
-            [list[ProcessedMessage], str | None, str, ProcessingSettings, BBSInfo | None],
+            [list[ProcessedMessage], str | None, str, ProcessingSettings, BBSInfo | None, Mapping[int, str] | None],
             None,
         ],
     ] = {
@@ -2888,7 +2976,7 @@ def write_messages(
     if settings.format == 'text':
         output_encoding = settings.encoding
 
-    writer(messages, output_path, output_encoding, settings, bbs_info)
+    writer(messages, output_path, output_encoding, settings, bbs_info, board_dict)
 
 
 def _write_index(
