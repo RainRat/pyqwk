@@ -15,7 +15,7 @@ def test_welcome_screen_on_startup():
     # We need to ensure pyqwk.gui is imported. If it was already imported,
     # we patch its internal 'tk' and 'ttk' references.
     with patch("pyqwk.gui.tk") as patched_tk, \
-         patch("pyqwk.gui.ttk") as patched_ttk, \
+         patch("pyqwk.gui.ttk"), \
          patch("pyqwk.gui.messagebox") as _, \
          patch("pyqwk.gui.filedialog") as _, \
          patch("pyqwk.gui.simpledialog") as _:

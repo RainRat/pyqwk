@@ -85,7 +85,7 @@ def test_attachment_metadata_in_csv():
     )
 
     import pyqwk.core
-    output = io.StringIO()
+    io.StringIO()
     # We need to call _write_csv but it writes to a file if output_path is set.
     # We can mock _write_text_output to capture it.
 

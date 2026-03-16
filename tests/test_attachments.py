@@ -41,10 +41,6 @@ Nice, isn't it?
     assert binaries[0][1] == b"Cat"
 
 def test_extract_base64():
-    text = """
-Some B64 data follows:
-RGF0YQ==
-"""
     # Note: RE_BASE64_PATTERN requires 60+ chars for initial detection to avoid false positives.
     # So I need a longer string for the test.
     long_b64 = "R" * 64 + "\n" + "RGF0YQ=="
@@ -56,10 +52,6 @@ RGF0YQ==
     assert binaries[0][1].endswith(b"Data")
 
 def test_extract_yenc():
-    text = """
-=ybegin line=128 size=4 name=test.txt
-=yend size=4 crc32=00000000
-"""
     # My yEnc decoder is very basic and expects data between begin and end.
     # The example above has no data lines, but let's try with one.
     text_with_data = """

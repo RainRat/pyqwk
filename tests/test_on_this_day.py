@@ -53,7 +53,7 @@ def test_on_this_day_matches():
     # Reference Feb 14, 2024
     settings = _make_settings(reference_date=datetime.datetime(2024, 2, 14))
 
-    assert matches_filters(msg, settings, set()) == True
+    assert matches_filters(msg, settings, set())
 
 def test_on_this_day_mismatch_day():
     # Feb 14, 1995
@@ -61,7 +61,7 @@ def test_on_this_day_mismatch_day():
     # Reference Feb 15, 2024
     settings = _make_settings(reference_date=datetime.datetime(2024, 2, 15))
 
-    assert matches_filters(msg, settings, set()) == False
+    assert not matches_filters(msg, settings, set())
 
 def test_on_this_day_mismatch_month():
     # Feb 14, 1995
@@ -69,7 +69,7 @@ def test_on_this_day_mismatch_month():
     # Reference Mar 14, 2024
     settings = _make_settings(reference_date=datetime.datetime(2024, 3, 14))
 
-    assert matches_filters(msg, settings, set()) == False
+    assert not matches_filters(msg, settings, set())
 
 def test_on_this_day_leap_year():
     # Feb 29, 1996
@@ -77,7 +77,7 @@ def test_on_this_day_leap_year():
     # Reference Feb 29, 2024
     settings = _make_settings(reference_date=datetime.datetime(2024, 2, 29))
 
-    assert matches_filters(msg, settings, set()) == True
+    assert matches_filters(msg, settings, set())
 
 def test_on_this_day_defaults_to_now(monkeypatch):
     # Feb 14, 1995
@@ -91,7 +91,7 @@ def test_on_this_day_defaults_to_now(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", MockDatetime)
 
     settings = _make_settings(reference_date=None)
-    assert matches_filters(msg, settings, set()) == True
+    assert matches_filters(msg, settings, set())
 
 def test_on_this_day_disabled():
     # Feb 14, 1995
@@ -99,4 +99,4 @@ def test_on_this_day_disabled():
     # Reference Feb 15, 2024, but feature disabled
     settings = _make_settings(on_this_day=False, reference_date=datetime.datetime(2024, 2, 15))
 
-    assert matches_filters(msg, settings, set()) == True
+    assert matches_filters(msg, settings, set())

@@ -452,7 +452,7 @@ class TestQwkGui:
         ]
         app.message_list.exists.return_value = True
 
-        with patch.object(app, "on_message_selected") as mock_on_selected:
+        with patch.object(app, "on_message_selected"):
             app.jump_to_message(1, 1) # Jump to conf 1, msg 1
 
         app.message_list.selection_set.assert_called_with("0")
@@ -544,7 +544,7 @@ class TestQwkGui:
 
         # No selection initially -> select first
         app.message_list.selection.return_value = ()
-        with patch.object(app, "on_message_selected") as mock_on_selected:
+        with patch.object(app, "on_message_selected"):
             app._select_relative_message(1)
             app.message_list.selection_set.assert_called_with("0")
 
@@ -585,7 +585,7 @@ class TestQwkGui:
 
     def test_initial_path_loading(self, mock_gui_deps):
         """Test that passing an initial path to the constructor triggers loading."""
-        with patch("pyqwk.gui.QwkGuiApp.load_messages") as mock_load:
+        with patch("pyqwk.gui.QwkGuiApp.load_messages"):
             app = get_app(initial_path="initial.qwk")
             assert app.current_path == "initial.qwk"
             # Since we use self.root.after, we need to check that it was scheduled

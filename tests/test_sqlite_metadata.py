@@ -4,9 +4,7 @@ from pathlib import Path
 import pytest
 from pyqwk.core import (
     load_data,
-    process_file,
     ProcessingSettings,
-    ParsedMessage,
     BBSInfo,
     ConferenceMap
 )

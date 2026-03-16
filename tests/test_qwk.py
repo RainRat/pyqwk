@@ -501,7 +501,7 @@ def test_process_file_writes_json(
     message = data[0]
     assert "header" in message
     assert "text" in message
-    expected_message = _read_expected(expected_output_path)
+    _read_expected(expected_output_path)
     # Structured output should NOT contain the separator line or text headers
     separator = ("-" * 80) + "\r\n"
     assert separator not in message["text"]
@@ -593,7 +593,7 @@ def test_process_file_writes_xml(
     assert '<message>' in content
     assert '<header>' in content
     assert '<msgnum>28' in content
-    expected_message = _read_expected(expected_output_path)
+    _read_expected(expected_output_path)
     # Structured output should NOT contain the separator line or text headers
     separator = ("-" * 80) + "\r\n"
     assert separator not in content

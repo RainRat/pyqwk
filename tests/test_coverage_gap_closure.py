@@ -72,4 +72,4 @@ def test_any_match_empty_patterns():
         refnum=None, numblocks=1, msgflag='', confnum=1, lognum=1, nettag=''
     )
     msg = ParsedMessage(text="body", msgnum=1, refnum=None, confnum=1, header=header)
-    assert matches_filters(msg, settings, set()) == True
+    assert matches_filters(msg, settings, set())

@@ -117,7 +117,7 @@ def test_threading_visited_branches():
         with patch("pyqwk.core.load_data", return_value=(bytearray(), {})), \
              patch("pyqwk.core.parse_messages", return_value=[msg1, msg2, msg3]), \
              patch("pyqwk.core.sys.stdout", new_callable=io.StringIO):
-             results = process_merged_files(["archive.qwk"], settings, MagicMock())
+             process_merged_files(["archive.qwk"], settings, MagicMock())
              # No direct return from process_merged_files, but we verify it runs.
              # We check that it didn't crash.
 

@@ -53,7 +53,7 @@ def test_fallback_subject_threading(message_factory):
 
     # Order should be 10 -> 11 -> 12 -> 14, then 13 separately
 
-    ids = [m.msgnum for m in ordered]
+    [m.msgnum for m in ordered]
     # 13 is root, 10 is root.
     # 10, 11, 12, 14, 13 (or 13 anywhere if it's root)
 

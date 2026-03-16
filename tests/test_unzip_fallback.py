@@ -36,7 +36,7 @@ class TestUnzipFallback(unittest.TestCase):
 
         logger = MagicMock()
         
-        with patch('builtins.open', side_effect=side_effect) as mock_file:
+        with patch('builtins.open', side_effect=side_effect):
             # Run load_data
             file_data, board_dict = core.load_data("dummy.qwk", logger)
 

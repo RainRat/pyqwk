@@ -39,7 +39,7 @@ def bbs_info():
     )
 
 def test_toc_html(mock_messages, bbs_info, monkeypatch):
-    output = io.StringIO()
+    io.StringIO()
     # We need to mock _write_text_output to capture the result
     captured_content = []
     def mock_write_output(content, path, encoding='utf-8'):
