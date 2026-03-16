@@ -1053,7 +1053,7 @@ def _parse_eml_messages(path: str) -> list[ParsedMessage]:
 
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
-) -> tuple[bytearray | list[ParsedMessage], dict[int, str]]:
+) -> tuple[bytearray | list[ParsedMessage], ConferenceMap]:
     """Load message and conference information from a QWK packet or raw file.
 
     Args:
