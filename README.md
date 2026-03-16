@@ -93,6 +93,7 @@ qwk-gui archive.eml
 - **Ctrl + O**: Open any supported message archive.
 - **Ctrl + S**: Export the current view to a file.
 - **Ctrl + F**: Jump to the search bar.
+- **Ctrl + G**: Jump to a specific message number.
 - **Ctrl + Q**: Exit the application.
 - **j / k** or **n / p**: Move to the next or previous message in the list.
 - **Esc**: Clear the search filter and return focus to the message list. This works from anywhere in the application.
@@ -168,6 +169,12 @@ qwk archive.qwk --stats
 qwk my_archives/ -o output_folder/
 ```
 *Tip: The output folder will be created automatically if it does not exist.*
+
+**Organize archives into folders by BBS name:**
+```bash
+qwk my_archives/ --organize-by-bbs
+```
+*Tip: This automatically sorts your archives into folders named after the BBS they came from.*
 
 **Merge multiple archives into one file (removing any duplicate messages):**
 ```bash
@@ -344,9 +351,12 @@ for msg in messages:
 | `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
 | `--organize` | Organize individual files into subfolders by conference. |
+| `--organize-by-bbs` | Organize archives into folders named after the BBS. |
 | `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
+| `-j`, `--json` | A shortcut for `--format json`. |
 | `-T`, `--threaded` | Group replies together into conversations. |
-| `--oneline` | Show each message as a single-line summary (Conference, Date, From, To, Subject). |
+| `-1`, `--oneline` | Show each message as a single-line summary (Conference, Date, From, To, Subject). |
+| `--toc` | Include a table of contents and a summary of the archive in the output. |
 | `-m`, `--merge` | Combine multiple inputs into a single output file. |
 | `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
 | `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message text. |
