@@ -20,12 +20,16 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Prerequisites
 
-- You need **Python 3.10** or newer.
-- (Optional) You need **Tkinter** for the graphical reader. Most Python installations include it. If you use Linux, you may need to install it manually:
+### Required
+- **Python 3.10** or newer.
+
+### Optional
+- **Tkinter**: Needed for the graphical reader. Most Python installations include it. If you use Linux, you may need to install it manually:
   - **Ubuntu/Debian:** `sudo apt install python3-tk`
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
-- (Optional) Install the **tqdm** package for a progress bar: `python -m pip install tqdm`
+- **tqdm**: Install this for a progress bar: `python -m pip install tqdm`
+- **unzip**: A system tool used to handle older archives with special compression. If `pyqwk` cannot open a file, it will try to use `unzip` if it is installed on your system.
 
 ## Quick Start
 
