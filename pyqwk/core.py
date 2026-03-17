@@ -111,6 +111,17 @@ RE_SUBJECT_PREFIX_PATTERN = re.compile(
 
 RE_ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 
+DEFAULT_STOP_WORDS = {
+    'the', 'and', 'for', 'that', 'this', 'with', 'from', 'have', 'was', 'were',
+    'but', 'not', 'are', 'you', 'your', 'his', 'her', 'they', 'them', 'their',
+    'will', 'can', 'has', 'had', 'been', 'which', 'who', 'how', 'when', 'where',
+    'all', 'any', 'some', 'there', 'what', 'about', 'just', 'more', 'very',
+    'than', 'then', 'also', 'only', 'even', 'into', 'most', 'well', 'would',
+    'could', 'should', 'these', 'those', 'much', 'many', 'once', 'here', 'back',
+    'still', 'over', 'must', 'does', 'made', 'said', 'went', 'came', 'down',
+    'give', 'take', 'find', 'look', 'work', 'part',
+}
+
 SIGNATURE_PATTERNS_EXACT = {
     "---",
     "___",
@@ -3262,6 +3273,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             "recipients": [],
             "conferences": [],
             "subjects": [],
+            "keywords": [],
             "attachments_count": 0,
             "day_of_week": {},
             "hour_of_day": {},
@@ -3278,6 +3290,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             recipient_counter = Counter()
             conf_counter = Counter()
             subject_counter = Counter()
+            keyword_counter = Counter()
             dow_counter = Counter()
             hour_counter = Counter()
 
@@ -3348,6 +3361,12 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                         found_binaries = extract_binaries(message.text)
                         attachments_count += len(found_binaries)
 
+                        # Keyword analysis
+                        words = re.findall(r'\b\w{3,}\b', message.text.lower())
+                        for word in words:
+                            if word not in DEFAULT_STOP_WORDS and not word.isdigit():
+                                keyword_counter[word] += 1
+
             stats_entry["total_messages"] = total_count
             stats_entry["matching_messages"] = processed_count
             stats_entry["private_count"] = private_count
@@ -3362,6 +3381,7 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
             stats_entry["conferences"] = [{"number": n, "name": board_dict.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
             stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
+            stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
             stats_entry["day_of_week"] = dict(dow_counter)
             stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
 
@@ -3398,6 +3418,22 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                         conf_name = conf['name'][:21]
                         bar = "#" * int(conf['count'] * 40 / max_conf_count) if max_conf_count > 0 else ""
                         print(f"    {conf['number']:3} {conf_name:21} : {conf['count']:4} {bar}")
+
+                if subject_counter:
+                    print(f"\n  {_colorize('Top Subjects:', BOLD)}")
+                    max_subj_count = max(subject_counter.values())
+                    for subj in stats_entry["subjects"]:
+                        subject_text = subj['subject'][:25]
+                        bar = "#" * int(subj['count'] * 40 / max_subj_count) if max_subj_count > 0 else ""
+                        print(f"    {subject_text:25} : {subj['count']:4} {bar}")
+
+                if keyword_counter:
+                    print(f"\n  {_colorize('Top Keywords:', BOLD)}")
+                    max_key_count = max(keyword_counter.values())
+                    for kw in stats_entry["keywords"]:
+                        keyword_text = kw['word'][:25]
+                        bar = "#" * int(kw['count'] * 40 / max_key_count) if max_key_count > 0 else ""
+                        print(f"    {keyword_text:25} : {kw['count']:4} {bar}")
 
                 if dow_counter:
                     print(f"\n  {_colorize('Day of Week Distribution:', BOLD)}")
