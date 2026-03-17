@@ -1224,9 +1224,15 @@ def load_data(
                         logger.warning("CONTROL.DAT not found in the zip archive.")
                         
                 except subprocess.CalledProcessError as sub_e:
-                    raise RuntimeError(f"Failed to extract older ZIP archive using 'unzip': {sub_e.stderr}") from sub_e
+                    error_msg = f"Failed to extract older ZIP archive using 'unzip': {sub_e.stderr}"
+                    if os.name == 'nt' and sub_e.returncode == 127: # 127 usually means command not found
+                        error_msg += "\nTip: On Windows, ensure you have 'unzip.exe' installed and in your PATH (e.g., via Git Bash or GnuWin32)."
+                    raise RuntimeError(error_msg) from sub_e
                 except Exception as final_e:
-                    raise RuntimeError(f"An error occurred while handling older ZIP archive: {str(final_e)}") from final_e
+                    error_msg = f"An error occurred while handling older ZIP archive: {str(final_e)}"
+                    if os.name == 'nt' and "[WinError 2]" in str(final_e):
+                        error_msg += "\nTip: This error usually means the 'unzip' tool is missing. On Windows, please install 'unzip.exe' and ensure it is in your PATH."
+                    raise RuntimeError(error_msg) from final_e
     else:
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())

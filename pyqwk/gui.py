@@ -48,7 +48,6 @@ class QwkGuiApp:
 
         self.clean_var = tk.BooleanVar(value=False)
         self.private_var = tk.BooleanVar(value=True)
-        self.redact_var = tk.BooleanVar(value=False)
         self.ansi_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
         self.regex_var = tk.BooleanVar(value=False)
@@ -291,7 +290,6 @@ class QwkGuiApp:
         for text, var in [
             ("Threaded", self.threaded_var),
             ("Clean", self.clean_var),
-            ("Hide Personal Info", self.redact_var),
             ("Remove Colors", self.ansi_var),
         ]:
             ttk.Checkbutton(
@@ -415,7 +413,7 @@ class QwkGuiApp:
             individual_files=False,
             threaded=self.threaded_var.get(),
             binaries_removal=clean,
-            redact_pii=self.redact_var.get(),
+            redact_pii=False,
             strip_ansi=clean or self.ansi_var.get(),
             format='text',
             separator='none',
