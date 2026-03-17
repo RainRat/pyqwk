@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import tkinter as tk
+from collections import Counter
 from dataclasses import replace
 from tkinter import filedialog, messagebox, ttk, simpledialog
 
@@ -199,7 +200,10 @@ class QwkGuiApp:
 
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters to their default state."""
-        self.conf_combo.set("All Conferences")
+        try:
+            self.conf_combo.current(0)
+        except Exception:
+            self.conf_combo.set("All Conferences")
         self.has_attach_var.set(False)
         self.mine_var.set(False)
         self.on_this_day_var.set(False)
@@ -392,10 +396,12 @@ class QwkGuiApp:
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
         search_val = self.search_var.get().strip()
+        if not search_val:
+            search_val = None
 
         selected_conf_name = self.conf_combo.get()
         conferences = None
-        if selected_conf_name and selected_conf_name != "All Conferences":
+        if selected_conf_name and not selected_conf_name.startswith("All Conferences"):
             conf_id = self.conf_mapping.get(selected_conf_name)
             if conf_id is not None:
                 conferences = [str(conf_id)]
@@ -592,6 +598,12 @@ class QwkGuiApp:
         try:
             self.status_label.config(text="Loading...")
             self.root.update_idletasks()
+
+            # If opening a new file, clear stale conference mapping and selection
+            if self._cache.get('path') != path:
+                self.conf_mapping = {}
+                self.conf_combo.set("All Conferences")
+
             settings = self._current_settings()
 
             # Capture current selection to restore it later
@@ -640,13 +652,14 @@ class QwkGuiApp:
                     'file_data': file_data,
                     'board_dict': board_dict
                 }
-                # Populate conference selector
-                conf_list = ["All Conferences"]
-                for cid, name in sorted(board_dict.items()):
-                    conf_list.append(f"{cid}: {name}")
-                self.conf_combo['values'] = conf_list
-                self.conf_combo.set("All Conferences")
-                self.conf_mapping = {f"{cid}: {name}": cid for cid, name in board_dict.items()}
+                # Initial population if first time loading this file
+                if not self.conf_mapping:
+                    conf_list = ["All Conferences"]
+                    for cid, name in sorted(board_dict.items()):
+                        conf_list.append(f"{cid}: {name}")
+                    self.conf_combo['values'] = conf_list
+                    self.conf_combo.set("All Conferences")
+                    self.conf_mapping = {f"{cid}: {name}": cid for cid, name in board_dict.items()}
 
             file_data = self._cache['file_data']
             board_dict = self._cache['board_dict']
@@ -662,27 +675,57 @@ class QwkGuiApp:
             else:
                 messages_to_process = parse_messages(file_data, None, settings.encoding)
 
+            conf_counts = Counter()
+            # Create a settings object without conference filter for counting
+            count_settings = replace(settings, conferences=None)
+
             for parsed_message in messages_to_process:
                 total_count += 1
-                if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
-                    continue
 
-                processed_buffer = process_message(
-                    parsed_message.text,
-                    settings.truncate_signatures,
-                    settings.cut_quoting,
-                    settings.binaries_removal,
-                    settings.redact_pii,
-                    settings.strip_ansi,
-                )
+                # Check if message matches filters ignoring the conference filter itself
+                if matches_filters(parsed_message, count_settings, set(), user_name):
+                    conf_counts[parsed_message.confnum] += 1
 
-                # Ensure attachments are detected for the status icon
-                attachments = parsed_message.attachments
-                if attachments is None and parsed_message.text:
-                    found = extract_binaries(parsed_message.text)
-                    attachments = [name for name, data in found]
+                    # Now apply the actual conference filter for the display list
+                    if not settings.conferences or parsed_message.confnum in allowed_conferences:
+                        processed_buffer = process_message(
+                            parsed_message.text,
+                            settings.truncate_signatures,
+                            settings.cut_quoting,
+                            settings.binaries_removal,
+                            settings.redact_pii,
+                            settings.strip_ansi,
+                        )
 
-                messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
+                        # Ensure attachments are detected for the status icon
+                        attachments = parsed_message.attachments
+                        if attachments is None and parsed_message.text:
+                            found = extract_binaries(parsed_message.text)
+                            attachments = [name for name, data in found]
+
+                        messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
+
+            # Re-populate conference selector with dynamic counts
+            total_filtered = sum(conf_counts.values())
+            conf_list = [f"All Conferences ({total_filtered})"]
+            new_conf_mapping = {}
+
+            # Map for reverse lookup to preserve the current selection
+            old_selection = self.conf_combo.get()
+            selected_conf_id = self.conf_mapping.get(old_selection)
+            new_selection = conf_list[0]
+
+            for cid, name in sorted(board_dict.items()):
+                count = conf_counts.get(cid, 0)
+                display_str = f"{cid}: {name} ({count})"
+                conf_list.append(display_str)
+                new_conf_mapping[display_str] = cid
+                if cid == selected_conf_id:
+                    new_selection = display_str
+
+            self.conf_combo['values'] = conf_list
+            self.conf_mapping = new_conf_mapping
+            self.conf_combo.set(new_selection)
 
             if settings.threaded:
                 messages = _order_messages_by_thread(messages)

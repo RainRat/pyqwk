@@ -159,7 +159,7 @@ class TestQwkGui:
         app.mine_var.get.return_value = True
         with patch.object(app, 'reload_messages') as mock_reload:
             app.clear_filters()
-            app.conf_combo.set.assert_called_with("All Conferences")
+            app.conf_combo.current.assert_called_with(0)
             app.has_attach_var.set.assert_called_with(False)
             app.mine_var.set.assert_called_with(False)
             mock_reload.assert_called_once()
@@ -254,9 +254,9 @@ class TestQwkGui:
             mock_load_data.return_value = (bytearray(), {1: "General", 2: "Tech"})
             mock_parse_messages.return_value = []
             app.load_messages("test.qwk")
-            expected_values = ["All Conferences", "1: General", "2: Tech"]
+            expected_values = ["All Conferences (0)", "1: General (0)", "2: Tech (0)"]
             mock_gui_deps["combo"].__setitem__.assert_any_call('values', expected_values)
-            assert app.conf_mapping == {"1: General": 1, "2: Tech": 2}
+            assert app.conf_mapping == {"1: General (0)": 1, "2: Tech (0)": 2}
 
     def test_caching_mechanism(self, mock_gui_deps):
         app = get_app()
@@ -695,10 +695,10 @@ class TestQwkGui:
             app.load_messages("test.qwk")
 
             # Check if Conf 99 was added to dropdown
-            # Values are ["All Conferences", "1: General", "99: Conference 99"]
-            expected_values = ["All Conferences", "1: General", "99: Conference 99"]
+            # Values are ["All Conferences (1)", "1: General (0)", "99: Conference 99 (1)"]
+            expected_values = ["All Conferences (1)", "1: General (0)", "99: Conference 99 (1)"]
             mock_gui_deps["combo"].__setitem__.assert_any_call('values', expected_values)
-            assert app.conf_mapping["99: Conference 99"] == 99
+            assert app.conf_mapping["99: Conference 99 (1)"] == 99
 
             # Test exception handling in discovery phase
             # Reset cache to force a new load_data call
