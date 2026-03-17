@@ -98,7 +98,7 @@ examples:
   # Extract attachments (UUE, yEnc, Base64) to an attachments/ folder
   qwk archive.qwk --extract-attachments
 
-  # Show detailed statistics about an archive
+  # Show detailed statistics about an archive (authors, conferences, keywords, etc.)
   qwk archive.qwk --stats
 """,
     )
