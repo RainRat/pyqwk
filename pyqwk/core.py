@@ -1956,40 +1956,25 @@ def process_merged_files(
 
         desc = f"Processing {os.path.basename(input_path)}"
 
-        if isinstance(file_data, list):
-            # For pre-parsed messages (JSON), we iterate directly
-            messages_to_process = file_data
-            total_progress = len(file_data)
-            progress_unit = 'msg'
-        else:
-            # For raw data, we use parse_messages
-            messages_to_process = parse_messages(
-                file_data,
-                None, # Will be set below
-                settings.encoding,
-                settings.headers_only,
-            )
-            total_progress = len(file_data)
-            progress_unit = 'B'
+        is_structured = isinstance(file_data, list)
+        total_progress = len(file_data)
 
         with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
-            if progress_bar is not None:
-                if progress_unit == 'msg':
-                    # tqdm settings for message count
+            if is_structured:
+                messages_to_process = file_data
+                if progress_bar is not None:
                     progress_bar.unit = 'msg'
                     progress_bar.unit_scale = False
-                else:
-                    # If it's a bytearray and we're using parse_messages,
-                    # we need to pass the progress bar to it.
-                    messages_to_process = parse_messages(
-                        file_data,
-                        progress_bar,
-                        settings.encoding,
-                        settings.headers_only,
-                    )
+            else:
+                messages_to_process = parse_messages(
+                    file_data,
+                    progress_bar,
+                    settings.encoding,
+                    settings.headers_only,
+                )
 
             for parsed_message in messages_to_process:
-                if isinstance(file_data, list) and progress_bar is not None:
+                if is_structured and progress_bar is not None:
                     progress_bar.update(1)
 
                 parsed_message = replace(
@@ -3309,29 +3294,22 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             # We must read message bodies to accurately count attachments
             need_body = True
 
-            if isinstance(file_data, list):
-                messages_to_process = file_data
-                total_progress = len(file_data)
-                progress_unit = 'msg'
-            else:
-                messages_to_process = parse_messages(
-                    file_data, None, settings.encoding, headers_only=not need_body
-                )
-                total_progress = len(file_data)
-                progress_unit = 'B'
+            is_structured = isinstance(file_data, list)
+            total_progress = len(file_data)
 
             with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
-                if progress_bar is not None:
-                    if progress_unit == 'msg':
+                if is_structured:
+                    messages_to_process = file_data
+                    if progress_bar is not None:
                         progress_bar.unit = 'msg'
                         progress_bar.unit_scale = False
-                    else:
-                        messages_to_process = parse_messages(
-                            file_data, progress_bar, settings.encoding, headers_only=not need_body
-                        )
+                else:
+                    messages_to_process = parse_messages(
+                        file_data, progress_bar, settings.encoding, headers_only=not need_body
+                    )
 
                 for message in messages_to_process:
-                    if isinstance(file_data, list) and progress_bar is not None:
+                    if is_structured and progress_bar is not None:
                         progress_bar.update(1)
                     total_count += 1
 
