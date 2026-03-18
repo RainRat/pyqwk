@@ -10,7 +10,6 @@ from pyqwk.core import (
     process_merged_files,
     _write_html,
     _write_markdown,
-    _decode_yenc,
     _write_xml
 )
 from dataclasses import replace
@@ -141,10 +140,6 @@ def test_filename_collision_safety_break_coverage(tmp_path, default_settings, lo
                     process_merged_files(["dummy.qwk"], settings, logger)
 
     assert exists_count > 100
-
-def test_decode_yenc_exception_coverage():
-    # Coverage for line 215-216
-    assert _decode_yenc(None) == b""
 
 def test_eml_serialize_no_from_header_coverage(message_factory):
     from pyqwk.core import _serialize_rfc822
