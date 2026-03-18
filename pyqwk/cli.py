@@ -79,7 +79,7 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to read and convert old Bulletin Board System (BBS) message packets into modern formats like Text, HTML, Markdown, and CSV. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite.",
+        description="A tool to convert old BBS message packets (like QWK and REP) into modern formats.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
@@ -104,12 +104,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help=(
-            'The archives, message files, or folders to read. '
-            'Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite. '
-            'If you provide a MESSAGES.DAT file, pyqwk looks for a '
-            'CONTROL.DAT file nearby to load conference names.'
-        ),
+        help='The archives or folders to read. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite.',
         nargs='+',
     )
 
@@ -118,13 +113,13 @@ examples:
         '-o',
         '--output',
         dest='output_path',
-        help='Save results to this file or folder. Prints to the screen if not set.',
+        help='Save results to a file or folder. Prints to the screen by default.',
     )
     io_group.add_argument(
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message as a separate file. For HTML and Markdown, this also creates a clickable index file. A new folder will be created if needed. You cannot use this with --threaded.',
+        help='Save each message as a separate file. This also creates an index for HTML and Markdown.',
         action='store_true',
     )
     io_group.add_argument(
@@ -148,28 +143,28 @@ examples:
     content_group = parser.add_argument_group('Content Processing')
     content_group.add_argument(
         '--clean',
-        help='Automatically remove signatures, old quotes, attachments, and color codes.',
+        help='Remove signatures, quotes, attachments, and color codes.',
         action='store_true',
     )
     content_group.add_argument(
         '-t',
         '--truncate-signatures',
         dest='truncatesignatures',
-        help="Stop reading a message when a signature (like '---') is found.",
+        help='Stop reading a message when a signature is found.',
         action='store_true',
     )
     content_group.add_argument(
         '-c',
         '--cut-quoting',
         dest='cutquoting',
-        help="Remove text quoted from earlier messages (lines starting with '>').",
+        help='Remove quoted text from earlier messages.',
         action='store_true',
     )
     content_group.add_argument(
         '-b',
         '--binaries-removal',
         dest='binariesremoval',
-        help='Remove attachments like images or programs that are included in the message text.',
+        help='Remove attachments like images or programs from the message text.',
         action='store_true',
     )
     content_group.add_argument(
@@ -183,14 +178,14 @@ examples:
         '-r',
         '--redact-pii',
         dest='redactpii',
-        help='Hide personal information like email addresses and phone numbers.',
+        help='Hide personal info like email addresses and phone numbers.',
         action='store_true',
     )
     content_group.add_argument(
         '-A',
         '--strip-ansi',
         dest='stripansi',
-        help='Remove color codes and other formatting symbols from the message text.',
+        help='Remove color codes and formatting symbols from the text.',
         action='store_true',
     )
     content_group.add_argument(
@@ -246,7 +241,7 @@ examples:
     format_group.add_argument(
         '-1',
         '--oneline',
-        help='Show each message as a single line summary (Conference, Date, From, To, Subject).',
+        help='Show each message as a single-line summary.',
         action='store_true',
     )
     format_group.add_argument(
@@ -385,7 +380,7 @@ examples:
     )
     filter_group.add_argument(
         '--mine',
-        help='Only show messages from or to your user name (as defined in the archive).',
+        help='Only show messages sent to or from your user name.',
         action='store_true',
     )
     filter_group.add_argument(
