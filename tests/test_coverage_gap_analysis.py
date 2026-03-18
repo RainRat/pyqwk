@@ -100,7 +100,7 @@ def test_load_data_unzip_fallback_called_process_error(logger):
     with patch("zipfile.is_zipfile", return_value=True):
         with patch("zipfile.ZipFile", side_effect=RuntimeError("Test error")):
             with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "unzip", stderr="Failure")):
-                with pytest.raises(RuntimeError, match="Failed to extract older ZIP archive using 'unzip'"):
+                with pytest.raises(RuntimeError, match="An error occurred while handling older ZIP archive"):
                     load_data("dummy.zip", logger)
 
 def test_show_stats_progress_bar_raw_data(tmp_path, default_settings, logger):
