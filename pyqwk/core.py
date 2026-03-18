@@ -191,48 +191,6 @@ def _is_binary_line(
     return False, in_yenc_block, False, in_base64_block
 
 
-def _decode_uue(data: list[str]) -> bytes:
-    """Helper to decode UUE data blocks."""
-    decoded = b""
-    for line in data:
-        if not line:
-            continue
-        try:
-            # binascii.a2b_uu expects the length character at the start
-            decoded += binascii.a2b_uu(line)
-        except (binascii.Error, ValueError):
-            continue
-    return decoded
-
-
-def _decode_base64(data: list[str]) -> bytes:
-    """Helper to decode Base64 data blocks."""
-    try:
-        return base64.b64decode("".join(data))
-    except (binascii.Error, ValueError, TypeError):
-        return b""
-
-
-def _decode_yenc(data: list[str]) -> bytes:
-    """Helper to decode yEnc data blocks."""
-    try:
-        encoded_str = "".join(data)
-        decoded_bytes = bytearray()
-        escaped = False
-        for char in encoded_str:
-            if char == '=' and not escaped:
-                escaped = True
-                continue
-            val = ord(char)
-            if escaped:
-                val = (val - 64) % 256
-                escaped = False
-            decoded_bytes.append((val - 42) % 256)
-        return bytes(decoded_bytes)
-    except Exception:
-        return b""
-
-
 def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     """Scan text for attachment blocks (UUE, yEnc, Base64) and decode them.
 
@@ -256,11 +214,36 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
         nonlocal in_uue, in_base64, in_yenc
         decoded = b""
         if in_uue:
-            decoded = _decode_uue(current_data)
+            for line in current_data:
+                if not line:
+                    continue
+                try:
+                    # binascii.a2b_uu expects the length character at the start
+                    decoded += binascii.a2b_uu(line)
+                except (binascii.Error, ValueError):
+                    continue
         elif in_base64:
-            decoded = _decode_base64(current_data)
+            try:
+                decoded = base64.b64decode("".join(current_data))
+            except (binascii.Error, ValueError, TypeError):
+                decoded = b""
         elif in_yenc:
-            decoded = _decode_yenc(current_data)
+            try:
+                encoded_str = "".join(current_data)
+                decoded_bytes = bytearray()
+                escaped = False
+                for char in encoded_str:
+                    if char == '=' and not escaped:
+                        escaped = True
+                        continue
+                    val = ord(char)
+                    if escaped:
+                        val = (val - 64) % 256
+                        escaped = False
+                    decoded_bytes.append((val - 42) % 256)
+                decoded = bytes(decoded_bytes)
+            except Exception:
+                decoded = b""
 
         if decoded:
             binaries.append((current_filename, decoded))
