@@ -1174,7 +1174,10 @@ def load_data(
                     result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
                     
                     if result.returncode not in (0, 1):
-                         raise RuntimeError(f"unzip failed with return code {result.returncode}: {result.stderr}")
+                        error_msg = f"unzip failed with return code {result.returncode}: {result.stderr}"
+                        if os.name == 'nt' and result.returncode == 127:
+                            error_msg += "\nTip: On Windows, ensure you have 'unzip.exe' installed and in your PATH (e.g., via Git Bash or GnuWin32)."
+                        raise RuntimeError(error_msg)
                     
                     # Find extracted files (case-insensitive search in temp_dir)
                     extracted_files = os.listdir(temp_dir)
@@ -1206,11 +1209,6 @@ def load_data(
                     else:
                         logger.warning("CONTROL.DAT not found in the zip archive.")
                         
-                except subprocess.CalledProcessError as sub_e:
-                    error_msg = f"Failed to extract older ZIP archive using 'unzip': {sub_e.stderr}"
-                    if os.name == 'nt' and sub_e.returncode == 127: # 127 usually means command not found
-                        error_msg += "\nTip: On Windows, ensure you have 'unzip.exe' installed and in your PATH (e.g., via Git Bash or GnuWin32)."
-                    raise RuntimeError(error_msg) from sub_e
                 except Exception as final_e:
                     error_msg = f"An error occurred while handling older ZIP archive: {str(final_e)}"
                     if os.name == 'nt' and "[WinError 2]" in str(final_e):
