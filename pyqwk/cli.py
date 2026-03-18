@@ -403,7 +403,7 @@ examples:
     parser.add_argument(
         '--stats',
         action='store_true',
-        help='Show detailed statistics about the messages and exit. This respects your current filters. Use --format json for JSON output.',
+        help='Show advanced archive analytics including temporal distribution, vitality metrics, and keyword analysis. This respects your current filters. Use --format json for JSON output.',
     )
     parser.add_argument(
         '-V',

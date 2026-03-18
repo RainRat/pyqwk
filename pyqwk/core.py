@@ -3283,7 +3283,12 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             "attachments_count": 0,
             "day_of_week": {},
             "hour_of_day": {},
+            "year_distribution": {},
+            "month_distribution": {},
             "private_count": 0,
+            "reply_count": 0,
+            "reply_rate": 0.0,
+            "avg_message_length": 0.0,
         }
 
         try:
@@ -3299,6 +3304,8 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             keyword_counter = Counter()
             dow_counter = Counter()
             hour_counter = Counter()
+            year_counter = Counter()
+            month_counter = Counter()
 
             earliest_dt = None
             latest_dt = None
@@ -3307,6 +3314,8 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             matching_count = 0
             total_count = 0
             processed_count = 0
+            reply_count = 0
+            total_chars = 0
 
             desc = f"Analyzing {os.path.basename(input_path)}"
             # Use a progress bar for statistics gathering
@@ -3358,12 +3367,23 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
 
                     dow_counter[dt.strftime('%A')] += 1
                     hour_counter[dt.hour] += 1
+                    year_counter[dt.year] += 1
+                    month_counter[dt.strftime('%Y-%m')] += 1
 
                     if message.header.is_private:
                         private_count += 1
 
+                    # Detect if it's a reply
+                    is_reply = (
+                        (message.header.refnum is not None and message.header.refnum != 0)
+                        or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
+                    )
+                    if is_reply:
+                        reply_count += 1
+
                     # Check for attachments in the full message
                     if message.text:
+                        total_chars += len(message.text)
                         found_binaries = extract_binaries(message.text)
                         attachments_count += len(found_binaries)
 
@@ -3377,6 +3397,9 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             stats_entry["matching_messages"] = processed_count
             stats_entry["private_count"] = private_count
             stats_entry["attachments_count"] = attachments_count
+            stats_entry["reply_count"] = reply_count
+            stats_entry["reply_rate"] = round(reply_count / processed_count * 100, 1) if processed_count > 0 else 0.0
+            stats_entry["avg_message_length"] = round(total_chars / processed_count, 1) if processed_count > 0 else 0.0
 
             if earliest_dt:
                 stats_entry["dates"]["earliest"] = earliest_dt.isoformat()
@@ -3390,6 +3413,8 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
             stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
             stats_entry["day_of_week"] = dict(dow_counter)
             stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
+            stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
+            stats_entry["month_distribution"] = dict(sorted(month_counter.items()))
 
             if settings.format != 'json':
                 print(f"Statistics for: {_colorize(input_path, CYAN)}")
@@ -3402,6 +3427,26 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                     print(f"  {_colorize('Date Range:', BOLD)} {earliest_dt.strftime('%Y-%m-%d')} to {latest_dt.strftime('%Y-%m-%d')}")
 
                 print(f"  {_colorize('Private:', BOLD)}    {private_count} messages")
+
+                print(f"\n  {_colorize('Vitality & Content:', BOLD)}")
+                print(f"    Reply Rate:    {stats_entry['reply_rate']}% ({reply_count} replies)")
+                print(f"    Avg Length:    {int(stats_entry['avg_message_length'])} characters")
+
+                if year_counter:
+                    print(f"\n  {_colorize('Yearly Activity:', BOLD)}")
+                    max_year_count = max(year_counter.values())
+                    for year in sorted(year_counter.keys()):
+                        count = year_counter[year]
+                        bar = "#" * int(count * 40 / max_year_count) if max_year_count > 0 else ""
+                        print(f"    {year:4} : {count:4} {bar}")
+
+                if month_counter and len(month_counter) <= 24: # Only show month bar chart if not too long
+                    print(f"\n  {_colorize('Monthly Activity:', BOLD)}")
+                    max_month_count = max(month_counter.values())
+                    for month in sorted(month_counter.keys()):
+                        count = month_counter[month]
+                        bar = "#" * int(count * 40 / max_month_count) if max_month_count > 0 else ""
+                        print(f"    {month:7} : {count:4} {bar}")
 
                 if author_counter:
                     print(f"\n  {_colorize('Top Authors:', BOLD)}")
