@@ -40,21 +40,25 @@ def test_show_stats_bar_charts(capsys, monkeypatch):
     )
     logger = logging.getLogger("test")
 
+    # Mock isatty to force color output for testing
+    import sys
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+
     show_stats(["dummy.qwk"], settings, logger)
 
     captured = capsys.readouterr().out
 
-    # Check Top Authors
+    # Check Top Authors (with ANSI codes: DIM=90, BOLD=1, CYAN=36)
     assert "Top Authors:" in captured
-    assert "Author A                  :    2 ########################################" in captured
-    assert "Author B                  :    1 ####################" in captured
+    assert "\x1b[90mAuthor A                 \x1b[0m : \x1b[1m   2\x1b[0m \x1b[36m########################################\x1b[0m" in captured
+    assert "\x1b[90mAuthor B                 \x1b[0m : \x1b[1m   1\x1b[0m \x1b[36m####################\x1b[0m" in captured
 
     # Check Top Recipients
     assert "Top Recipients:" in captured
-    assert "Recipient A               :    2 ########################################" in captured
-    assert "Recipient B               :    1 ####################" in captured
+    assert "\x1b[90mRecipient A              \x1b[0m : \x1b[1m   2\x1b[0m \x1b[36m########################################\x1b[0m" in captured
+    assert "\x1b[90mRecipient B              \x1b[0m : \x1b[1m   1\x1b[0m \x1b[36m####################\x1b[0m" in captured
 
     # Check Top Conferences
     assert "Top Conferences:" in captured
-    assert "  1 General               :    2 ########################################" in captured
-    assert "  2 Tech                  :    1 ####################" in captured
+    assert "\x1b[90m  1 General              \x1b[0m : \x1b[1m   2\x1b[0m \x1b[36m########################################\x1b[0m" in captured
+    assert "\x1b[90m  2 Tech                 \x1b[0m : \x1b[1m   1\x1b[0m \x1b[36m####################\x1b[0m" in captured
