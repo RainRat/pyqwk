@@ -3242,6 +3242,27 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
         print(json.dumps(all_info, indent=4, ensure_ascii=False))
 
 
+def _render_stats_bar_chart(
+    title: str,
+    data: list[tuple[str, int]],
+    max_count: int,
+    bold_attr: str,
+    cyan_attr: str,
+    dim_attr: str,
+) -> None:
+    """Render a color-coded ASCII bar chart section for statistics."""
+    print(f"\n  {_colorize(title, bold_attr)}")
+    for label, count in data:
+        display_label = f"{label[:25]:<25}"
+        count_str = f"{count:4}"
+        bar = "#" * int(count * 40 / max_count) if max_count > 0 else ""
+        print(
+            f"    {_colorize(display_label, dim_attr)} : "
+            f"{_colorize(count_str, bold_attr)} "
+            f"{_colorize(bar, cyan_attr)}"
+        )
+
+
 def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
     """Show detailed statistics about the messages in the QWK archives."""
     # ANSI Attribute codes
@@ -3431,68 +3452,61 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
                         print(f"    {month:7} : {count:4} {bar}")
 
                 if author_counter:
-                    print(f"\n  {_colorize('Top Authors:', BOLD)}")
-                    max_author_count = max(author_counter.values())
-                    for auth in stats_entry["authors"]:
-                        label = f"{auth['name'][:25]:<25}"
-                        count_str = f"{auth['count']:4}"
-                        bar = "#" * int(auth['count'] * 40 / max_author_count) if max_author_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Top Authors:",
+                        [(a["name"], a["count"]) for a in stats_entry["authors"]],
+                        max(author_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
 
                 if recipient_counter:
-                    print(f"\n  {_colorize('Top Recipients:', BOLD)}")
-                    max_recipient_count = max(recipient_counter.values())
-                    for rcpt in stats_entry["recipients"]:
-                        label = f"{rcpt['name'][:25]:<25}"
-                        count_str = f"{rcpt['count']:4}"
-                        bar = "#" * int(rcpt['count'] * 40 / max_recipient_count) if max_recipient_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Top Recipients:",
+                        [(r["name"], r["count"]) for r in stats_entry["recipients"]],
+                        max(recipient_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
 
                 if conf_counter:
-                    print(f"\n  {_colorize('Top Conferences:', BOLD)}")
-                    max_conf_count = max(conf_counter.values())
-                    for conf in stats_entry["conferences"]:
-                        label = f"{conf['number']:3} {conf['name'][:21]:<21}"
-                        count_str = f"{conf['count']:4}"
-                        bar = "#" * int(conf['count'] * 40 / max_conf_count) if max_conf_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Top Conferences:",
+                        [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats_entry["conferences"]],
+                        max(conf_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
 
                 if subject_counter:
-                    print(f"\n  {_colorize('Top Subjects:', BOLD)}")
-                    max_subj_count = max(subject_counter.values())
-                    for subj in stats_entry["subjects"]:
-                        label = f"{subj['subject'][:25]:<25}"
-                        count_str = f"{subj['count']:4}"
-                        bar = "#" * int(subj['count'] * 40 / max_subj_count) if max_subj_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Top Subjects:",
+                        [(s["subject"], s["count"]) for s in stats_entry["subjects"]],
+                        max(subject_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
 
                 if keyword_counter:
-                    print(f"\n  {_colorize('Top Keywords:', BOLD)}")
-                    max_key_count = max(keyword_counter.values())
-                    for kw in stats_entry["keywords"]:
-                        label = f"{kw['word'][:25]:<25}"
-                        count_str = f"{kw['count']:4}"
-                        bar = "#" * int(kw['count'] * 40 / max_key_count) if max_key_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Top Keywords:",
+                        [(kw["word"], kw["count"]) for kw in stats_entry["keywords"]],
+                        max(keyword_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
 
                 if dow_counter:
-                    print(f"\n  {_colorize('Day of Week Distribution:', BOLD)}")
                     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    max_dow_count = max(dow_counter.values())
-                    for day in days:
-                        count = dow_counter.get(day, 0)
-                        label = f"{day:<25}"
-                        bar = "#" * int(count * 40 / max_dow_count) if max_dow_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(f'{count:4}', BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Day of Week Distribution:",
+                        [(d, dow_counter.get(d, 0)) for d in days],
+                        max(dow_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
 
                 if hour_counter:
-                    print(f"\n  {_colorize('Hourly Distribution:', BOLD)}")
-                    max_hour_count = max(hour_counter.values())
-                    for h in range(24):
-                        count = hour_counter.get(h, 0)
-                        label = f"{h:02}:00{'':<20}"
-                        bar = "#" * int(count * 40 / max_hour_count) if max_hour_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(f'{count:4}', BOLD)} {_colorize(bar, CYAN)}")
+                    _render_stats_bar_chart(
+                        "Hourly Distribution:",
+                        [(f"{h:02}:00", hour_counter.get(h, 0)) for h in range(24)],
+                        max(hour_counter.values()),
+                        BOLD, CYAN, DIM
+                    )
                 print("")
 
             all_stats.append(stats_entry)
