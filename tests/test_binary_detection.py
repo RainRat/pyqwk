@@ -98,6 +98,15 @@ class TestBinaryDetection:
         assert in_yenc is False
         assert in_uue is True
 
+    def test_detects_uue_start_multiple_spaces(self):
+        line = "begin  644  test.txt"
+        skip, in_yenc, in_uue, in_b64 = _is_binary_line(
+            line, previous_line=None, in_yenc_block=False, in_uue_block=False, in_base64_block=False
+        )
+        assert skip is True
+        assert in_yenc is False
+        assert in_uue is True
+
     def test_detects_uue_data_strict(self):
         # Strict UUE line starts with 'M' and is 61 chars long (M + 60 chars)
         line = "M" + ("A" * 60)
