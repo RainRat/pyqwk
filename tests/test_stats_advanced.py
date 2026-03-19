@@ -118,4 +118,5 @@ def test_stats_advanced_ui(monkeypatch, capsys):
     assert "Reply Rate:" in captured.out
     assert "Avg Length:" in captured.out
     assert "Yearly Activity:" in captured.out
-    assert "1990 :" in captured.out
+    # The new consistent bar chart helper uses 25-character alignment
+    assert "1990                      :" in captured.out
