@@ -19,6 +19,8 @@ from pyqwk.core import (
     resolve_output_format,
     write_messages,
     extract_binaries,
+    calculate_archive_stats,
+    render_stats_as_text,
 )
 
 
@@ -88,6 +90,7 @@ class QwkGuiApp:
         shortcuts = [
             ("Ctrl + O", "Open Archive"),
             ("Ctrl + S", "Export Current View"),
+            ("Ctrl + I", "Archive Statistics"),
             ("Ctrl + F", "Search / Find"),
             ("Ctrl + G", "Go to Message Number"),
             ("Ctrl + Q", "Quit Application"),
@@ -112,6 +115,11 @@ class QwkGuiApp:
             label="Export Current View...",
             command=self.export_messages,
             accelerator="Ctrl+S",
+        )
+        file_menu.add_command(
+            label="Statistics...",
+            command=self.show_stats_window,
+            accelerator="Ctrl+I",
         )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
@@ -138,6 +146,7 @@ class QwkGuiApp:
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-s>", self.export_messages)
+        self.root.bind("<Control-i>", self.show_stats_window)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Escape>", self.clear_search)
@@ -231,6 +240,7 @@ class QwkGuiApp:
         ttk.Label(actions_frame, text="File:").pack(side=tk.LEFT)
         ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(5, 2))
         ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
+        ttk.Button(actions_frame, text="Stats", command=self.show_stats_window).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
@@ -976,6 +986,51 @@ class QwkGuiApp:
             "Not Found",
             f"Referenced message #{msgnum} was not found in the current view.",
         )
+
+    def show_stats_window(self, _event: object | None = None) -> None:
+        """Calculate and display statistics for the current archive and filters."""
+        if not self.current_path:
+            messagebox.showwarning("Statistics", "Please open an archive first.")
+            return
+
+        try:
+            self.status_label.config(text="Calculating statistics...")
+            self.root.update_idletasks()
+
+            settings = self._current_settings()
+            # Ensure stats are calculated correctly by using the same logic as the CLI
+            stats = calculate_archive_stats(self.current_path, settings, self.logger)
+            report = render_stats_as_text(stats, use_colors=False)
+
+            # Create a new window for the report
+            stats_win = tk.Toplevel(self.root)
+            stats_win.title(f"Statistics - {os.path.basename(self.current_path)}")
+            stats_win.geometry("700x600")
+
+            frame = ttk.Frame(stats_win, padding=10)
+            frame.pack(fill=tk.BOTH, expand=True)
+
+            txt = tk.Text(frame, font=("TkFixedFont", 10), wrap=tk.NONE)
+            sb_y = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=txt.yview)
+            sb_x = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=txt.xview)
+            txt.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
+
+            txt.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            sb_y.pack(side=tk.RIGHT, fill=tk.Y, before=txt)
+            sb_x.pack(side=tk.BOTTOM, fill=tk.X)
+
+            txt.insert(tk.END, report)
+            txt.config(state=tk.DISABLED)
+
+            # Re-set status
+            source_display = self.root.title().split(" - ")[0]
+            self.status_label.config(
+                text=f"Showing {len(self.messages)} messages from {source_display}"
+            )
+
+        except Exception as e:
+            self.status_label.config(text="Error calculating statistics")
+            messagebox.showerror("Statistics Error", str(e))
 
     def on_message_selected(self, _event: object | None = None) -> None:
         selected_items = self.message_list.selection()

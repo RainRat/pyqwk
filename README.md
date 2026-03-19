@@ -92,10 +92,12 @@ qwk-gui archive.eml
 - **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (hides emails and phone numbers), and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
+- **Statistics:** View detailed activity reports, top authors, and temporal distributions for the current archive and filters.
 
 **Keyboard Shortcuts:**
 - **Ctrl + O**: Open any supported message archive.
 - **Ctrl + S**: Export the current view to a file.
+- **Ctrl + I**: View archive statistics.
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + G**: Jump to a specific message number.
 - **Ctrl + Q**: Exit the application.
