@@ -79,26 +79,26 @@ def _parse_cli_date(date_str: str | None, end_of_day: bool = False) -> datetime.
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="A tool to convert old BBS message packets (like QWK and REP) into modern formats.",
+        description="Convert old BBS message packets (like QWK and REP) into modern formats.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  # Show a one-line summary of all messages in an archive
+  # Show a one-line summary of all messages
   qwk archive.qwk --oneline
 
-  # Convert an archive to a single, searchable HTML file
+  # Convert to a single HTML file
   qwk archive.qwk --format html -o messages.html
 
-  # Save each message as an individual EML file in a folder
+  # Save as individual EML files in a folder
   qwk archive.qwk --format eml -o ./output/
 
-  # Search for a keyword and show matching messages with headers only
+  # Search for a keyword and show headers only
   qwk archive.qwk --search "vintage computing" --headers-only
 
-  # Extract attachments (UUE, yEnc, Base64) to an attachments/ folder
+  # Extract attachments to an attachments/ folder
   qwk archive.qwk --extract-attachments
 
-  # Show detailed statistics about an archive (authors, conferences, keywords, etc.)
+  # Show message stats (authors, conferences, keywords, etc.)
   qwk archive.qwk --stats
 """,
     )
@@ -241,13 +241,13 @@ examples:
     format_group.add_argument(
         '-1',
         '--oneline',
-        help='Show each message as a single-line summary.',
+        help='Show a one-line summary (Conference, Date, From, To, Subject).',
         action='store_true',
     )
     format_group.add_argument(
         '--toc',
         dest='include_toc',
-        help='Include a table of contents and a summary of the archive in the output. This works for Text, HTML, and Markdown when merging files.',
+        help='Add a table of contents and archive summary to the output.',
         action='store_true',
     )
     format_group.add_argument(
@@ -398,7 +398,7 @@ examples:
     parser.add_argument(
         '--stats',
         action='store_true',
-        help='Show advanced archive analytics including temporal distribution, vitality metrics, and keyword analysis. This respects your current filters. Use --format json for JSON output.',
+        help='Show message stats like timing, reply rates, and common keywords. This respects your filters. Use --format json for JSON output.',
     )
     parser.add_argument(
         '-V',
