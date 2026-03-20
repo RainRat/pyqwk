@@ -28,8 +28,13 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
   - **Ubuntu/Debian:** `sudo apt install python3-tk`
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
-- **tqdm**: Install this for a progress bar: `python -m pip install tqdm`
-- **unzip**: A system tool used to handle older archives with special compression. If `pyqwk` cannot open a file, it will try to use `unzip` if it is installed on your system.
+- **tqdm**: Provides a progress bar when processing many messages. Install it with: `python -m pip install tqdm`
+- **unzip**: A system tool used to handle older archives with special compression. If `pyqwk` cannot open a file with Python's built-in tools, it will try to use `unzip`.
+  - **Ubuntu/Debian:** `sudo apt install unzip`
+  - **Fedora:** `sudo dnf install unzip`
+  - **Arch Linux:** `sudo pacman -S unzip`
+  - **macOS:** `brew install unzip`
+  - **Windows:** Install via [Git Bash](https://git-scm.com/downloads) or [GnuWin32](http://gnuwin32.sourceforge.net/packages/unzip.htm).
 
 ## Quick Start
 
