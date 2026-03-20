@@ -3242,261 +3242,271 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
         print(json.dumps(all_info, indent=4, ensure_ascii=False))
 
 
-def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
-    """Show detailed statistics about the messages in the QWK archives."""
+def calculate_archive_stats(
+    input_path: str,
+    settings: ProcessingSettings,
+    logger: logging.Logger
+) -> dict[str, Any]:
+    """Calculate detailed statistics for a single archive."""
+    stats_entry: dict[str, Any] = {
+        "file": input_path,
+        "total_messages": 0,
+        "matching_messages": 0,
+        "dates": {"earliest": None, "latest": None},
+        "authors": [],
+        "recipients": [],
+        "conferences": [],
+        "subjects": [],
+        "keywords": [],
+        "attachments_count": 0,
+        "day_of_week": {},
+        "hour_of_day": {},
+        "year_distribution": {},
+        "month_distribution": {},
+        "private_count": 0,
+        "reply_count": 0,
+        "reply_rate": 0.0,
+        "avg_message_length": 0.0,
+    }
+
+    file_data, board_dict = load_data(input_path, logger, settings.encoding)
+    bbs_info = getattr(board_dict, 'bbs_info', None)
+    user_name = bbs_info.user_name if bbs_info else None
+    allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+
+    author_counter: Counter = Counter()
+    recipient_counter: Counter = Counter()
+    conf_counter: Counter = Counter()
+    subject_counter: Counter = Counter()
+    keyword_counter: Counter = Counter()
+    dow_counter: Counter = Counter()
+    hour_counter: Counter = Counter()
+    year_counter: Counter = Counter()
+    month_counter: Counter = Counter()
+
+    earliest_dt = None
+    latest_dt = None
+    private_count = 0
+    attachments_count = 0
+    matching_count = 0
+    total_count = 0
+    processed_count = 0
+    reply_count = 0
+    total_chars = 0
+
+    desc = f"Analyzing {os.path.basename(input_path)}"
+    need_body = True
+
+    is_structured = isinstance(file_data, list)
+    total_progress = len(file_data)
+
+    with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+        if is_structured:
+            messages_to_process = file_data
+            if progress_bar is not None:
+                progress_bar.unit = 'msg'
+                progress_bar.unit_scale = False
+        else:
+            messages_to_process = parse_messages(
+                file_data, progress_bar, settings.encoding, headers_only=not need_body
+            )
+
+        for message in messages_to_process:
+            if is_structured and progress_bar is not None:
+                progress_bar.update(1)
+            total_count += 1
+
+            if not matches_filters(message, settings, allowed_conferences, user_name):
+                continue
+
+            matching_count += 1
+
+            if settings.skip is not None and matching_count <= settings.skip:
+                continue
+
+            if settings.limit is not None and processed_count >= settings.limit:
+                break
+            processed_count += 1
+
+            # Date/Time
+            dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+            if earliest_dt is None or dt < earliest_dt:
+                earliest_dt = dt
+            if latest_dt is None or dt > latest_dt:
+                latest_dt = dt
+
+            author_counter[message.header.msgfrom.strip()] += 1
+            recipient_counter[message.header.msgto.strip()] += 1
+            conf_counter[message.confnum] += 1
+            subject_counter[_normalize_subject(message.header.msgsubject)] += 1
+
+            dow_counter[dt.strftime('%A')] += 1
+            hour_counter[dt.hour] += 1
+            year_counter[dt.year] += 1
+            month_counter[dt.strftime('%Y-%m')] += 1
+
+            if message.header.is_private:
+                private_count += 1
+
+            # Detect if it's a reply
+            is_reply = (
+                (message.header.refnum is not None and message.header.refnum != 0)
+                or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
+            )
+            if is_reply:
+                reply_count += 1
+
+            # Check for attachments in the full message
+            if message.text:
+                total_chars += len(message.text)
+                found_binaries = extract_binaries(message.text)
+                attachments_count += len(found_binaries)
+
+                # Keyword analysis
+                words = re.findall(r'\b\w{3,}\b', message.text.lower())
+                for word in words:
+                    if word not in DEFAULT_STOP_WORDS and not word.isdigit():
+                        keyword_counter[word] += 1
+
+    stats_entry["total_messages"] = total_count
+    stats_entry["matching_messages"] = processed_count
+    stats_entry["private_count"] = private_count
+    stats_entry["attachments_count"] = attachments_count
+    stats_entry["reply_count"] = reply_count
+    stats_entry["reply_rate"] = round(reply_count / processed_count * 100, 1) if processed_count > 0 else 0.0
+    stats_entry["avg_message_length"] = round(total_chars / processed_count, 1) if processed_count > 0 else 0.0
+
+    if earliest_dt:
+        stats_entry["dates"]["earliest"] = earliest_dt.isoformat()
+        stats_entry["dates"]["latest"] = latest_dt.isoformat()
+
+    # Top 10
+    stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
+    stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
+    stats_entry["conferences"] = [{"number": n, "name": board_dict.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
+    stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
+    stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
+    stats_entry["day_of_week"] = dict(dow_counter)
+    stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
+    stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
+    stats_entry["month_distribution"] = dict(sorted(month_counter.items()))
+
+    return stats_entry
+
+
+def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str:
+    """Render a statistics entry into a human-readable text report."""
     # ANSI Attribute codes
     BOLD = "1"
     CYAN = "36"
     DIM = "90"
 
+    def c(t, *a):
+        if use_colors:
+            return f"\033[{';'.join(a)}m{t}\033[0m"
+        return t
+
+    parts = []
+    parts.append(f"Statistics for: {c(stats['file'], CYAN)}")
+    parts.append(f"  {c('Messages:', BOLD)} {stats['matching_messages']} matching / {stats['total_messages']} total")
+
+    if stats['attachments_count'] > 0:
+        parts.append(f"  {c('Attachments:', BOLD)} {stats['attachments_count']} files detected")
+
+    if stats['dates']['earliest']:
+        earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
+        latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+        parts.append(f"  {c('Date Range:', BOLD)} {earliest} to {latest}")
+
+    parts.append(f"  {c('Private:', BOLD)}    {stats['private_count']} messages")
+
+    parts.append(f"\n  {c('Vitality & Content:', BOLD)}")
+    parts.append(f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)")
+    parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
+
+    if stats['year_distribution']:
+        parts.append(f"\n  {c('Yearly Activity:', BOLD)}")
+        years = stats['year_distribution']
+        max_year_count = max(years.values()) if years else 0
+        for year in sorted(years.keys()):
+            count = years[year]
+            bar = "#" * int(count * 40 / max_year_count) if max_year_count > 0 else ""
+            parts.append(f"    {year:4} : {count:4} {bar}")
+
+    if stats['month_distribution'] and len(stats['month_distribution']) <= 24:
+        parts.append(f"\n  {c('Monthly Activity:', BOLD)}")
+        months = stats['month_distribution']
+        max_month_count = max(months.values()) if months else 0
+        for month in sorted(months.keys()):
+            count = months[month]
+            bar = "#" * int(count * 40 / max_month_count) if max_month_count > 0 else ""
+            parts.append(f"    {month:7} : {count:4} {bar}")
+
+    def render_bar_chart(label_title, items, count_key, label_key):
+        if not items:
+            return
+        parts.append(f"\n  {c(label_title + ':', BOLD)}")
+        max_count = max(i['count'] for i in items) if items else 0
+        for item in items:
+            label = f"{item[label_key][:25]:<25}"
+            count_str = f"{item['count']:4}"
+            bar = "#" * int(item['count'] * 40 / max_count) if max_count > 0 else ""
+            parts.append(f"    {c(label, DIM)} : {c(count_str, BOLD)} {c(bar, CYAN)}")
+
+    render_bar_chart('Top Authors', stats['authors'], 'count', 'name')
+    render_bar_chart('Top Recipients', stats['recipients'], 'count', 'name')
+
+    if stats['conferences']:
+        parts.append(f"\n  {c('Top Conferences:', BOLD)}")
+        max_conf_count = max(i['count'] for i in stats['conferences'])
+        for conf in stats['conferences']:
+            label = f"{conf['number']:3} {conf['name'][:21]:<21}"
+            count_str = f"{conf['count']:4}"
+            bar = "#" * int(conf['count'] * 40 / max_conf_count) if max_conf_count > 0 else ""
+            parts.append(f"    {c(label, DIM)} : {c(count_str, BOLD)} {c(bar, CYAN)}")
+
+    render_bar_chart('Top Subjects', stats['subjects'], 'count', 'subject')
+    render_bar_chart('Top Keywords', stats['keywords'], 'count', 'word')
+
+    if stats['day_of_week']:
+        parts.append(f"\n  {c('Day of Week Distribution:', BOLD)}")
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        max_dow_count = max(stats['day_of_week'].values()) if stats['day_of_week'] else 0
+        for day in days:
+            count = stats['day_of_week'].get(day, 0)
+            label = f"{day:<25}"
+            bar = "#" * int(count * 40 / max_dow_count) if max_dow_count > 0 else ""
+            parts.append(f"    {c(label, DIM)} : {c(f'{count:4}', BOLD)} {c(bar, CYAN)}")
+
+    if stats['hour_of_day']:
+        parts.append(f"\n  {c('Hourly Distribution:', BOLD)}")
+        hours = stats['hour_of_day']
+        max_hour_count = max(hours.values()) if hours else 0
+        for h in range(24):
+            count = hours.get(str(h), 0)
+            label = f"{h:02}:00{'':<20}"
+            bar = "#" * int(count * 40 / max_hour_count) if max_hour_count > 0 else ""
+            parts.append(f"    {c(label, DIM)} : {c(f'{count:4}', BOLD)} {c(bar, CYAN)}")
+
+    return "\n".join(parts) + "\n"
+
+
+def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+    """Show detailed statistics about the messages in the QWK archives."""
     all_stats = []
 
+    use_colors = (
+        settings.format == 'text'
+        and hasattr(sys.stdout, 'isatty')
+        and sys.stdout.isatty()
+    )
+
     for input_path in input_paths:
-        stats_entry = {
-            "file": input_path,
-            "total_messages": 0,
-            "matching_messages": 0,
-            "dates": {"earliest": None, "latest": None},
-            "authors": [],
-            "recipients": [],
-            "conferences": [],
-            "subjects": [],
-            "keywords": [],
-            "attachments_count": 0,
-            "day_of_week": {},
-            "hour_of_day": {},
-            "year_distribution": {},
-            "month_distribution": {},
-            "private_count": 0,
-            "reply_count": 0,
-            "reply_rate": 0.0,
-            "avg_message_length": 0.0,
-        }
-
         try:
-            file_data, board_dict = load_data(input_path, logger, settings.encoding)
-            bbs_info = getattr(board_dict, 'bbs_info', None)
-            user_name = bbs_info.user_name if bbs_info else None
-            allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
-
-            author_counter = Counter()
-            recipient_counter = Counter()
-            conf_counter = Counter()
-            subject_counter = Counter()
-            keyword_counter = Counter()
-            dow_counter = Counter()
-            hour_counter = Counter()
-            year_counter = Counter()
-            month_counter = Counter()
-
-            earliest_dt = None
-            latest_dt = None
-            private_count = 0
-            attachments_count = 0
-            matching_count = 0
-            total_count = 0
-            processed_count = 0
-            reply_count = 0
-            total_chars = 0
-
-            desc = f"Analyzing {os.path.basename(input_path)}"
-            # Use a progress bar for statistics gathering
-            # We must read message bodies to accurately count attachments
-            need_body = True
-
-            is_structured = isinstance(file_data, list)
-            total_progress = len(file_data)
-
-            with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
-                if is_structured:
-                    messages_to_process = file_data
-                    if progress_bar is not None:
-                        progress_bar.unit = 'msg'
-                        progress_bar.unit_scale = False
-                else:
-                    messages_to_process = parse_messages(
-                        file_data, progress_bar, settings.encoding, headers_only=not need_body
-                    )
-
-                for message in messages_to_process:
-                    if is_structured and progress_bar is not None:
-                        progress_bar.update(1)
-                    total_count += 1
-
-                    if not matches_filters(message, settings, allowed_conferences, user_name):
-                        continue
-
-                    matching_count += 1
-
-                    if settings.skip is not None and matching_count <= settings.skip:
-                        continue
-
-                    if settings.limit is not None and processed_count >= settings.limit:
-                        break
-                    processed_count += 1
-
-                    # Date/Time
-                    dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
-                    if earliest_dt is None or dt < earliest_dt:
-                        earliest_dt = dt
-                    if latest_dt is None or dt > latest_dt:
-                        latest_dt = dt
-
-                    author_counter[message.header.msgfrom.strip()] += 1
-                    recipient_counter[message.header.msgto.strip()] += 1
-                    conf_counter[message.confnum] += 1
-                    subject_counter[_normalize_subject(message.header.msgsubject)] += 1
-
-                    dow_counter[dt.strftime('%A')] += 1
-                    hour_counter[dt.hour] += 1
-                    year_counter[dt.year] += 1
-                    month_counter[dt.strftime('%Y-%m')] += 1
-
-                    if message.header.is_private:
-                        private_count += 1
-
-                    # Detect if it's a reply
-                    is_reply = (
-                        (message.header.refnum is not None and message.header.refnum != 0)
-                        or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
-                    )
-                    if is_reply:
-                        reply_count += 1
-
-                    # Check for attachments in the full message
-                    if message.text:
-                        total_chars += len(message.text)
-                        found_binaries = extract_binaries(message.text)
-                        attachments_count += len(found_binaries)
-
-                        # Keyword analysis
-                        words = re.findall(r'\b\w{3,}\b', message.text.lower())
-                        for word in words:
-                            if word not in DEFAULT_STOP_WORDS and not word.isdigit():
-                                keyword_counter[word] += 1
-
-            stats_entry["total_messages"] = total_count
-            stats_entry["matching_messages"] = processed_count
-            stats_entry["private_count"] = private_count
-            stats_entry["attachments_count"] = attachments_count
-            stats_entry["reply_count"] = reply_count
-            stats_entry["reply_rate"] = round(reply_count / processed_count * 100, 1) if processed_count > 0 else 0.0
-            stats_entry["avg_message_length"] = round(total_chars / processed_count, 1) if processed_count > 0 else 0.0
-
-            if earliest_dt:
-                stats_entry["dates"]["earliest"] = earliest_dt.isoformat()
-                stats_entry["dates"]["latest"] = latest_dt.isoformat()
-
-            # Top 10
-            stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
-            stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
-            stats_entry["conferences"] = [{"number": n, "name": board_dict.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
-            stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
-            stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
-            stats_entry["day_of_week"] = dict(dow_counter)
-            stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
-            stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
-            stats_entry["month_distribution"] = dict(sorted(month_counter.items()))
-
+            stats_entry = calculate_archive_stats(input_path, settings, logger)
             if settings.format != 'json':
-                print(f"Statistics for: {_colorize(input_path, CYAN)}")
-                print(f"  {_colorize('Messages:', BOLD)} {processed_count} matching / {total_count} total")
-
-                if attachments_count > 0:
-                    print(f"  {_colorize('Attachments:', BOLD)} {attachments_count} files detected")
-
-                if earliest_dt:
-                    print(f"  {_colorize('Date Range:', BOLD)} {earliest_dt.strftime('%Y-%m-%d')} to {latest_dt.strftime('%Y-%m-%d')}")
-
-                print(f"  {_colorize('Private:', BOLD)}    {private_count} messages")
-
-                print(f"\n  {_colorize('Vitality & Content:', BOLD)}")
-                print(f"    Reply Rate:    {stats_entry['reply_rate']}% ({reply_count} replies)")
-                print(f"    Avg Length:    {int(stats_entry['avg_message_length'])} characters")
-
-                if year_counter:
-                    print(f"\n  {_colorize('Yearly Activity:', BOLD)}")
-                    max_year_count = max(year_counter.values())
-                    for year in sorted(year_counter.keys()):
-                        count = year_counter[year]
-                        bar = "#" * int(count * 40 / max_year_count) if max_year_count > 0 else ""
-                        print(f"    {year:4} : {count:4} {bar}")
-
-                if month_counter and len(month_counter) <= 24: # Only show month bar chart if not too long
-                    print(f"\n  {_colorize('Monthly Activity:', BOLD)}")
-                    max_month_count = max(month_counter.values())
-                    for month in sorted(month_counter.keys()):
-                        count = month_counter[month]
-                        bar = "#" * int(count * 40 / max_month_count) if max_month_count > 0 else ""
-                        print(f"    {month:7} : {count:4} {bar}")
-
-                if author_counter:
-                    print(f"\n  {_colorize('Top Authors:', BOLD)}")
-                    max_author_count = max(author_counter.values())
-                    for auth in stats_entry["authors"]:
-                        label = f"{auth['name'][:25]:<25}"
-                        count_str = f"{auth['count']:4}"
-                        bar = "#" * int(auth['count'] * 40 / max_author_count) if max_author_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
-
-                if recipient_counter:
-                    print(f"\n  {_colorize('Top Recipients:', BOLD)}")
-                    max_recipient_count = max(recipient_counter.values())
-                    for rcpt in stats_entry["recipients"]:
-                        label = f"{rcpt['name'][:25]:<25}"
-                        count_str = f"{rcpt['count']:4}"
-                        bar = "#" * int(rcpt['count'] * 40 / max_recipient_count) if max_recipient_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
-
-                if conf_counter:
-                    print(f"\n  {_colorize('Top Conferences:', BOLD)}")
-                    max_conf_count = max(conf_counter.values())
-                    for conf in stats_entry["conferences"]:
-                        label = f"{conf['number']:3} {conf['name'][:21]:<21}"
-                        count_str = f"{conf['count']:4}"
-                        bar = "#" * int(conf['count'] * 40 / max_conf_count) if max_conf_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
-
-                if subject_counter:
-                    print(f"\n  {_colorize('Top Subjects:', BOLD)}")
-                    max_subj_count = max(subject_counter.values())
-                    for subj in stats_entry["subjects"]:
-                        label = f"{subj['subject'][:25]:<25}"
-                        count_str = f"{subj['count']:4}"
-                        bar = "#" * int(subj['count'] * 40 / max_subj_count) if max_subj_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
-
-                if keyword_counter:
-                    print(f"\n  {_colorize('Top Keywords:', BOLD)}")
-                    max_key_count = max(keyword_counter.values())
-                    for kw in stats_entry["keywords"]:
-                        label = f"{kw['word'][:25]:<25}"
-                        count_str = f"{kw['count']:4}"
-                        bar = "#" * int(kw['count'] * 40 / max_key_count) if max_key_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(count_str, BOLD)} {_colorize(bar, CYAN)}")
-
-                if dow_counter:
-                    print(f"\n  {_colorize('Day of Week Distribution:', BOLD)}")
-                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    max_dow_count = max(dow_counter.values())
-                    for day in days:
-                        count = dow_counter.get(day, 0)
-                        label = f"{day:<25}"
-                        bar = "#" * int(count * 40 / max_dow_count) if max_dow_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(f'{count:4}', BOLD)} {_colorize(bar, CYAN)}")
-
-                if hour_counter:
-                    print(f"\n  {_colorize('Hourly Distribution:', BOLD)}")
-                    max_hour_count = max(hour_counter.values())
-                    for h in range(24):
-                        count = hour_counter.get(h, 0)
-                        label = f"{h:02}:00{'':<20}"
-                        bar = "#" * int(count * 40 / max_hour_count) if max_hour_count > 0 else ""
-                        print(f"    {_colorize(label, DIM)} : {_colorize(f'{count:4}', BOLD)} {_colorize(bar, CYAN)}")
-                print("")
-
+                print(render_stats_as_text(stats_entry, use_colors=use_colors))
             all_stats.append(stats_entry)
-
         except PROCESSING_EXCEPTIONS as e:
             logger.error(f"Error calculating stats for {input_path}: {e}")
 
