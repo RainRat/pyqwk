@@ -9,6 +9,7 @@ from pyqwk.core import (
     PROCESSING_EXCEPTIONS,
     ProcessingSettings,
     __version__,
+    expand_paths,
     process_file,
     process_merged_files,
     process_multiple_files,
@@ -17,21 +18,6 @@ from pyqwk.core import (
     show_info,
     show_stats,
 )
-
-
-def _expand_directories(paths: list[str]) -> list[str]:
-    """Recursively find supported QWK files in directories."""
-    expanded_paths = []
-    for path in paths:
-        if os.path.isdir(path):
-            for root, _, files in os.walk(path):
-                for file in files:
-                    lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml')) or lower_file == 'messages.dat':
-                        expanded_paths.append(os.path.join(root, file))
-        else:
-            expanded_paths.append(path)
-    return sorted(expanded_paths)
 
 
 def _parse_msgnum_ranges(msgnum_str: str | None) -> set[int] | None:
@@ -401,6 +387,11 @@ examples:
         help='Show message stats like timing, reply rates, and common keywords. This respects your filters. Use --format json for JSON output.',
     )
     parser.add_argument(
+        '--merge-stats',
+        action='store_true',
+        help='When used with multiple archives and --stats, show a single merged report instead of individual ones.',
+    )
+    parser.add_argument(
         '-V',
         '--version',
         action='version',
@@ -425,7 +416,7 @@ examples:
     logger = logging.getLogger(__name__)
 
     has_directory_input = any(os.path.isdir(p) for p in args.input_paths)
-    input_paths = _expand_directories(args.input_paths)
+    input_paths = expand_paths(args.input_paths)
     output_path = args.output_path
 
     if not input_paths:
@@ -528,6 +519,7 @@ examples:
         has_attachments=args.has_attachments,
         mine=args.mine,
         on_this_day=args.on_this_day,
+        merge_stats=args.merge_stats,
     )
 
     if args.organize_by_bbs:

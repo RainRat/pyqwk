@@ -100,6 +100,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
         mine=False,
         on_this_day=False,
         reference_date=None,
+        merge_stats=False,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -153,6 +154,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         msgnum_filter=None,
         mine=False,
         on_this_day=False,
+        merge_stats=False,
     )
     base.update(overrides)
     return argparse.Namespace(**base)

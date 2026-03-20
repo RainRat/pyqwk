@@ -40,3 +40,25 @@ def test_info_multiple_files_no_output(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "File: testdata/test1_qwk.zip" in captured.out
     assert "File: testdata/test2_qwk.zip" in captured.out
+
+def test_merge_stats_multiple_files(monkeypatch, capsys):
+    """Test that --merge-stats produces a single merged report."""
+    test1 = "testdata/test1_qwk.zip"
+    test2 = "testdata/test2_qwk.zip"
+
+    # Simulate: qwk.py testdata/test1_qwk.zip testdata/test2_qwk.zip --stats --merge-stats
+    monkeypatch.setattr(sys, "argv", ["qwk.py", test1, test2, "--stats", "--merge-stats", "--quiet"])
+
+    try:
+        main()
+    except SystemExit as e:
+        if e.code != 0:
+            pytest.fail(f"main() exited with code {e.code}")
+
+    captured = capsys.readouterr()
+    assert "Statistics for: Multiple Archives" in captured.out
+    # test1 has 1 msg, test2 has 2 msgs -> 3 total
+    assert "Messages: 3 matching / 3 total" in captured.out
+    # Individual file sections should NOT be present if merged correctly
+    assert "Statistics for: testdata/test1_qwk.zip" not in captured.out
+    assert "Statistics for: testdata/test2_qwk.zip" not in captured.out
