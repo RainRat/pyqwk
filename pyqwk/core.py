@@ -3152,6 +3152,40 @@ def _apply_highlighting(
     return "".join(result)
 
 
+def _render_stats_bar_chart(
+    title: str,
+    items: list[tuple[str, int]],
+    bold: str = "1",
+    cyan: str = "36",
+    dim: str = "90",
+) -> None:
+    """Render a color-coded ASCII bar chart for statistics.
+
+    Args:
+        title: The section title.
+        items: List of (label, count) tuples.
+        bold: ANSI code for bold text.
+        cyan: ANSI code for cyan color.
+        dim: ANSI code for dim text.
+    """
+    if not items:
+        return
+
+    print(f"\n  {_colorize(title, bold)}")
+
+    max_count = max(count for _, count in items)
+    for label, count in items:
+        # Consistent 25-character label alignment with truncation
+        truncated_label = f"{label[:25]:<25}"
+        count_str = f"{count:4}"
+        # Scale bars to a maximum of 40 characters
+        bar_len = int(count * 40 / max_count) if max_count > 0 else 0
+        bar = "#" * bar_len
+
+        # Consistent coloring: Dim labels, Bold counts, Cyan bars
+        print(f"    {_colorize(truncated_label, dim)} : {_colorize(count_str, bold)} {_colorize(bar, cyan)}")
+
+
 def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
     """Show a summary of the QWK packet contents."""
     # ANSI Attribute codes
@@ -3424,69 +3458,47 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
     parts.append(f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)")
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
 
+    def render_bar_chart(label_title, data, bold=BOLD, cyan=CYAN, dim=DIM):
+        """Standardized bar chart renderer for text output."""
+        if not data:
+            return
+        parts.append(f"\n  {c(label_title, bold)}")
+        
+        # data is a list of (label, count) tuples
+        max_count = max(count for _, count in data) if data else 0
+        for label, count in data:
+            truncated_label = f"{str(label)[:25]:<25}"
+            count_str = f"{count:4}"
+            bar_len = int(count * 40 / max_count) if max_count > 0 else 0
+            bar = "#" * bar_len
+            parts.append(f"    {c(truncated_label, dim)} : {c(count_str, bold)} {c(bar, cyan)}")
+
     if stats['year_distribution']:
-        parts.append(f"\n  {c('Yearly Activity:', BOLD)}")
-        years = stats['year_distribution']
-        max_year_count = max(years.values()) if years else 0
-        for year in sorted(years.keys()):
-            count = years[year]
-            bar = "#" * int(count * 40 / max_year_count) if max_year_count > 0 else ""
-            parts.append(f"    {year:4} : {count:4} {bar}")
+        items = [(y, c) for y, c in sorted(stats['year_distribution'].items())]
+        render_bar_chart('Yearly Activity:', items)
 
     if stats['month_distribution'] and len(stats['month_distribution']) <= 24:
-        parts.append(f"\n  {c('Monthly Activity:', BOLD)}")
-        months = stats['month_distribution']
-        max_month_count = max(months.values()) if months else 0
-        for month in sorted(months.keys()):
-            count = months[month]
-            bar = "#" * int(count * 40 / max_month_count) if max_month_count > 0 else ""
-            parts.append(f"    {month:7} : {count:4} {bar}")
+        items = [(m, c) for m, c in sorted(stats['month_distribution'].items())]
+        render_bar_chart('Monthly Activity:', items)
 
-    def render_bar_chart(label_title, items, count_key, label_key):
-        if not items:
-            return
-        parts.append(f"\n  {c(label_title + ':', BOLD)}")
-        max_count = max(i['count'] for i in items) if items else 0
-        for item in items:
-            label = f"{item[label_key][:25]:<25}"
-            count_str = f"{item['count']:4}"
-            bar = "#" * int(item['count'] * 40 / max_count) if max_count > 0 else ""
-            parts.append(f"    {c(label, DIM)} : {c(count_str, BOLD)} {c(bar, CYAN)}")
-
-    render_bar_chart('Top Authors', stats['authors'], 'count', 'name')
-    render_bar_chart('Top Recipients', stats['recipients'], 'count', 'name')
+    render_bar_chart('Top Authors:', [(a["name"], a["count"]) for a in stats['authors']])
+    render_bar_chart('Top Recipients:', [(r["name"], r["count"]) for r in stats['recipients']])
 
     if stats['conferences']:
-        parts.append(f"\n  {c('Top Conferences:', BOLD)}")
-        max_conf_count = max(i['count'] for i in stats['conferences'])
-        for conf in stats['conferences']:
-            label = f"{conf['number']:3} {conf['name'][:21]:<21}"
-            count_str = f"{conf['count']:4}"
-            bar = "#" * int(conf['count'] * 40 / max_conf_count) if max_conf_count > 0 else ""
-            parts.append(f"    {c(label, DIM)} : {c(count_str, BOLD)} {c(bar, CYAN)}")
+        items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]
+        render_bar_chart('Top Conferences:', items)
 
-    render_bar_chart('Top Subjects', stats['subjects'], 'count', 'subject')
-    render_bar_chart('Top Keywords', stats['keywords'], 'count', 'word')
+    render_bar_chart('Top Subjects:', [(s["subject"], s["count"]) for s in stats['subjects']])
+    render_bar_chart('Top Keywords:', [(k["word"], k["count"]) for k in stats['keywords']])
 
     if stats['day_of_week']:
-        parts.append(f"\n  {c('Day of Week Distribution:', BOLD)}")
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        max_dow_count = max(stats['day_of_week'].values()) if stats['day_of_week'] else 0
-        for day in days:
-            count = stats['day_of_week'].get(day, 0)
-            label = f"{day:<25}"
-            bar = "#" * int(count * 40 / max_dow_count) if max_dow_count > 0 else ""
-            parts.append(f"    {c(label, DIM)} : {c(f'{count:4}', BOLD)} {c(bar, CYAN)}")
+        items = [(d, stats['day_of_week'].get(d, 0)) for d in days]
+        render_bar_chart('Day of Week Distribution:', items)
 
     if stats['hour_of_day']:
-        parts.append(f"\n  {c('Hourly Distribution:', BOLD)}")
-        hours = stats['hour_of_day']
-        max_hour_count = max(hours.values()) if hours else 0
-        for h in range(24):
-            count = hours.get(str(h), 0)
-            label = f"{h:02}:00{'':<20}"
-            bar = "#" * int(count * 40 / max_hour_count) if max_hour_count > 0 else ""
-            parts.append(f"    {c(label, DIM)} : {c(f'{count:4}', BOLD)} {c(bar, CYAN)}")
+        items = [(f"{h:02}:00", stats['hour_of_day'].get(str(h), 0)) for h in range(24)]
+        render_bar_chart('Hourly Distribution:', items)
 
     return "\n".join(parts) + "\n"
 
