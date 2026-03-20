@@ -186,17 +186,17 @@ class TestQwkGui:
 
     def test_open_file_cancel(self, mock_gui_deps):
         app = get_app()
-        mock_gui_deps["filedialog"].askopenfilename.return_value = ""
+        mock_gui_deps["filedialog"].askopenfilenames.return_value = []
         app.open_file()
         assert app.current_path is None
 
     def test_open_file_select(self, mock_gui_deps):
         app = get_app()
-        mock_gui_deps["filedialog"].askopenfilename.return_value = "selected.qwk"
+        mock_gui_deps["filedialog"].askopenfilenames.return_value = ["selected.qwk"]
         with patch.object(app, 'load_messages') as mock_load:
             app.open_file()
             assert app.current_path == "selected.qwk"
-            mock_load.assert_called_with("selected.qwk")
+            mock_load.assert_called_with(["selected.qwk"])
 
     def test_sort_column(self, mock_gui_deps):
         app = get_app()
@@ -412,7 +412,7 @@ class TestQwkGui:
             app.reload_messages()
             app.root.after_cancel.assert_called_with("timer2")
             assert app._search_timer is None
-            mock_load.assert_called_with("path")
+            mock_load.assert_called_with(["path"])
 
     def test_quit_app(self, mock_gui_deps):
         app = get_app()

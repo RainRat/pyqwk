@@ -6,10 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.cli import _expand_directories
+from pyqwk.core import expand_paths as _expand_directories
 
 class TestDirectoryExpansion:
-    """Tests for the _expand_directories function."""
+    """Tests for the expand_paths function."""
 
     def test_expand_flat_directory_valid_files(self, tmp_path):
         """Test finding supported files in a flat directory."""

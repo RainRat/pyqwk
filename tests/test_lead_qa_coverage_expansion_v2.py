@@ -38,6 +38,7 @@ def _make_settings(**kwargs):
         quiet=False, headers_only=False, oneline=False,
         extract_attachments=False, limit=None, skip=None,
         sort=None, reverse=False, merge=True, unique=False, organize=False,
+        merge_stats=False,
         organize_by_bbs=False, include_toc=False,
         has_attachments=False, mine=False, on_this_day=False
     )

@@ -22,10 +22,24 @@ from pyqwk.core import (
     extract_binaries,
     calculate_archive_stats,
     render_stats_as_text,
+    expand_paths,
+    ConferenceMap,
 )
 
 
 class QwkGuiApp:
+    @property
+    def current_path(self) -> str | None:
+        """Return the first path in current_paths for backward compatibility."""
+        return self.current_paths[0] if self.current_paths else None
+
+    @current_path.setter
+    def current_path(self, value: str | None) -> None:
+        if value is None:
+            self.current_paths = []
+        else:
+            self.current_paths = [value]
+
     def __init__(self, root: tk.Tk, initial_path: str | None = None) -> None:
         self.root = root
         self.root.title("PyQWK Reader")
@@ -35,7 +49,7 @@ class QwkGuiApp:
 
         self.messages = []
         self.board_dict: dict[int, str] = {}
-        self.current_path: str | None = None
+        self.current_paths: list[str] = []
         self._cache = {}
         self.conf_mapping = {}
 
@@ -68,8 +82,8 @@ class QwkGuiApp:
         self._build_layout()
 
         if initial_path:
-            self.current_path = initial_path
-            self.root.after(100, lambda: self.load_messages(initial_path))
+            self.current_paths = [initial_path]
+            self.root.after(100, lambda: self.load_messages(self.current_paths))
         else:
             self.root.after(100, self._render_welcome_screen)
 
@@ -110,7 +124,10 @@ class QwkGuiApp:
         menubar = tk.Menu(self.root)
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(
-            label="Open...", command=self.open_file, accelerator="Ctrl+O"
+            label="Open Archive(s)...", command=self.open_file, accelerator="Ctrl+O"
+        )
+        file_menu.add_command(
+            label="Open Folder...", command=self.open_folder
         )
         file_menu.add_command(
             label="Export Current View...",
@@ -240,6 +257,7 @@ class QwkGuiApp:
         actions_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(actions_frame, text="File:").pack(side=tk.LEFT)
         ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Button(actions_frame, text="Folder", command=self.open_folder).pack(side=tk.LEFT, padx=2)
         ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
         ttk.Button(actions_frame, text="Stats", command=self.show_stats_window).pack(side=tk.LEFT, padx=2)
 
@@ -466,6 +484,9 @@ class QwkGuiApp:
         insert_field("Date", f"{header.msgdate} {header.msgtime}")
         insert_field("Conf", conf_name, last_in_row=True)
 
+        if message.source_file:
+            insert_field("Source", message.source_file, last_in_row=True)
+
         if header.msgnum is not None or message.refnum:
             if header.msgnum is not None:
                 self.detail_text.insert(tk.END, "Msg #: ", "header_label")
@@ -552,14 +573,28 @@ class QwkGuiApp:
             ("messages.dat", "messages.dat"),
             ("All files", "*.*"),
         ]
-        path = filedialog.askopenfilename(
-            title="Open QWK archive",
+        paths = filedialog.askopenfilenames(
+            title="Open Archive(s)",
             filetypes=filetypes,
         )
-        if not path:
+        if not paths:
             return
-        self.current_path = path
-        self.load_messages(path)
+        self.current_paths = list(paths)
+        self.load_messages(self.current_paths)
+
+    def open_folder(self, _event: object | None = None) -> None:
+        """Open all archives in a selected directory."""
+        folder = filedialog.askdirectory(title="Select Folder with Archives")
+        if not folder:
+            return
+
+        paths = expand_paths([folder])
+        if not paths:
+            messagebox.showinfo("Open Folder", "No supported message archives found in the selected folder.")
+            return
+
+        self.current_paths = paths
+        self.load_messages(self.current_paths)
 
     def _on_search_changed(self, *args: object) -> None:
         """Handle search term changes with debouncing to improve UI responsiveness."""
@@ -577,8 +612,8 @@ class QwkGuiApp:
             self.root.after_cancel(self._search_timer)
             self._search_timer = None
 
-        if self.current_path:
-            self.load_messages(self.current_path)
+        if self.current_paths:
+            self.load_messages(self.current_paths)
 
     def _reset_column_headers(self) -> None:
         """Reset all column headers to their original labels without sort indicators."""
@@ -597,21 +632,32 @@ class QwkGuiApp:
                 command=lambda c=col: self.sort_column(c, False)
             )
 
-    def load_messages(self, path: str) -> None:
+    def load_messages(self, paths: str | list[str]) -> None:
+        if isinstance(paths, str):
+            paths = [paths]
+
         # Save current state for potential restoration on failure
         old_messages = self.messages
         old_board_dict = self.board_dict
         old_cache = self._cache
-        old_path = self.current_path
+        old_paths = self.current_paths
 
         try:
             self.status_label.config(text="Loading...")
             self.root.update_idletasks()
 
-            # If opening a new file, clear stale conference mapping and selection
-            if self._cache.get('path') != path:
+            # For now, we only cache single file loads. Multi-file loads are re-processed.
+            # In a future version, we could cache per path.
+            if len(paths) == 1:
+                path = paths[0]
+                # If opening a new file, clear stale conference mapping and selection
+                if self._cache.get('path') != path:
+                    self.conf_mapping = {}
+                    self.conf_combo.set("All Conferences")
+            else:
                 self.conf_mapping = {}
                 self.conf_combo.set("All Conferences")
+                self._cache = {}
 
             settings = self._current_settings()
 
@@ -632,12 +678,24 @@ class QwkGuiApp:
             # Reset headers to remove any previous sort indicators
             self._reset_column_headers()
 
-            # Cache file data to improve responsiveness during filtering
-            if self._cache.get('path') != path:
-                file_data, board_dict = load_data(path, self.logger, settings.encoding)
+            all_messages = []
+            merged_board_dict = ConferenceMap()
+            total_count = 0
+            conf_counts = Counter()
 
-                # Ensure all conferences present in the data are in the dropdown,
-                # even if CONTROL.DAT is missing or incomplete.
+            for path in paths:
+                if len(paths) == 1 and self._cache.get('path') == path:
+                    file_data = self._cache['file_data']
+                    board_dict = self._cache['board_dict']
+                else:
+                    file_data, board_dict = load_data(path, self.logger, settings.encoding)
+
+                bbs_info = getattr(board_dict, "bbs_info", None)
+                if not merged_board_dict.bbs_info:
+                    merged_board_dict.bbs_info = bbs_info
+                user_name = bbs_info.user_name if bbs_info else None
+
+                # Reconstruct/Discovery of conferences
                 try:
                     found_confs = set()
                     if isinstance(file_data, list):
@@ -649,70 +707,63 @@ class QwkGuiApp:
                         ):
                             found_confs.add(parsed_message.confnum)
 
-                    for cid in sorted(found_confs):
+                    for cid in found_confs:
                         if cid not in board_dict:
                             board_dict[cid] = f"Conference {cid}"
                 except Exception:
-                    # If discovery fails, we proceed with whatever load_data found
                     pass
 
+                # Merge into global board dict
+                for cid, name in board_dict.items():
+                    if cid not in merged_board_dict:
+                        merged_board_dict[cid] = name
+
+                allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+
+                if isinstance(file_data, list):
+                    messages_to_process = file_data
+                else:
+                    messages_to_process = parse_messages(file_data, None, settings.encoding)
+
+                # Create a settings object without conference filter for counting
+                count_settings = replace(settings, conferences=None)
+
+                for parsed_message in messages_to_process:
+                    total_count += 1
+
+                    # Add source file metadata
+                    parsed_message = replace(parsed_message, source_file=os.path.basename(path))
+
+                    # Check if message matches filters ignoring the conference filter itself
+                    if matches_filters(parsed_message, count_settings, set(), user_name):
+                        conf_counts[parsed_message.confnum] += 1
+
+                        # Now apply the actual conference filter for the display list
+                        if not settings.conferences or parsed_message.confnum in allowed_conferences:
+                            processed_buffer = process_message(
+                                parsed_message.text,
+                                settings.truncate_signatures,
+                                settings.cut_quoting,
+                                settings.binaries_removal,
+                                settings.redact_pii,
+                                settings.strip_ansi,
+                            )
+
+                            # Ensure attachments are detected for the status icon
+                            attachments = parsed_message.attachments
+                            if attachments is None and parsed_message.text:
+                                found = extract_binaries(parsed_message.text)
+                                attachments = [name for name, data in found]
+
+                            all_messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
+
+            # Update cache if it was a single file
+            if len(paths) == 1:
                 self._cache = {
-                    'path': path,
-                    'file_data': file_data,
+                    'path': paths[0],
+                    'file_data': file_data, # From the last iteration
                     'board_dict': board_dict
                 }
-                # Initial population if first time loading this file
-                if not self.conf_mapping:
-                    conf_list = ["All Conferences"]
-                    for cid, name in sorted(board_dict.items()):
-                        conf_list.append(f"{cid}: {name}")
-                    self.conf_combo['values'] = conf_list
-                    self.conf_combo.set("All Conferences")
-                    self.conf_mapping = {f"{cid}: {name}": cid for cid, name in board_dict.items()}
-
-            file_data = self._cache['file_data']
-            board_dict = self._cache['board_dict']
-
-            messages = []
-            total_count = 0
-            allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
-            bbs_info = getattr(board_dict, "bbs_info", None)
-            user_name = bbs_info.user_name if bbs_info else None
-
-            if isinstance(file_data, list):
-                messages_to_process = file_data
-            else:
-                messages_to_process = parse_messages(file_data, None, settings.encoding)
-
-            conf_counts = Counter()
-            # Create a settings object without conference filter for counting
-            count_settings = replace(settings, conferences=None)
-
-            for parsed_message in messages_to_process:
-                total_count += 1
-
-                # Check if message matches filters ignoring the conference filter itself
-                if matches_filters(parsed_message, count_settings, set(), user_name):
-                    conf_counts[parsed_message.confnum] += 1
-
-                    # Now apply the actual conference filter for the display list
-                    if not settings.conferences or parsed_message.confnum in allowed_conferences:
-                        processed_buffer = process_message(
-                            parsed_message.text,
-                            settings.truncate_signatures,
-                            settings.cut_quoting,
-                            settings.binaries_removal,
-                            settings.redact_pii,
-                            settings.strip_ansi,
-                        )
-
-                        # Ensure attachments are detected for the status icon
-                        attachments = parsed_message.attachments
-                        if attachments is None and parsed_message.text:
-                            found = extract_binaries(parsed_message.text)
-                            attachments = [name for name, data in found]
-
-                        messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
 
             # Re-populate conference selector with dynamic counts
             total_filtered = sum(conf_counts.values())
@@ -724,7 +775,7 @@ class QwkGuiApp:
             selected_conf_id = self.conf_mapping.get(old_selection)
             new_selection = conf_list[0]
 
-            for cid, name in sorted(board_dict.items()):
+            for cid, name in sorted(merged_board_dict.items()):
                 count = conf_counts.get(cid, 0)
                 display_str = f"{cid}: {name} ({count})"
                 conf_list.append(display_str)
@@ -737,11 +788,11 @@ class QwkGuiApp:
             self.conf_combo.set(new_selection)
 
             if settings.threaded:
-                messages = _order_messages_by_thread(messages)
+                all_messages = _order_messages_by_thread(all_messages)
 
-            self.messages = messages
-            self.board_dict = board_dict
-            self.current_path = path
+            self.messages = all_messages
+            self.board_dict = merged_board_dict
+            self.current_paths = paths
 
             self.message_list.delete(*self.message_list.get_children())
             parent_at_depth = {-1: ""}
@@ -795,9 +846,9 @@ class QwkGuiApp:
                 source_display = os.path.basename(path)
 
             self.status_label.config(
-                text=f"Showing {len(self.messages)} of {total_count} messages from {source_display}"
+                text=f"Showing {len(self.messages)} of {total_count} messages from {source_display if len(paths) == 1 else str(len(paths)) + ' archives'}"
             )
-            self.root.title(f"{source_display} - PyQWK Reader")
+            self.root.title(f"{source_display if len(paths) == 1 else str(len(paths)) + ' archives'} - PyQWK Reader")
 
             # Restore selection if possible
             new_iid_to_select = None
@@ -823,10 +874,10 @@ class QwkGuiApp:
             self.messages = old_messages
             self.board_dict = old_board_dict
             self._cache = old_cache
-            self.current_path = old_path
+            self.current_paths = old_paths
             
             # Reset status and show error
-            if self.current_path:
+            if self.current_paths:
                 source_display = self.root.title().split(" - ")[0]
                 self.status_label.config(
                     text=f"Showing {len(self.messages)} messages from {source_display}"
@@ -989,8 +1040,8 @@ class QwkGuiApp:
         )
 
     def show_stats_window(self, _event: object | None = None) -> None:
-        """Calculate and display statistics for the current archive and filters."""
-        if not self.current_path:
+        """Calculate and display statistics for the current archives and filters."""
+        if not self.current_paths:
             messagebox.showwarning("Statistics", "Please open an archive first.")
             return
 
@@ -1000,11 +1051,13 @@ class QwkGuiApp:
 
             settings = self._current_settings()
             # Ensure stats are calculated correctly by using the same logic as the CLI
-            stats = calculate_archive_stats(self.current_path, settings, self.logger)
+            # calculate_archive_stats now expects a list of paths
+            stats = calculate_archive_stats(self.current_paths, settings, self.logger)
 
             # Create a new window for the report
             stats_win = tk.Toplevel(self.root)
-            stats_win.title(f"Statistics - {os.path.basename(self.current_path)}")
+            title_suffix = os.path.basename(self.current_paths[0]) if len(self.current_paths) == 1 else f"{len(self.current_paths)} archives"
+            stats_win.title(f"Statistics - {title_suffix}")
             stats_win.geometry("750x700")
 
             main_frame = ttk.Frame(stats_win, padding=10)
@@ -1033,7 +1086,8 @@ class QwkGuiApp:
             txt.tag_configure("info_label", font=("TkDefaultFont", 10, "bold"), foreground="#666666")
 
             # Rendering logic
-            txt.insert(tk.END, f"Statistics for: {os.path.basename(stats['file'])}\n\n", "h1")
+            display_name = os.path.basename(stats['file']) if len(self.current_paths) == 1 else "Multiple Archives"
+            txt.insert(tk.END, f"Statistics for: {display_name}\n\n", "h1")
 
             def insert_info(label, value):
                 txt.insert(tk.END, f"  {label:<15}: ", "info_label")

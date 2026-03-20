@@ -33,6 +33,20 @@ MESSAGES_FILENAME = 'messages.dat'
 REPLY_FILENAME = 'reply.dat'
 CONTROL_FILENAME = 'control.dat'
 
+def expand_paths(paths: list[str]) -> list[str]:
+    """Recursively find supported QWK files in directories."""
+    expanded_paths = []
+    for path in paths:
+        if os.path.isdir(path):
+            for root, _, files in os.walk(path):
+                for file in files:
+                    lower_file = file.lower()
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml')) or lower_file == 'messages.dat':
+                        expanded_paths.append(os.path.join(root, file))
+        else:
+            expanded_paths.append(path)
+    return sorted(expanded_paths)
+
 FORMAT_EXTENSIONS = {
     'text': '.txt',
     'json': '.json',
@@ -358,6 +372,7 @@ class ProcessingSettings:
     mine: bool = False
     on_this_day: bool = False
     reference_date: datetime.datetime | None = None
+    merge_stats: bool = False
 
 
 @dataclass
@@ -3291,13 +3306,13 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
 
 
 def calculate_archive_stats(
-    input_path: str,
+    input_paths: list[str],
     settings: ProcessingSettings,
     logger: logging.Logger
 ) -> dict[str, Any]:
-    """Calculate detailed statistics for a single archive."""
+    """Calculate detailed statistics for one or more archives."""
     stats_entry: dict[str, Any] = {
-        "file": input_path,
+        "file": input_paths[0] if len(input_paths) == 1 else "Multiple Archives",
         "total_messages": 0,
         "matching_messages": 0,
         "dates": {"earliest": None, "latest": None},
@@ -3317,14 +3332,10 @@ def calculate_archive_stats(
         "avg_message_length": 0.0,
     }
 
-    file_data, board_dict = load_data(input_path, logger, settings.encoding)
-    bbs_info = getattr(board_dict, 'bbs_info', None)
-    user_name = bbs_info.user_name if bbs_info else None
-    allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
-
     author_counter: Counter = Counter()
     recipient_counter: Counter = Counter()
     conf_counter: Counter = Counter()
+    conf_names: dict[int, str] = {}
     subject_counter: Counter = Counter()
     keyword_counter: Counter = Counter()
     dow_counter: Counter = Counter()
@@ -3342,79 +3353,89 @@ def calculate_archive_stats(
     reply_count = 0
     total_chars = 0
 
-    desc = f"Analyzing {os.path.basename(input_path)}"
-    need_body = True
+    for input_path in input_paths:
+        file_data, board_dict = load_data(input_path, logger, settings.encoding)
+        bbs_info = getattr(board_dict, 'bbs_info', None)
+        user_name = bbs_info.user_name if bbs_info else None
+        allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
 
-    is_structured = isinstance(file_data, list)
-    total_progress = len(file_data)
+        for num, name in board_dict.items():
+            if num not in conf_names:
+                conf_names[num] = name
 
-    with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
-        if is_structured:
-            messages_to_process = file_data
-            if progress_bar is not None:
-                progress_bar.unit = 'msg'
-                progress_bar.unit_scale = False
-        else:
-            messages_to_process = parse_messages(
-                file_data, progress_bar, settings.encoding, headers_only=not need_body
-            )
+        desc = f"Analyzing {os.path.basename(input_path)}"
+        need_body = True
 
-        for message in messages_to_process:
-            if is_structured and progress_bar is not None:
-                progress_bar.update(1)
-            total_count += 1
+        is_structured = isinstance(file_data, list)
+        total_progress = len(file_data)
 
-            if not matches_filters(message, settings, allowed_conferences, user_name):
-                continue
+        with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+            if is_structured:
+                messages_to_process = file_data
+                if progress_bar is not None:
+                    progress_bar.unit = 'msg'
+                    progress_bar.unit_scale = False
+            else:
+                messages_to_process = parse_messages(
+                    file_data, progress_bar, settings.encoding, headers_only=not need_body
+                )
 
-            matching_count += 1
+            for message in messages_to_process:
+                if is_structured and progress_bar is not None:
+                    progress_bar.update(1)
+                total_count += 1
 
-            if settings.skip is not None and matching_count <= settings.skip:
-                continue
+                if not matches_filters(message, settings, allowed_conferences, user_name):
+                    continue
 
-            if settings.limit is not None and processed_count >= settings.limit:
-                break
-            processed_count += 1
+                matching_count += 1
 
-            # Date/Time
-            dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
-            if earliest_dt is None or dt < earliest_dt:
-                earliest_dt = dt
-            if latest_dt is None or dt > latest_dt:
-                latest_dt = dt
+                if settings.skip is not None and matching_count <= settings.skip:
+                    continue
 
-            author_counter[message.header.msgfrom.strip()] += 1
-            recipient_counter[message.header.msgto.strip()] += 1
-            conf_counter[message.confnum] += 1
-            subject_counter[_normalize_subject(message.header.msgsubject)] += 1
+                if settings.limit is not None and processed_count >= settings.limit:
+                    break
+                processed_count += 1
 
-            dow_counter[dt.strftime('%A')] += 1
-            hour_counter[dt.hour] += 1
-            year_counter[dt.year] += 1
-            month_counter[dt.strftime('%Y-%m')] += 1
+                # Date/Time
+                dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+                if earliest_dt is None or dt < earliest_dt:
+                    earliest_dt = dt
+                if latest_dt is None or dt > latest_dt:
+                    latest_dt = dt
 
-            if message.header.is_private:
-                private_count += 1
+                author_counter[message.header.msgfrom.strip()] += 1
+                recipient_counter[message.header.msgto.strip()] += 1
+                conf_counter[message.confnum] += 1
+                subject_counter[_normalize_subject(message.header.msgsubject)] += 1
 
-            # Detect if it's a reply
-            is_reply = (
-                (message.header.refnum is not None and message.header.refnum != 0)
-                or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
-            )
-            if is_reply:
-                reply_count += 1
+                dow_counter[dt.strftime('%A')] += 1
+                hour_counter[dt.hour] += 1
+                year_counter[dt.year] += 1
+                month_counter[dt.strftime('%Y-%m')] += 1
 
-            # Check for attachments in the full message
-            if message.text:
-                total_chars += len(message.text)
-                found_binaries = extract_binaries(message.text)
-                attachments_count += len(found_binaries)
+                if message.header.is_private:
+                    private_count += 1
 
-                # Keyword analysis
-                words = re.findall(r'\b\w{3,}\b', message.text.lower())
-                for word in words:
-                    if word not in DEFAULT_STOP_WORDS and not word.isdigit():
-                        keyword_counter[word] += 1
+                # Detect if it's a reply
+                is_reply = (
+                    (message.header.refnum is not None and message.header.refnum != 0)
+                    or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
+                )
+                if is_reply:
+                    reply_count += 1
+
+                # Check for attachments in the full message
+                if message.text:
+                    total_chars += len(message.text)
+                    found_binaries = extract_binaries(message.text)
+                    attachments_count += len(found_binaries)
+
+                    # Keyword analysis
+                    words = re.findall(r'\b\w{3,}\b', message.text.lower())
+                    for word in words:
+                        if word not in DEFAULT_STOP_WORDS and not word.isdigit():
+                            keyword_counter[word] += 1
 
     stats_entry["total_messages"] = total_count
     stats_entry["matching_messages"] = processed_count
@@ -3431,7 +3452,7 @@ def calculate_archive_stats(
     # Top 10
     stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
     stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
-    stats_entry["conferences"] = [{"number": n, "name": board_dict.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
+    stats_entry["conferences"] = [{"number": n, "name": conf_names.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
     stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
     stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
     stats_entry["day_of_week"] = dict(dow_counter)
@@ -3512,14 +3533,23 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
         and sys.stdout.isatty()
     )
 
-    for input_path in input_paths:
+    if settings.merge_stats:
         try:
-            stats_entry = calculate_archive_stats(input_path, settings, logger)
+            stats_entry = calculate_archive_stats(input_paths, settings, logger)
             if settings.format != 'json':
                 print(render_stats_as_text(stats_entry, use_colors=use_colors))
             all_stats.append(stats_entry)
         except PROCESSING_EXCEPTIONS as e:
-            logger.error(f"Error calculating stats for {input_path}: {e}")
+            logger.error(f"Error calculating merged stats: {e}")
+    else:
+        for input_path in input_paths:
+            try:
+                stats_entry = calculate_archive_stats([input_path], settings, logger)
+                if settings.format != 'json':
+                    print(render_stats_as_text(stats_entry, use_colors=use_colors))
+                all_stats.append(stats_entry)
+            except PROCESSING_EXCEPTIONS as e:
+                logger.error(f"Error calculating stats for {input_path}: {e}")
 
     if settings.format == 'json':
         print(json.dumps(all_stats, indent=4, ensure_ascii=False))
