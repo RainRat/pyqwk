@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import logging
 import os
 import tkinter as tk
@@ -1000,26 +1001,103 @@ class QwkGuiApp:
             settings = self._current_settings()
             # Ensure stats are calculated correctly by using the same logic as the CLI
             stats = calculate_archive_stats(self.current_path, settings, self.logger)
-            report = render_stats_as_text(stats, use_colors=False)
 
             # Create a new window for the report
             stats_win = tk.Toplevel(self.root)
             stats_win.title(f"Statistics - {os.path.basename(self.current_path)}")
-            stats_win.geometry("700x600")
+            stats_win.geometry("750x700")
 
-            frame = ttk.Frame(stats_win, padding=10)
-            frame.pack(fill=tk.BOTH, expand=True)
+            main_frame = ttk.Frame(stats_win, padding=10)
+            main_frame.pack(fill=tk.BOTH, expand=True)
 
-            txt = tk.Text(frame, font=("TkFixedFont", 10), wrap=tk.NONE)
-            sb_y = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=txt.yview)
-            sb_x = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=txt.xview)
+            txt = tk.Text(main_frame, font=("TkFixedFont", 10), wrap=tk.NONE, padx=10, pady=10)
+            sb_y = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=txt.yview)
+            sb_x = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=txt.xview)
             txt.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
+
+            # Footer for close button
+            footer = ttk.Frame(stats_win, padding=(10, 5))
+            footer.pack(side=tk.BOTTOM, fill=tk.X)
+            ttk.Button(footer, text="Close", command=stats_win.destroy).pack(side=tk.RIGHT)
 
             txt.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             sb_y.pack(side=tk.RIGHT, fill=tk.Y, before=txt)
             sb_x.pack(side=tk.BOTTOM, fill=tk.X)
 
-            txt.insert(tk.END, report)
+            # Define tags for statistics window
+            txt.tag_configure("h1", font=("TkDefaultFont", 14, "bold"), foreground="#0055aa")
+            txt.tag_configure("h2", font=("TkDefaultFont", 11, "bold"), foreground="#444444")
+            txt.tag_configure("bold", font=("TkFixedFont", 10, "bold"))
+            txt.tag_configure("dim", foreground="#888888")
+            txt.tag_configure("cyan_bar", background="#00aaaa", foreground="#ffffff")
+            txt.tag_configure("info_label", font=("TkDefaultFont", 10, "bold"), foreground="#666666")
+
+            # Rendering logic
+            txt.insert(tk.END, f"Statistics for: {os.path.basename(stats['file'])}\n\n", "h1")
+
+            def insert_info(label, value):
+                txt.insert(tk.END, f"  {label:<15}: ", "info_label")
+                txt.insert(tk.END, f"{value}\n")
+
+            insert_info("Messages", f"{stats['matching_messages']} matching / {stats['total_messages']} total")
+            if stats['attachments_count'] > 0:
+                insert_info("Attachments", f"{stats['attachments_count']} files detected")
+            if stats['dates']['earliest']:
+                earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
+                latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+                insert_info("Date Range", f"{earliest} to {latest}")
+            insert_info("Private", f"{stats['private_count']} messages")
+
+            txt.insert(tk.END, "\nVitality & Content\n", "h2")
+            insert_info("Reply Rate", f"{stats['reply_rate']}% ({stats['reply_count']} replies)")
+            insert_info("Avg Length", f"{int(stats['avg_message_length'])} characters")
+
+            def render_gui_bar_chart(title, data):
+                if not data:
+                    return
+                txt.insert(tk.END, f"\n{title}\n", "h2")
+                max_count = max(count for _, count in data) if data else 0
+                for label, count in data:
+                    truncated_label = f"{str(label)[:25]:<25}"
+                    count_str = f"{count:4}"
+                    bar_len = int(count * 40 / max_count) if max_count > 0 else 0
+
+                    txt.insert(tk.END, "    ", "")
+                    txt.insert(tk.END, truncated_label, "dim")
+                    txt.insert(tk.END, " : ", "")
+                    txt.insert(tk.END, count_str, "bold")
+                    txt.insert(tk.END, " ", "")
+                    if bar_len > 0:
+                        txt.insert(tk.END, " " * bar_len, "cyan_bar")
+                    txt.insert(tk.END, "\n")
+
+            if stats['year_distribution']:
+                items = [(y, c) for y, c in sorted(stats['year_distribution'].items())]
+                render_gui_bar_chart('Yearly Activity', items)
+
+            if stats['month_distribution'] and len(stats['month_distribution']) <= 24:
+                items = [(m, c) for m, c in sorted(stats['month_distribution'].items())]
+                render_gui_bar_chart('Monthly Activity', items)
+
+            render_gui_bar_chart('Top Authors', [(a["name"], a["count"]) for a in stats['authors']])
+            render_gui_bar_chart('Top Recipients', [(r["name"], r["count"]) for r in stats['recipients']])
+
+            if stats['conferences']:
+                items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]
+                render_gui_bar_chart('Top Conferences', items)
+
+            render_gui_bar_chart('Top Subjects', [(s["subject"], s["count"]) for s in stats['subjects']])
+            render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']])
+
+            if stats['day_of_week']:
+                days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                items = [(d, stats['day_of_week'].get(d, 0)) for d in days]
+                render_gui_bar_chart('Day of Week Distribution', items)
+
+            if stats['hour_of_day']:
+                items = [(f"{h:02}:00", stats['hour_of_day'].get(str(h), 0)) for h in range(24)]
+                render_gui_bar_chart('Hourly Distribution', items)
+
             txt.config(state=tk.DISABLED)
 
             # Re-set status

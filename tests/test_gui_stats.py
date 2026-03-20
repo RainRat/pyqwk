@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 
 # Mock tkinter before any pyqwk.gui imports
 mock_tk = MagicMock()
@@ -25,18 +25,49 @@ def test_stats_window_trigger(app):
     app.current_path = "test.qwk"
     app.logger = MagicMock()
 
-    # Mock calculate_archive_stats and render_stats_as_text
-    mock_stats = {"file": "test.qwk", "total_messages": 10, "matching_messages": 10, "attachments_count": 0, "dates": {"earliest": None, "latest": None}, "authors": [], "recipients": [], "conferences": [], "subjects": [], "keywords": [], "day_of_week": {}, "hour_of_day": {}, "year_distribution": {}, "month_distribution": {}, "private_count": 0, "reply_count": 0, "reply_rate": 0.0, "avg_message_length": 0.0}
+    # Mock calculate_archive_stats
+    mock_stats = {
+        "file": "test.qwk",
+        "total_messages": 10,
+        "matching_messages": 10,
+        "attachments_count": 1,
+        "dates": {"earliest": "2023-01-01T12:00:00", "latest": "2023-01-01T13:00:00"},
+        "authors": [{"name": "User", "count": 5}],
+        "recipients": [],
+        "conferences": [],
+        "subjects": [],
+        "keywords": [],
+        "day_of_week": {"Monday": 10},
+        "hour_of_day": {"12": 10},
+        "year_distribution": {"2023": 10},
+        "month_distribution": {"2023-01": 10},
+        "private_count": 0,
+        "reply_count": 0,
+        "reply_rate": 0.0,
+        "avg_message_length": 100.0
+    }
 
     with patch("pyqwk.gui.calculate_archive_stats", return_value=mock_stats) as mock_calc, \
-         patch("pyqwk.gui.render_stats_as_text", return_value="Mock Report") as mock_render, \
+         patch("pyqwk.gui.render_stats_as_text") as mock_render_cli, \
          patch("pyqwk.gui.tk.Toplevel") as mock_toplevel:
 
-        app.show_stats_window()
+        # We need to mock the Text widget inside show_stats_window
+        mock_win = MagicMock()
+        mock_toplevel.return_value = mock_win
+        mock_txt = MagicMock()
+
+        with patch("pyqwk.gui.tk.Text", return_value=mock_txt):
+            app.show_stats_window()
 
         mock_calc.assert_called_once()
-        mock_render.assert_called_once_with(mock_stats, use_colors=False)
+        # Verify CLI renderer is NOT called
+        mock_render_cli.assert_not_called()
         mock_toplevel.assert_called_once()
+
+        # Verify structured insertion
+        mock_txt.insert.assert_any_call(ANY, "Statistics for: test.qwk\n\n", "h1")
+        mock_txt.insert.assert_any_call(ANY, "\nYearly Activity\n", "h2")
+        mock_txt.insert.assert_any_call(ANY, "\nTop Authors\n", "h2")
 
 def test_stats_window_no_path(app):
     """Test that show_stats_window shows a warning if no archive is open."""
