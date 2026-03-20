@@ -3154,36 +3154,50 @@ def _apply_highlighting(
 
 def _render_stats_bar_chart(
     title: str,
-    items: list[tuple[str, int]],
+    items: list[tuple[Any, int]],
+    use_colors: bool = False,
     bold: str = "1",
     cyan: str = "36",
     dim: str = "90",
-) -> None:
+) -> list[str]:
     """Render a color-coded ASCII bar chart for statistics.
 
     Args:
         title: The section title.
         items: List of (label, count) tuples.
+        use_colors: Whether to apply ANSI colors.
         bold: ANSI code for bold text.
         cyan: ANSI code for cyan color.
         dim: ANSI code for dim text.
+
+    Returns:
+        A list of formatted strings representing the bar chart.
     """
     if not items:
-        return
+        return []
 
-    print(f"\n  {_colorize(title, bold)}")
+    def c(t, *a):
+        if use_colors:
+            return f"\033[{';'.join(a)}m{t}\033[0m"
+        return str(t)
+
+    parts = []
+    parts.append(f"\n  {c(title, bold)}")
 
     max_count = max(count for _, count in items)
     for label, count in items:
         # Consistent 25-character label alignment with truncation
-        truncated_label = f"{label[:25]:<25}"
+        label_str = str(label)
+        truncated_label = f"{label_str[:25]:<25}"
         count_str = f"{count:4}"
         # Scale bars to a maximum of 40 characters
         bar_len = int(count * 40 / max_count) if max_count > 0 else 0
         bar = "#" * bar_len
 
         # Consistent coloring: Dim labels, Bold counts, Cyan bars
-        print(f"    {_colorize(truncated_label, dim)} : {_colorize(count_str, bold)} {_colorize(bar, cyan)}")
+        parts.append(f"    {c(truncated_label, dim)} : {c(count_str, bold)} {c(bar, cyan)}")
+
+    return parts
 
 
 def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
@@ -3458,47 +3472,32 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
     parts.append(f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)")
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
 
-    def render_bar_chart(label_title, data, bold=BOLD, cyan=CYAN, dim=DIM):
-        """Standardized bar chart renderer for text output."""
-        if not data:
-            return
-        parts.append(f"\n  {c(label_title, bold)}")
-        
-        # data is a list of (label, count) tuples
-        max_count = max(count for _, count in data) if data else 0
-        for label, count in data:
-            truncated_label = f"{str(label)[:25]:<25}"
-            count_str = f"{count:4}"
-            bar_len = int(count * 40 / max_count) if max_count > 0 else 0
-            bar = "#" * bar_len
-            parts.append(f"    {c(truncated_label, dim)} : {c(count_str, bold)} {c(bar, cyan)}")
-
     if stats['year_distribution']:
         items = [(y, c) for y, c in sorted(stats['year_distribution'].items())]
-        render_bar_chart('Yearly Activity:', items)
+        parts.extend(_render_stats_bar_chart('Yearly Activity:', items, use_colors=use_colors))
 
     if stats['month_distribution'] and len(stats['month_distribution']) <= 24:
         items = [(m, c) for m, c in sorted(stats['month_distribution'].items())]
-        render_bar_chart('Monthly Activity:', items)
+        parts.extend(_render_stats_bar_chart('Monthly Activity:', items, use_colors=use_colors))
 
-    render_bar_chart('Top Authors:', [(a["name"], a["count"]) for a in stats['authors']])
-    render_bar_chart('Top Recipients:', [(r["name"], r["count"]) for r in stats['recipients']])
+    parts.extend(_render_stats_bar_chart('Top Authors:', [(a["name"], a["count"]) for a in stats['authors']], use_colors=use_colors))
+    parts.extend(_render_stats_bar_chart('Top Recipients:', [(r["name"], r["count"]) for r in stats['recipients']], use_colors=use_colors))
 
     if stats['conferences']:
         items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]
-        render_bar_chart('Top Conferences:', items)
+        parts.extend(_render_stats_bar_chart('Top Conferences:', items, use_colors=use_colors))
 
-    render_bar_chart('Top Subjects:', [(s["subject"], s["count"]) for s in stats['subjects']])
-    render_bar_chart('Top Keywords:', [(k["word"], k["count"]) for k in stats['keywords']])
+    parts.extend(_render_stats_bar_chart('Top Subjects:', [(s["subject"], s["count"]) for s in stats['subjects']], use_colors=use_colors))
+    parts.extend(_render_stats_bar_chart('Top Keywords:', [(k["word"], k["count"]) for k in stats['keywords']], use_colors=use_colors))
 
     if stats['day_of_week']:
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         items = [(d, stats['day_of_week'].get(d, 0)) for d in days]
-        render_bar_chart('Day of Week Distribution:', items)
+        parts.extend(_render_stats_bar_chart('Day of Week Distribution:', items, use_colors=use_colors))
 
     if stats['hour_of_day']:
         items = [(f"{h:02}:00", stats['hour_of_day'].get(str(h), 0)) for h in range(24)]
-        render_bar_chart('Hourly Distribution:', items)
+        parts.extend(_render_stats_bar_chart('Hourly Distribution:', items, use_colors=use_colors))
 
     return "\n".join(parts) + "\n"
 
