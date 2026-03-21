@@ -60,7 +60,8 @@ class QwkGuiApp:
             "From": "From",
             "To": "To",
             "Date": "Date",
-            "Conference": "Conference",
+            "Conference": "Conf",
+            "BBS": "BBS",
         }
 
         self.clean_var = tk.BooleanVar(value=False)
@@ -337,7 +338,7 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Flags", "Num", "From", "To", "Date", "Conference"),
+            columns=("Flags", "Num", "From", "To", "Date", "Conference", "BBS"),
             selectmode="browse",
         )
 
@@ -362,7 +363,8 @@ class QwkGuiApp:
         self.message_list.column("From", minwidth=80, width=150)
         self.message_list.column("To", minwidth=80, width=150)
         self.message_list.column("Date", minwidth=80, width=120)
-        self.message_list.column("Conference", minwidth=80, width=100)
+        self.message_list.column("Conference", minwidth=50, width=60)
+        self.message_list.column("BBS", minwidth=80, width=100)
 
         scrollbar = ttk.Scrollbar(
             list_frame, orient=tk.VERTICAL, command=self.message_list.yview
@@ -484,6 +486,8 @@ class QwkGuiApp:
         insert_field("Date", f"{header.msgdate} {header.msgtime}")
         insert_field("Conf", conf_name, last_in_row=True)
 
+        if message.bbs_name:
+            insert_field("BBS", message.bbs_name)
         if message.source_file:
             insert_field("Source", message.source_file, last_in_row=True)
 
@@ -731,8 +735,13 @@ class QwkGuiApp:
                 for parsed_message in messages_to_process:
                     total_count += 1
 
-                    # Add source file metadata
-                    parsed_message = replace(parsed_message, source_file=os.path.basename(path))
+                    # Add BBS and source file metadata
+                    parsed_message = replace(
+                        parsed_message,
+                        bbs_name=bbs_info.name if bbs_info else None,
+                        bbs_id=bbs_info.bbs_id if bbs_info else None,
+                        source_file=os.path.basename(path)
+                    )
 
                     # Check if message matches filters ignoring the conference filter itself
                     if matches_filters(parsed_message, count_settings, set(), user_name):
@@ -831,6 +840,7 @@ class QwkGuiApp:
                         header.msgto.strip(),
                         f"{header.msgdate} {header.msgtime}",
                         conf_name,
+                        message.bbs_name or message.bbs_id or "",
                     ),
                     open=True,  # Expand by default
                     tags=tuple(item_tags)
@@ -1135,6 +1145,9 @@ class QwkGuiApp:
 
             render_gui_bar_chart('Top Authors', [(a["name"], a["count"]) for a in stats['authors']])
             render_gui_bar_chart('Top Recipients', [(r["name"], r["count"]) for r in stats['recipients']])
+
+            if stats.get('bbses'):
+                render_gui_bar_chart('Top BBSes', [(b["name"], b["count"]) for b in stats['bbses']])
 
             if stats['conferences']:
                 items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]

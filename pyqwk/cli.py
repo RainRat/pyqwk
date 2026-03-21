@@ -280,6 +280,12 @@ examples:
         help='Filter messages by conference name or number (can be used multiple times).',
     )
     filter_group.add_argument(
+        '--bbs',
+        dest='bbs_names',
+        action='append',
+        help='Filter messages by BBS name or ID (can be used multiple times).',
+    )
+    filter_group.add_argument(
         '-f',
         '--from',
         dest='authors',
@@ -350,8 +356,8 @@ examples:
     )
     filter_group.add_argument(
         '--sort',
-        help='Sort results by field (date, author, to, subject, num, or conference).',
-        choices=['date', 'author', 'to', 'subject', 'num', 'conference'],
+        help='Sort results by field (date, author, to, subject, num, conference, or bbs).',
+        choices=['date', 'author', 'to', 'subject', 'num', 'conference', 'bbs'],
         default=None,
     )
     filter_group.add_argument(
