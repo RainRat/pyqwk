@@ -375,6 +375,9 @@ class QwkGuiApp:
         # Tags for visual hierarchy
         self.message_list.tag_configure("even", background="#f7f7f7")
         self.message_list.tag_configure("private", font=("TkDefaultFont", 10, "italic"))
+        self.message_list.tag_configure(
+            "mine", foreground="#0055aa", font=("TkDefaultFont", 10, "bold")
+        )
 
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
@@ -797,6 +800,10 @@ class QwkGuiApp:
             self.message_list.delete(*self.message_list.get_children())
             parent_at_depth = {-1: ""}
 
+            # Identify the user's name for highlighting "mine" messages
+            bbs_info = getattr(self.board_dict, "bbs_info", None)
+            user_name = bbs_info.user_name if bbs_info else None
+
             for index, message in enumerate(self.messages):
                 header = message.header
                 conf_name = self.board_dict.get(header.confnum, str(header.confnum))
@@ -818,6 +825,11 @@ class QwkGuiApp:
                     item_tags.append("even")
                 if header.is_private:
                     item_tags.append("private")
+                if user_name:
+                    is_from_me = user_name.lower() in header.msgfrom.lower()
+                    is_to_me = user_name.lower() in header.msgto.lower()
+                    if is_from_me or is_to_me:
+                        item_tags.append("mine")
 
                 self.message_list.insert(
                     parent_iid,
