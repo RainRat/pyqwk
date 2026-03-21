@@ -90,7 +90,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help='The archives or folders to read. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite.',
+        help='Path to one or more message archives or folders. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite formats.',
         nargs='+',
     )
 
@@ -122,14 +122,14 @@ examples:
     io_group.add_argument(
         '-E',
         '--encoding',
-        help='The text encoding of the input files (default is cp437).',
+        help="The character set of the input files. Default is 'cp437' (standard for DOS-based BBSs).",
         default='cp437',
     )
 
     content_group = parser.add_argument_group('Content Processing')
     content_group.add_argument(
         '--clean',
-        help='Remove signatures, quotes, attachments, and color codes.',
+        help='Clean up messages by removing signatures, quoted replies, attachments, and color codes.',
         action='store_true',
     )
     content_group.add_argument(
@@ -171,7 +171,7 @@ examples:
         '-A',
         '--strip-ansi',
         dest='stripansi',
-        help='Remove color codes and formatting symbols from the text.',
+        help='Remove color codes and other formatting symbols to make the text easier to read.',
         action='store_true',
     )
     content_group.add_argument(
@@ -314,11 +314,11 @@ examples:
     filter_group.add_argument(
         '--regex',
         action='store_true',
-        help='Use regular expressions for searching and filtering.',
+        help='Treat search and filter terms as regular expressions (advanced patterns).',
     )
     filter_group.add_argument(
         '--after',
-        help='Only show messages from this date or later (YYYY-MM-DD).',
+        help='Filter messages sent on or after this date (use YYYY-MM-DD format).',
         default=None,
     )
     filter_group.add_argument(
@@ -331,14 +331,14 @@ examples:
     )
     filter_group.add_argument(
         '--before',
-        help='Only show messages from this date or earlier (YYYY-MM-DD).',
+        help='Filter messages sent on or before this date (use YYYY-MM-DD format).',
         default=None,
     )
     filter_group.add_argument(
         '-N',
         '--msgnum',
         dest='msgnum_filter',
-        help="Only show messages with these numbers (e.g., '100', '200-300', '10,20,50-100').",
+        help="Filter by specific message numbers or ranges (for example: '100', '200-300', or '10,20,50-100').",
     )
     filter_group.add_argument(
         '-L',

@@ -168,11 +168,16 @@ def _is_binary_line(
 ) -> tuple[bool, bool, bool, bool]:
     """Check if a line of text is part of an attachment (like an image).
 
+    This function uses a simple state machine to identify the start, data, and end
+    of common binary attachment formats (yEnc, UUE, and Base64) embedded in
+    plain text messages.
+
     Returns a group of four values:
     - A boolean that is True if the line should be hidden.
     - Three booleans representing if we are currently inside a specific type of attachment (yEnc, UUE, or Base64).
     """
     stripped_line = line.strip()
+
     if in_base64_block:
         if RE_BASE64_LOOSE_PATTERN.match(stripped_line):
             return True, in_yenc_block, in_uue_block, True
@@ -378,7 +383,11 @@ class ProcessingSettings:
 
 @dataclass
 class BBSInfo:
-    """Information about the BBS that generated the QWK packet."""
+    """Metadata about the Bulletin Board System (BBS) that created the archive.
+
+    This information is typically extracted from the 'CONTROL.DAT' file in
+    QWK packets or preserved in the header of structured formats like SQLite.
+    """
     name: str = ""
     location: str = ""
     phone: str = ""
@@ -400,6 +409,11 @@ class ConferenceMap(dict):
 
 @dataclass
 class ParsedMessage:
+    """A fully parsed and processed message from an archive.
+
+    This class contains the message body text, conference details, and
+    threading metadata used for organizing conversations.
+    """
     text: str
     msgnum: int | None
     refnum: int | None
@@ -422,6 +436,11 @@ ProcessedMessage = ParsedMessage
 
 @dataclass
 class MessageHeader:
+    """The metadata header for a single message in the QWK format.
+
+    These fields correspond to the fixed-length record structure used in
+    traditional BBS message packets.
+    """
     status: str
     msgnum: int | None
     msgdate: str
@@ -1064,22 +1083,25 @@ def _parse_eml_messages(path: str) -> list[ParsedMessage]:
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray | list[ParsedMessage], ConferenceMap]:
-    """Load message and conference information from a QWK packet or raw file.
+    """Load message data and conference mappings from an archive file.
+
+    This function handles both raw legacy formats (QWK, REP) and modern
+    structured formats (JSON, SQLite, XML, CSV, mbox, EML).
 
     Args:
-        input_path: Path to either a ``messages.dat`` file or a QWK archive.
-        logger: Logger used to report warnings when optional information is missing.
-        encoding: The text format to use when reading information.
+        input_path: Path to the archive file or a raw 'MESSAGES.DAT' file.
+        logger: Logger for reporting warnings and informational messages.
+        encoding: The character set used to decode legacy text (default is 'cp437').
 
     Returns:
-        A tuple ``(file_data, board_dict)`` where ``file_data`` contains the
-        contents of ``messages.dat`` and ``board_dict`` maps conference numbers
-        to their names. If conference names are not found, the names will just
-        be the conference numbers.
+        A tuple of (file_data, board_dict):
+        - file_data: A 'bytearray' of raw records for QWK/REP files, or
+          a list of 'ParsedMessage' objects for modern structured formats.
+        - board_dict: A 'ConferenceMap' linking conference numbers to names,
+          which may also include BBS metadata.
 
-        Note: If you provide a path to a raw ``MESSAGES.DAT`` file, this function
-        will also look for an accompanying ``CONTROL.DAT`` file in the same directory
-        to automatically load conference information.
+        Note: When loading a raw 'MESSAGES.DAT' file, it automatically searches
+        for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
     board_dict: dict[int, str] = {}
 
