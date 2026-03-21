@@ -114,6 +114,7 @@ class TestQwkGui:
             mock_board_dict.items.return_value = {1: "General"}.items()
             bbs_info = MagicMock()
             bbs_info.name = "Test BBS"
+            bbs_info.user_name = "Mock User"
             mock_board_dict.bbs_info = bbs_info
 
             mock_load_data.return_value = (bytearray(), mock_board_dict)
