@@ -357,6 +357,7 @@ class ProcessingSettings:
     extract_attachments: bool = False
     msgnum_filters: set[int] | None = None
     conferences: list[str] | None = None
+    bbs_names: list[str] | None = None
     authors: list[str] | None = None
     recipients: list[str] | None = None
     subjects: list[str] | None = None
@@ -1567,26 +1568,6 @@ def matches_filters(
     Returns:
         True if the message matches all filters, False otherwise.
     """
-    # 1. Private/Password Check
-    if (not settings.private and message.header.is_private) or message.header.is_password:
-        return False
-
-    # 2. Conference Filter
-    if settings.conferences and message.confnum not in allowed_conferences:
-        return False
-
-    # 2b. Mine Filter
-    if settings.mine and user_name:
-        is_from_me = user_name.lower() in message.header.msgfrom.lower()
-        is_to_me = user_name.lower() in message.header.msgto.lower()
-        if not (is_from_me or is_to_me):
-            return False
-
-    # 3. Message Number Filter
-    if settings.msgnum_filters and message.msgnum is not None:
-        if message.msgnum not in settings.msgnum_filters:
-            return False
-
     def check_str_match(pattern: str, text: str) -> bool:
         if settings.regex:
             try:
@@ -1605,6 +1586,33 @@ def matches_filters(
             return True
 
         return any(check_str_match(p, text) for p in pattern_list)
+
+    # 1. Private/Password Check
+    if (not settings.private and message.header.is_private) or message.header.is_password:
+        return False
+
+    # 2. Conference Filter
+    if settings.conferences and message.confnum not in allowed_conferences:
+        return False
+
+    # 2b. BBS Filter
+    if settings.bbs_names:
+        match_name = any_match(settings.bbs_names, message.bbs_name or "")
+        match_id = any_match(settings.bbs_names, message.bbs_id or "")
+        if not (match_name or match_id):
+            return False
+
+    # 2c. Mine Filter
+    if settings.mine and user_name:
+        is_from_me = user_name.lower() in message.header.msgfrom.lower()
+        is_to_me = user_name.lower() in message.header.msgto.lower()
+        if not (is_from_me or is_to_me):
+            return False
+
+    # 3. Message Number Filter
+    if settings.msgnum_filters and message.msgnum is not None:
+        if message.msgnum not in settings.msgnum_filters:
+            return False
 
     # 4. Author Filter
     if not any_match(settings.authors, message.header.msgfrom):
@@ -2038,6 +2046,8 @@ def process_merged_files(
                 sort_buffer.sort(key=lambda x: (x[0].confnum, x[0].msgnum or 0))
             elif settings.sort == 'conference':
                 sort_buffer.sort(key=lambda x: (x[0].confnum, _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
+            elif settings.sort == 'bbs':
+                sort_buffer.sort(key=lambda x: (x[0].bbs_name or "", x[0].bbs_id or "", _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
 
         if settings.reverse:
             sort_buffer.reverse()
@@ -3319,6 +3329,7 @@ def calculate_archive_stats(
         "authors": [],
         "recipients": [],
         "conferences": [],
+        "bbses": [],
         "subjects": [],
         "keywords": [],
         "attachments_count": 0,
@@ -3335,6 +3346,7 @@ def calculate_archive_stats(
     author_counter: Counter = Counter()
     recipient_counter: Counter = Counter()
     conf_counter: Counter = Counter()
+    bbs_counter: Counter = Counter()
     conf_names: dict[int, str] = {}
     subject_counter: Counter = Counter()
     keyword_counter: Counter = Counter()
@@ -3387,6 +3399,14 @@ def calculate_archive_stats(
                     progress_bar.update(1)
                 total_count += 1
 
+                message = replace(
+                    message,
+                    confname=message.confname or board_dict.get(message.confnum),
+                    bbs_name=message.bbs_name or (bbs_info.name if bbs_info else None),
+                    bbs_id=message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
+                    source_file=message.source_file or os.path.basename(input_path),
+                )
+
                 if not matches_filters(message, settings, allowed_conferences, user_name):
                     continue
 
@@ -3409,6 +3429,10 @@ def calculate_archive_stats(
                 author_counter[message.header.msgfrom.strip()] += 1
                 recipient_counter[message.header.msgto.strip()] += 1
                 conf_counter[message.confnum] += 1
+
+                bbs_display = message.bbs_name or message.bbs_id or "Unknown BBS"
+                bbs_counter[bbs_display] += 1
+
                 subject_counter[_normalize_subject(message.header.msgsubject)] += 1
 
                 dow_counter[dt.strftime('%A')] += 1
@@ -3455,6 +3479,7 @@ def calculate_archive_stats(
     stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
     stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
     stats_entry["conferences"] = [{"number": n, "name": conf_names.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
+    stats_entry["bbses"] = [{"name": n, "count": c} for n, c in bbs_counter.most_common(10)]
     stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
     stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
     stats_entry["day_of_week"] = dict(dow_counter)
@@ -3505,6 +3530,9 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
 
     parts.extend(_render_stats_bar_chart('Top Authors:', [(a["name"], a["count"]) for a in stats['authors']], use_colors=use_colors))
     parts.extend(_render_stats_bar_chart('Top Recipients:', [(r["name"], r["count"]) for r in stats['recipients']], use_colors=use_colors))
+
+    if stats.get('bbses'):
+        parts.extend(_render_stats_bar_chart('Top BBSes:', [(b["name"], b["count"]) for b in stats['bbses']], use_colors=use_colors))
 
     if stats['conferences']:
         items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]
