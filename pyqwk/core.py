@@ -3354,6 +3354,8 @@ def calculate_archive_stats(
     total_chars = 0
 
     for input_path in input_paths:
+        if settings.limit is not None and processed_count >= settings.limit:
+            break
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, 'bbs_info', None)
         user_name = bbs_info.user_name if bbs_info else None
