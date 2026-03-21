@@ -133,7 +133,7 @@ class TestQwkGui:
             assert len(app.messages) == 1
             app.message_list.insert.assert_called_with(
                 '', 'end', iid='0', text='Subject',
-                values=('', 1, 'User', 'All', '01-01-90 12:00', 'General'),
+                values=('', 1, 'User', 'All', '01-01-90 12:00', 'General', 'Test BBS'),
                 open=True, tags=()
             )
 

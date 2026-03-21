@@ -108,27 +108,27 @@ def test_gui_message_list_icons_and_tags(mock_gui_deps):
     # Message 1: Private (🔒) + Attach (📎), Tag: private
     app.message_list.insert.assert_any_call(
         '', 'end', iid='0', text='Private with Attach',
-        values=('🔒📎', 101, 'Sender', 'Recipient', '01-01-23 12:00', 'General'),
+        values=('🔒📎', 101, 'Sender', 'Recipient', '01-01-23 12:00', 'General', ''),
         open=True, tags=('private',)
     )
 
     # Message 2: Public, No Attach, Tag: even
     app.message_list.insert.assert_any_call(
         '', 'end', iid='1', text='Public No Attach',
-        values=('', 102, 'Sender', 'All', '01-01-23 12:05', 'General'),
+        values=('', 102, 'Sender', 'All', '01-01-23 12:05', 'General', ''),
         open=True, tags=('even',)
     )
 
     # Message 3: Private (🔒), No Attach, Tag: private
     app.message_list.insert.assert_any_call(
         '', 'end', iid='2', text='Private No Attach',
-        values=('🔒', 103, 'Sender', 'Recipient', '01-01-23 12:10', 'General'),
+        values=('🔒', 103, 'Sender', 'Recipient', '01-01-23 12:10', 'General', ''),
         open=True, tags=('private',)
     )
 
     # Message 4: Private (🔒) + Attach (📎), Tag: even, private
     app.message_list.insert.assert_any_call(
         '', 'end', iid='3', text='Private odd index',
-        values=('🔒📎', 104, 'Sender', 'Recipient', '01-01-23 12:15', 'General'),
+        values=('🔒📎', 104, 'Sender', 'Recipient', '01-01-23 12:15', 'General', ''),
         open=True, tags=('even', 'private')
     )
