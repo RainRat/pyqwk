@@ -175,6 +175,11 @@ qwk archive.qwk --individual-files --organize -o output_folder/
 qwk archive.qwk --stats
 ```
 
+**Show merged statistics for multiple archives:**
+```bash
+qwk archive1.qwk archive2.qwk --stats --merge-stats
+```
+
 **Process a whole folder of archives:**
 ```bash
 qwk my_archives/ -o output_folder/
@@ -237,6 +242,13 @@ Find messages in a specific conference by its name or number.
 ```bash
 qwk archive.qwk -C "General Chat"
 qwk archive.qwk -C 123
+```
+
+**Filter by BBS:**
+Find messages from a specific BBS by its name or ID.
+```bash
+qwk my_archives/ --bbs "The Digital Horizon"
+qwk my_archives/ --bbs "DIGIHORZ"
 ```
 
 **Filter by Person:**
@@ -373,6 +385,7 @@ for msg in messages:
 | `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message text. |
 | `--regex` | Use regular expressions for searching and filtering. |
 | `-C`, `--conference [id]` | Only show messages from this conference name or number (can be used multiple times). |
+| `--bbs [name/id]` | Only show messages from this BBS name or ID (can be used multiple times). |
 | `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Extract attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
 | `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
@@ -397,13 +410,14 @@ for msg in messages:
 | `-l, --loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
 | `-L, --limit [num]` | Stop after processing this many messages. |
 | `-K, --skip [num]` | Skip the first this many matching messages. |
-| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, or `conference`. |
+| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, or `bbs`. |
 | `--reverse` | Reverse the order of the output. |
 | `--has-attachments` | Only show messages that contain attachments (UUE, yEnc, Base64). |
 | `--mine` | Only show messages from or to your user name. |
 | `--on-this-day` | Only show messages sent on this same month and day in any year. |
 | `-I, --info` | Show a summary of the archive and exit. Use `--format json` for JSON output. |
 | `--stats` | Show detailed statistics about the messages and exit. Use `--format json` for JSON output. |
+| `--merge-stats` | Show a single merged report when analyzing multiple archives with `--stats`. |
 | `-V, --version` | Show the version number and exit. |
 
 Run `qwk --help` to see all available options.
