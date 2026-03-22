@@ -2568,7 +2568,10 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
         msgdate = msgdate.replace('/', '-')
 
         month, day, year = map(int, msgdate.split('-'))
-        hour, minute = map(int, msgtime.split(':'))
+        time_parts = list(map(int, msgtime.split(':')))
+        hour = time_parts[0]
+        minute = time_parts[1]
+        second = time_parts[2] if len(time_parts) > 2 else 0
 
         # Handle Year 2000 problem using a sliding window.
         # BBS activity peaked in the 1980s and 1990s. We use 80 as a cutoff:
@@ -2579,8 +2582,8 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
             else:
                 year += 1900
 
-        return datetime.datetime(year, month, day, hour, minute)
-    except ValueError:
+        return datetime.datetime(year, month, day, hour, minute, second)
+    except (ValueError, IndexError):
         # Fallback for invalid dates
         return datetime.datetime(1970, 1, 1, 0, 0)
 

@@ -67,9 +67,7 @@ class TestDateParsing:
         dt = _parse_qwk_date("01-01-90", "12")
         assert dt == datetime.datetime(1970, 1, 1, 0, 0)
 
-    def test_extra_time_components_fallback(self):
-        # Time string with seconds (HH:MM:SS) - function expects only HH:MM splitting
-        # map(int, "12:34:56".split(':')) -> map over 3 items.
-        # hour, minute = map(...) -> ValueError: too many values to unpack
+    def test_parse_with_seconds(self):
+        # Time string with seconds (HH:MM:SS)
         dt = _parse_qwk_date("01-01-90", "12:34:56")
-        assert dt == datetime.datetime(1970, 1, 1, 0, 0)
+        assert dt == datetime.datetime(1990, 1, 1, 12, 34, 56)
