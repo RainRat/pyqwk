@@ -88,9 +88,79 @@ class QwkGuiApp:
         else:
             self.root.after(100, self._render_welcome_screen)
 
+    def _show_list_context_menu(self, event: tk.Event) -> None:
+        """Display a context menu for the message list."""
+        iid = self.message_list.identify_row(event.y)
+        if not iid:
+            return
+
+        self.message_list.selection_set(iid)
+        self.message_list.focus(iid)
+
+        try:
+            idx = int(iid)
+            msg = self.messages[idx]
+        except (ValueError, IndexError):
+            return
+
+        menu = tk.Menu(self.root, tearoff=0)
+
+        # Copy section
+        menu.add_command(label="Copy Subject", command=lambda: self._copy_to_clipboard(msg.header.msgsubject.strip()))
+        menu.add_command(label="Copy From", command=lambda: self._copy_to_clipboard(msg.header.msgfrom.strip()))
+        menu.add_command(label="Copy To", command=lambda: self._copy_to_clipboard(msg.header.msgto.strip()))
+        menu.add_command(label="Copy Num", command=lambda: self._copy_to_clipboard(str(msg.header.msgnum or "")))
+        menu.add_separator()
+
+        # Filter pivoting
+        menu.add_command(label=f"Filter by Author: {msg.header.msgfrom.strip()[:20]}...",
+                         command=lambda: self._pivot_filter(author=msg.header.msgfrom.strip()))
+
+        conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
+        menu.add_command(label=f"Filter by Conference: {conf_name[:20]}...",
+                         command=lambda: self._pivot_filter(conf_num=msg.confnum))
+
+        menu.post(event.x_root, event.y_root)
+
+    def _show_text_context_menu(self, event: tk.Event) -> None:
+        """Display a context menu for the detail viewer."""
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Copy", command=lambda: self.detail_text.event_generate("<<Copy>>"))
+        menu.add_command(label="Select All", command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END))
+        menu.post(event.x_root, event.y_root)
+
+    def _copy_to_clipboard(self, text: str) -> None:
+        """Copy the given text to the system clipboard."""
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+    def _pivot_filter(self, author: str | None = None, conf_num: int | None = None) -> None:
+        """Update filters to pivot the view around a specific attribute."""
+        if author:
+            self.search_var.set(author)
+
+        if conf_num is not None:
+            # Find exact match in combobox
+            for i, val in enumerate(self.conf_combo['values']):
+                if val.startswith(f"{conf_num}:"):
+                    self.conf_combo.current(i)
+                    break
+
+        self.reload_messages()
+
+    def _block_text_input(self, event: tk.Event) -> str | None:
+        """Block keyboard input in the detail view while allowing common shortcuts."""
+        # Allow Control+C (copy) and Control+A (select all)
+        if event.state & 0x4:  # Control mask
+            if event.keysym.lower() in ('c', 'a'):
+                return None
+        # Allow navigation keys
+        if event.keysym in ('Up', 'Down', 'Left', 'Right', 'Prior', 'Next', 'Home', 'End'):
+            return None
+        return "break"
+
     def _render_welcome_screen(self) -> None:
         """Render a welcome screen with instructions and shortcuts."""
-        self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
 
         self.detail_text.insert(tk.END, "Welcome to PyQWK\n\n", "header_subject")
@@ -118,8 +188,6 @@ class QwkGuiApp:
         for key, desc in shortcuts:
             self.detail_text.insert(tk.END, f"{key:<12}", "header_label")
             self.detail_text.insert(tk.END, f"{desc}\n", "body")
-
-        self.detail_text.config(state=tk.DISABLED)
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
@@ -383,6 +451,10 @@ class QwkGuiApp:
 
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
 
+        # Context menu for list
+        self.message_list.bind("<Button-3>", self._show_list_context_menu)
+        self.message_list.bind("<Control-Button-1>", self._show_list_context_menu)
+
         self.detail_text = tk.Text(
             detail_frame,
             wrap=tk.WORD,
@@ -400,7 +472,14 @@ class QwkGuiApp:
 
         detail_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.detail_text.config(state=tk.DISABLED)
+        self.detail_text.config(state=tk.NORMAL)
+
+        # Intercept key events to allow selection/copy but block editing
+        self.detail_text.bind("<Key>", self._block_text_input)
+
+        # Context menu for text
+        self.detail_text.bind("<Button-3>", self._show_text_context_menu)
+        self.detail_text.bind("<Control-Button-1>", self._show_text_context_menu)
 
         # Configure tags for visual hierarchy
         self.detail_text.tag_configure(
@@ -469,7 +548,6 @@ class QwkGuiApp:
         header = message.header
         conf_name = self.board_dict.get(header.confnum, str(header.confnum))
 
-        self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
 
         # Apply header area background
@@ -563,8 +641,6 @@ class QwkGuiApp:
             self.detail_text.tag_raise("search_highlight")
             if first_match_pos:
                 self.detail_text.see(first_match_pos)
-
-        self.detail_text.config(state=tk.DISABLED)
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
@@ -911,10 +987,8 @@ class QwkGuiApp:
             messagebox.showerror("Failed to load QWK", str(exc))
 
     def _set_detail_text(self, text: str) -> None:
-        self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
         self.detail_text.insert(tk.END, text)
-        self.detail_text.config(state=tk.DISABLED)
 
     def export_messages(self, _event: object | None = None) -> None:
         """Export the currently filtered and sorted messages to a file."""
