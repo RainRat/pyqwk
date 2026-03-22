@@ -205,3 +205,34 @@ def test_sort_with_individual_files(mock_messages, monkeypatch, tmp_path):
     assert any("subject_a" in f.name for f in files)
     assert any("subject_b" in f.name for f in files)
     assert any("subject_c" in f.name for f in files)
+
+def test_sort_by_bbs(mock_messages, monkeypatch, capsys):
+    from pyqwk.core import BBSInfo, ConferenceMap
+
+    def mock_load(path, *args, **kwargs):
+        bd = ConferenceMap({1: "Conf 1", 2: "Conf 2"})
+        if "b2" in path:
+            bd.bbs_info = BBSInfo(name="BBS B", bbs_id="ID2")
+            msgs = [mock_messages[0]]
+        elif "a1" in path:
+            bd.bbs_info = BBSInfo(name="BBS A", bbs_id="ID1")
+            msgs = [mock_messages[1]]
+        elif "b1" in path:
+            bd.bbs_info = BBSInfo(name="BBS B", bbs_id="ID1")
+            msgs = [mock_messages[2]]
+        else:
+            msgs, bd = [], ConferenceMap()
+        return msgs, bd
+
+    monkeypatch.setattr(qwk, "load_data", mock_load)
+
+    settings = _make_settings(sort="bbs")
+    process_merged_files(["b2.qwk", "a1.qwk", "b1.qwk"], settings, logging.getLogger("test"))
+
+    captured = capsys.readouterr().out
+    # Expected order:
+    # 1. BBS A (ID1) -> Message 2
+    # 2. BBS B (ID1) -> Message 3
+    # 3. BBS B (ID2) -> Message 1
+    lines = [line.strip() for line in captured.splitlines() if line.strip()]
+    assert lines == ["Message 2", "Message 3", "Message 1"]
