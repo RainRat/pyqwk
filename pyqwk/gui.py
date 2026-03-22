@@ -81,6 +81,7 @@ class QwkGuiApp:
         self._build_toolbar()
         self._build_status_bar()
         self._build_layout()
+        self._build_context_menus()
 
         if initial_path:
             self.current_paths = [initial_path]
@@ -90,7 +91,6 @@ class QwkGuiApp:
 
     def _render_welcome_screen(self) -> None:
         """Render a welcome screen with instructions and shortcuts."""
-        self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
 
         self.detail_text.insert(tk.END, "Welcome to PyQWK\n\n", "header_subject")
@@ -119,7 +119,76 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, f"{key:<12}", "header_label")
             self.detail_text.insert(tk.END, f"{desc}\n", "body")
 
-        self.detail_text.config(state=tk.DISABLED)
+    def _build_context_menus(self) -> None:
+        """Create right-click context menus for the message list and viewer."""
+        self.tree_context_menu = tk.Menu(self.root, tearoff=0)
+        self.tree_context_menu.add_command(label="Copy Subject", command=lambda: self._copy_treeview_field("#0"))
+        self.tree_context_menu.add_command(label="Copy From", command=lambda: self._copy_treeview_field("From"))
+        self.tree_context_menu.add_command(label="Copy To", command=lambda: self._copy_treeview_field("To"))
+        self.tree_context_menu.add_command(label="Copy Message Number", command=lambda: self._copy_treeview_field("Num"))
+
+        self.text_context_menu = tk.Menu(self.root, tearoff=0)
+        self.text_context_menu.add_command(label="Copy", command=self._copy_detail_selection)
+        self.text_context_menu.add_command(label="Select All", command=self._select_all_detail_text)
+
+        # Bind events for the context menus
+        for widget, menu in [(self.message_list, self.tree_context_menu), (self.detail_text, self.text_context_menu)]:
+            widget.bind("<Button-3>", lambda e, m=menu: self._show_context_menu(e, m))
+            widget.bind("<Control-Button-1>", lambda e, m=menu: self._show_context_menu(e, m))
+
+    def _block_text_input(self, event: tk.Event) -> str | None:
+        """Prevent keyboard modification of text while allowing navigation and copying."""
+        # Allow Control/Command combinations for Copy (C) and Select All (A)
+        # event.state & 4 is Control, event.state & 8 is usually Alt or Command
+        if (event.state & 0x4) and event.keysym.lower() in ("c", "a"):
+            return None
+
+        # Allow standard navigation keys
+        if event.keysym in ("Up", "Down", "Left", "Right", "Prior", "Next", "Home", "End"):
+            return None
+
+        # Block everything else (insertion, deletion, etc.)
+        return "break"
+
+    def _show_context_menu(self, event, menu) -> None:
+        """Post the context menu at the mouse coordinates."""
+        # For Treeview, select the item under the cursor first
+        if event.widget == self.message_list:
+            item = self.message_list.identify_row(event.y)
+            if item:
+                self.message_list.selection_set(item)
+                self.message_list.focus(item)
+
+        menu.post(event.x_root, event.y_root)
+
+    def _copy_treeview_field(self, column: str) -> None:
+        """Copy the value of a specific field from the selected Treeview item."""
+        selected = self.message_list.selection()
+        if not selected:
+            return
+
+        iid = selected[0]
+        if column == "#0":
+            text = self.message_list.item(iid, "text")
+        else:
+            text = self.message_list.set(iid, column)
+
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+    def _copy_detail_selection(self) -> None:
+        """Copy the current selection from the message detail viewer."""
+        try:
+            selected_text = self.detail_text.get(tk.SEL_FIRST, tk.SEL_LAST)
+            self.root.clipboard_clear()
+            self.root.clipboard_append(selected_text)
+        except tk.TclError:
+            # No selection
+            pass
+
+    def _select_all_detail_text(self) -> None:
+        """Select all text in the message detail viewer."""
+        self.detail_text.tag_add(tk.SEL, "1.0", tk.END)
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
@@ -400,7 +469,8 @@ class QwkGuiApp:
 
         detail_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.detail_text.config(state=tk.DISABLED)
+        # Block keyboard edits but allow selection and navigation
+        self.detail_text.bind("<Key>", self._block_text_input)
 
         # Configure tags for visual hierarchy
         self.detail_text.tag_configure(
@@ -469,7 +539,6 @@ class QwkGuiApp:
         header = message.header
         conf_name = self.board_dict.get(header.confnum, str(header.confnum))
 
-        self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
 
         # Apply header area background
@@ -563,8 +632,6 @@ class QwkGuiApp:
             self.detail_text.tag_raise("search_highlight")
             if first_match_pos:
                 self.detail_text.see(first_match_pos)
-
-        self.detail_text.config(state=tk.DISABLED)
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
@@ -911,10 +978,8 @@ class QwkGuiApp:
             messagebox.showerror("Failed to load QWK", str(exc))
 
     def _set_detail_text(self, text: str) -> None:
-        self.detail_text.config(state=tk.NORMAL)
         self.detail_text.delete("1.0", tk.END)
         self.detail_text.insert(tk.END, text)
-        self.detail_text.config(state=tk.DISABLED)
 
     def export_messages(self, _event: object | None = None) -> None:
         """Export the currently filtered and sorted messages to a file."""
