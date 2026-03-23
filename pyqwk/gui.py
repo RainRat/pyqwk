@@ -600,7 +600,6 @@ class QwkGuiApp:
 
         # Visual separator
         self.detail_text.insert(tk.END, "\n")
-        self.detail_text.insert(tk.END, "—" * 80 + "\n", "dim")
         self.detail_text.insert(tk.END, "\n")
 
         # Insert body with quote highlighting
@@ -1182,7 +1181,7 @@ class QwkGuiApp:
             txt.tag_configure("bold", font=("TkFixedFont", 10, "bold"))
             txt.tag_configure("dim", foreground="#888888")
             txt.tag_configure("cyan_bar", background="#00aaaa", foreground="#ffffff")
-            txt.tag_configure("info_label", font=("TkDefaultFont", 10, "bold"), foreground="#666666")
+            txt.tag_configure("info_label", font=("TkFixedFont", 10, "bold"), foreground="#666666")
 
             # Rendering logic
             display_name = os.path.basename(stats['file']) if len(self.current_paths) == 1 else "Multiple Archives"
