@@ -1,5 +1,4 @@
-import pytest
-from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, calculate_archive_stats
+from pyqwk.core import ProcessingSettings, calculate_archive_stats
 import logging
 
 def test_bbs_stats(tmp_path):

@@ -1,7 +1,6 @@
 import sys
 from unittest.mock import MagicMock, patch, ANY
 import pytest
-import os
 
 # Mock tkinter before any pyqwk.gui imports
 mock_tk = MagicMock()

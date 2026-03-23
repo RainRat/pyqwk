@@ -21,7 +21,7 @@ from pyqwk.core import (
     write_messages,
     extract_binaries,
     calculate_archive_stats,
-    render_stats_as_text,
+    render_stats_as_text,  # noqa: F401
     expand_paths,
     ConferenceMap,
 )

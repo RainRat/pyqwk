@@ -1,7 +1,5 @@
 import tkinter as tk
 from pyqwk.gui import QwkGuiApp
-import os
-import time
 
 def capture_screenshot():
     root = tk.Tk()

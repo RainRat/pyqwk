@@ -1,5 +1,4 @@
 from dataclasses import replace
-import pytest
 from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, matches_filters
 
 def test_bbs_filter():

@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import pyqwk.core as core
-import os
 
 class TestUnzipWindowsTips(unittest.TestCase):
     @patch('zipfile.is_zipfile', return_value=True)

@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 import pytest
 from pyqwk.core import ParsedMessage, MessageHeader, BBSInfo, ConferenceMap
 

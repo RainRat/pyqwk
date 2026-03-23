@@ -3520,7 +3520,6 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
     # ANSI Attribute codes
     BOLD = "1"
     CYAN = "36"
-    DIM = "90"
 
     def c(t, *a):
         if use_colors:
