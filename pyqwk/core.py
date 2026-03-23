@@ -75,27 +75,27 @@ def resolve_output_format(
     Returns:
         The resolved format name (e.g., 'text', 'json', 'html').
     """
-    if output_format is None:
-        if output_path and output_mode == 'file':
-            ext = os.path.splitext(output_path)[1].lower()
-            if ext == '.json':
-                return 'json'
-            if ext == '.xml':
-                return 'xml'
-            if ext == '.html':
-                return 'html'
-            if ext == '.csv':
-                return 'csv'
-            if ext == '.mbox':
-                return 'mbox'
-            if ext == '.eml':
-                return 'eml'
-            if ext in ('.md', '.markdown'):
-                return 'markdown'
-            if ext in ('.sqlite', '.db'):
-                return 'sqlite'
-        return 'text'
-    return output_format
+    if output_format is not None:
+        return output_format
+
+    if output_path and output_mode == 'file':
+        ext = os.path.splitext(output_path)[1].lower()
+        mapping = {
+            '.json': 'json',
+            '.xml': 'xml',
+            '.html': 'html',
+            '.csv': 'csv',
+            '.mbox': 'mbox',
+            '.eml': 'eml',
+            '.md': 'markdown',
+            '.markdown': 'markdown',
+            '.sqlite': 'sqlite',
+            '.db': 'sqlite',
+        }
+        if ext in mapping:
+            return mapping[ext]
+
+    return 'text'
 
 RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s+\d{3}\s+')
