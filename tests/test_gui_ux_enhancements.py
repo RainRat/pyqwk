@@ -97,5 +97,35 @@ def test_show_text_context_menu(app):
 
     with patch("pyqwk.gui.tk.Menu") as mock_menu_class:
         mock_menu_instance = mock_menu_class.return_value
+        app.detail_text.tag_ranges.return_value = [] # No selection
         app._show_text_context_menu(event)
         mock_menu_instance.post.assert_called_once_with(200, 200)
+        # Verify Search was NOT added
+        calls = [call[1].get('label') for call in mock_menu_instance.add_command.call_args_list]
+        assert not any(c and "Search for" in c for c in calls)
+
+def test_show_text_context_menu_with_selection(app):
+    """Verify that right-clicking with selected text includes the Search option."""
+    event = MagicMock(x_root=200, y_root=200)
+    app._search_from_selection = MagicMock()
+
+    with patch("pyqwk.gui.tk.Menu") as mock_menu_class:
+        mock_menu_instance = mock_menu_class.return_value
+        app.detail_text.tag_ranges.return_value = ["1.0", "1.5"]
+        app.detail_text.get.return_value = "vintage"
+
+        app._show_text_context_menu(event)
+
+        # Verify Search command was added
+        calls = [call[1].get('label') for call in mock_menu_instance.add_command.call_args_list]
+        assert any("Search for 'vintage'" in c for c in calls if c)
+
+def test_search_from_selection(app):
+    """Verify the search_from_selection helper logic."""
+    app.reload_messages = MagicMock()
+    app.message_list = MagicMock()
+
+    app._search_from_selection("  new search  ")
+    app.search_var.set.assert_called_once_with("new search")
+    app.reload_messages.assert_called_once()
+    app.message_list.focus_set.assert_called_once()

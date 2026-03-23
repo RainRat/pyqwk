@@ -125,9 +125,30 @@ class QwkGuiApp:
     def _show_text_context_menu(self, event: tk.Event) -> None:
         """Display a context menu for the detail viewer."""
         menu = tk.Menu(self.root, tearoff=0)
+
+        # Check for selection
+        selected_text = ""
+        try:
+            if self.detail_text.tag_ranges(tk.SEL):
+                selected_text = self.detail_text.get(tk.SEL_FIRST, tk.SEL_LAST).strip()
+        except tk.TclError:
+            pass
+
+        if selected_text:
+            display_text = selected_text[:20] + "..." if len(selected_text) > 20 else selected_text
+            menu.add_command(label=f"Search for '{display_text}'",
+                             command=lambda: self._search_from_selection(selected_text))
+            menu.add_separator()
+
         menu.add_command(label="Copy", command=lambda: self.detail_text.event_generate("<<Copy>>"))
         menu.add_command(label="Select All", command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END))
         menu.post(event.x_root, event.y_root)
+
+    def _search_from_selection(self, text: str) -> None:
+        """Set the search term and focus the message list."""
+        self.search_var.set(text.strip())
+        self.reload_messages()
+        self.message_list.focus_set()
 
     def _copy_to_clipboard(self, text: str) -> None:
         """Copy the given text to the system clipboard."""
