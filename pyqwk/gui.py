@@ -321,8 +321,11 @@ class QwkGuiApp:
         toolbar = ttk.Frame(self.root, padding=(10, 5))
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
-        # Actions group
-        actions_frame = ttk.Frame(toolbar)
+        # Row 1: Actions and Search
+        row1 = ttk.Frame(toolbar)
+        row1.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
+
+        actions_frame = ttk.Frame(row1)
         actions_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(actions_frame, text="File:").pack(side=tk.LEFT)
         ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(5, 2))
@@ -330,10 +333,9 @@ class QwkGuiApp:
         ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
         ttk.Button(actions_frame, text="Stats", command=self.show_stats_window).pack(side=tk.LEFT, padx=2)
 
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+        ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
-        # Search group
-        search_frame = ttk.Frame(toolbar)
+        search_frame = ttk.Frame(row1)
         search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
@@ -347,16 +349,11 @@ class QwkGuiApp:
             side=tk.LEFT
         )
 
-        self.search_entry.bind("<Return>", self._on_search_enter)
-        self.search_entry.bind("<Escape>", self.clear_search)
-        self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
-        self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
-        self.root.bind("<Control-f>", self._focus_search)
+        # Row 2: Filters and View Options
+        row2 = ttk.Frame(toolbar)
+        row2.pack(side=tk.TOP, fill=tk.X)
 
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
-
-        # Filters group
-        filters_frame = ttk.Frame(toolbar)
+        filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(filters_frame, text="Filters:").pack(side=tk.LEFT)
         self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
@@ -375,13 +372,9 @@ class QwkGuiApp:
             side=tk.LEFT
         )
 
-        self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
-        self.conf_combo.bind("<Escape>", lambda e: self.clear_filters())
+        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
-
-        # Options group
-        options_frame = ttk.Frame(toolbar)
+        options_frame = ttk.Frame(row2)
         options_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
 
@@ -393,6 +386,15 @@ class QwkGuiApp:
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=self.reload_messages
             ).pack(side=tk.LEFT, padx=5)
+
+        # Binds
+        self.search_entry.bind("<Return>", self._on_search_enter)
+        self.search_entry.bind("<Escape>", self.clear_search)
+        self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
+        self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
+        self.root.bind("<Control-f>", self._focus_search)
+        self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
+        self.conf_combo.bind("<Escape>", lambda e: self.clear_filters())
 
     def _build_layout(self) -> None:
         paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
@@ -439,8 +441,10 @@ class QwkGuiApp:
         )
         self.message_list.configure(yscroll=scrollbar.set)
 
-        self.message_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.message_list.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        list_frame.grid_columnconfigure(0, weight=1)
+        list_frame.grid_rowconfigure(0, weight=1)
 
         # Tags for visual hierarchy
         self.message_list.tag_configure("even", background="#f7f7f7")
@@ -596,9 +600,8 @@ class QwkGuiApp:
 
         # Visual separator
         self.detail_text.insert(tk.END, "\n")
-        separator = ttk.Separator(self.detail_text, orient=tk.HORIZONTAL)
-        self.detail_text.window_create(tk.END, window=separator, stretch=True)
-        self.detail_text.insert(tk.END, "\n\n")
+        self.detail_text.insert(tk.END, "—" * 80 + "\n", "dim")
+        self.detail_text.insert(tk.END, "\n")
 
         # Insert body with quote highlighting
         for line in message.text.splitlines(keepends=True):
