@@ -766,82 +766,83 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
     cursor = conn.cursor()
 
     try:
+        try:
+            cursor.execute("SELECT 1 FROM messages LIMIT 1")
+        except sqlite3.OperationalError as e:
+            raise ValueError(f"SQLite database is missing the 'messages' table: {e}")
+
+        # Try to load BBS Info
+        bbs_info = BBSInfo()
+        try:
+            cursor.execute("SELECT * FROM bbs_info LIMIT 1")
+            row = cursor.fetchone()
+            if row:
+                for field in fields(BBSInfo):
+                    if field.name in row.keys():
+                        setattr(bbs_info, field.name, row[field.name])
+        except sqlite3.OperationalError:
+            pass
+
+        # Try to load Conferences
+        board_dict = ConferenceMap()
+        board_dict.bbs_info = bbs_info
+        try:
+            cursor.execute("SELECT * FROM conferences")
+            for row in cursor.fetchall():
+                board_dict[row['number']] = row['name']
+        except sqlite3.OperationalError:
+            pass
+
         cursor.execute("SELECT * FROM messages")
-    except sqlite3.OperationalError as e:
-        conn.close()
-        raise ValueError(f"SQLite database is missing the 'messages' table: {e}")
-
-    # Try to load BBS Info
-    bbs_info = BBSInfo()
-    try:
-        cursor.execute("SELECT * FROM bbs_info LIMIT 1")
-        row = cursor.fetchone()
-        if row:
-            for field in fields(BBSInfo):
-                if field.name in row.keys():
-                    setattr(bbs_info, field.name, row[field.name])
-    except sqlite3.OperationalError:
-        pass
-
-    # Try to load Conferences
-    board_dict = ConferenceMap()
-    board_dict.bbs_info = bbs_info
-    try:
-        cursor.execute("SELECT * FROM conferences")
+        messages = []
         for row in cursor.fetchall():
-            board_dict[row['number']] = row['name']
-    except sqlite3.OperationalError:
-        pass
+            # Reconstruct header dict
+            header_dict = {
+                'confnum': row['conference_number'],
+                'msgnum': row['message_number'],
+                'msgdate': row['date'],
+                'msgtime': "", # ISO date in SQLite includes time
+                'msgfrom': row['author'],
+                'msgto': row['recipient'],
+                'msgsubject': row['subject'],
+                'status': row['status'],
+                'refnum': row['reference_number']
+            }
 
-    cursor.execute("SELECT * FROM messages")
-    messages = []
-    for row in cursor.fetchall():
-        # Reconstruct header dict
-        header_dict = {
-            'confnum': row['conference_number'],
-            'msgnum': row['message_number'],
-            'msgdate': row['date'],
-            'msgtime': "", # ISO date in SQLite includes time
-            'msgfrom': row['author'],
-            'msgto': row['recipient'],
-            'msgsubject': row['subject'],
-            'status': row['status'],
-            'refnum': row['reference_number']
-        }
+            # Add remaining fields with defaults
+            for f in fields(MessageHeader):
+                if f.name not in header_dict:
+                    header_dict[f.name] = ""
 
-        # Add remaining fields with defaults
-        for f in fields(MessageHeader):
-            if f.name not in header_dict:
-                header_dict[f.name] = ""
+            header = MessageHeader.from_dict(header_dict)
 
-        header = MessageHeader.from_dict(header_dict)
+            attachments = row['attachments'].split(';') if row['attachments'] else []
 
-        attachments = row['attachments'].split(';') if row['attachments'] else []
-
-        msg = ParsedMessage(
-            text=row['text'],
-            msgnum=header.msgnum,
-            refnum=header.refnum,
-            confnum=header.confnum,
-            header=header,
-            depth=row['depth'],
-            thread_id=row['thread_id'],
-            parent_msgnum=row['parent_message_number'],
-            confname=row['conference_name'],
-            bbs_name=row['bbs_name'] or bbs_info.name,
-            bbs_id=(row['bbs_id'] if 'bbs_id' in row.keys() else None) or bbs_info.bbs_id,
-            source_file=row['source_file'],
-            attachments=attachments,
-        )
-        messages.append(msg)
-
-    conn.close()
+            msg = ParsedMessage(
+                text=row['text'],
+                msgnum=header.msgnum,
+                refnum=header.refnum,
+                confnum=header.confnum,
+                header=header,
+                depth=row['depth'],
+                thread_id=row['thread_id'],
+                parent_msgnum=row['parent_message_number'],
+                confname=row['conference_name'],
+                bbs_name=row['bbs_name'] or bbs_info.name,
+                bbs_id=(row['bbs_id'] if 'bbs_id' in row.keys() else None) or bbs_info.bbs_id,
+                source_file=row['source_file'],
+                attachments=attachments,
+            )
+            messages.append(msg)
+    finally:
+        conn.close()
 
     # If board_dict is empty, we reconstruct it from messages for backward compatibility
     if not board_dict:
         board_dict = _reconstruct_metadata(messages)
 
     return messages, board_dict
+
 
 
 def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
