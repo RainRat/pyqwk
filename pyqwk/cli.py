@@ -90,7 +90,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help='Path to one or more message archives or folders. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite formats.',
+        help='Path to one or more message archives, ZIP files, or folders. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, and SQLite.',
         nargs='+',
     )
 
@@ -122,14 +122,14 @@ examples:
     io_group.add_argument(
         '-E',
         '--encoding',
-        help="The character set of the input files. Default is 'cp437' (standard for DOS-based BBSs).",
+        help="The character set of the input files. Default is 'cp437' (standard for DOS-based BBSs). Use this if messages show strange characters.",
         default='cp437',
     )
 
     content_group = parser.add_argument_group('Content Processing')
     content_group.add_argument(
         '--clean',
-        help='Clean up messages by removing signatures, quoted replies, attachments, and color codes.',
+        help='Automatically remove signatures, quoted replies, attachments, and color codes.',
         action='store_true',
     )
     content_group.add_argument(
@@ -171,7 +171,7 @@ examples:
         '-A',
         '--strip-ansi',
         dest='stripansi',
-        help='Remove color codes and other formatting symbols to make the text easier to read.',
+        help='Remove color codes and other formatting symbols.',
         action='store_true',
     )
     content_group.add_argument(
@@ -314,37 +314,37 @@ examples:
     filter_group.add_argument(
         '--regex',
         action='store_true',
-        help='Treat search and filter terms as regular expressions (advanced patterns).',
+        help='Use regular expressions (advanced patterns) for searching and filtering.',
     )
     filter_group.add_argument(
         '--after',
-        help='Filter messages sent on or after this date (use YYYY-MM-DD format).',
+        help='Only show messages sent on or after this date (YYYY-MM-DD).',
         default=None,
     )
     filter_group.add_argument(
         '-K',
         '--skip',
         metavar='NUM',
-        help='Skip this many matching messages.',
+        help='Skip the first this many matching messages.',
         type=int,
         default=None,
     )
     filter_group.add_argument(
         '--before',
-        help='Filter messages sent on or before this date (use YYYY-MM-DD format).',
+        help='Only show messages sent on or before this date (YYYY-MM-DD).',
         default=None,
     )
     filter_group.add_argument(
         '-N',
         '--msgnum',
         dest='msgnum_filter',
-        help="Filter by specific message numbers or ranges (for example: '100', '200-300', or '10,20,50-100').",
+        help="Only show specific message numbers or ranges (for example: '100', '200-300', or '10,20,50-100').",
     )
     filter_group.add_argument(
         '-L',
         '--limit',
         metavar='NUM',
-        help='Process only this many matching messages.',
+        help='Stop after processing this many matching messages.',
         type=int,
         default=None,
     )
@@ -390,7 +390,7 @@ examples:
     parser.add_argument(
         '--stats',
         action='store_true',
-        help='Show message stats like timing, reply rates, and common keywords. This respects your filters. Use --format json for JSON output.',
+        help='Show detailed statistics about the messages and exit. Use --format json for JSON output.',
     )
     parser.add_argument(
         '--merge-stats',
