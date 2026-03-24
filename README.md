@@ -54,16 +54,16 @@ python qwk.py messages.db
 
 You can install `pyqwk` to use it from any folder on your computer.
 
-1. Open your terminal in the project folder.
+1. Open your terminal in the folder where you downloaded `pyqwk`.
 2. Install the package:
    ```bash
    python -m pip install .
    ```
-3. Now you can use the `qwk` command anywhere:
+3. Use the `qwk` command to process archives:
    ```bash
    qwk archive.qwk
    ```
-4. Or launch the graphical reader:
+4. Launch the graphical reader:
    ```bash
    qwk-gui
    ```
@@ -91,11 +91,11 @@ qwk-gui archive.eml
 ```
 
 **Key Features:**
-- **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can also highlight any text in a message, right-click, and select **Search for [Selection]** to instantly find related messages.
+- **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can also highlight any text in a message, right-click, and select **Search for '[Selected Text]'** to instantly find related messages.
 - **Filtering:** View messages from specific conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
 - **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire archive by that author or conference. You can also right-click in the message text to copy selected sections.
 - **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (hides emails and phone numbers), and **Remove Colors**.
+- **Viewing Options:** Toggle between **Clean** view (removes formatting) and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 - **Statistics:** View detailed activity reports, top authors, and temporal distributions for the current archive and filters.
@@ -372,60 +372,60 @@ for msg in messages:
 
 | Flag | Description |
 | :--- | :--- |
-| `-o`, `--output [path]` | Where to save the output. Prints to terminal by default. |
+| `-o`, `--output [path]` | Save output to a file or folder. Prints to the screen by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
-| `--organize` | Organize individual files into subfolders by conference. |
+| `--organize` | Organize files into subfolders by conference. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
-| `-F, --format [type]` | Choose format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
-| `-j`, `--json` | A shortcut for `--format json`. |
-| `-T`, `--threaded` | Group replies together into conversations. |
-| `-1`, `--oneline` | Show each message as a single-line summary (Conference, Date, From, To, Subject). |
-| `--toc` | Include a table of contents and a summary of the archive in the output. |
-| `-m`, `--merge` | Combine multiple inputs into a single output file. |
-| `-u`, `--unique` | Only include unique messages (removes duplicates when merging archives). |
-| `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message text. |
+| `-F, --format [type]` | Set output format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
+| `-j`, `--json` | Use JSON output format (shortcut for `--format json`). |
+| `-T`, `--threaded` | Group replies into conversations. |
+| `-1`, `--oneline` | Show a one-line summary (Conference, Date, From, To, Subject). |
+| `--toc` | Add a table of contents and summary to the output. |
+| `-m`, `--merge` | Combine multiple archives into one file. |
+| `-u`, `--unique` | Remove duplicate messages when merging archives. |
+| `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message body. |
 | `--regex` | Use regular expressions for searching and filtering. |
-| `-C`, `--conference [id]` | Only show messages from this conference name or number (can be used multiple times). |
-| `--bbs [name/id]` | Only show messages from this BBS name or ID (can be used multiple times). |
-| `--clean` | Automatically remove signatures, quotes, attachments, and color codes. |
+| `-C`, `--conference [id]` | Only show messages from this conference (can be used multiple times). |
+| `--bbs [name/id]` | Only show messages from this BBS (can be used multiple times). |
+| `--clean` | Remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Extract attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
 | `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
 | `-c, --cut-quoting` | Remove text quoted from earlier messages. |
-| `-b, --binaries-removal` | Remove attachments such as images or programs. |
+| `-b, --binaries-removal` | Remove attachments like images or programs. |
 | `-r, --redact-pii` | Hide personal information like email addresses and phone numbers. |
-| `-H, --headers-only` | Show only message headers and skip the message text. |
-| `-E, --encoding [name]` | Set the text format (default is `cp437`). |
+| `-H, --headers-only` | Show message headers only. |
+| `-E, --encoding [name]` | Set text encoding (default is `cp437`). |
 | `-p`, `--private` | Include private messages in the output. |
 | `-f, --from [name]` | Only show messages from this author (can be used multiple times). |
 | `--to [name]` | Only show messages to this recipient (can be used multiple times). |
 | `-s, --subject [text]` | Only show messages with this word in the subject (can be used multiple times). |
 | `--after [date]` | Only show messages from this date or later (YYYY-MM-DD). |
 | `--before [date]` | Only show messages from this date or earlier (YYYY-MM-DD). |
-| `-N, --msgnum [list]` | Only show messages with these numbers (e.g., '100', '200-300', '10,20,50-100'). |
-| `-n, --noheader` | Do not include the message header information in the text. |
+| `-N, --msgnum [list]` | Only show specific message numbers or ranges (e.g., '100', '200-300'). |
+| `-n, --noheader` | Hide message header information in the output. |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
-| `--separator [type]` | How to separate messages (`auto`, `none`, `dashes`, `blank`). |
+| `--separator [type]` | Choose message separator (`auto`, `none`, `dashes`, `blank`). |
 | `-v`, `--verbose` | Show more details like conference names and message numbers. |
-| `-q`, `--quiet` | Hide the progress bar and extra information. |
+| `-q`, `--quiet` | Hide the progress bar and other information. |
 | `--dry-run` | Preview actions without writing files to disk. |
-| `-l, --loglevel [level]` | Set how much detail to show in logs (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
-| `-L, --limit [num]` | Stop after processing this many messages. |
-| `-K, --skip [num]` | Skip the first this many matching messages. |
+| `-l, --loglevel [level]` | Set log detail level (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
+| `-L, --limit [num]` | Stop after processing this many matching messages. |
+| `-K, --skip [num]` | Skip the first matching messages. |
 | `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, or `bbs`. |
-| `--reverse` | Reverse the order of the output. |
-| `--has-attachments` | Only show messages that contain attachments (UUE, yEnc, Base64). |
+| `--reverse` | Reverse the output order. |
+| `--has-attachments` | Only show messages that contain attachments. |
 | `--mine` | Only show messages from or to your user name. |
 | `--on-this-day` | Only show messages sent on this same month and day in any year. |
-| `-I, --info` | Show a summary of the archive and exit. Use `--format json` for JSON output. |
-| `--stats` | Show detailed statistics about the messages and exit. Use `--format json` for JSON output. |
-| `--merge-stats` | Show a single merged report when analyzing multiple archives with `--stats`. |
+| `-I, --info` | Show archive summary and exit. |
+| `--stats` | Show detailed message statistics and exit. |
+| `--merge-stats` | Show a single merged report for multiple archives. |
 | `-V, --version` | Show the version number and exit. |
 
 Run `qwk --help` to see all available options.
 
 ## Troubleshooting
 
-- **Unsupported Compression:** Some old QWK or REP packets use special ZIP methods. If you get an error, unzip the file manually and run `qwk` on the `messages.dat` (or `reply.dat`) file inside.
+- **Unsupported Compression:** Some old QWK or REP packets use special ZIP methods. `pyqwk` automatically attempts to use the system `unzip` tool if Python's built-in tools fail. If you still see an error, unzip the file manually and run `qwk` on the `messages.dat` (or `reply.dat`) file inside.
 - **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
 - **Option Conflict:** Some options cannot be used together. You will get an error if you try to use:
   - `--threaded` and `--individual-files`
