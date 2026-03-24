@@ -92,8 +92,8 @@ qwk-gui archive.eml
 
 **Key Features:**
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can also highlight any text in a message, right-click, and select **Search for [Selection]** to instantly find related messages.
-- **Filtering:** View messages from specific conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
-- **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire archive by that author or conference. You can also right-click in the message text to copy selected sections.
+- **Filtering:** View messages from specific BBSes or conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
+- **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
 - **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Toggle between **Clean** view (removes formatting), **Hide Personal Info** (hides emails and phone numbers), and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
