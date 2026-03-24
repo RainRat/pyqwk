@@ -145,7 +145,7 @@ class TestQwkGui:
 
             # Verify Ref #: was rendered
             app._render_message(0)
-            app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Ref #: ", "header_label")
+            app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Ref #99", "link")
 
     def test_load_messages_error(self, mock_gui_deps):
         app = get_app()
@@ -579,10 +579,10 @@ class TestQwkGui:
 
         # Verify that stripped values were inserted
         # Subject is inserted first
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Subject\n\n", "header_subject")
-        # Then From and To via insert_field
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\t", "header_value")
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\t", "header_value")
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Subject\n", "header_subject")
+        # Then From and To
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\n", "header_value")
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\n\n", "header_value")
 
     def test_initial_path_loading(self, mock_gui_deps):
         """Test that passing an initial path to the constructor triggers loading."""

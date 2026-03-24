@@ -191,7 +191,9 @@ class QwkGuiApp:
         """Render a welcome screen with instructions and shortcuts."""
         self.detail_text.delete("1.0", tk.END)
 
-        self.detail_text.insert(tk.END, "Welcome to PyQWK\n\n", "header_subject")
+        self.detail_text.insert(tk.END, "Welcome to PyQWK\n", "header_subject")
+        self.detail_text.insert(tk.END, " \n", "header_hr")
+        self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "Getting Started:\n", "header_label")
         self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
@@ -517,6 +519,8 @@ class QwkGuiApp:
         self.detail_text.tag_configure(
             "header_label", font=("TkDefaultFont", 10, "bold"), foreground="#444444"
         )
+        self.detail_text.tag_configure("header_meta", font=("TkDefaultFont", 9), foreground="#888888")
+        self.detail_text.tag_configure("header_hr", font=("TkDefaultFont", 1), background="#eeeeee")
         self.detail_text.tag_configure("header_area", background="#f9f9f9")
         self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 10))
         self.detail_text.tag_configure(
@@ -586,38 +590,43 @@ class QwkGuiApp:
         header_start = "1.0"
 
         # Subject as a prominent title
-        self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n\n", "header_subject")
+        self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n", "header_subject")
+        self.detail_text.insert(tk.END, " \n", "header_hr")
+        self.detail_text.insert(tk.END, "\n")
 
-        def insert_field(label: str, value: str, last_in_row: bool = False) -> None:
-            self.detail_text.insert(tk.END, f"{label}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{value.strip()}\t", "header_value")
-            if last_in_row:
-                self.detail_text.insert(tk.END, "\n")
+        # Primary fields
+        self.detail_text.insert(tk.END, "From: ", "header_label")
+        self.detail_text.insert(tk.END, f"{header.msgfrom.strip()}\n", "header_value")
+        self.detail_text.insert(tk.END, "To:   ", "header_label")
+        self.detail_text.insert(tk.END, f"{header.msgto.strip()}\n\n", "header_value")
 
-        insert_field("From", header.msgfrom.strip())
-        insert_field("To", header.msgto.strip(), last_in_row=True)
-        insert_field("Date", f"{header.msgdate} {header.msgtime}")
-        insert_field("Conf", conf_name, last_in_row=True)
-
+        # Metadata line (Date, Conference, BBS, Msg #)
+        meta_parts = []
+        meta_parts.append(f"{header.msgdate} {header.msgtime}")
+        meta_parts.append(conf_name)
         if message.bbs_name:
-            insert_field("BBS", message.bbs_name)
-        if message.source_file:
-            insert_field("Source", message.source_file, last_in_row=True)
+            meta_parts.append(message.bbs_name)
+        if header.msgnum is not None:
+            meta_parts.append(f"Msg #{header.msgnum}")
 
-        if header.msgnum is not None or message.refnum:
-            if header.msgnum is not None:
-                self.detail_text.insert(tk.END, "Msg #: ", "header_label")
-                self.detail_text.insert(tk.END, f"{header.msgnum}\t", "header_value")
-            if message.refnum:
-                self.detail_text.insert(tk.END, "Ref #: ", "header_label")
-                self.detail_text.insert(tk.END, str(message.refnum), "link")
-                self.detail_text.insert(tk.END, "\t", "header_value")
-                self.detail_text.tag_bind(
-                    "link",
-                    "<Button-1>",
-                    lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(c, r),
-                )
-            self.detail_text.insert(tk.END, "\n")
+        for i, part in enumerate(meta_parts):
+            self.detail_text.insert(tk.END, part, "header_meta")
+            if i < len(meta_parts) - 1:
+                self.detail_text.insert(tk.END, "  •  ", "header_meta")
+
+        if message.refnum:
+            self.detail_text.insert(tk.END, "  •  ", "header_meta")
+            self.detail_text.insert(tk.END, f"Ref #{message.refnum}", "link")
+            self.detail_text.tag_bind(
+                "link",
+                "<Button-1>",
+                lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(c, r),
+            )
+
+        self.detail_text.insert(tk.END, "\n")
+
+        if message.source_file:
+            self.detail_text.insert(tk.END, f"Source: {message.source_file}\n", "header_meta")
 
         if message.attachments:
             self.detail_text.insert(tk.END, "Attachments: ", "header_label")
