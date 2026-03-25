@@ -92,10 +92,31 @@ def test_show_list_context_menu(app):
         mock_menu_instance.post.assert_called_once_with(100, 100)
 
 def test_show_text_context_menu(app):
-    """Verify that right-clicking the text triggers menu posting."""
+    """Verify that right-clicking the text triggers menu posting with metadata filters."""
     event = MagicMock(x_root=200, y_root=200)
+
+    # Mock selection
+    app.message_list.selection.return_value = ("0",)
+    header = MessageHeader(
+        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
+        msgto='Alice', msgfrom='Bob', msgsubject='Test',
+        msgpassword='', refnum=None, numblocks=1, msgflag=' ',
+        confnum=1, lognum=1, nettag=''
+    )
+    app.messages = [ParsedMessage(text="Hello", msgnum=1, refnum=None, confnum=1, header=header, bbs_name="TestBBS")]
+    app.board_dict = {1: "General"}
 
     with patch("pyqwk.gui.tk.Menu") as mock_menu_class:
         mock_menu_instance = mock_menu_class.return_value
         app._show_text_context_menu(event)
+
+        # Check for expected commands: Copy, Select All, Copy Full Message, Filter by Author, Conf, BBS
+        calls = [c[1]["label"] for c in mock_menu_instance.add_command.call_args_list]
+        assert "Copy" in calls
+        assert "Select All" in calls
+        assert "Copy Full Message" in calls
+        assert any("Filter by Author: Bob" == c for c in calls)
+        assert any("Filter by Conference: General" == c for c in calls)
+        assert any("Filter by BBS: TestBBS" == c for c in calls)
+
         mock_menu_instance.post.assert_called_once_with(200, 200)

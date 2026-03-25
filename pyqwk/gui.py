@@ -133,6 +133,33 @@ class QwkGuiApp:
         menu = tk.Menu(self.root, tearoff=0)
         menu.add_command(label="Copy", command=lambda: self.detail_text.event_generate("<<Copy>>"))
         menu.add_command(label="Select All", command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END))
+        menu.add_command(label="Copy Full Message", command=lambda: self._copy_to_clipboard(self.detail_text.get("1.0", tk.END).strip()))
+
+        # Get current message for metadata filtering
+        current_selection = self.message_list.selection()
+        if current_selection:
+            try:
+                idx = int(current_selection[0])
+                msg = self.messages[idx]
+
+                menu.add_separator()
+                author_text = msg.header.msgfrom.strip()
+                author_label = (author_text[:20] + "...") if len(author_text) > 20 else author_text
+                menu.add_command(label=f"Filter by Author: {author_label}",
+                                 command=lambda a=author_text: self._pivot_filter(author=a))
+
+                conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
+                conf_label = (conf_name[:20] + "...") if len(conf_name) > 20 else conf_name
+                menu.add_command(label=f"Filter by Conference: {conf_label}",
+                                 command=lambda c=msg.confnum: self._pivot_filter(conf_num=c))
+
+                bbs_display = msg.bbs_name or msg.bbs_id
+                if bbs_display:
+                    bbs_label = (bbs_display[:20] + "...") if len(bbs_display) > 20 else bbs_display
+                    menu.add_command(label=f"Filter by BBS: {bbs_label}",
+                                     command=lambda b=bbs_display: self._pivot_filter(bbs_name=b))
+            except (ValueError, IndexError):
+                pass
 
         try:
             sel_range = self.detail_text.tag_ranges("sel")
