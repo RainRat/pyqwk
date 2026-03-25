@@ -21,7 +21,7 @@ class TestUnzipWindowsTips(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             core.load_data("dummy.qwk", logger)
 
-        self.assertIn("unzip.exe", str(cm.exception))
+        self.assertIn("GnuWin32.UnZip", str(cm.exception))
         self.assertIn("return code 127", str(cm.exception))
 
     @patch('zipfile.is_zipfile', return_value=True)
@@ -42,7 +42,7 @@ class TestUnzipWindowsTips(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             core.load_data("dummy.qwk", logger)
 
-        self.assertIn("unzip.exe", str(cm.exception))
+        self.assertIn("GnuWin32.UnZip", str(cm.exception))
         self.assertIn("tool is missing", str(cm.exception))
 
 if __name__ == '__main__':

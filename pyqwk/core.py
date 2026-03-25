@@ -1215,7 +1215,7 @@ def load_data(
                     if result.returncode not in (0, 1):
                         error_msg = f"unzip failed with return code {result.returncode}: {result.stderr}"
                         if os.name == 'nt' and result.returncode == 127:
-                            error_msg += "\nTip: On Windows, ensure you have 'unzip.exe' installed and in your PATH (e.g., via Git Bash or GnuWin32)."
+                            error_msg += "\nTip: On Windows, run 'winget install GnuWin32.UnZip' or install 'unzip.exe' via Git Bash."
                         raise RuntimeError(error_msg)
                     
                     # Find extracted files (case-insensitive search in temp_dir)
@@ -1251,7 +1251,7 @@ def load_data(
                 except Exception as final_e:
                     error_msg = f"An error occurred while handling older ZIP archive: {str(final_e)}"
                     if os.name == 'nt' and "[WinError 2]" in str(final_e):
-                        error_msg += "\nTip: This error usually means the 'unzip' tool is missing. On Windows, please install 'unzip.exe' and ensure it is in your PATH."
+                        error_msg += "\nTip: This error usually means the 'unzip' tool is missing. On Windows, run 'winget install GnuWin32.UnZip' or install it via Git Bash."
                     raise RuntimeError(error_msg) from final_e
     else:
         with open(input_path, 'rb') as f:

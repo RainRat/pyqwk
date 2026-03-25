@@ -34,7 +34,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
   - **Fedora:** `sudo dnf install unzip`
   - **Arch Linux:** `sudo pacman -S unzip`
   - **macOS:** `brew install unzip`
-  - **Windows:** Install via [Git Bash](https://git-scm.com/downloads) or [GnuWin32](http://gnuwin32.sourceforge.net/packages/unzip.htm).
+  - **Windows:** Run `winget install GnuWin32.UnZip` or install via [Git Bash](https://git-scm.com/downloads).
 
 ## Quick Start
 
