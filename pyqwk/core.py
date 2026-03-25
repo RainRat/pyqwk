@@ -809,11 +809,6 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
                 'refnum': row['reference_number']
             }
 
-            # Add remaining fields with defaults
-            for f in fields(MessageHeader):
-                if f.name not in header_dict:
-                    header_dict[f.name] = ""
-
             header = MessageHeader.from_dict(header_dict)
 
             attachments = row['attachments'].split(';') if row['attachments'] else []
