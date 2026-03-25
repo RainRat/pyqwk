@@ -41,7 +41,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml', '.md', '.markdown')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -1075,6 +1075,161 @@ def _parse_eml_messages(path: str) -> list[ParsedMessage]:
     return [_message_from_email(msg_obj)]
 
 
+def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
+    """Import messages from a Markdown file."""
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Split into sections by horizontal rules '---'
+    raw_sections = re.split(r'\n---\n', content)
+    sections = []
+    current_chunk = ""
+    for s in raw_sections:
+        # A new message section contains '## ' or '> ## '
+        if '## ' in s:
+            if current_chunk:
+                sections.append(current_chunk)
+            current_chunk = s
+        else:
+            if current_chunk:
+                current_chunk += "\n---\n" + s
+            else:
+                # Header of the file before any message
+                continue
+    if current_chunk:
+        sections.append(current_chunk)
+
+    messages = []
+
+    # Regex patterns for fields
+    re_subject = re.compile(r'^## (.*)', re.MULTILINE)
+    re_date = re.compile(r'^- \*\*Date:\*\* (.*)', re.MULTILINE)
+    re_from = re.compile(r'^- \*\*From:\*\* (.*)', re.MULTILINE)
+    re_to = re.compile(r'^- \*\*To:\*\* (.*)', re.MULTILINE)
+    re_conf = re.compile(r'^- \*\*Conference:\*\* (.*) \((\d+)\)', re.MULTILINE)
+    re_bbs = re.compile(r'^- \*\*BBS:\*\* (.*)', re.MULTILINE)
+    re_source = re.compile(r'^- \*\*Source:\*\* (.*)', re.MULTILINE)
+    re_number = re.compile(r'^- \*\*Number:\*\* (.*)', re.MULTILINE)
+    re_attachments = re.compile(r'^- \*\*Attachments:\*\* (.*)', re.MULTILINE)
+
+    for section in sections:
+        # Detect blockquote depth for threaded Markdown
+        depth = 0
+        working_section = section.lstrip('\n')
+        while working_section.startswith('> '):
+            depth += 1
+            lines = working_section.splitlines()
+            new_lines = []
+            for line in lines:
+                if line.startswith('> '):
+                    new_lines.append(line[2:])
+                elif not line.strip():
+                    new_lines.append("")
+                else:
+                    new_lines.append(line)
+            working_section = "\n".join(new_lines).strip()
+
+        # If it's the first section, it might start with the archive title (# )
+        msg_start = working_section.find('## ')
+        if msg_start == -1:
+            continue
+
+        working_section = working_section[msg_start:]
+
+        # Extract metadata
+        subject_match = re_subject.search(working_section)
+        if not subject_match:
+            continue
+
+        subject = subject_match.group(1).strip().replace('**', '')
+        date_match = re_date.search(working_section)
+        from_match = re_from.search(working_section)
+        to_match = re_to.search(working_section)
+        conf_match = re_conf.search(working_section)
+        bbs_match = re_bbs.search(working_section)
+        source_match = re_source.search(working_section)
+        num_match = re_number.search(working_section)
+        attach_match = re_attachments.search(working_section)
+
+        # Date and Time
+        msg_date = "01-01-70"
+        msg_time = "00:00"
+        if date_match:
+            dt_parts = date_match.group(1).split()
+            if len(dt_parts) >= 1:
+                msg_date = dt_parts[0]
+            if len(dt_parts) >= 2:
+                msg_time = dt_parts[1]
+
+        # Conference
+        conf_num = 0
+        conf_name = None
+        if conf_match:
+            conf_name = conf_match.group(1).strip().replace('**', '')
+            conf_num = int(conf_match.group(2))
+
+        # BBS info
+        bbs_name = bbs_match.group(1).strip().replace('**', '') if bbs_match else None
+        source_file = source_match.group(1).strip().replace('**', '') if source_match else None
+        msg_num = _safe_to_int(num_match.group(1).strip()) if num_match else None
+
+        attachments = None
+        if attach_match:
+            attach_str = attach_match.group(1).strip()
+            if '[' in attach_str:
+                attachments = re.findall(r'\[(.*?)\]', attach_str)
+            else:
+                attachments = [a.strip() for a in attach_str.split(',') if a.strip()]
+
+        # Message body: everything after the metadata lines
+        lines = working_section.splitlines()
+        body_start_idx = 0
+        for i, line in enumerate(lines):
+            line_strip = line.strip()
+            if not line_strip:
+                continue
+            if line_strip.startswith('## ') or line_strip.startswith('- **'):
+                body_start_idx = i + 1
+            else:
+                body_start_idx = i
+                break
+
+        body = "\n".join(lines[body_start_idx:]).strip()
+
+        # Construct MessageHeader
+        header = MessageHeader(
+            status=" ",
+            msgnum=msg_num,
+            msgdate=msg_date,
+            msgtime=msg_time,
+            msgto=to_match.group(1).strip().replace('**', '') if to_match else "",
+            msgfrom=from_match.group(1).strip().replace('**', '') if from_match else "",
+            msgsubject=subject,
+            msgpassword="",
+            refnum=None,
+            numblocks=None,
+            msgflag=" ",
+            confnum=conf_num,
+            lognum=0,
+            nettag="",
+        )
+
+        msg = ParsedMessage(
+            text=body,
+            msgnum=msg_num,
+            refnum=None,
+            confnum=conf_num,
+            header=header,
+            depth=depth,
+            confname=conf_name,
+            bbs_name=bbs_name,
+            source_file=source_file,
+            attachments=attachments,
+        )
+        messages.append(msg)
+
+    return messages
+
 
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
@@ -1124,6 +1279,15 @@ def load_data(
             messages = _parse_mbox_messages(input_path)
         except Exception as e:
             raise ValueError(f"Failed to load mbox archive: {e}")
+
+        board_dict = _reconstruct_metadata(messages)
+        return messages, board_dict
+
+    if input_path.lower().endswith(('.md', '.markdown')):
+        try:
+            messages = _parse_markdown_messages(input_path)
+        except Exception as e:
+            raise ValueError(f"Failed to load Markdown archive: {e}")
 
         board_dict = _reconstruct_metadata(messages)
         return messages, board_dict

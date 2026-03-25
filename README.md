@@ -10,7 +10,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, XML, SQLite, mbox, or EML.
+- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, XML, SQLite, mbox, EML, or Markdown.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
@@ -68,6 +68,11 @@ You can install `pyqwk` to use it from any folder on your computer.
    qwk-gui
    ```
 
+**5. Import from Markdown:**
+   ```bash
+   qwk archive.md -o messages.html
+   ```
+
 *Note: You can also run the reader directly without installing:*
 ```bash
 python -m pyqwk.gui
@@ -75,7 +80,7 @@ python -m pyqwk.gui
 
 ## Graphical Reader
 
-If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, CSV, XML, SQLite, mbox, and EML).
+If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, CSV, XML, SQLite, mbox, EML, and Markdown).
 
 **To start the reader:**
 ```bash
