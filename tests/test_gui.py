@@ -325,7 +325,10 @@ class TestQwkGui:
             header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
             mock_msgs = [ParsedMessage("Msg 1", 1, None, 1, header), ParsedMessage("Msg 2", 2, None, 1, header)]
             mock_parse_messages.return_value = mock_msgs
-            mock_matches_filters.side_effect = [True, False]
+            # matches_filters is called 3 times per message (BBS count, conf count, filter check)
+            # For 2 messages, total 6 calls.
+            # We want Msg 1 to show up (3x True) and Msg 2 conf count/filter to fail (or at least filter fail)
+            mock_matches_filters.side_effect = [True, True, True, True, False, False]
             app.load_messages("test.qwk")
             calls = app.status_label.config.call_args_list
             texts = [c.kwargs['text'] for c in calls if 'text' in c.kwargs]

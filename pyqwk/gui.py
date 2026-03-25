@@ -52,6 +52,7 @@ class QwkGuiApp:
         self.current_paths: list[str] = []
         self._cache = {}
         self.conf_mapping = {}
+        self.bbs_mapping = {}
 
         self.column_labels = {
             "#0": "Subject",
@@ -120,6 +121,11 @@ class QwkGuiApp:
         menu.add_command(label=f"Filter by Conference: {conf_name[:20]}...",
                          command=lambda: self._pivot_filter(conf_num=msg.confnum))
 
+        bbs_display = msg.bbs_name or msg.bbs_id
+        if bbs_display:
+            menu.add_command(label=f"Filter by BBS: {bbs_display[:20]}...",
+                             command=lambda: self._pivot_filter(bbs_name=bbs_display))
+
         menu.post(event.x_root, event.y_root)
 
     def _show_text_context_menu(self, event: tk.Event) -> None:
@@ -162,10 +168,17 @@ class QwkGuiApp:
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
 
-    def _pivot_filter(self, author: str | None = None, conf_num: int | None = None) -> None:
+    def _pivot_filter(self, author: str | None = None, conf_num: int | None = None, bbs_name: str | None = None) -> None:
         """Update filters to pivot the view around a specific attribute."""
         if author:
             self.search_var.set(author)
+
+        if bbs_name:
+            # Find match in BBS combobox
+            for i, val in enumerate(self.bbs_combo['values']):
+                if val.startswith(bbs_name):
+                    self.bbs_combo.current(i)
+                    break
 
         if conf_num is not None:
             # Find exact match in combobox
@@ -326,6 +339,10 @@ class QwkGuiApp:
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters to their default state."""
         try:
+            self.bbs_combo.current(0)
+        except Exception:
+            self.bbs_combo.set("All BBSes")
+        try:
             self.conf_combo.current(0)
         except Exception:
             self.conf_combo.set("All Conferences")
@@ -386,8 +403,10 @@ class QwkGuiApp:
         filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(filters_frame, text="Filters:").pack(side=tk.LEFT)
+        self.bbs_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
+        self.bbs_combo.pack(side=tk.LEFT, padx=(5, 2))
         self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
-        self.conf_combo.pack(side=tk.LEFT, padx=(5, 2))
+        self.conf_combo.pack(side=tk.LEFT, padx=2)
 
         for text, var in [
             ("Attachments", self.has_attach_var),
@@ -423,6 +442,8 @@ class QwkGuiApp:
         self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
         self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
         self.root.bind("<Control-f>", self._focus_search)
+        self.bbs_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
+        self.bbs_combo.bind("<Escape>", lambda e: self.clear_filters())
         self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
         self.conf_combo.bind("<Escape>", lambda e: self.clear_filters())
 
@@ -546,6 +567,13 @@ class QwkGuiApp:
         if not search_val:
             search_val = None
 
+        selected_bbs_name = self.bbs_combo.get()
+        bbs_names = None
+        if selected_bbs_name and not selected_bbs_name.startswith("All BBSes"):
+            bbs_id = self.bbs_mapping.get(selected_bbs_name)
+            if bbs_id is not None:
+                bbs_names = [bbs_id]
+
         selected_conf_name = self.conf_combo.get()
         conferences = None
         if selected_conf_name and not selected_conf_name.startswith("All Conferences"):
@@ -573,6 +601,7 @@ class QwkGuiApp:
             quiet=True,
             search_term=search_val if search_val else None,
             conferences=conferences,
+            bbs_names=bbs_names,
             has_attachments=self.has_attach_var.get(),
             mine=self.mine_var.get(),
             on_this_day=self.on_this_day_var.get(),
@@ -804,6 +833,8 @@ class QwkGuiApp:
             merged_board_dict = ConferenceMap()
             total_count = 0
             conf_counts = Counter()
+            bbs_counts = Counter()
+            bbs_identities = {}
 
             for path in paths:
                 if len(paths) == 1 and self._cache.get('path') == path:
@@ -847,8 +878,9 @@ class QwkGuiApp:
                 else:
                     messages_to_process = parse_messages(file_data, None, settings.encoding)
 
-                # Create a settings object without conference filter for counting
+                # Create settings objects without conference/BBS filters for counting
                 count_settings = replace(settings, conferences=None)
+                bbs_count_settings = replace(settings, bbs_names=None)
 
                 for parsed_message in messages_to_process:
                     total_count += 1
@@ -856,17 +888,25 @@ class QwkGuiApp:
                     # Add BBS and source file metadata
                     parsed_message = replace(
                         parsed_message,
-                        bbs_name=bbs_info.name if bbs_info else None,
-                        bbs_id=bbs_info.bbs_id if bbs_info else None,
-                        source_file=os.path.basename(path)
+                        bbs_name=parsed_message.bbs_name or (bbs_info.name if bbs_info else None),
+                        bbs_id=parsed_message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
+                        source_file=parsed_message.source_file or os.path.basename(path)
                     )
+
+                    # Check if message matches filters ignoring the BBS filter itself
+                    if matches_filters(parsed_message, bbs_count_settings, set(), user_name):
+                        bbs_display = parsed_message.bbs_name or parsed_message.bbs_id or "Unknown BBS"
+                        # Use ID for exact filtering if available, else name
+                        bbs_val = parsed_message.bbs_id or parsed_message.bbs_name or ""
+                        bbs_counts[bbs_display] += 1
+                        bbs_identities[bbs_display] = bbs_val
 
                     # Check if message matches filters ignoring the conference filter itself
                     if matches_filters(parsed_message, count_settings, set(), user_name):
                         conf_counts[parsed_message.confnum] += 1
 
-                        # Now apply the actual conference filter for the display list
-                        if not settings.conferences or parsed_message.confnum in allowed_conferences:
+                        # Now apply the actual filters for the display list
+                        if matches_filters(parsed_message, settings, allowed_conferences, user_name):
                             processed_buffer = process_message(
                                 parsed_message.text,
                                 settings.truncate_signatures,
@@ -891,6 +931,27 @@ class QwkGuiApp:
                     'file_data': file_data, # From the last iteration
                     'board_dict': board_dict
                 }
+
+            # Re-populate BBS selector with dynamic counts
+            total_bbs_filtered = sum(bbs_counts.values())
+            bbs_list = [f"All BBSes ({total_bbs_filtered})"]
+            new_bbs_mapping = {}
+
+            old_bbs_selection = self.bbs_combo.get()
+            selected_bbs_id = self.bbs_mapping.get(old_bbs_selection)
+            new_bbs_selection = bbs_list[0]
+
+            for b_name, count in sorted(bbs_counts.items()):
+                b_val = bbs_identities[b_name]
+                display_str = f"{b_name} ({count})"
+                bbs_list.append(display_str)
+                new_bbs_mapping[display_str] = b_val
+                if b_val == selected_bbs_id:
+                    new_bbs_selection = display_str
+
+            self.bbs_combo['values'] = bbs_list
+            self.bbs_mapping = new_bbs_mapping
+            self.bbs_combo.set(new_bbs_selection)
 
             # Re-populate conference selector with dynamic counts
             total_filtered = sum(conf_counts.values())

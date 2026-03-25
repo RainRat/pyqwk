@@ -92,8 +92,8 @@ qwk-gui archive.eml
 
 **Key Features:**
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can also highlight any text in a message, right-click, and select **Search for '[Selected Text]'** to instantly find related messages.
-- **Filtering:** View messages from specific conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
-- **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire archive by that author or conference. You can also right-click in the message text to copy selected sections.
+- **Filtering:** View messages from specific BBSes or conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
+- **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
 - **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Toggle between **Clean** view (removes formatting) and **Remove Colors**.
 - **Threading:** Group replies together to follow the flow of a conversation.
@@ -171,23 +171,7 @@ qwk archive.qwk --individual-files --organize -o output_folder/
 ```
 *Tip: This creates subfolders for each conference (e.g., `001-general_chat/`) to keep the output tidy.*
 
-**Show detailed archive statistics:**
-```bash
-qwk archive.qwk --stats
-```
-
-**Show merged statistics for multiple archives:**
-```bash
-qwk archive1.qwk archive2.qwk --stats --merge-stats
-```
-
-**Process a whole folder of archives:**
-```bash
-qwk my_archives/ -o output_folder/
-```
-*Tip: The output folder will be created automatically if it does not exist.*
-
-**Organize archives into folders by BBS name:**
+**Save each message as a separate file organized by BBS name:**
 ```bash
 qwk my_archives/ --organize-by-bbs
 ```
