@@ -296,12 +296,29 @@ class TestQwkGui:
         assert "<Return>" in bound_events
         assert "<Escape>" in bound_events
 
-    def test_clear_search(self, mock_gui_deps):
+    def test_clear_search_progressive(self, mock_gui_deps):
+        app = get_app()
+        with patch.object(app, "reload_messages") as mock_reload, \
+             patch.object(app, "clear_filters") as mock_clear_filters:
+
+            # Case 1: Search is not empty -> should clear search only
+            app.search_var.get.return_value = "something"
+            app.clear_search()
+            app.search_var.set.assert_called_with("")
+            mock_reload.assert_called_once()
+            mock_clear_filters.assert_not_called()
+
+            # Case 2: Search is already empty -> should clear all filters
+            app.search_var.get.return_value = ""
+            app.clear_search()
+            mock_clear_filters.assert_called_once()
+
+    def test_clear_filters_resets_search(self, mock_gui_deps):
         app = get_app()
         app.search_var.set("something")
-        app.clear_search()
-        app.search_var.set.assert_called_with("")
-        app.message_list.focus_set.assert_called()
+        with patch.object(app, 'reload_messages'):
+            app.clear_filters()
+            app.search_var.set.assert_called_with("")
 
     def test_sort_indicators_update(self, mock_gui_deps):
         app = get_app()
