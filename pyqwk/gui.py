@@ -239,7 +239,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
 
         self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
-        formats = "QWK, REP, JSON, CSV, SQLite (.db), XML, mbox, EML, and MESSAGES.DAT"
+        formats = "QWK, REP, JSON, CSV, SQLite (.db), XML, mbox, EML, Markdown, and MESSAGES.DAT"
         self.detail_text.insert(tk.END, f"{formats}\n\n", "body")
 
         self.detail_text.insert(tk.END, "Keyboard Shortcuts:\n", "header_label")

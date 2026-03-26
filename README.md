@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a tool to convert `.QWK`, `.REP`, `.JSON`, `.CSV`, `.XML`, SQLite, `.mbox`, and `.eml` mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
+pyqwk is a tool to convert `.QWK`, `.REP`, `.JSON`, `.CSV`, `.XML`, SQLite, `.mbox`, `.eml`, and Markdown mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
 
 ## What are QWK and REP files?
 
@@ -47,6 +47,7 @@ python qwk.py archive.csv
 python qwk.py archive.xml
 python qwk.py archive.mbox
 python qwk.py archive.eml
+python qwk.py archive.md
 python qwk.py messages.db
 ```
 
@@ -66,11 +67,6 @@ You can install `pyqwk` to use it from any folder on your computer.
 4. Launch the graphical reader:
    ```bash
    qwk-gui
-   ```
-
-**5. Import from Markdown:**
-   ```bash
-   qwk archive.md -o messages.html
    ```
 
 *Note: You can also run the reader directly without installing:*
@@ -221,6 +217,11 @@ qwk messages.csv -o updated.html
 **Import from an XML file:**
 ```bash
 qwk archive.xml -o messages.html
+```
+
+**Import from Markdown:**
+```bash
+qwk archive.md -o messages.html
 ```
 
 *Note for Windows users: If you use symbols like `*` (wildcards) to select multiple files, use PowerShell instead of the standard Command Prompt.*
