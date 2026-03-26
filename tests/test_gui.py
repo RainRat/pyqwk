@@ -145,7 +145,7 @@ class TestQwkGui:
 
             # Verify Ref #: was rendered
             app._render_message(0)
-            app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Ref #99", "link")
+            app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Ref #99", ("link", "ref_link"))
 
     def test_load_messages_error(self, mock_gui_deps):
         app = get_app()

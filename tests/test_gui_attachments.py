@@ -67,5 +67,57 @@ def test_gui_renders_attachments(mock_gui_deps):
 
     # Check if "Attachments: " label was inserted
     app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Attachments: ", "header_label")
-    # Check if attachment names were inserted
-    app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "file1.zip, image.jpg\n", "header_value")
+    # In the updated code, each filename is inserted individually with a specific tag
+    # Check if filenames were inserted
+    inserted_texts = [c[0][1] for c in app.detail_text.insert.call_args_list]
+    assert "file1.zip" in inserted_texts
+    assert "image.jpg" in inserted_texts
+
+def test_save_attachment_logic(mock_gui_deps):
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    msg = ParsedMessage(
+        text="Dummy content with UUE\nbegin 644 test.txt\n!\r\n` \nend",
+        msgnum=1,
+        refnum=None,
+        confnum=1,
+        header=MagicMock()
+    )
+
+    mock_gui_deps["filedialog"].asksaveasfilename.return_value = "/tmp/test.txt"
+
+    with patch("pyqwk.gui.extract_binaries") as mock_ext, \
+         patch("builtins.open", new_callable=MagicMock) as mock_open:
+        mock_ext.return_value = [("test.txt", b"decoded")]
+
+        app.save_attachment(msg, "test.txt")
+
+        mock_open.assert_called_with("/tmp/test.txt", "wb")
+        mock_open.return_value.__enter__.return_value.write.assert_called_with(b"decoded")
+
+def test_extract_filtered_attachments_logic(mock_gui_deps):
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    msg = ParsedMessage(
+        text="Content",
+        msgnum=1,
+        refnum=None,
+        confnum=1,
+        header=MagicMock(),
+        attachments=["test.bin"]
+    )
+    app.messages = [msg]
+
+    mock_gui_deps["filedialog"].askdirectory.return_value = "/tmp/extract"
+
+    with patch("pyqwk.gui.extract_binaries") as mock_ext, \
+         patch("builtins.open", new_callable=MagicMock) as mock_open, \
+         patch("os.path.exists", return_value=False):
+        mock_ext.return_value = [("test.bin", b"data")]
+
+        app.extract_filtered_attachments()
+
+        mock_open.assert_called()
+        assert "Successfully extracted 1 attachments" in mock_gui_deps["messagebox"].showinfo.call_args[0][1]
