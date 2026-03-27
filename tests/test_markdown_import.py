@@ -192,6 +192,39 @@ Root content.
         self.assertEqual(messages[1].header.msgfrom, "Bob")
         self.assertEqual(messages[1].text, "Reply content.")
 
+    def test_markdown_import_threaded_no_space(self):
+        markdown_content = """
+# Archive
+
+## Root Message
+- **Date:** 01-01-24 12:00
+- **From:** Alice
+- **To:** Bob
+- **Conference:** General (1)
+
+Root content.
+
+---
+
+>## Reply Message
+>- **Date:** 01-01-24 12:10
+>- **From:** Bob
+>- **To:** Alice
+>- **Conference:** General (1)
+>
+>Reply content.
+"""
+        markdown_path = os.path.join(self.test_dir, "test_threaded_no_space.md")
+        with open(markdown_path, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+
+        messages, _ = load_data(markdown_path, self.logger)
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[0].depth, 0)
+        self.assertEqual(messages[1].depth, 1)
+        self.assertEqual(messages[1].header.msgfrom, "Bob")
+        self.assertEqual(messages[1].text, "Reply content.")
+
     def test_markdown_import_with_internal_separators(self):
         markdown_content = """
 # Archive
