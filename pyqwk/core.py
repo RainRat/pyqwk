@@ -1116,13 +1116,15 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
         # Detect blockquote depth for threaded Markdown
         depth = 0
         working_section = section.lstrip('\n')
-        while working_section.startswith('> '):
+        while working_section.startswith('>'):
             depth += 1
             lines = working_section.splitlines()
             new_lines = []
             for line in lines:
                 if line.startswith('> '):
                     new_lines.append(line[2:])
+                elif line.startswith('>'):
+                    new_lines.append(line[1:])
                 elif not line.strip():
                     new_lines.append("")
                 else:
