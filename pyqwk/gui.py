@@ -359,9 +359,9 @@ class QwkGuiApp:
         if self.search_var.get().strip():
             self.search_var.set("")
             self.reload_messages()
+            self.message_list.focus_set()
         else:
             self.clear_filters()
-        self.message_list.focus_set()
 
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
@@ -468,14 +468,11 @@ class QwkGuiApp:
 
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
-        self.search_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
         self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
         self.root.bind("<Control-f>", self._focus_search)
         self.bbs_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
-        self.bbs_combo.bind("<Escape>", lambda e: self.clear_filters())
         self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
-        self.conf_combo.bind("<Escape>", lambda e: self.clear_filters())
 
     def _build_layout(self) -> None:
         paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
