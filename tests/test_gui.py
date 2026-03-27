@@ -145,7 +145,15 @@ class TestQwkGui:
 
             # Verify Ref #: was rendered
             app._render_message(0)
-            app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Ref #99", "link")
+            # Find the call with "Ref #99". The tag should be ('link', 'ref_link_...')
+            found_ref = False
+            for call in app.detail_text.insert.call_args_list:
+                if len(call.args) >= 2 and call.args[1] == "Ref #99":
+                    tags = call.args[2]
+                    if isinstance(tags, tuple) and "link" in tags and any(t.startswith("ref_link_") for t in tags):
+                        found_ref = True
+                        break
+            assert found_ref, "Ref #99 link with correct tags not found"
 
     def test_load_messages_error(self, mock_gui_deps):
         app = get_app()
