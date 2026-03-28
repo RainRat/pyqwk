@@ -834,7 +834,16 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
 
     # If board_dict is empty, we reconstruct it from messages for backward compatibility
     if not board_dict:
+        # Preserve existing bbs_info if it was loaded from a table.
+        # We only restore it if it's not a default empty BBSInfo object.
+        loaded_bbs_info = board_dict.bbs_info
         board_dict = _reconstruct_metadata(messages)
+        if loaded_bbs_info and loaded_bbs_info != BBSInfo():
+            # Merge: prefer data loaded from SQLite tables, but fill gaps from reconstruction
+            for field in fields(BBSInfo):
+                if not getattr(loaded_bbs_info, field.name):
+                    setattr(loaded_bbs_info, field.name, getattr(board_dict.bbs_info, field.name))
+            board_dict.bbs_info = loaded_bbs_info
 
     return messages, board_dict
 

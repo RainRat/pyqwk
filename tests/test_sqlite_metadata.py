@@ -157,3 +157,30 @@ def test_sqlite_backward_compatibility(tmp_path, baseline_path, logger):
     assert len(messages) == 1
     assert messages[0].header.msgfrom == 'Old User'
     assert board_dict[10] == 'Conference 10' # Default reconstruction
+
+def test_sqlite_metadata_preservation_empty_conferences(tmp_path, logger):
+    """Test that BBS info is preserved even if the conferences table is empty."""
+    db_path = tmp_path / "bbs_only.db"
+
+    conn = sqlite3.connect(str(db_path))
+    # Create tables
+    conn.execute("CREATE TABLE messages (conference_number INTEGER, message_number INTEGER, date TEXT, author TEXT, recipient TEXT, subject TEXT, status TEXT, text TEXT, reference_number INTEGER, thread_id TEXT, depth INTEGER, parent_message_number INTEGER, conference_name TEXT, bbs_name TEXT, bbs_id TEXT, source_file TEXT, attachments TEXT)")
+    conn.execute("CREATE TABLE bbs_info (name TEXT, location TEXT, phone TEXT, sysop TEXT, serial_number TEXT, bbs_id TEXT, user_name TEXT, packet_at TEXT, total_messages INTEGER, num_conferences INTEGER)")
+    conn.execute("CREATE TABLE conferences (number INTEGER PRIMARY KEY, name TEXT)")
+
+    # Insert BBS info with detailed fields
+    conn.execute("INSERT INTO bbs_info (name, location, sysop) VALUES (?, ?, ?)", ("My BBS", "Somewhere", "The SysOp"))
+    # Insert a message
+    conn.execute("INSERT INTO messages (conference_number, author, subject, text, date, status) VALUES (?, ?, ?, ?, ?, ?)", (1, "Author", "Subject", "Body", "2023-01-01", " "))
+
+    conn.commit()
+    conn.close()
+
+    # load_data calls _parse_sqlite_messages
+    messages, board_dict = load_data(str(db_path), logger)
+
+    # board_dict should have the BBS info and reconstructed conference names
+    assert board_dict.bbs_info.name == "My BBS"
+    assert board_dict.bbs_info.location == "Somewhere"
+    assert board_dict.bbs_info.sysop == "The SysOp"
+    assert board_dict[1] == "Conference 1"
