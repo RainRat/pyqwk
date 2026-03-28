@@ -659,23 +659,50 @@ class QwkGuiApp:
 
         # Primary fields
         self.detail_text.insert(tk.END, "From: ", "header_label")
-        self.detail_text.insert(tk.END, f"{header.msgfrom.strip()}\n", "header_value")
+        from_tag = f"from_link_{id(message)}"
+        self.detail_text.insert(tk.END, header.msgfrom.strip(), ("link", "header_value", from_tag))
+        self.detail_text.tag_bind(
+            from_tag,
+            "<Button-1>",
+            lambda e, a=header.msgfrom.strip(): self._pivot_filter(author=a),
+        )
+        self.detail_text.insert(tk.END, "\n")
+
         self.detail_text.insert(tk.END, "To:   ", "header_label")
-        self.detail_text.insert(tk.END, f"{header.msgto.strip()}\n\n", "header_value")
+        to_tag = f"to_link_{id(message)}"
+        self.detail_text.insert(tk.END, header.msgto.strip(), ("link", "header_value", to_tag))
+        self.detail_text.tag_bind(
+            to_tag,
+            "<Button-1>",
+            lambda e, a=header.msgto.strip(): self._pivot_filter(author=a),
+        )
+        self.detail_text.insert(tk.END, "\n\n")
 
         # Metadata line (Date, Conference, BBS, Msg #)
-        meta_parts = []
-        meta_parts.append(f"{header.msgdate} {header.msgtime}")
-        meta_parts.append(conf_name)
-        if message.bbs_name:
-            meta_parts.append(message.bbs_name)
-        if header.msgnum is not None:
-            meta_parts.append(f"Msg #{header.msgnum}")
+        self.detail_text.insert(tk.END, f"{header.msgdate} {header.msgtime}", "header_meta")
+        self.detail_text.insert(tk.END, "  •  ", "header_meta")
 
-        for i, part in enumerate(meta_parts):
-            self.detail_text.insert(tk.END, part, "header_meta")
-            if i < len(meta_parts) - 1:
-                self.detail_text.insert(tk.END, "  •  ", "header_meta")
+        conf_tag = f"conf_link_{id(message)}"
+        self.detail_text.insert(tk.END, conf_name, ("link", "header_meta", conf_tag))
+        self.detail_text.tag_bind(
+            conf_tag,
+            "<Button-1>",
+            lambda e, c=header.confnum: self._pivot_filter(conf_num=c),
+        )
+
+        if message.bbs_name:
+            self.detail_text.insert(tk.END, "  •  ", "header_meta")
+            bbs_tag = f"bbs_link_{id(message)}"
+            self.detail_text.insert(tk.END, message.bbs_name, ("link", "header_meta", bbs_tag))
+            self.detail_text.tag_bind(
+                bbs_tag,
+                "<Button-1>",
+                lambda e, b=message.bbs_name: self._pivot_filter(bbs_name=b),
+            )
+
+        if header.msgnum is not None:
+            self.detail_text.insert(tk.END, "  •  ", "header_meta")
+            self.detail_text.insert(tk.END, f"Msg #{header.msgnum}", "header_meta")
 
         if message.refnum:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
