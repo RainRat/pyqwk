@@ -67,5 +67,8 @@ def test_gui_renders_attachments(mock_gui_deps):
 
     # Check if "Attachments: " label was inserted
     app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Attachments: ", "header_label")
-    # Check if attachment names were inserted
-    app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "file1.zip, image.jpg\n", "header_value")
+    # Check if attachment names were inserted as links
+    # Note: Using id(message) in tags
+    msg_id = id(message)
+    app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "file1.zip", ("link", f"attach_link_{msg_id}_0"))
+    app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "image.jpg", ("link", f"attach_link_{msg_id}_1"))

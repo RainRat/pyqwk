@@ -274,6 +274,10 @@ class QwkGuiApp:
             accelerator="Ctrl+S",
         )
         file_menu.add_command(
+            label="Extract All Attachments...",
+            command=self.extract_all_attachments,
+        )
+        file_menu.add_command(
             label="Statistics...",
             command=self.show_stats_window,
             accelerator="Ctrl+I",
@@ -675,9 +679,10 @@ class QwkGuiApp:
 
         if message.refnum:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, f"Ref #{message.refnum}", "link")
+            ref_tag = f"ref_link_{id(message)}"
+            self.detail_text.insert(tk.END, f"Ref #{message.refnum}", ("link", ref_tag))
             self.detail_text.tag_bind(
-                "link",
+                ref_tag,
                 "<Button-1>",
                 lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(c, r),
             )
@@ -689,7 +694,17 @@ class QwkGuiApp:
 
         if message.attachments:
             self.detail_text.insert(tk.END, "Attachments: ", "header_label")
-            self.detail_text.insert(tk.END, ", ".join(message.attachments) + "\n", "header_value")
+            for i, filename in enumerate(message.attachments):
+                tag = f"attach_link_{id(message)}_{i}"
+                self.detail_text.insert(tk.END, filename, ("link", tag))
+                self.detail_text.tag_bind(
+                    tag,
+                    "<Button-1>",
+                    lambda e, f=filename, idx=i: self.save_attachment(f, idx),
+                )
+                if i < len(message.attachments) - 1:
+                    self.detail_text.insert(tk.END, ", ", "header_value")
+            self.detail_text.insert(tk.END, "\n")
 
         header_end = self.detail_text.index(tk.INSERT)
         self.detail_text.tag_add("header_area", header_start, header_end)
@@ -1119,6 +1134,90 @@ class QwkGuiApp:
     def _set_detail_text(self, text: str) -> None:
         self.detail_text.delete("1.0", tk.END)
         self.detail_text.insert(tk.END, text)
+
+    def save_attachment(self, filename: str, attachment_index: int) -> None:
+        """Save a specific attachment from the currently selected message."""
+        current_selection = self.message_list.selection()
+        if not current_selection:
+            return
+
+        try:
+            idx = int(current_selection[0])
+            msg = self.messages[idx]
+
+            # Re-extract to get the raw data
+            if not msg.text:
+                return
+            found = extract_binaries(msg.text)
+            if attachment_index >= len(found):
+                return
+
+            _, data = found[attachment_index]
+
+            initial_file = os.path.basename(filename)
+            path = filedialog.asksaveasfilename(
+                title=f"Save Attachment: {initial_file}",
+                initialfile=initial_file,
+            )
+
+            if path:
+                with open(path, 'wb') as f:
+                    f.write(data)
+                self.status_label.config(text=f"Saved attachment to {os.path.basename(path)}")
+        except Exception as e:
+            messagebox.showerror("Save Attachment", f"Failed to save attachment: {e}")
+
+    def extract_all_attachments(self, _event: object | None = None) -> None:
+        """Batch-extract all attachments from the current filtered view."""
+        if not self.messages:
+            messagebox.showwarning("Extract Attachments", "No messages to process.")
+            return
+
+        folder = filedialog.askdirectory(title="Select Folder to Extract Attachments")
+        if not folder:
+            return
+
+        try:
+            count = 0
+            # Use messages in their current display order from the treeview
+            ordered_item_ids = self._get_all_tree_items()
+
+            for iid in ordered_item_ids:
+                try:
+                    idx = int(iid)
+                    msg = self.messages[idx]
+                    if not msg.text:
+                        continue
+
+                    found = extract_binaries(msg.text)
+                    for filename, data in found:
+                        # Sanitize filename
+                        filename = os.path.basename(filename)
+                        if not filename:
+                            filename = "attachment.bin"
+
+                        target_path = os.path.join(folder, filename)
+                        # Collision avoidance
+                        if os.path.exists(target_path):
+                            base, ext = os.path.splitext(filename)
+                            counter = 1
+                            while os.path.exists(target_path):
+                                target_path = os.path.join(folder, f"{base}_{counter}{ext}")
+                                counter += 1
+
+                        with open(target_path, 'wb') as f:
+                            f.write(data)
+                        count += 1
+                except (ValueError, IndexError):
+                    continue
+
+            messagebox.showinfo(
+                "Extraction Successful",
+                f"Successfully extracted {count} attachments to {folder}",
+            )
+            self.status_label.config(text=f"Extracted {count} attachments")
+        except Exception as e:
+            messagebox.showerror("Extraction Failed", f"Failed to extract attachments: {e}")
 
     def export_messages(self, _event: object | None = None) -> None:
         """Export the currently filtered and sorted messages to a file."""
