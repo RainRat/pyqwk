@@ -120,6 +120,10 @@ examples:
         action='store_true',
     )
     io_group.add_argument(
+        '--filename-pattern',
+        help="A pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, msgnum, confnum, confname, bbs_name, bbs_id.",
+    )
+    io_group.add_argument(
         '-E',
         '--encoding',
         help="The character set of the input files. Default is 'cp437' (standard for DOS-based BBSs). Use this if messages show strange characters.",
@@ -526,6 +530,7 @@ examples:
         mine=args.mine,
         on_this_day=args.on_this_day,
         merge_stats=args.merge_stats,
+        filename_pattern=getattr(args, 'filename_pattern', None),
     )
 
     if args.organize_by_bbs:
