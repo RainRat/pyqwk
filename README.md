@@ -38,17 +38,15 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Quick Start
 
-Run the script on any supported message archive:
+Run the script on any supported message archive (QWK, REP, JSON, CSV, XML, mbox, EML, Markdown, or SQLite):
+
 ```bash
+# Process a single archive
 python qwk.py archive.qwk
 python qwk.py replies.rep
-python qwk.py archive.json
-python qwk.py archive.csv
-python qwk.py archive.xml
-python qwk.py archive.mbox
-python qwk.py archive.eml
-python qwk.py archive.md
-python qwk.py messages.db
+
+# Process an entire directory of archives
+python qwk.py my_archives/
 ```
 
 ## Installation
@@ -173,7 +171,7 @@ qwk archive.qwk --individual-files --organize -o output_folder/
 ```
 *Tip: This creates subfolders for each conference (e.g., `001-general_chat/`) to keep the output tidy.*
 
-**Save each message as a separate file organized by BBS name:**
+**Organize archive files into folders by BBS name:**
 ```bash
 qwk my_archives/ --organize-by-bbs
 ```
