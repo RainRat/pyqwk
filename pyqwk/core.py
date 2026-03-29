@@ -349,6 +349,7 @@ class ProcessingSettings:
     output_mode: str
     output_path: str | None
     encoding: str
+    filename_pattern: str | None = None
     regex: bool = False
     dry_run: bool = False
     strip_ansi: bool = False
@@ -1860,9 +1861,41 @@ def _slugify(text: str, default: str) -> str:
     return slug if slug else default
 
 
-def _generate_safe_filename(message: ParsedMessage, output_format: str, count: int) -> str:
+def _generate_safe_filename(message: ParsedMessage, settings_or_format: ProcessingSettings | str, count: int) -> str:
     """Generate a human-readable filename for an individual message."""
+    if isinstance(settings_or_format, ProcessingSettings):
+        settings = settings_or_format
+        output_format = settings.format
+    else:
+        settings = None
+        output_format = settings_or_format
+
     ext = FORMAT_EXTENSIONS.get(output_format, '.txt')
+
+    if settings and settings.filename_pattern:
+        try:
+            mapping = {
+                'date': _slugify(message.header.msgdate, "date"),
+                'time': _slugify(message.header.msgtime, "time"),
+                'author': _slugify(message.header.msgfrom, "author"),
+                'to': _slugify(message.header.msgto, "to"),
+                'subject': _slugify(message.header.msgsubject, "subject"),
+                'msgnum': message.msgnum if message.msgnum is not None else count,
+                'confnum': message.confnum,
+                'confname': _slugify(message.confname or f"conf_{message.confnum}", "conf"),
+                'bbs_name': _slugify(message.bbs_name or "bbs", "bbs"),
+                'bbs_id': _slugify(message.bbs_id or "id", "id"),
+            }
+            # Use formatting while preserving the pattern's intent
+            filename = settings.filename_pattern.format(**mapping)
+            # Basic sanitization of the resulting filename (replace any remaining odd chars)
+            filename = re.sub(r'[^\w\-.]', '_', filename)
+            if not filename.endswith(ext):
+                filename += ext
+            return filename
+        except (KeyError, ValueError, AttributeError):
+            # Fallback to default if pattern is invalid
+            pass
 
     msg_num = message.msgnum if message.msgnum is not None else count
     slug = _slugify(message.header.msgsubject, "message")
@@ -2113,7 +2146,7 @@ def process_merged_files(
             else:
                 encoded_buffer = processed_buffer.encode(target_encoding)
 
-            filename = _generate_safe_filename(parsed_message, settings.format, processed_count)
+            filename = _generate_safe_filename(parsed_message, settings, processed_count)
             full_path = os.path.join(target_dir, filename)
 
             # Collision avoidance

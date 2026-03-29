@@ -179,6 +179,12 @@ qwk my_archives/ --organize-by-bbs
 ```
 *Tip: This automatically sorts your archives into folders named after the BBS they came from.*
 
+**Save messages with custom filenames:**
+```bash
+qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}" -o output/
+```
+*Tip: Use variables like `{date}`, `{author}`, and `{subject}` to create descriptive filenames instead of just numbers.*
+
 **Merge multiple archives into one file (removing any duplicate messages):**
 ```bash
 qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
@@ -365,6 +371,7 @@ for msg in messages:
 | :--- | :--- |
 | `-o`, `--output [path]` | Save output to a file or folder. Prints to the screen by default. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
+| `--filename-pattern [pat]` | Set a pattern for naming individual files (e.g., `{date}_{author}_{subject}`). |
 | `--organize` | Organize files into subfolders by conference. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
 | `-F, --format [type]` | Set output format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
