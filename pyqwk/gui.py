@@ -406,7 +406,7 @@ class QwkGuiApp:
         toolbar = ttk.Frame(self.root, padding=(10, 5))
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
-        # Row 1: Actions and View Options
+        # Row 1: Primary Actions and Search
         row1 = ttk.Frame(toolbar)
         row1.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
 
@@ -420,24 +420,7 @@ class QwkGuiApp:
 
         ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
-        options_frame = ttk.Frame(row1)
-        options_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
-
-        for text, var in [
-            ("Threaded", self.threaded_var),
-            ("Clean", self.clean_var),
-            ("Remove Colors", self.ansi_var),
-        ]:
-            ttk.Checkbutton(
-                options_frame, text=text, variable=var, command=self.reload_messages
-            ).pack(side=tk.LEFT, padx=5)
-
-        # Row 2: Search and Filters
-        row2 = ttk.Frame(toolbar)
-        row2.pack(side=tk.TOP, fill=tk.X)
-
-        search_frame = ttk.Frame(row2)
+        search_frame = ttk.Frame(row1)
         search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
@@ -448,7 +431,15 @@ class QwkGuiApp:
             search_frame, text="Regex", variable=self.regex_var, command=self.reload_messages
         ).pack(side=tk.LEFT, padx=5)
 
-        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+        ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        ttk.Button(row1, text="Reset All", command=self.clear_filters).pack(
+            side=tk.LEFT, padx=5
+        )
+
+        # Row 2: Refinement and Filters
+        row2 = ttk.Frame(toolbar)
+        row2.pack(side=tk.TOP, fill=tk.X)
 
         filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
@@ -467,9 +458,20 @@ class QwkGuiApp:
                 filters_frame, text=text, variable=var, command=self.reload_messages
             ).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(row2, text="Reset All", command=self.clear_filters).pack(
-            side=tk.LEFT, padx=10
-        )
+        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        options_frame = ttk.Frame(row2)
+        options_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
+
+        for text, var in [
+            ("Threaded", self.threaded_var),
+            ("Clean", self.clean_var),
+            ("Remove Colors", self.ansi_var),
+        ]:
+            ttk.Checkbutton(
+                options_frame, text=text, variable=var, command=self.reload_messages
+            ).pack(side=tk.LEFT, padx=5)
 
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
