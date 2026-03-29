@@ -591,9 +591,9 @@ class TestQwkGui:
         # Verify that stripped values were inserted
         # Subject is inserted first
         app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Subject\n", "header_subject")
-        # Then From and To
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\n", "header_value")
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\n\n", "header_value")
+        # Then From and To (which are now interactive links)
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User", ANY)
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All", ANY)
 
     def test_initial_path_loading(self, mock_gui_deps):
         """Test that passing an initial path to the constructor triggers loading."""
