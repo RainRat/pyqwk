@@ -3841,7 +3841,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
     children: dict[int, list[int]] = defaultdict(list)
     roots: list[int] = []
 
-    # 1. Indexing
+    # Build lookup tables to efficiently match replies by message number and subject
     for index, message in enumerate(messages):
         if message.msgnum is not None:
             index_by_key[(message.confnum, message.msgnum)] = index
@@ -3851,7 +3851,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
         if subj:
             index_by_subject[(message.confnum, subj)].append(index)
 
-    # 2. Identify Parents
+    # Establish parent-child relationships using explicit references or subject-based heuristics
     parent_map: dict[int, int] = {}
 
     for index, message in enumerate(messages):
@@ -3895,7 +3895,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
         else:
             roots.append(index)
 
-    # 3. Traversal
+    # Perform an iterative depth-first traversal to group threads while safely handling potential cycles and recursion depth
     ordered_messages: list[ProcessedMessage] = []
     visited: set[int] = set()
     cycle_reported: set[int] = set()
