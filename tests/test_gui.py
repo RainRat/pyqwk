@@ -134,7 +134,7 @@ class TestQwkGui:
             assert len(app.messages) == 1
             app.message_list.insert.assert_called_with(
                 '', 'end', iid='0', text='Subject',
-                values=('', 1, 'User', 'All', '01-01-90 12:00', 'General', 'Test BBS'),
+                values=('', 1, 'User', 'All', '01-01-90 12:00', '14 B', 'General', 'Test BBS'),
                 open=True, tags=()
             )
 
@@ -592,8 +592,8 @@ class TestQwkGui:
         # Subject is inserted first
         app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Subject\n", "header_subject")
         # Then From and To
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\n", "header_value")
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\n\n", "header_value")
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User", ("link", "header_value", ANY))
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All", ("link", "header_value", ANY))
 
     def test_initial_path_loading(self, mock_gui_deps):
         """Test that passing an initial path to the constructor triggers loading."""

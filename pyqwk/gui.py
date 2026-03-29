@@ -61,6 +61,7 @@ class QwkGuiApp:
             "From": "From",
             "To": "To",
             "Date": "Date",
+            "Size": "Size",
             "Conference": "Conf",
             "BBS": "BBS",
         }
@@ -493,12 +494,12 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Flags", "Num", "From", "To", "Date", "Conference", "BBS"),
+            columns=("Flags", "Num", "From", "To", "Date", "Size", "Conference", "BBS"),
             selectmode="browse",
         )
 
         for col, label in self.column_labels.items():
-            if col == "Num":
+            if col in ("Num", "Size"):
                 header_anchor = tk.E
             elif col == "Flags":
                 header_anchor = tk.CENTER
@@ -518,6 +519,7 @@ class QwkGuiApp:
         self.message_list.column("From", minwidth=80, width=150)
         self.message_list.column("To", minwidth=80, width=150)
         self.message_list.column("Date", minwidth=80, width=120)
+        self.message_list.column("Size", minwidth=60, width=70, anchor=tk.E)
         self.message_list.column("Conference", minwidth=50, width=60)
         self.message_list.column("BBS", minwidth=80, width=100)
 
@@ -841,7 +843,7 @@ class QwkGuiApp:
     def _reset_column_headers(self) -> None:
         """Reset all column headers to their original labels without sort indicators."""
         for col, label in self.column_labels.items():
-            if col == "Num":
+            if col in ("Num", "Size"):
                 header_anchor = tk.E
             elif col == "Flags":
                 header_anchor = tk.CENTER
@@ -1099,6 +1101,7 @@ class QwkGuiApp:
                         header.msgfrom.strip(),
                         header.msgto.strip(),
                         f"{header.msgdate} {header.msgtime}",
+                        f"{len(message.text)} B" if message.text else "0 B",
                         conf_name,
                         message.bbs_name or message.bbs_id or "",
                     ),
@@ -1566,6 +1569,8 @@ class QwkGuiApp:
                 return
             if col == "Num":
                 items.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
+            elif col == "Size":
+                items.sort(key=lambda t: int(t[0].split()[0]) if t[0] and str(t[0].split()[0]).isdigit() else 0, reverse=reverse)
             elif col == "Date":
                 # QWK date is MM-DD-YY HH:MM. Sort chronologically.
                 def get_date_key(date_str):
@@ -1599,7 +1604,7 @@ class QwkGuiApp:
                 # If we click a different column, it should start as ascending
                 next_reverse = False
 
-            if c == "Num":
+            if c in ("Num", "Size"):
                 header_anchor = tk.E
             elif c == "Flags":
                 header_anchor = tk.CENTER

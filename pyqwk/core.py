@@ -350,6 +350,8 @@ class ProcessingSettings:
     output_path: str | None
     encoding: str
     filename_pattern: str | None = None
+    min_length: int | None = None
+    max_length: int | None = None
     regex: bool = False
     dry_run: bool = False
     strip_ansi: bool = False
@@ -1852,6 +1854,13 @@ def matches_filters(
         if settings.has_attachments and not message.attachments:
             return False
 
+    # 10. Length Filter
+    msg_len = len(message.text) if message.text else 0
+    if settings.min_length is not None and msg_len < settings.min_length:
+        return False
+    if settings.max_length is not None and msg_len > settings.max_length:
+        return False
+
     return True
 
 
@@ -1885,6 +1894,7 @@ def _generate_safe_filename(message: ParsedMessage, settings_or_format: Processi
                 'confname': _slugify(message.confname or f"conf_{message.confnum}", "conf"),
                 'bbs_name': _slugify(message.bbs_name or "bbs", "bbs"),
                 'bbs_id': _slugify(message.bbs_id or "id", "id"),
+                'length': len(message.text) if message.text else 0,
             }
             # Use formatting while preserving the pattern's intent
             filename = settings.filename_pattern.format(**mapping)
@@ -2274,6 +2284,8 @@ def process_merged_files(
                 sort_buffer.sort(key=lambda x: (x[0].confnum, _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
             elif settings.sort == 'bbs':
                 sort_buffer.sort(key=lambda x: (x[0].bbs_name or "", x[0].bbs_id or "", _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
+            elif settings.sort in ('length', 'size'):
+                sort_buffer.sort(key=lambda x: len(x[0].text) if x[0].text else 0)
 
         if settings.reverse:
             sort_buffer.reverse()

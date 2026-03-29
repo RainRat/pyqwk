@@ -326,6 +326,18 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        '--min-length',
+        help='Only show messages with at least this many characters.',
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        '--max-length',
+        help='Only show messages with at most this many characters.',
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         '-K',
         '--skip',
         metavar='NUM',
@@ -360,8 +372,8 @@ examples:
     )
     filter_group.add_argument(
         '--sort',
-        help='Sort results by field (date, author, to, subject, num, conference, or bbs).',
-        choices=['date', 'author', 'to', 'subject', 'num', 'conference', 'bbs'],
+        help='Sort results by field (date, author, to, subject, num, conference, bbs, length, or size).',
+        choices=['date', 'author', 'to', 'subject', 'num', 'conference', 'bbs', 'length', 'size'],
         default=None,
     )
     filter_group.add_argument(
@@ -531,6 +543,8 @@ examples:
         on_this_day=args.on_this_day,
         merge_stats=args.merge_stats,
         filename_pattern=getattr(args, 'filename_pattern', None),
+        min_length=getattr(args, 'min_length', None),
+        max_length=getattr(args, 'max_length', None),
     )
 
     if args.organize_by_bbs:

@@ -279,16 +279,29 @@ qwk archive.qwk --skip 100 --limit 50
 When viewing messages in your terminal, pyqwk automatically uses colors to make them easier to read. Message headers are bolded, and search terms are highlighted using inverted colors. This only applies to terminal output; file exports remain clean.
 
 **Sorting Results:**
-You can sort the output by various fields such as date, author, or subject.
+You can sort the output by various fields such as date, author, subject, or length.
 ```bash
 # Show the 10 most recent messages
 qwk archive.qwk --sort date --reverse --limit 10
+
+# Show the longest messages first
+qwk archive.qwk --sort length --reverse --limit 5
 ```
 
 **Filter by Date:**
 Find messages from a specific date range (use YYYY-MM-DD).
 ```bash
 qwk archive.qwk --after 2023-01-01 --before 2023-12-31
+```
+
+**Filter by Length:**
+Only show messages within a specific character count range.
+```bash
+# Show messages with at least 1000 characters
+qwk archive.qwk --min-length 1000
+
+# Show short messages (at most 500 characters)
+qwk archive.qwk --max-length 500
 ```
 
 **Filter by Message Number:**
@@ -409,11 +422,13 @@ for msg in messages:
 | `-l, --loglevel [level]` | Set log detail level (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
 | `-L, --limit [num]` | Stop after processing this many matching messages. |
 | `-K, --skip [num]` | Skip the first matching messages. |
-| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, or `bbs`. |
+| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, `bbs`, or `length`. |
 | `--reverse` | Reverse the output order. |
 | `--has-attachments` | Only show messages that contain attachments. |
 | `--mine` | Only show messages from or to your user name. |
 | `--on-this-day` | Only show messages sent on this same month and day in any year. |
+| `--min-length [n]` | Only show messages with at least `n` characters. |
+| `--max-length [n]` | Only show messages with at most `n` characters. |
 | `-I, --info` | Show archive summary and exit. |
 | `--stats` | Show detailed message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
