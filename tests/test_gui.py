@@ -583,17 +583,22 @@ class TestQwkGui:
             msgpassword='', refnum=None, numblocks=1, msgflag=' ',
             confnum=1, lognum=1, nettag=''
         )
-        app.messages = [ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)]
+        msg = ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)
+        app.messages = [msg]
         app.board_dict = {1: "General"}
 
         app._render_message(0)
 
-        # Verify that stripped values were inserted
-        # Subject is inserted first
+        # Verify that stripped values were inserted as interactive links
+        # Subject is inserted first with a newline
         app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "Subject\n", "header_subject")
-        # Then From and To
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User\n", "header_value")
-        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All\n\n", "header_value")
+
+        # Then From and To are inserted as interactive links (stripped) with separate newline calls
+        from_tag = f"from_link_{id(msg)}"
+        to_tag = f"to_link_{id(msg)}"
+
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "User", ("link", "header_value", from_tag))
+        app.detail_text.insert.assert_any_call(mock_gui_deps["tk"].END, "All", ("link", "header_value", to_tag))
 
     def test_initial_path_loading(self, mock_gui_deps):
         """Test that passing an initial path to the constructor triggers loading."""
