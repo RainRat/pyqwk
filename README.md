@@ -181,7 +181,7 @@ qwk my_archives/ --organize-by-bbs
 ```bash
 qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}" -o output/
 ```
-*Tip: Use variables like `{date}`, `{author}`, and `{subject}` to create descriptive filenames instead of just numbers.*
+*Tip: Use variables like `{date}`, `{author}`, `{subject}`, and `{length}` to create descriptive filenames instead of just numbers.*
 
 **Merge multiple archives into one file (removing any duplicate messages):**
 ```bash
@@ -277,7 +277,7 @@ qwk archive.qwk --skip 100 --limit 50
 When viewing messages in your terminal, pyqwk automatically uses colors to make them easier to read. Message headers are bolded, and search terms are highlighted using inverted colors. This only applies to terminal output; file exports remain clean.
 
 **Sorting Results:**
-You can sort the output by various fields such as date, author, subject, or length.
+You can sort the output by various fields such as date, author, subject, length, or size.
 ```bash
 # Show the 10 most recent messages
 qwk archive.qwk --sort date --reverse --limit 10
@@ -381,7 +381,7 @@ for msg in messages:
 | Flag | Description |
 | :--- | :--- |
 | `-o`, `--output [path]` | Save output to a file or folder. Prints to the screen by default. |
-| `-i`, `--individual-files` | Save each message as a separate file. |
+| `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `--filename-pattern [pat]` | Set a pattern for naming individual files (e.g., `{date}_{author}_{subject}`). |
 | `--organize` | Organize files into subfolders by conference. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
@@ -420,7 +420,7 @@ for msg in messages:
 | `-l, --loglevel [level]` | Set log detail level (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
 | `-L, --limit [num]` | Stop after processing this many matching messages. |
 | `-K, --skip [num]` | Skip the first matching messages. |
-| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, `bbs`, or `length`. |
+| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, `bbs`, `length`, or `size`. |
 | `--reverse` | Reverse the output order. |
 | `--has-attachments` | Only show messages that contain attachments. |
 | `--mine` | Only show messages from or to your user name. |
