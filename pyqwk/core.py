@@ -2269,25 +2269,24 @@ def process_merged_files(
                 break
 
     if not use_streaming:
+        reversal_needed = settings.reverse
         if settings.sort:
-            if settings.sort == 'date':
-                sort_buffer.sort(key=lambda x: _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime))
-            elif settings.sort == 'author':
-                sort_buffer.sort(key=lambda x: x[0].header.msgfrom.lower())
-            elif settings.sort == 'to':
-                sort_buffer.sort(key=lambda x: x[0].header.msgto.lower())
-            elif settings.sort == 'subject':
-                sort_buffer.sort(key=lambda x: x[0].header.msgsubject.lower())
-            elif settings.sort == 'num':
-                sort_buffer.sort(key=lambda x: (x[0].confnum, x[0].msgnum or 0))
-            elif settings.sort == 'conference':
-                sort_buffer.sort(key=lambda x: (x[0].confnum, _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
-            elif settings.sort == 'bbs':
-                sort_buffer.sort(key=lambda x: (x[0].bbs_name or "", x[0].bbs_id or "", _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)))
-            elif settings.sort in ('length', 'size'):
-                sort_buffer.sort(key=lambda x: len(x[0].text) if x[0].text else 0)
+            sort_keys: dict[str, Callable[[tuple[ParsedMessage, dict[int, str]]], Any]] = {
+                'date': lambda x: _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime),
+                'author': lambda x: x[0].header.msgfrom.lower(),
+                'to': lambda x: x[0].header.msgto.lower(),
+                'subject': lambda x: x[0].header.msgsubject.lower(),
+                'num': lambda x: (x[0].confnum, x[0].msgnum or 0),
+                'conference': lambda x: (x[0].confnum, _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)),
+                'bbs': lambda x: (x[0].bbs_name or "", x[0].bbs_id or "", _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)),
+                'length': lambda x: len(x[0].text) if x[0].text else 0,
+                'size': lambda x: len(x[0].text) if x[0].text else 0,
+            }
+            if settings.sort in sort_keys:
+                sort_buffer.sort(key=sort_keys[settings.sort], reverse=settings.reverse)
+                reversal_needed = False
 
-        if settings.reverse:
+        if reversal_needed:
             sort_buffer.reverse()
 
         for parsed_message, board_dict in sort_buffer:
