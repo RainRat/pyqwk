@@ -2463,6 +2463,7 @@ def _get_html_header(title: str) -> list[str]:
         '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',
         '.header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }',
         '.body { white-space: pre-wrap; font-family: monospace; }',
+        '.quote { color: #4e9a06; }',
         '</style>',
         '</head>',
         '<body>',
@@ -2483,6 +2484,7 @@ def _render_single_message_html(
     search_term: str | None = None,
     is_regex: bool = False,
 ) -> list[str]:
+    """Render a single message into HTML components with quote highlighting."""
     parts = []
     id_attr = f' id="{msg_id}"' if msg_id else ""
     parts.append(f'<div class="message"{id_attr}>')
@@ -2523,9 +2525,21 @@ def _render_single_message_html(
     parts.append('</div>')
 
     # Body
-    escaped_text = h_esc(message.text.replace('\r\n', '\n'))
     parts.append('<pre class="body">')
-    parts.append(escaped_text)
+
+    body_text = message.text.replace('\r\n', '\n')
+    body_lines = body_text.split('\n')
+    processed_lines = []
+
+    for line in body_lines:
+        is_quote = bool(RE_QUOTE_PATTERN.match(line))
+        highlighted_line = h_esc(line)
+        if is_quote:
+            processed_lines.append(f'<span class="quote">{highlighted_line}</span>')
+        else:
+            processed_lines.append(highlighted_line)
+
+    parts.append('\n'.join(processed_lines))
     parts.append('</pre>')
     parts.append('</div>')
 
@@ -2559,6 +2573,7 @@ def _render_single_message_markdown(
     search_term: str | None = None,
     is_regex: bool = False,
 ) -> list[str]:
+    """Render a single message into Markdown with blockquote standardization."""
     header = message.header
     parts = []
 
@@ -2594,7 +2609,24 @@ def _render_single_message_markdown(
         parts.append(f"- **Attachments:** {', '.join(links)}")
 
     parts.append("")
-    parts.append(md_high(message.text.replace('\r\n', '\n')))
+
+    body_text = message.text.replace('\r\n', '\n')
+    body_lines = body_text.split('\n')
+    processed_lines = []
+
+    for line in body_lines:
+        is_quote = bool(RE_QUOTE_PATTERN.match(line))
+        highlighted_line = md_high(line)
+        if is_quote:
+            # Standardize to use '> ' for blockquotes if it's not already starting with it
+            if not highlighted_line.startswith('>'):
+                processed_lines.append(f"> {highlighted_line}")
+            else:
+                processed_lines.append(highlighted_line)
+        else:
+            processed_lines.append(highlighted_line)
+
+    parts.append('\n'.join(processed_lines))
     parts.append("")
     parts.append("---")
     return parts
