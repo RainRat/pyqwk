@@ -1009,6 +1009,8 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
     msg_subject = get_hdr('Subject')
 
     # Date/Time
+    msg_date = "01-01-70"
+    msg_time = "00:00"
     date_hdr = get_hdr('Date')
     if date_hdr:
         try:
@@ -1016,11 +1018,7 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
             msg_date = dt.strftime('%m-%d-%y')
             msg_time = dt.strftime('%H:%M')
         except (ValueError, TypeError):
-            msg_date = "01-01-70"
-            msg_time = "00:00"
-    else:
-        msg_date = "01-01-70"
-        msg_time = "00:00"
+            pass
 
     # Message body
     body = ""
