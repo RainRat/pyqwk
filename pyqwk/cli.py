@@ -396,6 +396,11 @@ examples:
         help='Only show messages sent on this same month and day in any year.',
         action='store_true',
     )
+    filter_group.add_argument(
+        '--has-links',
+        help='Only show messages that contain web, gopher, ftp, or telnet links.',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -542,6 +547,7 @@ examples:
         mine=args.mine,
         on_this_day=args.on_this_day,
         merge_stats=args.merge_stats,
+        has_links=getattr(args, 'has_links', False),
         filename_pattern=getattr(args, 'filename_pattern', None),
         min_length=getattr(args, 'min_length', None),
         max_length=getattr(args, 'max_length', None),
