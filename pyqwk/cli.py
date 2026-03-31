@@ -90,7 +90,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help='Path to one or more message archives, ZIP files, or folders. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, SQLite, and Markdown.',
+        help='Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, CSV, XML, MBOX, EML, SQLite, and Markdown.',
         nargs='+',
     )
 
@@ -99,18 +99,18 @@ examples:
         '-o',
         '--output',
         dest='output_path',
-        help='Save results to a file or folder. Prints to the screen by default.',
+        help='Save results to a file or folder. By default, it prints to the screen.',
     )
     io_group.add_argument(
         '-i',
         '--individual-files',
         dest='individualfiles',
-        help='Save each message as a separate file. This also creates an index for HTML and Markdown.',
+        help='Save each message as a separate file. This also creates a browsable index for HTML and Markdown.',
         action='store_true',
     )
     io_group.add_argument(
         '--organize',
-        help='Organize individual files into folders by conference.',
+        help='Organize individual files into subfolders by conference.',
         action='store_true',
     )
     io_group.add_argument(
@@ -121,19 +121,19 @@ examples:
     )
     io_group.add_argument(
         '--filename-pattern',
-        help="A pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, msgnum, confnum, confname, bbs_name, bbs_id.",
+        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, msgnum, confnum, confname, bbs_name, bbs_id, length.",
     )
     io_group.add_argument(
         '-E',
         '--encoding',
-        help="The character set of the input files. Default is 'cp437' (standard for DOS-based BBSs). Use this if messages show strange characters.",
+        help="Set the character set of the input files. Default is 'cp437' (standard for DOS-based BBSs). Use this if messages show strange characters.",
         default='cp437',
     )
 
     content_group = parser.add_argument_group('Content Processing')
     content_group.add_argument(
         '--clean',
-        help='Automatically remove signatures, quoted replies, attachments, and color codes.',
+        help='Remove signatures, quoted replies, attachments, and color codes.',
         action='store_true',
     )
     content_group.add_argument(
@@ -187,7 +187,7 @@ examples:
     content_group.add_argument(
         '-H',
         '--headers-only',
-        help='Show only the message headers and hide the message text.',
+        help='Show only the message headers.',
         action='store_true',
     )
 
@@ -196,8 +196,8 @@ examples:
         '-F',
         '--format',
         help=(
-            'Choose the output format (text, html, json, etc.). '
-            'If you leave this out, it is determined by the file extension of the output path.'
+            'Set the output format (text, html, json, etc.). '
+            'If omitted, the format is determined by the output file extension.'
         ),
         default=None,
         choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
@@ -214,12 +214,12 @@ examples:
         '--separator',
         choices=['auto', 'none', 'dashes', 'blank'],
         default='auto',
-        help='Choose how to separate messages in the output file.',
+        help='Set how to separate messages in the output file.',
     )
     format_group.add_argument(
         '-n',
         '--noheader',
-        help='Do not include message information in the output text.',
+        help='Hide message information in the output text.',
         action='store_true',
     )
     format_group.add_argument(
@@ -264,7 +264,7 @@ examples:
         '-d',
         '--dry-run',
         action='store_true',
-        help='Do everything except actually writing files. Useful for testing filters.',
+        help='Preview actions without writing files to disk. Useful for testing filters.',
     )
     control_group.add_argument(
         '-l',
@@ -281,33 +281,33 @@ examples:
         '--conference',
         dest='conferences',
         action='append',
-        help='Filter messages by conference name or number (can be used multiple times).',
+        help='Show messages from this conference (can be used multiple times).',
     )
     filter_group.add_argument(
         '--bbs',
         dest='bbs_names',
         action='append',
-        help='Filter messages by BBS name or ID (can be used multiple times).',
+        help='Show messages from this BBS (can be used multiple times).',
     )
     filter_group.add_argument(
         '-f',
         '--from',
         dest='authors',
         action='append',
-        help='Only show messages from this author (you can use part of the name).',
+        help='Show messages from this author (you can use part of the name).',
     )
     filter_group.add_argument(
         '--to',
         dest='recipients',
         action='append',
-        help='Only show messages to this recipient (you can use part of the name).',
+        help='Show messages to this recipient (you can use part of the name).',
     )
     filter_group.add_argument(
         '-s',
         '--subject',
         dest='subjects',
         action='append',
-        help='Only show messages with this word in the subject line.',
+        help='Show messages with this word in the subject line.',
     )
     filter_group.add_argument(
         '-S',
@@ -322,18 +322,18 @@ examples:
     )
     filter_group.add_argument(
         '--after',
-        help='Only show messages sent on or after this date (YYYY-MM-DD).',
+        help='Show messages sent on or after this date (YYYY-MM-DD).',
         default=None,
     )
     filter_group.add_argument(
         '--min-length',
-        help='Only show messages with at least this many characters.',
+        help='Show messages with at least this many characters.',
         type=int,
         default=None,
     )
     filter_group.add_argument(
         '--max-length',
-        help='Only show messages with at most this many characters.',
+        help='Show messages with at most this many characters.',
         type=int,
         default=None,
     )
@@ -341,33 +341,33 @@ examples:
         '-K',
         '--skip',
         metavar='NUM',
-        help='Skip the first this many matching messages.',
+        help='Skip the first set of matching messages.',
         type=int,
         default=None,
     )
     filter_group.add_argument(
         '--before',
-        help='Only show messages sent on or before this date (YYYY-MM-DD).',
+        help='Show messages sent on or before this date (YYYY-MM-DD).',
         default=None,
     )
     filter_group.add_argument(
         '-N',
         '--msgnum',
         dest='msgnum_filter',
-        help="Only show specific message numbers or ranges (for example: '100', '200-300', or '10,20,50-100').",
+        help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
     filter_group.add_argument(
         '-L',
         '--limit',
         metavar='NUM',
-        help='Stop after processing this many matching messages.',
+        help='Stop after this many matching messages.',
         type=int,
         default=None,
     )
     filter_group.add_argument(
         '-u',
         '--unique',
-        help='Remove duplicate messages when merging archives.',
+        help='Remove duplicate messages during a merge.',
         action='store_true',
     )
     filter_group.add_argument(
@@ -383,17 +383,17 @@ examples:
     )
     filter_group.add_argument(
         '--has-attachments',
-        help='Only show messages that contain attachments (UUE, yEnc, Base64).',
+        help='Show messages that contain attachments (UUE, yEnc, Base64).',
         action='store_true',
     )
     filter_group.add_argument(
         '--mine',
-        help='Only show messages sent to or from your user name.',
+        help='Show messages sent to or from your user name.',
         action='store_true',
     )
     filter_group.add_argument(
         '--on-this-day',
-        help='Only show messages sent on this same month and day in any year.',
+        help='Show messages sent on this same month and day in any year.',
         action='store_true',
     )
 
@@ -406,12 +406,12 @@ examples:
     parser.add_argument(
         '--stats',
         action='store_true',
-        help='Show detailed statistics about the messages and exit. Use --format json for JSON output.',
+        help='Show detailed statistics and exit. Use --format json for JSON output.',
     )
     parser.add_argument(
         '--merge-stats',
         action='store_true',
-        help='When used with multiple archives and --stats, show a single merged report instead of individual ones.',
+        help='Show a single merged report when analyzing multiple archives.',
     )
     parser.add_argument(
         '-V',
