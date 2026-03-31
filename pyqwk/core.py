@@ -105,6 +105,10 @@ RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
 RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
 RE_BASE64_LOOSE_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{4,}$')
 RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
+RE_URL_PATTERN = re.compile(
+    r'\b(?:https?|ftp|telnet|gopher)://[^\s<>"]+|www\.[^\s<>"]+',
+    re.IGNORECASE
+)
 RE_PHONE_PATTERN = re.compile(
     r'(?<!\w)'
     r'(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)'
@@ -382,6 +386,7 @@ class ProcessingSettings:
     on_this_day: bool = False
     reference_date: datetime.datetime | None = None
     merge_stats: bool = False
+    has_links: bool = False
 
 
 @dataclass
@@ -1850,6 +1855,11 @@ def matches_filters(
             message.attachments = [name for name, data in found]
 
         if settings.has_attachments and not message.attachments:
+            return False
+
+    # 9b. Links Filter
+    if settings.has_links:
+        if not (message.text and RE_URL_PATTERN.search(message.text)):
             return False
 
     # 10. Length Filter
@@ -3602,6 +3612,7 @@ def calculate_archive_stats(
         "bbses": [],
         "subjects": [],
         "keywords": [],
+        "links": [],
         "attachments_count": 0,
         "day_of_week": {},
         "hour_of_day": {},
@@ -3620,6 +3631,7 @@ def calculate_archive_stats(
     conf_names: dict[int, str] = {}
     subject_counter: Counter = Counter()
     keyword_counter: Counter = Counter()
+    link_counter: Counter = Counter()
     dow_counter: Counter = Counter()
     hour_counter: Counter = Counter()
     year_counter: Counter = Counter()
@@ -3733,6 +3745,11 @@ def calculate_archive_stats(
                         if word not in DEFAULT_STOP_WORDS and not word.isdigit():
                             keyword_counter[word] += 1
 
+                    # URL analysis
+                    urls = RE_URL_PATTERN.findall(message.text)
+                    for url in urls:
+                        link_counter[url.lower()] += 1
+
     stats_entry["total_messages"] = total_count
     stats_entry["matching_messages"] = processed_count
     stats_entry["private_count"] = private_count
@@ -3752,6 +3769,7 @@ def calculate_archive_stats(
     stats_entry["bbses"] = [{"name": n, "count": c} for n, c in bbs_counter.most_common(10)]
     stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
     stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
+    stats_entry["links"] = [{"url": u, "count": c} for u, c in link_counter.most_common(10)]
     stats_entry["day_of_week"] = dict(dow_counter)
     stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
     stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
@@ -3809,6 +3827,9 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
 
     parts.extend(_render_stats_bar_chart('Top Subjects:', [(s["subject"], s["count"]) for s in stats['subjects']], use_colors=use_colors))
     parts.extend(_render_stats_bar_chart('Top Keywords:', [(k["word"], k["count"]) for k in stats['keywords']], use_colors=use_colors))
+
+    if stats.get('links'):
+        parts.extend(_render_stats_bar_chart('Top Links:', [(l["url"], l["count"]) for l in stats['links']], use_colors=use_colors))
 
     if stats['day_of_week']:
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

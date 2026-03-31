@@ -2,6 +2,7 @@ import argparse
 import datetime
 import logging
 import os
+import webbrowser
 import tkinter as tk
 from collections import Counter
 from dataclasses import replace
@@ -15,6 +16,7 @@ from pyqwk.core import (
     process_message,
     matches_filters,
     RE_QUOTE_PATTERN,
+    RE_URL_PATTERN,
     get_allowed_conferences,
     _parse_qwk_date,
     resolve_output_format,
@@ -74,6 +76,7 @@ class QwkGuiApp:
         self.has_attach_var = tk.BooleanVar(value=False)
         self.mine_var = tk.BooleanVar(value=False)
         self.on_this_day_var = tk.BooleanVar(value=False)
+        self.has_links_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -396,6 +399,7 @@ class QwkGuiApp:
         self.has_attach_var.set(False)
         self.mine_var.set(False)
         self.on_this_day_var.set(False)
+        self.has_links_var.set(False)
         self.reload_messages()
         self.message_list.focus_set()
 
@@ -462,6 +466,7 @@ class QwkGuiApp:
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
             ("On This Day", self.on_this_day_var),
+            ("Links", self.has_links_var),
         ]:
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
@@ -652,6 +657,7 @@ class QwkGuiApp:
             has_attachments=self.has_attach_var.get(),
             mine=self.mine_var.get(),
             on_this_day=self.on_this_day_var.get(),
+            has_links=self.has_links_var.get(),
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -758,7 +764,30 @@ class QwkGuiApp:
             tags = ["body"]
             if RE_QUOTE_PATTERN.match(line):
                 tags.append("quote")
-            self.detail_text.insert(tk.END, line, tuple(tags))
+
+            # Find URLs in the line
+            last_idx = 0
+            for match in RE_URL_PATTERN.finditer(line):
+                start, end = match.span()
+                # Insert text before URL
+                if start > last_idx:
+                    self.detail_text.insert(tk.END, line[last_idx:start], tuple(tags))
+
+                # Insert URL
+                url = match.group(0)
+                # Ensure the URL has a scheme for webbrowser.open compatibility
+                full_url = url if "://" in url else f"http://{url}"
+                url_tag = f"url_{id(url)}_{start}"
+                # Combine link/body tags with the existing line tags (e.g. 'quote')
+                link_tags = ("link", "body", url_tag) + tuple(t for t in tags if t != "body")
+                self.detail_text.insert(tk.END, url, link_tags)
+                self.detail_text.tag_bind(url_tag, "<Button-1>", lambda e, u=full_url: webbrowser.open(u))
+
+                last_idx = end
+
+            # Insert remaining text
+            if last_idx < len(line):
+                self.detail_text.insert(tk.END, line[last_idx:], tuple(tags))
 
         # Highlight search terms if present
         search_term = self.search_var.get().strip()
@@ -1511,6 +1540,9 @@ class QwkGuiApp:
 
             render_gui_bar_chart('Top Subjects', [(s["subject"], s["count"]) for s in stats['subjects']])
             render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']])
+
+            if stats.get('links'):
+                render_gui_bar_chart('Top Links', [(l["url"], l["count"]) for l in stats['links']])
 
             if stats['day_of_week']:
                 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
