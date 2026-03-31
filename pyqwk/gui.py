@@ -178,6 +178,15 @@ class QwkGuiApp:
 
         menu.post(event.x_root, event.y_root)
 
+    def _format_size(self, size: int) -> str:
+        """Format byte count into a human-readable string (B, KB, MB)."""
+        if size < 1024:
+            return f"{size} B"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        else:
+            return f"{size / (1024 * 1024):.1f} MB"
+
     def _search_from_selection(self) -> None:
         """Search for the currently selected text in the detail viewer."""
         try:
@@ -1103,7 +1112,7 @@ class QwkGuiApp:
                         header.msgfrom.strip(),
                         header.msgto.strip(),
                         f"{header.msgdate} {header.msgtime}",
-                        f"{len(message.text)} B" if message.text else "0 B",
+                        self._format_size(len(message.text)) if message.text else "0 B",
                         conf_name,
                         message.bbs_name or message.bbs_id or "",
                     ),
@@ -1561,32 +1570,67 @@ class QwkGuiApp:
         """Sort the treeview contents by the given column."""
         items = []
         try:
-            items = [
-                (self.message_list.set(k, col), k)
-                if col != "#0"
-                else (self.message_list.item(k, "text"), k)
-                for k in self.message_list.get_children("")
-            ]
-            if not items:
+            # We want to sort the items that are currently in the treeview
+            # (which might be a subset of self.messages due to filtering)
+            item_ids = self.message_list.get_children("")
+            if not item_ids:
                 return
-            if col == "Num":
-                items.sort(key=lambda t: int(t[0]) if t[0] and str(t[0]).isdigit() else 0, reverse=reverse)
-            elif col == "Size":
-                items.sort(key=lambda t: int(t[0].split()[0]) if t[0] and str(t[0].split()[0]).isdigit() else 0, reverse=reverse)
-            elif col == "Date":
-                # QWK date is MM-DD-YY HH:MM. Sort chronologically.
-                def get_date_key(date_str):
-                    parts = date_str.split()
-                    date_part = parts[0] if len(parts) > 0 else ""
-                    time_part = parts[1] if len(parts) > 1 else "00:00"
-                    return _parse_qwk_date(date_part, time_part)
-                items.sort(key=lambda item_tuple: get_date_key(item_tuple[0]), reverse=reverse)
-            else:
-                items.sort(key=lambda t: t[0].lower(), reverse=reverse)
+
+            def get_sort_key(iid):
+                # Try to use the underlying message data for accurate sorting
+                try:
+                    idx = int(iid)
+                    msg = self.messages[idx]
+
+                    if col == "Num":
+                        return msg.header.msgnum or 0
+                    elif col == "Size":
+                        return len(msg.text) if msg.text else 0
+                    elif col == "Date":
+                        return _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+                    elif col == "From":
+                        return msg.header.msgfrom.lower()
+                    elif col == "To":
+                        return msg.header.msgto.lower()
+                    elif col == "Conference":
+                        return self.board_dict.get(msg.header.confnum, "").lower()
+                    elif col == "BBS":
+                        return (msg.bbs_name or msg.bbs_id or "").lower()
+                    elif col == "Flags":
+                        return (msg.header.status + (";".join(msg.attachments) if msg.attachments else "")).lower()
+                    elif col == "#0":
+                        return msg.header.msgsubject.lower()
+                except (ValueError, IndexError):
+                    pass
+
+                # Fallback to displayed text for items not mapping to self.messages (e.g. in tests)
+                val = self.message_list.set(iid, col) if col != "#0" else self.message_list.item(iid, "text")
+                if col == "Num":
+                    return int(val) if val and str(val).isdigit() else 0
+                elif col == "Size":
+                    try:
+                        return float(val.split()[0])
+                    except (ValueError, IndexError, AttributeError):
+                        return 0
+                elif col == "Date":
+                    try:
+                        parts = val.split()
+                        date_part = parts[0] if len(parts) > 0 else ""
+                        time_part = parts[1] if len(parts) > 1 else "00:00"
+                        return _parse_qwk_date(date_part, time_part)
+                    except Exception:
+                        return datetime.datetime.min
+                return str(val).lower()
+
+            items = [(get_sort_key(iid), iid) for iid in item_ids]
+            items.sort(key=lambda t: t[0], reverse=reverse)
         except Exception:
             # Fallback if sorting fails
             if items:
-                items.sort(key=lambda t: t[0], reverse=reverse)
+                try:
+                    items.sort(key=lambda t: str(t[0]), reverse=reverse)
+                except Exception:
+                    pass
 
         # Rearrange items in sorted positions
         for index, (_, k) in enumerate(items):
