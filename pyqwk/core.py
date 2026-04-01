@@ -387,6 +387,9 @@ class ProcessingSettings:
     reference_date: datetime.datetime | None = None
     merge_stats: bool = False
     has_links: bool = False
+    has_emails: bool = False
+    has_phones: bool = False
+    has_ansi: bool = False
 
 
 @dataclass
@@ -1860,6 +1863,21 @@ def matches_filters(
     # 9b. Links Filter
     if settings.has_links:
         if not (message.text and RE_URL_PATTERN.search(message.text)):
+            return False
+
+    # 9c. Emails Filter
+    if settings.has_emails:
+        if not (message.text and RE_EMAIL_PATTERN.search(message.text)):
+            return False
+
+    # 9d. Phones Filter
+    if settings.has_phones:
+        if not (message.text and RE_PHONE_PATTERN.search(message.text)):
+            return False
+
+    # 9e. ANSI Filter
+    if settings.has_ansi:
+        if not (message.text and RE_ANSI_ESCAPE_PATTERN.search(message.text)):
             return False
 
     # 10. Length Filter
@@ -3613,6 +3631,8 @@ def calculate_archive_stats(
         "subjects": [],
         "keywords": [],
         "links": [],
+        "emails": [],
+        "phones": [],
         "attachments_count": 0,
         "day_of_week": {},
         "hour_of_day": {},
@@ -3632,6 +3652,8 @@ def calculate_archive_stats(
     subject_counter: Counter = Counter()
     keyword_counter: Counter = Counter()
     link_counter: Counter = Counter()
+    email_counter: Counter = Counter()
+    phone_counter: Counter = Counter()
     dow_counter: Counter = Counter()
     hour_counter: Counter = Counter()
     year_counter: Counter = Counter()
@@ -3750,6 +3772,16 @@ def calculate_archive_stats(
                     for url in urls:
                         link_counter[url.lower()] += 1
 
+                    # Email analysis
+                    emails = RE_EMAIL_PATTERN.findall(message.text)
+                    for email_addr in emails:
+                        email_counter[email_addr.lower()] += 1
+
+                    # Phone analysis
+                    phones = RE_PHONE_PATTERN.findall(message.text)
+                    for phone in phones:
+                        phone_counter[phone.strip()] += 1
+
     stats_entry["total_messages"] = total_count
     stats_entry["matching_messages"] = processed_count
     stats_entry["private_count"] = private_count
@@ -3770,6 +3802,8 @@ def calculate_archive_stats(
     stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
     stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
     stats_entry["links"] = [{"url": u, "count": c} for u, c in link_counter.most_common(10)]
+    stats_entry["emails"] = [{"email": e, "count": c} for e, c in email_counter.most_common(10)]
+    stats_entry["phones"] = [{"phone": p, "count": c} for p, c in phone_counter.most_common(10)]
     stats_entry["day_of_week"] = dict(dow_counter)
     stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
     stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
@@ -3830,6 +3864,12 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
 
     if stats.get('links'):
         parts.extend(_render_stats_bar_chart('Top Links:', [(l["url"], l["count"]) for l in stats['links']], use_colors=use_colors))
+
+    if stats.get('emails'):
+        parts.extend(_render_stats_bar_chart('Top Emails:', [(e["email"], e["count"]) for e in stats['emails']], use_colors=use_colors))
+
+    if stats.get('phones'):
+        parts.extend(_render_stats_bar_chart('Top Phone Numbers:', [(p["phone"], p["count"]) for p in stats['phones']], use_colors=use_colors))
 
     if stats['day_of_week']:
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
