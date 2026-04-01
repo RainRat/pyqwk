@@ -95,7 +95,7 @@ qwk-gui archive.eml
 - **Filtering:** View messages from specific BBSes or conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
 - **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
 - **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Toggle between **Clean** view (removes formatting) and **Remove Colors**.
+- **Viewing Options:** Toggle the **Clean** view to hide signatures, quoted replies, and attachments. Use **Remove Colors** to strip ANSI color codes from the text.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
 - **Statistics:** View detailed activity reports, top authors, and temporal distributions for the current archive and filters.
@@ -107,7 +107,8 @@ qwk-gui archive.eml
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + G**: Jump to a specific message number.
 - **Ctrl + Q**: Exit the application.
-- **j / k** or **n / p**: Move to the next or previous message in the list.
+- **j** or **n**: Move to the next message in the list.
+- **k** or **p**: Move to the previous message in the list.
 - **Esc**: Clear the search filter and return focus to the message list. This works from anywhere in the application.
 - **Enter**: Execute the search immediately and move focus to the message list.
 
