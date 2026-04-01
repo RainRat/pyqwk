@@ -437,18 +437,15 @@ class QwkGuiApp:
         search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
-            search_frame, textvariable=self.search_var, width=20
+            search_frame, textvariable=self.search_var, width=30
         )
-        self.search_entry.pack(side=tk.LEFT, padx=(5, 2))
+        self.search_entry.pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Button(
+            search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
+        ).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Checkbutton(
             search_frame, text="Regex", variable=self.regex_var, command=self.reload_messages
         ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
-
-        ttk.Button(row1, text="Reset All", command=self.clear_filters).pack(
-            side=tk.LEFT, padx=5
-        )
 
         # Row 2: Refinement and Filters
         row2 = ttk.Frame(toolbar)
@@ -486,6 +483,12 @@ class QwkGuiApp:
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=self.reload_messages
             ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        ttk.Button(row2, text="Reset All", command=self.clear_filters).pack(
+            side=tk.LEFT, padx=5
+        )
 
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
