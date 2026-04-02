@@ -457,25 +457,41 @@ class QwkGuiApp:
         row2 = ttk.Frame(toolbar)
         row2.pack(side=tk.TOP, fill=tk.X)
 
+        archives_frame = ttk.Frame(row2)
+        archives_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Label(archives_frame, text="Archives:").pack(side=tk.LEFT)
+        self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
+        self.bbs_combo.pack(side=tk.LEFT, padx=(5, 2))
+        self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
+        self.conf_combo.pack(side=tk.LEFT, padx=2)
+
+        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
         filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(filters_frame, text="Filters:").pack(side=tk.LEFT)
-        self.bbs_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
-        self.bbs_combo.pack(side=tk.LEFT, padx=(5, 2))
-        self.conf_combo = ttk.Combobox(filters_frame, state="readonly", width=25)
-        self.conf_combo.pack(side=tk.LEFT, padx=2)
-
         for text, var in [
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
             ("On This Day", self.on_this_day_var),
+        ]:
+            ttk.Checkbutton(
+                filters_frame, text=text, variable=var, command=self.reload_messages
+            ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+        discovery_frame = ttk.Frame(row2)
+        discovery_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Label(discovery_frame, text="Discovery:").pack(side=tk.LEFT)
+        for text, var in [
             ("Links", self.has_links_var),
             ("Emails", self.has_emails_var),
             ("Phones", self.has_phones_var),
             ("ANSI", self.has_ansi_var),
         ]:
             ttk.Checkbutton(
-                filters_frame, text=text, variable=var, command=self.reload_messages
+                discovery_frame, text=text, variable=var, command=self.reload_messages
             ).pack(side=tk.LEFT, padx=5)
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
