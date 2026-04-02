@@ -1968,7 +1968,8 @@ def process_merged_files(
         output_dir = resolved_output_path
         if os.path.exists(output_dir) and not os.path.isdir(output_dir):
             raise ValueError('The output path must be a folder when using individual files.')
-        os.makedirs(output_dir, exist_ok=True)
+        if not settings.dry_run:
+            os.makedirs(output_dir, exist_ok=True)
 
     collected_messages: list[ParsedMessage] = []
     seen_ids: set[tuple[str, int, int | str]] = set()
@@ -2147,7 +2148,8 @@ def process_merged_files(
                 conf_slug = _slugify(conf_name, "conference")
                 conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
                 target_dir = os.path.join(output_dir, conf_dir)
-                os.makedirs(target_dir, exist_ok=True)
+                if not settings.dry_run:
+                    os.makedirs(target_dir, exist_ok=True)
 
             attachment_prefix = None
             if settings.extract_attachments:
@@ -3921,7 +3923,8 @@ def process_multiple_files(
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> bool:
-    os.makedirs(output_dir, exist_ok=True)
+    if not settings.dry_run:
+        os.makedirs(output_dir, exist_ok=True)
     had_errors = False
     for input_path in input_paths:
         try:
