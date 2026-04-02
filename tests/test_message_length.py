@@ -109,7 +109,7 @@ def test_filename_pattern_length(monkeypatch, tmp_path):
     msg = ParsedMessage("Body", 1, None, 1, header)
 
     # Mock load_data
-    monkeypatch.setattr("pyqwk.core.load_data", lambda p, l, e: ([msg], {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.load_data", lambda p, logger, e: ([msg], {1: "General"}))
 
     output_dir = tmp_path / "output"
     output_dir.mkdir()

@@ -99,7 +99,7 @@ def test_stats_advanced_ui(monkeypatch, capsys):
         )
     )
 
-    monkeypatch.setattr("pyqwk.core.load_data", lambda p, l, e: ([msg1], ConferenceMap({1: "Test"})))
+    monkeypatch.setattr("pyqwk.core.load_data", lambda p, logger, e: ([msg1], ConferenceMap({1: "Test"})))
 
     settings = ProcessingSettings(
         verbose=False, private=True, no_header=False,

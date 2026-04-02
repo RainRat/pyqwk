@@ -3863,7 +3863,7 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
     parts.extend(_render_stats_bar_chart('Top Keywords:', [(k["word"], k["count"]) for k in stats['keywords']], use_colors=use_colors))
 
     if stats.get('links'):
-        parts.extend(_render_stats_bar_chart('Top Links:', [(l["url"], l["count"]) for l in stats['links']], use_colors=use_colors))
+        parts.extend(_render_stats_bar_chart('Top Links:', [(link["url"], link["count"]) for link in stats['links']], use_colors=use_colors))
 
     if stats.get('emails'):
         parts.extend(_render_stats_bar_chart('Top Emails:', [(e["email"], e["count"]) for e in stats['emails']], use_colors=use_colors))

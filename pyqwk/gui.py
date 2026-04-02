@@ -1557,7 +1557,7 @@ class QwkGuiApp:
             render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']])
 
             if stats.get('links'):
-                render_gui_bar_chart('Top Links', [(l["url"], l["count"]) for l in stats['links']])
+                render_gui_bar_chart('Top Links', [(link["url"], link["count"]) for link in stats['links']])
 
             if stats.get('emails'):
                 render_gui_bar_chart('Top Emails', [(e["email"], e["count"]) for e in stats['emails']])

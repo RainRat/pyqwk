@@ -1,7 +1,4 @@
-import sys
 from unittest.mock import MagicMock, patch
-import pytest
-import datetime
 
 from pyqwk.core import (
     ProcessingSettings,

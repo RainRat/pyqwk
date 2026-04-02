@@ -1,6 +1,7 @@
 import sys
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 import pytest
+import tkinter as tk
 
 # Mock tkinter before any pyqwk.gui imports
 mock_tk = MagicMock()
@@ -10,6 +11,7 @@ sys.modules["tkinter.filedialog"] = MagicMock()
 sys.modules["tkinter.messagebox"] = MagicMock()
 sys.modules["tkinter.ttk"] = mock_ttk
 
+from pyqwk.gui import QwkGuiApp
 from pyqwk.core import (
     RE_URL_PATTERN,
     ProcessingSettings,
@@ -127,7 +129,7 @@ def test_url_stats(tmp_path):
         stats = calculate_archive_stats(["dummy.qwk"], settings, MagicMock())
 
         # Verify links were found and counted correctly
-        links = {l['url']: l['count'] for l in stats['links']}
+        links = {link['url']: link['count'] for link in stats['links']}
         assert "https://a.com" in links
         assert "https://b.com" in links
         assert links["https://a.com"] == 2
