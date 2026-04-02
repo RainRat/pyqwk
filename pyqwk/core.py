@@ -772,6 +772,10 @@ class LogFormatter(logging.Formatter):
 
 def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], ConferenceMap]:
     """Import messages and metadata from a pyqwk SQLite database."""
+    # Ensure the file exists before connecting to avoid creating an empty database
+    if db_path and db_path != ':memory:' and not os.path.exists(db_path):
+        raise sqlite3.OperationalError(f"unable to open database file: {db_path}")
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -1276,10 +1280,10 @@ def load_data(
     """
     board_dict: dict[int, str] = {}
 
-    if input_path.lower().endswith(('.db', '.sqlite')):
+    if input_path.lower().endswith(('.db', '.sqlite')) or input_path == ':memory:':
         try:
             messages, board_dict = _parse_sqlite_messages(input_path)
-        except Exception as e:
+        except (ValueError, sqlite3.Error) as e:
             raise ValueError(f"Failed to load SQLite archive: {e}")
 
         return messages, board_dict
