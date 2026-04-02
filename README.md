@@ -93,12 +93,12 @@ qwk-gui archive.eml
 - **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can also highlight any text in a message, right-click, and select **Search for '[Selected Text]'** to instantly find related messages.
 - **Attachments:** Messages containing attachments (UUE, Base64, yEnc) display clickable links in the header. Click any attachment name to save it to your computer. You can also use **File > Extract All Attachments...** to batch-save all attachments from the current filtered view to a folder.
 - **Filtering:** View messages from specific BBSes or conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
-- **Context Menus:** Right-click on any message in the list to copy its metadata (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
+- **Context Menus:** Right-click on any message in the list to copy its information (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
 - **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Toggle the **Clean** view to hide signatures, quoted replies, and attachments. Use **Remove Colors** to strip ANSI color codes from the text.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
-- **Statistics:** View detailed activity reports, top authors, and temporal distributions for the current archive and filters.
+- **Statistics:** View detailed activity reports, top authors, and charts showing activity over time for the current archive and filters.
 
 **Keyboard Shortcuts:**
 - **Ctrl + O**: Open any supported message archive.
@@ -361,7 +361,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyqwk")
 
 # Load the archive and conference list
-# file_data can be a bytearray (for QWK/REP) or a list of messages (for JSON/CSV/etc.)
+# file_data can be raw data (for QWK/REP) or a list of messages (for JSON/CSV/etc.)
 file_data, board_dict = load_data("archive.qwk", logger)
 
 # Determine if we need to parse raw data or use pre-parsed messages
