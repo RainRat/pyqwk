@@ -77,6 +77,9 @@ class QwkGuiApp:
         self.mine_var = tk.BooleanVar(value=False)
         self.on_this_day_var = tk.BooleanVar(value=False)
         self.has_links_var = tk.BooleanVar(value=False)
+        self.has_emails_var = tk.BooleanVar(value=False)
+        self.has_phones_var = tk.BooleanVar(value=False)
+        self.has_ansi_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -400,6 +403,9 @@ class QwkGuiApp:
         self.mine_var.set(False)
         self.on_this_day_var.set(False)
         self.has_links_var.set(False)
+        self.has_emails_var.set(False)
+        self.has_phones_var.set(False)
+        self.has_ansi_var.set(False)
         self.reload_messages()
         self.message_list.focus_set()
 
@@ -464,6 +470,9 @@ class QwkGuiApp:
             ("My Messages", self.mine_var),
             ("On This Day", self.on_this_day_var),
             ("Links", self.has_links_var),
+            ("Emails", self.has_emails_var),
+            ("Phones", self.has_phones_var),
+            ("ANSI", self.has_ansi_var),
         ]:
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
@@ -661,6 +670,9 @@ class QwkGuiApp:
             mine=self.mine_var.get(),
             on_this_day=self.on_this_day_var.get(),
             has_links=self.has_links_var.get(),
+            has_emails=self.has_emails_var.get(),
+            has_phones=self.has_phones_var.get(),
+            has_ansi=self.has_ansi_var.get(),
         )
 
     def _render_message(self, message_index: int) -> None:
@@ -1546,6 +1558,12 @@ class QwkGuiApp:
 
             if stats.get('links'):
                 render_gui_bar_chart('Top Links', [(l["url"], l["count"]) for l in stats['links']])
+
+            if stats.get('emails'):
+                render_gui_bar_chart('Top Emails', [(e["email"], e["count"]) for e in stats['emails']])
+
+            if stats.get('phones'):
+                render_gui_bar_chart('Top Phone Numbers', [(p["phone"], p["count"]) for p in stats['phones']])
 
             if stats['day_of_week']:
                 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

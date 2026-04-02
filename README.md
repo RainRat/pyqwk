@@ -329,6 +329,19 @@ Only show messages sent on this same month and day in any year. This is a great 
 qwk archive.qwk --on-this-day
 ```
 
+**Filter by Entity (Emails, Phones, ANSI):**
+Only show messages that contain specific types of content.
+```bash
+# Show messages with email addresses
+qwk archive.qwk --has-emails
+
+# Show messages with phone numbers
+qwk archive.qwk --has-phones
+
+# Show messages with ANSI color codes
+qwk archive.qwk --has-ansi
+```
+
 **Dry Run:**
 Preview exactly how many messages match your filters and how many files will be created without actually making any changes.
 ```bash
@@ -426,6 +439,9 @@ for msg in messages:
 | `--has-attachments` | Only show messages that contain attachments. |
 | `--mine` | Only show messages from or to your user name. |
 | `--on-this-day` | Only show messages sent on this same month and day in any year. |
+| `--has-emails` | Only show messages that contain email addresses. |
+| `--has-phones` | Only show messages that contain phone numbers. |
+| `--has-ansi` | Only show messages that contain ANSI color codes. |
 | `--min-length [n]` | Only show messages with at least `n` characters. |
 | `--max-length [n]` | Only show messages with at most `n` characters. |
 | `-I, --info` | Show archive summary and exit. |

@@ -401,6 +401,21 @@ examples:
         help='Only show messages that contain web, gopher, ftp, or telnet links.',
         action='store_true',
     )
+    filter_group.add_argument(
+        '--has-emails',
+        help='Only show messages that contain email addresses.',
+        action='store_true',
+    )
+    filter_group.add_argument(
+        '--has-phones',
+        help='Only show messages that contain phone numbers.',
+        action='store_true',
+    )
+    filter_group.add_argument(
+        '--has-ansi',
+        help='Only show messages that contain ANSI color codes.',
+        action='store_true',
+    )
 
     parser.add_argument(
         '-I',
@@ -548,6 +563,9 @@ examples:
         on_this_day=args.on_this_day,
         merge_stats=args.merge_stats,
         has_links=getattr(args, 'has_links', False),
+        has_emails=getattr(args, 'has_emails', False),
+        has_phones=getattr(args, 'has_phones', False),
+        has_ansi=getattr(args, 'has_ansi', False),
         filename_pattern=getattr(args, 'filename_pattern', None),
         min_length=getattr(args, 'min_length', None),
         max_length=getattr(args, 'max_length', None),
