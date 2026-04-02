@@ -41,7 +41,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml', '.md', '.markdown')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml', '.md', '.markdown')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -50,6 +50,7 @@ def expand_paths(paths: list[str]) -> list[str]:
 FORMAT_EXTENSIONS = {
     'text': '.txt',
     'json': '.json',
+    'jsonl': '.jsonl',
     'xml': '.xml',
     'html': '.html',
     'markdown': '.md',
@@ -82,6 +83,7 @@ def resolve_output_format(
         ext = os.path.splitext(output_path)[1].lower()
         mapping = {
             '.json': 'json',
+            '.jsonl': 'jsonl',
             '.xml': 'xml',
             '.html': 'html',
             '.csv': 'csv',
@@ -860,8 +862,10 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
 
 
 
-def _parse_json_messages(data: list[dict[str, Any]]) -> list[ParsedMessage]:
-    """Convert a list of dictionaries into ParsedMessage objects."""
+def _parse_json_messages(data: list[dict[str, Any]] | dict[str, Any]) -> list[ParsedMessage]:
+    """Convert a list of dictionaries or a single dictionary into ParsedMessage objects."""
+    if isinstance(data, dict):
+        data = [data]
     messages = []
     for entry in data:
         header_dict = entry.get('header', {})
@@ -901,7 +905,12 @@ def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
     messages = []
     header_fields = {f.name for f in fields(MessageHeader)}
 
-    for entry in root.findall('message'):
+    if root.tag == 'message':
+        entries = [root]
+    else:
+        entries = root.findall('message')
+
+    for entry in entries:
         header_el = entry.find('header')
         header_dict = {}
         if header_el is not None:
@@ -1287,12 +1296,21 @@ def load_data(
     if input_path.lower().endswith('.json'):
         with open(input_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError("JSON archive must be a list of messages.")
             messages = _parse_json_messages(data)
 
             board_dict = _reconstruct_metadata(messages)
             return messages, board_dict
+
+    if input_path.lower().endswith('.jsonl'):
+        messages = []
+        with open(input_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip():
+                    data = json.loads(line)
+                    messages.extend(_parse_json_messages(data))
+
+        board_dict = _reconstruct_metadata(messages)
+        return messages, board_dict
 
     if input_path.lower().endswith('.mbox'):
         try:
@@ -2413,6 +2431,21 @@ def _write_json(
     _write_text_output(output_json, output_path, encoding='utf-8')
 
 
+def _write_jsonl(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    lines = []
+    for msg in messages:
+        lines.append(json.dumps(_message_to_dict(msg), ensure_ascii=False))
+    output_jsonl = "\n".join(lines)
+    _write_text_output(output_jsonl, output_path, encoding='utf-8')
+
+
 XML_INVALID_CHAR_PATTERN = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
 
 
@@ -3268,6 +3301,7 @@ def write_messages(
         ],
     ] = {
         'json': _write_json,
+        'jsonl': _write_jsonl,
         'xml': _write_xml,
         'html': _write_html,
         'markdown': _write_markdown,

@@ -49,13 +49,24 @@ def test_message_header_from_dict_invalid_int():
     assert header.msgnum is None
     assert header.confnum == 1
 
-def test_load_data_invalid_json_format(tmp_path, logger):
-    # Ensure load_data raises ValueError when JSON archive is not a list
-    json_file = tmp_path / "invalid.json"
-    json_file.write_text(json.dumps({"not": "a list"}))
+def test_load_data_single_message_json(tmp_path, logger):
+    # Ensure load_data correctly imports a single-message JSON archive (symmetry)
+    json_file = tmp_path / "single.json"
+    msg_dict = {
+        "header": {
+            "status": " ", "msgnum": 1, "msgdate": "01-01-23", "msgtime": "12:00",
+            "msgto": "All", "msgfrom": "User1", "msgsubject": "Subj1",
+            "msgpassword": "", "refnum": None, "numblocks": 2, "msgflag": " ",
+            "confnum": 1, "lognum": 1, "nettag": ""
+        },
+        "text": "Body",
+        "conference": "General"
+    }
+    json_file.write_text(json.dumps(msg_dict))
 
-    with pytest.raises(ValueError, match="JSON archive must be a list of messages."):
-        load_data(str(json_file), logger)
+    messages, _ = load_data(str(json_file), logger)
+    assert len(messages) == 1
+    assert messages[0].header.msgsubject == "Subj1"
 
 def test_load_data_json_with_bbs_name(tmp_path, logger):
     # Ensure BBS name is correctly loaded from a JSON message archive
