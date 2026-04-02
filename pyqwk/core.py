@@ -196,7 +196,7 @@ def _is_binary_line(
         return True, True, in_uue_block, in_base64_block
 
     if in_uue_block:
-        if stripped_line == 'end':
+        if stripped_line in ('end', '`'):
             return True, in_yenc_block, False, in_base64_block
         return True, in_yenc_block, True, in_base64_block
 

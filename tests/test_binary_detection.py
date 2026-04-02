@@ -54,13 +54,13 @@ class TestBinaryDetection:
         assert in_b64_4 is False
 
     def test_uue_backtick_inside_block(self):
-        # Backtick is a valid UUE line (zero length) but often doesn't match data patterns
+        # Backtick is a valid UUE terminator and should exit the block
         line = "`"
         skip, in_yenc, in_uue, in_b64 = _is_binary_line(
             line, previous_line=None, in_yenc_block=False, in_uue_block=True, in_base64_block=False
         )
         assert skip is True
-        assert in_uue is True
+        assert in_uue is False
 
     def test_uue_skips_until_end(self):
         # Any garbage inside a UUE block should be skipped until 'end'
