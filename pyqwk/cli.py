@@ -200,7 +200,7 @@ examples:
             'If omitted, the format is determined by the output file extension.'
         ),
         default=None,
-        choices=['text', 'json', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
+        choices=['text', 'json', 'jsonl', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
     )
     format_group.add_argument(
         '-j',
@@ -209,6 +209,14 @@ examples:
         const='json',
         dest='format',
         help='A shortcut for --format json.',
+    )
+    format_group.add_argument(
+        '-J',
+        '--jsonl',
+        action='store_const',
+        const='jsonl',
+        dest='format',
+        help='A shortcut for --format jsonl.',
     )
     format_group.add_argument(
         '--separator',

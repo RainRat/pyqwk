@@ -857,10 +857,11 @@ class QwkGuiApp:
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
-            ("All supported formats", "*.qwk *.rep *.json *.csv *.db *.sqlite *.xml *.mbox *.eml"),
+            ("All supported formats", "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.mbox *.eml"),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
             ("JSON archives", "*.json"),
+            ("JSONL archives", "*.jsonl"),
             ("CSV archives", "*.csv"),
             ("SQLite databases", "*.db *.sqlite"),
             ("XML archives", "*.xml"),
@@ -1331,6 +1332,7 @@ class QwkGuiApp:
             ("HTML files", "*.html"),
             ("Markdown files", "*.md"),
             ("JSON files", "*.json"),
+            ("JSONL files", "*.jsonl"),
             ("mbox files", "*.mbox"),
             ("EML files", "*.eml"),
             ("CSV files", "*.csv"),
