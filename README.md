@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk is a tool to convert `.QWK`, `.REP`, `.JSON`, `.CSV`, `.XML`, SQLite, `.mbox`, `.eml`, and Markdown (`.md`, `.markdown`) mail archives into modern formats like Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, and SQLite.
+pyqwk is a tool to convert `.QWK`, `.REP`, `.JSON`, `.JSONL`, `.CSV`, `.XML`, SQLite, `.mbox`, `.eml`, and Markdown (`.md`, `.markdown`) mail archives into modern formats like Text, HTML, JSON, JSONL, XML, Markdown, CSV, mbox, EML, and SQLite.
 
 ## What are QWK and REP files?
 
@@ -10,7 +10,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, CSV, XML, SQLite, mbox, EML, or Markdown.
+- **Multiple Formats:** Export to Text, HTML, JSON, JSONL, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, JSONL, CSV, XML, SQLite, mbox, EML, or Markdown.
 - **Conversation Threading:** Group replies together to follow discussions easily.
 - **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
 - **Privacy:** Hide personal information and handle private messages.
@@ -74,7 +74,7 @@ python -m pyqwk.gui
 
 ## Graphical Reader
 
-If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, CSV, XML, SQLite, mbox, EML, and Markdown).
+If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, JSONL, CSV, XML, SQLite, mbox, EML, and Markdown).
 
 **To start the reader:**
 ```bash
@@ -83,6 +83,7 @@ qwk-gui
 
 # Or open a specific file immediately
 qwk-gui archive.qwk
+qwk-gui archive.jsonl
 qwk-gui archive.csv
 qwk-gui archive.xml
 qwk-gui archive.mbox
@@ -149,6 +150,11 @@ qwk archive.qwk --format eml -o ./output_folder/
 **Convert to JSON for your own scripts:**
 ```bash
 qwk archive.qwk --format json -o data.json
+```
+
+**Convert to JSON Lines (streaming-friendly):**
+```bash
+qwk archive.qwk --format jsonl -o data.jsonl
 ```
 
 **Show a one-line summary for each message (great for quick scanning):**
@@ -329,9 +335,12 @@ Only show messages sent on this same month and day in any year. This is a great 
 qwk archive.qwk --on-this-day
 ```
 
-**Filter by Entity (Emails, Phones, ANSI):**
+**Filter by Entity (Links, Emails, Phones, ANSI):**
 Only show messages that contain specific types of content.
 ```bash
+# Show messages with web, gopher, ftp, or telnet links
+qwk archive.qwk --has-links
+
 # Show messages with email addresses
 qwk archive.qwk --has-emails
 
@@ -399,8 +408,9 @@ for msg in messages:
 | `--filename-pattern [pat]` | Set a pattern for naming individual files (e.g., `{date}_{author}_{subject}`). |
 | `--organize` | Organize files into subfolders by conference. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
-| `-F, --format [type]` | Set output format: `text`, `html`, `json`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
+| `-F, --format [type]` | Set output format: `text`, `html`, `json`, `jsonl`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-j`, `--json` | Use JSON output format (shortcut for `--format json`). |
+| `-J`, `--jsonl` | Use JSON Lines output format (shortcut for `--format jsonl`). |
 | `-T`, `--threaded` | Group replies into conversations. |
 | `-1`, `--oneline` | Show a one-line summary (Conference, Date, From, To, Subject). |
 | `--toc` | Add a table of contents and summary to the output. |
@@ -439,6 +449,7 @@ for msg in messages:
 | `--has-attachments` | Only show messages that contain attachments. |
 | `--mine` | Only show messages from or to your user name. |
 | `--on-this-day` | Only show messages sent on this same month and day in any year. |
+| `--has-links` | Only show messages that contain web, gopher, ftp, or telnet links. |
 | `--has-emails` | Only show messages that contain email addresses. |
 | `--has-phones` | Only show messages that contain phone numbers. |
 | `--has-ansi` | Only show messages that contain ANSI color codes. |
