@@ -396,7 +396,7 @@ class ProcessingSettings:
 
 @dataclass
 class BBSInfo:
-    """Metadata about the Bulletin Board System (BBS) that created the archive.
+    """Information about the Bulletin Board System (BBS) that created the archive.
 
     This information is typically extracted from the 'CONTROL.DAT' file in
     QWK packets or preserved in the header of structured formats like SQLite.
@@ -425,7 +425,7 @@ class ParsedMessage:
     """A fully parsed and processed message from an archive.
 
     This class contains the message body text, conference details, and
-    threading metadata used for organizing conversations.
+    threading information used for organizing conversations.
     """
     text: str
     msgnum: int | None
@@ -449,7 +449,7 @@ ProcessedMessage = ParsedMessage
 
 @dataclass
 class MessageHeader:
-    """The metadata header for a single message in the QWK format.
+    """The information header for a single message in the QWK format.
 
     These fields correspond to the fixed-length record structure used in
     traditional BBS message packets.
@@ -773,7 +773,7 @@ class LogFormatter(logging.Formatter):
 
 
 def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], ConferenceMap]:
-    """Import messages and metadata from a pyqwk SQLite database."""
+    """Import messages and information from a pyqwk SQLite database."""
     # Ensure the file exists before connecting to avoid creating an empty database
     if db_path and db_path != ':memory:' and not os.path.exists(db_path):
         raise sqlite3.OperationalError(f"unable to open database file: {db_path}")
@@ -854,7 +854,7 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
         # Preserve existing bbs_info if it was loaded from a table.
         # We only restore it if it's not a default empty BBSInfo object.
         loaded_bbs_info = board_dict.bbs_info
-        board_dict = _reconstruct_metadata(messages)
+        board_dict = _reconstruct_archive_information(messages)
         if loaded_bbs_info and loaded_bbs_info != BBSInfo():
             # Merge: prefer data loaded from SQLite tables, but fill gaps from reconstruction
             for field in fields(BBSInfo):
@@ -984,8 +984,8 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     return messages
 
 
-def _reconstruct_metadata(messages: list[ParsedMessage]) -> ConferenceMap:
-    """Reconstruct board_dict and bbs_info from a list of messages."""
+def _reconstruct_archive_information(messages: list[ParsedMessage]) -> ConferenceMap:
+    """Reconstruct information from a list of messages."""
     board_dict = ConferenceMap()
     bbs_info = BBSInfo()
     for msg in messages:
@@ -1169,7 +1169,7 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
 
         working_section = working_section[msg_start:]
 
-        # Extract metadata
+        # Extract information
         subject_match = re_subject.search(working_section)
         if not subject_match:
             continue
@@ -1214,7 +1214,7 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
             else:
                 attachments = [a.strip() for a in attach_str.split(',') if a.strip()]
 
-        # Message body: everything after the metadata lines
+        # Message body: everything after the information lines
         lines = working_section.splitlines()
         body_start_idx = 0
         for i, line in enumerate(lines):
@@ -1282,7 +1282,7 @@ def load_data(
         - file_data: A 'bytearray' of raw records for QWK/REP files, or
           a list of 'ParsedMessage' objects for modern structured formats.
         - board_dict: A 'ConferenceMap' linking conference numbers to names,
-          which may also include BBS metadata.
+          which may also include BBS information.
 
         Note: When loading a raw 'MESSAGES.DAT' file, it automatically searches
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
@@ -1302,7 +1302,7 @@ def load_data(
             data = json.load(f)
             messages = _parse_json_messages(data)
 
-            board_dict = _reconstruct_metadata(messages)
+            board_dict = _reconstruct_archive_information(messages)
             return messages, board_dict
 
     if input_path.lower().endswith('.jsonl'):
@@ -1313,7 +1313,7 @@ def load_data(
                     data = json.loads(line)
                     messages.extend(_parse_json_messages(data))
 
-        board_dict = _reconstruct_metadata(messages)
+        board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.mbox'):
@@ -1322,7 +1322,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load mbox archive: {e}")
 
-        board_dict = _reconstruct_metadata(messages)
+        board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
     if input_path.lower().endswith(('.md', '.markdown')):
@@ -1331,7 +1331,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load Markdown archive: {e}")
 
-        board_dict = _reconstruct_metadata(messages)
+        board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.eml'):
@@ -1340,7 +1340,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load EML file: {e}")
 
-        board_dict = _reconstruct_metadata(messages)
+        board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.xml'):
@@ -1351,7 +1351,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load XML archive: {e}")
 
-        board_dict = _reconstruct_metadata(messages)
+        board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
     if input_path.lower().endswith('.csv'):
@@ -1359,7 +1359,7 @@ def load_data(
             reader = csv.DictReader(f)
             messages = _parse_csv_messages(reader)
 
-            board_dict = _reconstruct_metadata(messages)
+            board_dict = _reconstruct_archive_information(messages)
             return messages, board_dict
 
     if zipfile.is_zipfile(input_path):

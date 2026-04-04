@@ -142,7 +142,7 @@ class QwkGuiApp:
         menu.add_command(label="Select All", command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END))
         menu.add_command(label="Copy Full Message", command=lambda: self._copy_to_clipboard(self.detail_text.get("1.0", tk.END).strip()))
 
-        # Get current message for metadata filtering
+        # Get current message for information filtering
         current_selection = self.message_list.selection()
         if current_selection:
             try:
@@ -736,7 +736,7 @@ class QwkGuiApp:
         )
         self.detail_text.insert(tk.END, "\n\n")
 
-        # Metadata line (Date, Conference, BBS, Msg #)
+        # Information line (Date, Conference, BBS, Msg #)
         self.detail_text.insert(tk.END, f"{header.msgdate} {header.msgtime}", "header_meta")
 
         # Badges
@@ -1054,7 +1054,7 @@ class QwkGuiApp:
                 for parsed_message in messages_to_process:
                     total_count += 1
 
-                    # Add BBS and source file metadata
+                    # Add BBS and source file information
                     parsed_message = replace(
                         parsed_message,
                         bbs_name=parsed_message.bbs_name or (bbs_info.name if bbs_info else None),

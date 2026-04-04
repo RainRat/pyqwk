@@ -9,7 +9,7 @@ from pyqwk.core import (
     LogFormatter,
     _parse_sqlite_messages,
     _parse_xml_messages,
-    _reconstruct_metadata,
+    _reconstruct_archive_information,
     _message_from_email,
     load_data,
     _serialize_rfc822,
@@ -108,11 +108,11 @@ def test_parse_xml_missing_header_and_unknown_tags():
     assert messages[0].header.msgfrom == "Sender"
     assert messages[1].header.msgfrom == ""
 
-def test_reconstruct_metadata_none_confnum():
+def test_reconstruct_archive_information_none_confnum():
     header = MessageHeader(" ", None, "", "", "", "", "", "", None, None, "", 1, 0, "")
     msg = ParsedMessage("Text", None, None, None, header)
     msg.confnum = None
-    board_dict = _reconstruct_metadata([msg])
+    board_dict = _reconstruct_archive_information([msg])
     assert board_dict == {}
 
 def test_message_from_email_empty_payload(mocker):
