@@ -628,6 +628,14 @@ class QwkGuiApp:
             "header_subject", font=("TkDefaultFont", 14, "bold")
         )
         self.detail_text.tag_configure("header_separator", foreground="#cccccc")
+        self.detail_text.tag_configure(
+            "badge_private", background="#ffcccc", foreground="#990000",
+            font=("TkDefaultFont", 8, "bold")
+        )
+        self.detail_text.tag_configure(
+            "badge_mine", background="#cce5ff", foreground="#004085",
+            font=("TkDefaultFont", 8, "bold")
+        )
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
         self.detail_text.tag_configure("quote", foreground="#4e9a06")
         self.detail_text.tag_configure(
@@ -730,6 +738,21 @@ class QwkGuiApp:
 
         # Metadata line (Date, Conference, BBS, Msg #)
         self.detail_text.insert(tk.END, f"{header.msgdate} {header.msgtime}", "header_meta")
+
+        # Badges
+        if header.is_private:
+            self.detail_text.insert(tk.END, "  ")
+            self.detail_text.insert(tk.END, " PRIVATE ", "badge_private")
+
+        bbs_info = getattr(self.board_dict, "bbs_info", None)
+        user_name = bbs_info.user_name if bbs_info else None
+        if user_name:
+            is_from_me = user_name.lower() in header.msgfrom.lower()
+            is_to_me = user_name.lower() in header.msgto.lower()
+            if is_from_me or is_to_me:
+                self.detail_text.insert(tk.END, "  ")
+                self.detail_text.insert(tk.END, " MINE ", "badge_mine")
+
         self.detail_text.insert(tk.END, "  •  ", "header_meta")
 
         conf_tag = f"conf_link_{id(message)}"
