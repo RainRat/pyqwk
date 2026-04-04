@@ -907,7 +907,6 @@ def _safe_to_int(v: Any) -> int | None:
 def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
     """Convert an XML tree into ParsedMessage objects."""
     messages = []
-    header_fields = {f.name for f in fields(MessageHeader)}
 
     if root.tag == 'message':
         entries = [root]
@@ -916,11 +915,7 @@ def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
 
     for entry in entries:
         header_el = entry.find('header')
-        header_dict = {}
-        if header_el is not None:
-            for field_el in header_el:
-                if field_el.tag in header_fields:
-                    header_dict[field_el.tag] = field_el.text
+        header_dict = {el.tag: el.text for el in header_el} if header_el is not None else {}
 
         header = MessageHeader.from_dict(header_dict)
 
@@ -957,11 +952,9 @@ def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
 def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     """Convert CSV rows into ParsedMessage objects."""
     messages = []
-    header_fields = {f.name for f in fields(MessageHeader)}
 
     for row in data:
-        header_dict = {k: v for k, v in row.items() if k in header_fields}
-        header = MessageHeader.from_dict(header_dict)
+        header = MessageHeader.from_dict(row)
 
         attachments = row.get('attachments', "").split(';') if row.get('attachments') else []
 
