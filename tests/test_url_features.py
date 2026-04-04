@@ -75,10 +75,10 @@ def mock_gui_deps():
             "combo": mock_combo,
         }
 
-def get_app(initial_path=None):
+def get_app(initial_paths=None):
     from pyqwk.gui import QwkGuiApp
     root = MagicMock()
-    return QwkGuiApp(root, initial_path=initial_path)
+    return QwkGuiApp(root, initial_paths=initial_paths)
 
 def test_url_pattern():
     assert RE_URL_PATTERN.search("Check out https://google.com")

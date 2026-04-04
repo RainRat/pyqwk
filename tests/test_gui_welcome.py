@@ -56,5 +56,5 @@ def test_no_welcome_screen_with_path():
          patch("pyqwk.gui.ttk"), \
          patch("pyqwk.gui.load_data"):
         from pyqwk.gui import QwkGuiApp
-        app = QwkGuiApp(mock_root, initial_path="test.qwk")
+        app = QwkGuiApp(mock_root, initial_paths=["test.qwk"])
         assert app.current_path == "test.qwk"

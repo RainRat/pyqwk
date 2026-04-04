@@ -19,7 +19,7 @@ from pyqwk.gui import QwkGuiApp
 def app():
     root = MagicMock()
     # Avoid initial load by passing None
-    app = QwkGuiApp(root, initial_path=None)
+    app = QwkGuiApp(root, initial_paths=None)
     # Mock some widgets
     app.message_list = MagicMock()
     app.status_label = MagicMock()

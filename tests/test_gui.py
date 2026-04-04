@@ -65,10 +65,10 @@ def mock_gui_deps():
             "combo": mock_combo,
         }
 
-def get_app(initial_path=None):
+def get_app(initial_paths=None):
     from pyqwk.gui import QwkGuiApp
     root = MagicMock()
-    return QwkGuiApp(root, initial_path=initial_path)
+    return QwkGuiApp(root, initial_paths=initial_paths)
 
 class TestQwkGui:
     def test_initialization(self, mock_gui_deps):
@@ -602,7 +602,7 @@ class TestQwkGui:
     def test_initial_path_loading(self, mock_gui_deps):
         """Test that passing an initial path to the constructor triggers loading."""
         with patch("pyqwk.gui.QwkGuiApp.load_messages"):
-            app = get_app(initial_path="initial.qwk")
+            app = get_app(initial_paths=["initial.qwk"])
             assert app.current_path == "initial.qwk"
             # Since we use self.root.after, we need to check that it was scheduled
             app.root.after.assert_called_with(100, ANY)

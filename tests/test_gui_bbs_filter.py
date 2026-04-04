@@ -71,10 +71,10 @@ def mock_gui_deps():
             "conf_combo": conf_combo,
         }
 
-def get_app(initial_path=None):
+def get_app(initial_paths=None):
     from pyqwk.gui import QwkGuiApp
     root = MagicMock()
-    return QwkGuiApp(root, initial_path=initial_path)
+    return QwkGuiApp(root, initial_paths=initial_paths)
 
 def test_bbs_filter_population(mock_gui_deps):
     app = get_app()
