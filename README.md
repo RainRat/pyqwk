@@ -178,6 +178,12 @@ qwk archive.qwk --individual-files --organize -o output_folder/
 ```
 *Tip: This creates subfolders for each conference (e.g., `001-general_chat/`) to keep the output tidy.*
 
+**Save each message as a separate file organized by year and month:**
+```bash
+qwk archive.qwk --individual-files --organize-by-date -o output_folder/
+```
+*Tip: This creates a nested structure (e.g., `2023/10/`) to help manage large message archives over time. You can combine this with `--organize` to further sort by conference within each month.*
+
 **Organize archive files into folders by BBS name:**
 ```bash
 qwk my_archives/ --organize-by-bbs

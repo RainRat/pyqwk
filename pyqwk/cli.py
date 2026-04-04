@@ -120,6 +120,12 @@ examples:
         action='store_true',
     )
     io_group.add_argument(
+        '--organize-by-date',
+        dest='organize_by_date',
+        help='Organize individual files into subfolders by year and month.',
+        action='store_true',
+    )
+    io_group.add_argument(
         '--filename-pattern',
         help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, msgnum, confnum, confname, bbs_name, bbs_id, length.",
     )
@@ -544,6 +550,7 @@ examples:
         unique=args.unique,
         organize=args.organize,
         organize_by_bbs=args.organize_by_bbs,
+        organize_by_date=args.organize_by_date,
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
         msgnum_filters=msgnum_filters,

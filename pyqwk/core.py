@@ -367,6 +367,7 @@ class ProcessingSettings:
     unique: bool = False
     organize: bool = False
     organize_by_bbs: bool = False
+    organize_by_date: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
     msgnum_filters: set[int] | None = None
@@ -2164,18 +2165,30 @@ def process_merged_files(
             assert output_dir is not None
 
             target_dir = output_dir
-            conf_dir = ""
+            sub_dir = ""
+            if settings.organize_by_date:
+                dt = _parse_qwk_date(parsed_message.header.msgdate, parsed_message.header.msgtime)
+                sub_dir = os.path.join(str(dt.year), f"{dt.month:02d}")
+
             if settings.organize:
                 conf_name = parsed_message.confname or "unknown"
                 conf_slug = _slugify(conf_name, "conference")
                 conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
-                target_dir = os.path.join(output_dir, conf_dir)
+                sub_dir = os.path.join(sub_dir, conf_dir)
+
+            if sub_dir:
+                target_dir = os.path.join(output_dir, sub_dir)
                 if not settings.dry_run:
                     os.makedirs(target_dir, exist_ok=True)
 
             attachment_prefix = None
             if settings.extract_attachments:
-                attachment_prefix = "../attachments/" if settings.organize else "attachments/"
+                if sub_dir:
+                    # Count path separators to determine depth for relative link
+                    depth = len(sub_dir.replace('\\', '/').split('/'))
+                    attachment_prefix = ("../" * depth) + "attachments/"
+                else:
+                    attachment_prefix = "attachments/"
 
             if settings.format == 'text':
                 encoded_buffer = processed_buffer.encode(target_encoding)
@@ -2227,7 +2240,7 @@ def process_merged_files(
             potential_files += 1
 
             if settings.format in ('html', 'markdown'):
-                rel_path = os.path.join(conf_dir if settings.organize else "", filename)
+                rel_path = os.path.join(sub_dir, filename)
                 collected_for_index.append({
                     'path': rel_path,
                     'subject': parsed_message.header.msgsubject.strip(),
