@@ -178,6 +178,12 @@ qwk archive.qwk --individual-files --organize -o output_folder/
 ```
 *Tip: This creates subfolders for each conference (e.g., `001-general_chat/`) to keep the output tidy.*
 
+**Save each message as a separate file organized by date:**
+```bash
+qwk archive.qwk --individual-files --organize-by-date -o output_folder/
+```
+*Tip: This creates a `YYYY/MM/` subfolder structure (e.g., `2023/05/`) to organize messages chronologically.*
+
 **Organize archive files into folders by BBS name:**
 ```bash
 qwk my_archives/ --organize-by-bbs
@@ -407,6 +413,7 @@ for msg in messages:
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `--filename-pattern [pat]` | Set a pattern for naming individual files (e.g., `{date}_{author}_{subject}`). |
 | `--organize` | Organize files into subfolders by conference. |
+| `--organize-by-date` | Organize files into subfolders by year and month. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
 | `-F, --format [type]` | Set output format: `text`, `html`, `json`, `jsonl`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-j`, `--json` | Use JSON output format (shortcut for `--format json`). |

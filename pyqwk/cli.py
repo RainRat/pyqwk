@@ -114,6 +114,11 @@ examples:
         action='store_true',
     )
     io_group.add_argument(
+        '--organize-by-date',
+        help='Organize individual files into subfolders by date (YYYY/MM).',
+        action='store_true',
+    )
+    io_group.add_argument(
         '--organize-by-bbs',
         dest='organize_by_bbs',
         help='Organize archives into folders named after the BBS.',
@@ -543,6 +548,7 @@ examples:
         headers_only=args.headers_only,
         unique=args.unique,
         organize=args.organize,
+        organize_by_date=getattr(args, 'organize_by_date', False),
         organize_by_bbs=args.organize_by_bbs,
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
