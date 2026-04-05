@@ -69,6 +69,7 @@ class QwkGuiApp:
         }
 
         self.clean_var = tk.BooleanVar(value=False)
+        self.wrap_var = tk.BooleanVar(value=True)
         self.private_var = tk.BooleanVar(value=True)
         self.ansi_var = tk.BooleanVar(value=False)
         self.threaded_var = tk.BooleanVar(value=False)
@@ -406,11 +407,22 @@ class QwkGuiApp:
         self.has_emails_var.set(False)
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
+        self.wrap_var.set(True)
+        self._update_wrap()
         self.reload_messages()
         self.message_list.focus_set()
 
     def quit_app(self, _event: object | None = None) -> None:
         self.root.quit()
+
+    def _update_wrap(self) -> None:
+        """Toggle text wrapping in the detail view."""
+        if self.wrap_var.get():
+            self.detail_text.config(wrap=tk.WORD)
+            self.detail_h_scrollbar.grid_forget()
+        else:
+            self.detail_text.config(wrap=tk.NONE)
+            self.detail_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
     def _build_status_bar(self) -> None:
         status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
@@ -500,13 +512,14 @@ class QwkGuiApp:
         options_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
 
-        for text, var in [
-            ("Threaded", self.threaded_var),
-            ("Clean", self.clean_var),
-            ("Remove Colors", self.ansi_var),
+        for text, var, cmd in [
+            ("Threaded", self.threaded_var, self.reload_messages),
+            ("Clean", self.clean_var, self.reload_messages),
+            ("Wrap", self.wrap_var, self._update_wrap),
+            ("Remove Colors", self.ansi_var, self.reload_messages),
         ]:
             ttk.Checkbutton(
-                options_frame, text=text, variable=var, command=self.reload_messages
+                options_frame, text=text, variable=var, command=cmd
             ).pack(side=tk.LEFT, padx=5)
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
@@ -603,10 +616,19 @@ class QwkGuiApp:
         detail_scrollbar = ttk.Scrollbar(
             detail_frame, orient=tk.VERTICAL, command=self.detail_text.yview
         )
-        self.detail_text.configure(yscrollcommand=detail_scrollbar.set)
+        self.detail_h_scrollbar = ttk.Scrollbar(
+            detail_frame, orient=tk.HORIZONTAL, command=self.detail_text.xview
+        )
+        self.detail_text.configure(
+            yscrollcommand=detail_scrollbar.set,
+            xscrollcommand=self.detail_h_scrollbar.set
+        )
 
-        detail_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        detail_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.detail_text.grid(row=0, column=0, sticky="nsew")
+
+        detail_frame.grid_rowconfigure(0, weight=1)
+        detail_frame.grid_columnconfigure(0, weight=1)
         self.detail_text.config(state=tk.NORMAL)
 
         # Intercept key events to allow selection/copy but block editing
