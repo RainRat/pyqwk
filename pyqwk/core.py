@@ -2878,21 +2878,28 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
 
         # Normalize date separators
         msgdate = msgdate.replace('/', '-')
+        date_parts = msgdate.split('-')
 
-        month, day, year = map(int, msgdate.split('-'))
+        if len(date_parts[0]) == 4:
+            # ISO format: YYYY-MM-DD
+            year, month, day = map(int, date_parts)
+        else:
+            # Traditional format: MM-DD-YY
+            month, day, year = map(int, date_parts)
+
+            # Handle Year 2000 problem using a sliding window.
+            # BBS activity peaked in the 1980s and 1990s. We use 80 as a cutoff:
+            # years 80-99 are 1980-1999, while 00-79 are 2000-2079.
+            if year < 100:
+                if year < 80:
+                    year += 2000
+                else:
+                    year += 1900
+
         time_parts = list(map(int, msgtime.split(':')))
         hour = time_parts[0]
         minute = time_parts[1]
         second = time_parts[2] if len(time_parts) > 2 else 0
-
-        # Handle Year 2000 problem using a sliding window.
-        # BBS activity peaked in the 1980s and 1990s. We use 80 as a cutoff:
-        # years 80-99 are 1980-1999, while 00-79 are 2000-2079.
-        if year < 100:
-            if year < 80:
-                year += 2000
-            else:
-                year += 1900
 
         return datetime.datetime(year, month, day, hour, minute, second)
     except (ValueError, IndexError):
