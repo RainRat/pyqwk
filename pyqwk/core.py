@@ -366,6 +366,7 @@ class ProcessingSettings:
     merge: bool = False
     unique: bool = False
     organize: bool = False
+    organize_by_date: bool = False
     organize_by_bbs: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
@@ -2157,18 +2158,32 @@ def process_merged_files(
             assert output_dir is not None
 
             target_dir = output_dir
-            conf_dir = ""
-            if settings.organize:
-                conf_name = parsed_message.confname or "unknown"
-                conf_slug = _slugify(conf_name, "conference")
-                conf_dir = f"{parsed_message.confnum:03d}-{conf_slug}"
-                target_dir = os.path.join(output_dir, conf_dir)
+            relative_sub_path = ""
+            if settings.organize or settings.organize_by_date:
+                sub_parts = []
+                if settings.organize:
+                    conf_name = parsed_message.confname or "unknown"
+                    conf_slug = _slugify(conf_name, "conference")
+                    sub_parts.append(f"{parsed_message.confnum:03d}-{conf_slug}")
+
+                if settings.organize_by_date:
+                    msg_dt = _parse_qwk_date(parsed_message.header.msgdate, parsed_message.header.msgtime)
+                    sub_parts.append(msg_dt.strftime('%Y'))
+                    sub_parts.append(msg_dt.strftime('%m'))
+
+                relative_sub_path = os.path.join(*sub_parts)
+                target_dir = os.path.join(output_dir, relative_sub_path)
                 if not settings.dry_run:
                     os.makedirs(target_dir, exist_ok=True)
 
             attachment_prefix = None
             if settings.extract_attachments:
-                attachment_prefix = "../attachments/" if settings.organize else "attachments/"
+                if relative_sub_path:
+                    # Each level of directory nesting requires an extra '../'
+                    depth = len(relative_sub_path.replace(os.sep, '/').split('/'))
+                    attachment_prefix = ("../" * depth) + "attachments/"
+                else:
+                    attachment_prefix = "attachments/"
 
             if settings.format == 'text':
                 encoded_buffer = processed_buffer.encode(target_encoding)
@@ -2220,7 +2235,7 @@ def process_merged_files(
             potential_files += 1
 
             if settings.format in ('html', 'markdown'):
-                rel_path = os.path.join(conf_dir if settings.organize else "", filename)
+                rel_path = os.path.join(relative_sub_path, filename)
                 collected_for_index.append({
                     'path': rel_path,
                     'subject': parsed_message.header.msgsubject.strip(),
