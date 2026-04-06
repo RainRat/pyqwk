@@ -1,9 +1,9 @@
 from pyqwk.core import (
-    _reconstruct_metadata, ParsedMessage, MessageHeader, _serialize_rfc822,
+    _reconstruct_archive_information, ParsedMessage, MessageHeader, _serialize_rfc822,
     _order_messages_by_thread
 )
 
-def test_reconstruct_metadata_with_bbs_id():
+def test_reconstruct_archive_information_with_bbs_id():
     # Covers line 912: if msg.bbs_id: bbs_info.bbs_id = msg.bbs_id
     header = MessageHeader(
         status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
@@ -14,7 +14,7 @@ def test_reconstruct_metadata_with_bbs_id():
         text="body", msgnum=1, refnum=None, confnum=1, header=header,
         bbs_name="TestBBS", bbs_id="BBS123"
     )
-    board_dict = _reconstruct_metadata([msg])
+    board_dict = _reconstruct_archive_information([msg])
     assert board_dict.bbs_info.bbs_id == "BBS123"
     assert board_dict.bbs_info.name == "TestBBS"
 
