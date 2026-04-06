@@ -42,7 +42,7 @@ class QwkGuiApp:
         else:
             self.current_paths = [value]
 
-    def __init__(self, root: tk.Tk, initial_path: str | None = None) -> None:
+    def __init__(self, root: tk.Tk, initial_paths: list[str] | None = None) -> None:
         self.root = root
         self.root.title("PyQWK Reader")
         self.root.geometry("1100x650")
@@ -90,8 +90,8 @@ class QwkGuiApp:
         self._build_status_bar()
         self._build_layout()
 
-        if initial_path:
-            self.current_paths = [initial_path]
+        if initial_paths:
+            self.current_paths = initial_paths
             self.root.after(100, lambda: self.load_messages(self.current_paths))
         else:
             self.root.after(100, self._render_welcome_screen)
@@ -1762,15 +1762,18 @@ class QwkGuiApp:
 def main() -> None:
     parser = argparse.ArgumentParser(description="PyQWK Graphical Reader")
     parser.add_argument(
-        "path",
-        nargs="?",
-        help="Path to a supported message archive (QWK, REP, JSON, CSV, XML, MBOX, EML, or SQLite) or a MESSAGES.DAT file."
+        "paths",
+        nargs="*",
+        help="Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, MBOX, EML, SQLite, and Markdown.",
     )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+
+    input_paths = expand_paths(args.paths)
+
     root = tk.Tk()
-    QwkGuiApp(root, initial_path=args.path)
+    QwkGuiApp(root, initial_paths=input_paths)
     root.mainloop()
 
 

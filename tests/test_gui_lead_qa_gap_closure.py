@@ -150,7 +150,7 @@ def test_gui_main_entry(monkeypatch):
     # We patch tk.Tk in pyqwk.gui to return our mock_root
     with patch("pyqwk.gui.tk.Tk", return_value=mock_root), \
          patch("pyqwk.gui.QwkGuiApp") as mock_app, \
-         patch("argparse.ArgumentParser.parse_args", return_value=MagicMock(path=None)):
+         patch("argparse.ArgumentParser.parse_args", return_value=MagicMock(paths=[])):
 
         from pyqwk.gui import main
         main()
@@ -158,7 +158,7 @@ def test_gui_main_entry(monkeypatch):
         mock_app.assert_called_once()
         args, kwargs = mock_app.call_args
         assert args[0] == mock_root
-        assert kwargs['initial_path'] is None
+        assert kwargs['initial_paths'] == []
         mock_root.mainloop.assert_called_once()
 
 @pytest.mark.skip(reason="runpy coverage is tricky in this environment")
