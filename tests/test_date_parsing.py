@@ -71,3 +71,11 @@ class TestDateParsing:
         # Time string with seconds (HH:MM:SS)
         dt = _parse_qwk_date("01-01-90", "12:34:56")
         assert dt == datetime.datetime(1990, 1, 1, 12, 34, 56)
+
+    def test_parse_iso_format(self):
+        # ISO format: YYYY-MM-DD
+        dt = _parse_qwk_date("2023-10-27", "14:30")
+        assert dt == datetime.datetime(2023, 10, 27, 14, 30)
+
+        dt = _parse_qwk_date("1995-05-15", "09:00:05")
+        assert dt == datetime.datetime(1995, 5, 15, 9, 0, 5)
