@@ -256,7 +256,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
 
         self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
-        formats = "QWK, REP, JSON, CSV, SQLite (.db), XML, mbox, EML, and MESSAGES.DAT"
+        formats = "QWK, REP, JSON, JSONL, CSV, SQLite (.db), XML, mbox, EML, Markdown, and MESSAGES.DAT"
         self.detail_text.insert(tk.END, f"{formats}\n\n", "body")
 
         self.detail_text.insert(tk.END, "Keyboard Shortcuts:\n", "header_label")
@@ -902,7 +902,7 @@ class QwkGuiApp:
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
-            ("All supported formats", "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.mbox *.eml"),
+            ("All supported formats", "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.mbox *.eml *.md *.markdown"),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
             ("JSON archives", "*.json"),
@@ -910,6 +910,7 @@ class QwkGuiApp:
             ("CSV archives", "*.csv"),
             ("SQLite databases", "*.db *.sqlite"),
             ("XML archives", "*.xml"),
+            ("Markdown files", "*.md *.markdown"),
             ("mbox files", "*.mbox"),
             ("EML files", "*.eml"),
             ("messages.dat", "messages.dat"),
@@ -1375,7 +1376,7 @@ class QwkGuiApp:
         filetypes = [
             ("Text files", "*.txt"),
             ("HTML files", "*.html"),
-            ("Markdown files", "*.md"),
+            ("Markdown files", "*.md *.markdown"),
             ("JSON files", "*.json"),
             ("JSONL files", "*.jsonl"),
             ("mbox files", "*.mbox"),
