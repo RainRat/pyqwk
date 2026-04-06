@@ -58,6 +58,8 @@ FORMAT_EXTENSIONS = {
     'csv': '.csv',
     'sqlite': '.db',
     'eml': '.eml',
+    'qwk': '.qwk',
+    'rep': '.rep',
 }
 
 
@@ -93,6 +95,8 @@ def resolve_output_format(
             '.markdown': 'markdown',
             '.sqlite': 'sqlite',
             '.db': 'sqlite',
+            '.qwk': 'qwk',
+            '.rep': 'rep',
         }
         if ext in mapping:
             return mapping[ext]
@@ -487,6 +491,41 @@ class MessageHeader:
             value = getattr(self, field.name)
             result[field.name] = "" if value is None else value
         return result
+
+    def to_bytes(self, encoding: str = 'cp437') -> bytes:
+        """Serialize the message header into a 128-byte QWK record."""
+        def encode_pad(text: str, length: int, align: str = 'left') -> bytes:
+            if align == 'right':
+                return text.rjust(length).encode(encoding)[:length]
+            return text.ljust(length).encode(encoding)[:length]
+
+        def get_char_bytes(text: str) -> bytes:
+            b = text.encode(encoding)
+            return b[:1] if b else b' '
+
+        # QWK headers use right-aligned, space-padded strings for numeric fields
+        msgnum_raw = str(self.msgnum if self.msgnum is not None else 0)
+        refnum_raw = str(self.refnum if self.refnum is not None else 0)
+        numblocks_raw = str(self.numblocks if self.numblocks is not None else 0)
+
+        # Re-pack the data using the same format as from_bytes
+        return struct.pack(
+            '<c7s8s5s25s25s25s12s8s6scHHc',
+            get_char_bytes(self.status),
+            encode_pad(msgnum_raw, 7, 'right'),
+            encode_pad(self.msgdate, 8),
+            encode_pad(self.msgtime, 5),
+            encode_pad(self.msgto, 25),
+            encode_pad(self.msgfrom, 25),
+            encode_pad(self.msgsubject, 25),
+            encode_pad(self.msgpassword, 12),
+            encode_pad(refnum_raw, 8, 'right'),
+            encode_pad(numblocks_raw, 6, 'right'),
+            get_char_bytes(self.msgflag),
+            self.confnum,
+            self.lognum,
+            get_char_bytes(self.nettag),
+        )
 
     @classmethod
     def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> "MessageHeader":
@@ -2000,7 +2039,7 @@ def process_merged_files(
     separator_mode = settings.separator
     if separator_mode == 'auto':
         if settings.individual_files or settings.format in (
-            'json', 'xml', 'html', 'csv', 'markdown', 'sqlite', 'mbox', 'eml'
+            'json', 'xml', 'html', 'csv', 'markdown', 'sqlite', 'mbox', 'eml', 'qwk', 'rep'
         ):
             separator_mode = 'none'
         else:
@@ -3043,6 +3082,48 @@ def _write_eml(
     _write_text_output("\n\n".join(parts), output_path, encoding=encoding)
 
 
+def _serialize_control_dat(
+    bbs_info: BBSInfo | None,
+    board_dict: Mapping[int, str] | None,
+    encoding: str = 'cp437'
+) -> list[bytes]:
+    """Serialize BBS information and conference list into CONTROL.DAT format."""
+    lines = [b""] * 11
+    if bbs_info:
+        lines[0] = bbs_info.name.encode(encoding)
+        lines[1] = bbs_info.location.encode(encoding)
+        lines[2] = bbs_info.phone.encode(encoding)
+        lines[3] = bbs_info.sysop.encode(encoding)
+
+        id_line = f"{bbs_info.serial_number},{bbs_info.bbs_id}"
+        lines[4] = id_line.encode(encoding)
+
+        lines[5] = bbs_info.packet_at.encode(encoding)
+        lines[6] = bbs_info.user_name.encode(encoding)
+
+    if board_dict:
+        # Line 11 (index 10) is number of conferences - 1
+        lines[10] = str(len(board_dict) - 1).encode(encoding)
+        for conf_num, conf_name in sorted(board_dict.items()):
+            lines.append(str(conf_num).encode(encoding))
+            lines.append(conf_name.encode(encoding))
+    else:
+        lines[10] = b"-1"
+
+    return lines
+
+
+def _text_to_qwk_blocks(text: str, encoding: str = 'cp437') -> bytes:
+    """Convert message text into 128-byte QWK blocks with \xe3 newlines."""
+    # QWK uses \xe3 (227) as a newline character
+    qwk_text = text.replace('\r\n', '\xe3').replace('\n', '\xe3')
+    encoded = qwk_text.encode(encoding, errors='replace')
+
+    # Pad to 128-byte boundary
+    padding_len = (BLOCK_SIZE - (len(encoded) % BLOCK_SIZE)) % BLOCK_SIZE
+    return encoded + (b' ' * padding_len)
+
+
 def _write_text(
     messages: list[ProcessedMessage],
     output_path: str | None,
@@ -3179,6 +3260,57 @@ def _write_csv(
         writer.writerow(row)
 
     _write_text_output(output.getvalue(), output_path, encoding=encoding)
+
+
+def _write_qwk(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'cp437',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    """Export messages to a QWK/REP archive (ZIP file)."""
+    if output_path is None:
+        raise ValueError("Output path is required for QWK/REP export.")
+
+    is_rep = output_path.lower().endswith('.rep')
+
+    with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        if is_rep:
+            # REPLY.DAT
+            content = bytearray()
+            # First block is BBS ID
+            bbs_id = (bbs_info.bbs_id if bbs_info else "") or "QWK"
+            content.extend(bbs_id.ljust(BLOCK_SIZE).encode(encoding)[:BLOCK_SIZE])
+
+            for msg in messages:
+                body_blocks = _text_to_qwk_blocks(msg.text, encoding)
+                num_blocks = (len(body_blocks) // BLOCK_SIZE) + 1
+                header = replace(msg.header, numblocks=num_blocks)
+                content.extend(header.to_bytes(encoding))
+                content.extend(body_blocks)
+
+            zf.writestr(REPLY_FILENAME, content)
+        else:
+            # MESSAGES.DAT
+            content = bytearray()
+            # First block is "Produced by pyqwk"
+            header_block = "Produced by pyqwk".ljust(BLOCK_SIZE)
+            content.extend(header_block.encode(encoding)[:BLOCK_SIZE])
+
+            for msg in messages:
+                body_blocks = _text_to_qwk_blocks(msg.text, encoding)
+                num_blocks = (len(body_blocks) // BLOCK_SIZE) + 1
+                header = replace(msg.header, numblocks=num_blocks)
+                content.extend(header.to_bytes(encoding))
+                content.extend(body_blocks)
+
+            zf.writestr(MESSAGES_FILENAME, content)
+
+            # CONTROL.DAT
+            control_lines = _serialize_control_dat(bbs_info, board_dict, encoding)
+            zf.writestr(CONTROL_FILENAME, b"\r\n".join(control_lines) + b"\r\n")
 
 
 def _write_sqlite(
@@ -3331,6 +3463,8 @@ def write_messages(
         'mbox': _write_mbox,
         'eml': _write_eml,
         'sqlite': _write_sqlite,
+        'qwk': _write_qwk,
+        'rep': _write_qwk,
     }
 
     writer = writers.get(settings.format, _write_text)
