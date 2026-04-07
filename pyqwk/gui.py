@@ -17,6 +17,8 @@ from pyqwk.core import (
     matches_filters,
     RE_QUOTE_PATTERN,
     RE_URL_PATTERN,
+    RE_EMAIL_PATTERN,
+    RE_PHONE_PATTERN,
     get_allowed_conferences,
     _parse_qwk_date,
     resolve_output_format,
@@ -841,23 +843,42 @@ class QwkGuiApp:
             if RE_QUOTE_PATTERN.match(line):
                 tags.append("quote")
 
-            # Find URLs in the line
-            last_idx = 0
+            # Unified discovery loop for URLs, Emails, and Phone numbers
+            entities = []
             for match in RE_URL_PATTERN.finditer(line):
-                start, end = match.span()
-                # Insert text before URL
+                entities.append((match.start(), match.end(), "url", match.group(0)))
+            for match in RE_EMAIL_PATTERN.finditer(line):
+                entities.append((match.start(), match.end(), "email", match.group(0)))
+            for match in RE_PHONE_PATTERN.finditer(line):
+                entities.append((match.start(), match.end(), "phone", match.group(0)))
+
+            # Sort entities: primary sort by start position (ascending),
+            # secondary sort by end position (descending) to prefer longer matches.
+            entities.sort(key=lambda x: (x[0], -x[1]))
+
+            last_idx = 0
+            for start, end, etype, evalue in entities:
+                if start < last_idx:
+                    continue  # Skip overlapping entities
+
+                # Insert text before entity
                 if start > last_idx:
                     self.detail_text.insert(tk.END, line[last_idx:start], tuple(tags))
 
-                # Insert URL
-                url = match.group(0)
-                # Ensure the URL has a scheme for webbrowser.open compatibility
-                full_url = url if "://" in url else f"http://{url}"
-                url_tag = f"url_{id(url)}_{start}"
+                # Determine URI
+                if etype == "url":
+                    uri = evalue if "://" in evalue else f"http://{evalue}"
+                elif etype == "email":
+                    uri = f"mailto:{evalue}"
+                else:  # phone
+                    uri = "tel:" + "".join(c for c in evalue if c.isdigit() or c == '+')
+
+                # Insert Entity
+                entity_tag = f"{etype}_{id(evalue)}_{start}"
                 # Combine link/body tags with the existing line tags (e.g. 'quote')
-                link_tags = ("link", "body", url_tag) + tuple(t for t in tags if t != "body")
-                self.detail_text.insert(tk.END, url, link_tags)
-                self.detail_text.tag_bind(url_tag, "<Button-1>", lambda e, u=full_url: webbrowser.open(u))
+                link_tags = ("link", "body", entity_tag) + tuple(t for t in tags if t != "body")
+                self.detail_text.insert(tk.END, evalue, link_tags)
+                self.detail_text.tag_bind(entity_tag, "<Button-1>", lambda e, u=uri: webbrowser.open(u))
 
                 last_idx = end
 
