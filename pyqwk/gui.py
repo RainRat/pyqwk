@@ -1575,7 +1575,7 @@ class QwkGuiApp:
                 insert_info("Date Range", f"{earliest} to {latest}")
             insert_info("Private", f"{stats['private_count']} messages")
 
-            txt.insert(tk.END, "\nVitality & Content\n", "h2")
+            txt.insert(tk.END, "\nActivity & Content\n", "h2")
             insert_info("Reply Rate", f"{stats['reply_rate']}% ({stats['reply_count']} replies)")
             insert_info("Avg Length", f"{int(stats['avg_message_length'])} characters")
 
