@@ -326,7 +326,7 @@ examples:
         '-S',
         '--search',
         dest='search_term',
-        help='Search for a keyword in author, recipient, subject, and message body.',
+        help='Search for a keyword in author, recipient, subject, body, conference, BBS, and attachments.',
     )
     filter_group.add_argument(
         '--regex',

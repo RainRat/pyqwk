@@ -1846,11 +1846,20 @@ def matches_filters(
 
     # 7. Full-Text Search
     if settings.search_term:
+        if message.text and message.attachments is None:
+            found_attachments = extract_binaries(message.text)
+            message.attachments = [name for name, data in found_attachments]
+
         found = (
             check_str_match(settings.search_term, message.header.msgfrom)
             or check_str_match(settings.search_term, message.header.msgto)
             or check_str_match(settings.search_term, message.header.msgsubject)
             or check_str_match(settings.search_term, message.text)
+            or (message.confname and check_str_match(settings.search_term, message.confname))
+            or (message.bbs_name and check_str_match(settings.search_term, message.bbs_name))
+            or (message.bbs_id and check_str_match(settings.search_term, message.bbs_id))
+            or (message.source_file and check_str_match(settings.search_term, message.source_file))
+            or (message.attachments and any(check_str_match(settings.search_term, a) for a in message.attachments))
         )
         if not found:
             return False
