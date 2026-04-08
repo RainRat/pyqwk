@@ -140,4 +140,12 @@ def test_show_stats_window_with_bbses(app):
 
         # Verify Top BBSes header and data were inserted
         mock_txt.insert.assert_any_call(ANY, "\nTop BBSes\n", "h2")
-        mock_txt.insert.assert_any_call(ANY, f"{'MyBBS'[:25]:<25}", "dim")
+        # Check that 'dim' and 'link' tags are present (or just check the label text)
+        found_call = False
+        for call in mock_txt.insert.call_args_list:
+            if len(call.args) >= 2 and call.args[1] == f"{'MyBBS'[:25]:<25}":
+                tags = call.args[2]
+                if isinstance(tags, tuple) and "dim" in tags and "link" in tags:
+                    found_call = True
+                    break
+        assert found_call, "Could not find insert call for MyBBS with expected tags"
