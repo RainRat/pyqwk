@@ -3892,7 +3892,7 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
 
     parts.append(f"  {c('Private:', BOLD)}    {stats['private_count']} messages")
 
-    parts.append(f"\n  {c('Vitality & Content:', BOLD)}")
+    parts.append(f"\n  {c('Activity & Content:', BOLD)}")
     parts.append(f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)")
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
 

@@ -114,7 +114,7 @@ def test_stats_advanced_ui(monkeypatch, capsys):
     show_stats(["dummy.qwk"], settings, logging.getLogger("test"))
 
     captured = capsys.readouterr()
-    assert "Vitality & Content:" in captured.out
+    assert "Activity & Content:" in captured.out
     assert "Reply Rate:" in captured.out
     assert "Avg Length:" in captured.out
     assert "Yearly Activity:" in captured.out
