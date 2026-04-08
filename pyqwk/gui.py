@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import hashlib
 import logging
 import os
 import webbrowser
@@ -1582,10 +1583,14 @@ class QwkGuiApp:
             txt.tag_configure("dim", foreground="#888888")
             txt.tag_configure("cyan_bar", background="#00aaaa", foreground="#ffffff")
             txt.tag_configure("info_label", font=("TkFixedFont", 10, "bold"), foreground="#666666")
+            txt.tag_configure("link", foreground="blue", underline=True)
+            txt.tag_bind("link", "<Enter>", lambda e: txt.config(cursor="hand2"))
+            txt.tag_bind("link", "<Leave>", lambda e: txt.config(cursor=""))
 
             # Rendering logic
             display_name = os.path.basename(stats['file']) if len(self.current_paths) == 1 else "Multiple Archives"
             txt.insert(tk.END, f"Statistics for: {display_name}\n\n", "h1")
+            txt.insert(tk.END, "Tip: Click on Authors, Conferences, or BBSes to filter the main view.\n", "dim")
 
             def insert_info(label, value):
                 txt.insert(tk.END, f"  {label:<15}: ", "info_label")
@@ -1604,18 +1609,45 @@ class QwkGuiApp:
             insert_info("Reply Rate", f"{stats['reply_rate']}% ({stats['reply_count']} replies)")
             insert_info("Avg Length", f"{int(stats['avg_message_length'])} characters")
 
-            def render_gui_bar_chart(title, data):
+            def render_gui_bar_chart(title, data, filter_type=None):
                 if not data:
                     return
                 txt.insert(tk.END, f"\n{title}\n", "h2")
-                max_count = max(count for _, count in data) if data else 0
-                for label, count in data:
+                max_count = max(item[1] for item in data) if data else 0
+                for i, item in enumerate(data):
+                    label = item[0]
+                    count = item[1]
+                    filter_val = item[2] if len(item) > 2 else label
+
                     truncated_label = f"{str(label)[:25]:<25}"
                     count_str = f"{count:4}"
                     bar_len = int(count * 40 / max_count) if max_count > 0 else 0
 
                     txt.insert(tk.END, "    ", "")
-                    txt.insert(tk.END, truncated_label, "dim")
+
+                    label_tags = ["dim"]
+                    if filter_type:
+                        label_tags.append("link")
+                        # Create a unique tag for this specific label to bind the click event
+                        # Include title hash to ensure uniqueness across different charts
+                        title_hash = hashlib.md5(title.encode()).hexdigest()[:8]
+                        item_tag = f"filter_{filter_type}_{title_hash}_{i}"
+                        label_tags.append(item_tag)
+
+                        def make_callback(ft, fv):
+                            def callback(e):
+                                stats_win.destroy()
+                                if ft == 'author':
+                                    self._pivot_filter(author=fv)
+                                elif ft == 'conf':
+                                    self._pivot_filter(conf_num=fv)
+                                elif ft == 'bbs':
+                                    self._pivot_filter(bbs_name=fv)
+                            return callback
+
+                        txt.tag_bind(item_tag, "<Button-1>", make_callback(filter_type, filter_val))
+
+                    txt.insert(tk.END, truncated_label, tuple(label_tags))
                     txt.insert(tk.END, " : ", "")
                     txt.insert(tk.END, count_str, "bold")
                     txt.insert(tk.END, " ", "")
@@ -1631,15 +1663,15 @@ class QwkGuiApp:
                 items = [(m, c) for m, c in sorted(stats['month_distribution'].items())]
                 render_gui_bar_chart('Monthly Activity', items)
 
-            render_gui_bar_chart('Top Authors', [(a["name"], a["count"]) for a in stats['authors']])
-            render_gui_bar_chart('Top Recipients', [(r["name"], r["count"]) for r in stats['recipients']])
+            render_gui_bar_chart('Top Authors', [(a["name"], a["count"], a["name"]) for a in stats['authors']], filter_type='author')
+            render_gui_bar_chart('Top Recipients', [(r["name"], r["count"], r["name"]) for r in stats['recipients']], filter_type='author')
 
             if stats.get('bbses'):
-                render_gui_bar_chart('Top BBSes', [(b["name"], b["count"]) for b in stats['bbses']])
+                render_gui_bar_chart('Top BBSes', [(b["name"], b["count"], b["name"]) for b in stats['bbses']], filter_type='bbs')
 
             if stats['conferences']:
-                items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]
-                render_gui_bar_chart('Top Conferences', items)
+                items = [(f"{c['number']:3} {c['name']}", c["count"], c["number"]) for c in stats['conferences']]
+                render_gui_bar_chart('Top Conferences', items, filter_type='conf')
 
             render_gui_bar_chart('Top Subjects', [(s["subject"], s["count"]) for s in stats['subjects']])
             render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']])
