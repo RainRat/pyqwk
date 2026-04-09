@@ -184,6 +184,12 @@ qwk archive.qwk --individual-files --organize-by-date -o output_folder/
 ```
 *Tip: This creates a `YYYY/MM/` subfolder structure (e.g., `2023/05/`) to organize messages chronologically.*
 
+**Save each message as a separate file organized by Author and Recipient:**
+```bash
+qwk archive.qwk --individual-files --organize-by-author --organize-by-to -o output_folder/
+```
+*Tip: This creates a nested folder structure (e.g., `author_name/recipient_name/`) to group correspondence.*
+
 **Organize archive files into folders by BBS name:**
 ```bash
 qwk my_archives/ --organize-by-bbs
@@ -415,6 +421,8 @@ for msg in messages:
 | `--organize` | Organize files into subfolders by conference. |
 | `--organize-by-date` | Organize files into subfolders by year and month. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
+| `--organize-by-author` | Organize files into subfolders by author name. |
+| `--organize-by-to` | Organize files into subfolders by recipient name. |
 | `-F, --format [type]` | Set output format: `text`, `html`, `json`, `jsonl`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
 | `-j`, `--json` | Use JSON output format (shortcut for `--format json`). |
 | `-J`, `--jsonl` | Use JSON Lines output format (shortcut for `--format jsonl`). |
