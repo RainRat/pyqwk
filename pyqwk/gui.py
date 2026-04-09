@@ -58,6 +58,8 @@ class QwkGuiApp:
         self._cache = {}
         self.conf_mapping = {}
         self.bbs_mapping = {}
+        self._search_matches = []
+        self._current_match_idx = -1
 
         self.column_labels = {
             "#0": "Subject",
@@ -268,6 +270,8 @@ class QwkGuiApp:
             ("Ctrl + S", "Export Current View"),
             ("Ctrl + I", "Archive Statistics"),
             ("Ctrl + F", "Search / Find"),
+            ("F3", "Find Next"),
+            ("Shift + F3", "Find Previous"),
             ("Ctrl + G", "Go to Message Number"),
             ("Ctrl + Q", "Quit Application"),
             ("Esc", "Clear Search / Filters"),
@@ -313,6 +317,16 @@ class QwkGuiApp:
             accelerator="Ctrl+F",
         )
         edit_menu.add_command(
+            label="Find Next",
+            command=lambda: self._navigate_search_matches(1),
+            accelerator="F3",
+        )
+        edit_menu.add_command(
+            label="Find Previous",
+            command=lambda: self._navigate_search_matches(-1),
+            accelerator="Shift+F3",
+        )
+        edit_menu.add_command(
             label="Go to Message...",
             command=self.prompt_jump_to_message,
             accelerator="Ctrl+G",
@@ -331,6 +345,8 @@ class QwkGuiApp:
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Escape>", self.clear_search)
+        self.root.bind("<F3>", lambda e: self._navigate_search_matches(1))
+        self.root.bind("<Shift-F3>", lambda e: self._navigate_search_matches(-1))
         self.root.bind("j", lambda e: self._select_relative_message(1))
         self.root.bind("n", lambda e: self._select_relative_message(1))
         self.root.bind("k", lambda e: self._select_relative_message(-1))
@@ -666,6 +682,9 @@ class QwkGuiApp:
         self.detail_text.tag_configure(
             "search_highlight", background="#ffff00", foreground="#000000"
         )
+        self.detail_text.tag_configure(
+            "current_search_highlight", background="#ff9900", foreground="#ffffff"
+        )
         self.detail_text.tag_configure("link", foreground="blue", underline=True)
         self.detail_text.tag_bind(
             "link", "<Enter>", lambda e: self.detail_text.config(cursor="hand2")
@@ -889,11 +908,12 @@ class QwkGuiApp:
 
         # Highlight search terms if present
         search_term = self.search_var.get().strip()
+        self._search_matches = []
+        self._current_match_idx = -1
         if search_term:
             start_pos = "1.0"
             is_regex = self.regex_var.get()
             count_var = tk.IntVar()
-            first_match_pos = None
 
             while True:
                 try:
@@ -907,20 +927,50 @@ class QwkGuiApp:
                 if not start_pos:
                     break
 
-                if first_match_pos is None:
-                    first_match_pos = start_pos
-
                 match_count = count_var.get()
                 if match_count == 0:  # Avoid infinite loop on zero-width match
                     start_pos = f"{start_pos}+1c"
                     continue
                 end_pos = f"{start_pos}+{match_count}c"
                 self.detail_text.tag_add("search_highlight", start_pos, end_pos)
+                self._search_matches.append((start_pos, end_pos))
                 start_pos = end_pos
 
             self.detail_text.tag_raise("search_highlight")
-            if first_match_pos:
-                self.detail_text.see(first_match_pos)
+            if self._search_matches:
+                self._current_match_idx = 0
+                self.detail_text.see(self._search_matches[0][0])
+                self.detail_text.tag_add("current_search_highlight", self._search_matches[0][0], self._search_matches[0][1])
+                self.detail_text.tag_raise("current_search_highlight")
+
+                # Update status feedback
+                source_display = self.root.title().split(" - ")[0]
+                self.status_label.config(
+                    text=f"Match 1 of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
+                )
+
+    def _navigate_search_matches(self, delta: int, _event: object | None = None) -> None:
+        """Cycle through search matches in the detail view."""
+        if not self._search_matches:
+            return
+
+        # Remove existing current highlight
+        self.detail_text.tag_remove("current_search_highlight", "1.0", tk.END)
+
+        # Update index
+        self._current_match_idx = (self._current_match_idx + delta) % len(self._search_matches)
+
+        # Apply new highlight and scroll
+        start_pos, end_pos = self._search_matches[self._current_match_idx]
+        self.detail_text.tag_add("current_search_highlight", start_pos, end_pos)
+        self.detail_text.tag_raise("current_search_highlight")
+        self.detail_text.see(start_pos)
+
+        # Update status feedback
+        source_display = self.root.title().split(" - ")[0]
+        self.status_label.config(
+            text=f"Match {self._current_match_idx + 1} of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
+        )
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
