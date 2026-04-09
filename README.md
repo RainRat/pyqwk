@@ -28,7 +28,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
   - **Ubuntu/Debian:** `sudo apt install python3-tk`
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
-- **tqdm**: Provides a progress bar when processing many messages. Install it with: `python -m pip install tqdm`
+- **tqdm**: Shows a progress bar when processing many messages. Install it with: `python -m pip install tqdm`
 - **unzip**: A system tool used to handle older archives with special compression. If `pyqwk` cannot open a file with Python's built-in tools, it will try to use `unzip`.
   - **Ubuntu/Debian:** `sudo apt install unzip`
   - **Fedora:** `sudo dnf install unzip`
@@ -38,7 +38,7 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 
 ## Quick Start
 
-Run the script on any supported message archive (QWK, REP, JSON, CSV, XML, mbox, EML, Markdown, or SQLite):
+Run the tool on any supported message archive (QWK, REP, JSON, JSONL, CSV, XML, mbox, EML, Markdown, or SQLite):
 
 ```bash
 # Process a single archive
@@ -51,7 +51,7 @@ python qwk.py my_archives/
 
 ## Installation
 
-You can install `pyqwk` to use it from any folder on your computer.
+Install `pyqwk` to use it from any folder on your computer.
 
 1. Open your terminal in the folder where you downloaded `pyqwk`.
 2. Install the package:
@@ -472,8 +472,8 @@ Run `qwk --help` to see all available options.
 ## Troubleshooting
 
 - **Unsupported Compression:** Some old QWK or REP packets use special ZIP methods. `pyqwk` automatically attempts to use the system `unzip` tool if Python's built-in tools fail. If you still see an error, unzip the file manually and run `qwk` on the `messages.dat` (or `reply.dat`) file inside.
-- **Strange Characters:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
-- **Option Conflict:** Some options cannot be used together. You will get an error if you try to use:
+- **Incorrect Text:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
+- **Conflicting Options:** Some options cannot be used together. You will get an error if you try to use:
   - `--threaded` and `--individual-files`
   - `--oneline` and `--individual-files`
   - `--threaded` and `--format eml`
