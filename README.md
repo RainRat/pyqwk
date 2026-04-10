@@ -91,7 +91,7 @@ qwk-gui archive.eml
 ```
 
 **Key Features:**
-- **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can also highlight any text in a message, right-click, and select **Search for '[Selected Text]'** to instantly find related messages.
+- **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can cycle through matches using **F3** (Next) and **Shift + F3** (Previous). You can also highlight any text in a message, right-click, and select **Search for '[Selected Text]'** to instantly find related messages.
 - **Attachments:** Messages containing attachments (UUE, Base64, yEnc) display clickable links in the header. Click any attachment name to save it to your computer. You can also use **File > Extract All Attachments...** to batch-save all attachments from the current filtered view to a folder.
 - **Filtering:** View messages from specific BBSes or conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
 - **Context Menus:** Right-click on any message in the list to copy its information (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
@@ -108,6 +108,8 @@ qwk-gui archive.eml
 - **Ctrl + F**: Jump to the search bar.
 - **Ctrl + G**: Jump to a specific message number.
 - **Ctrl + Q**: Exit the application.
+- **F3**: Move to the next search match in the current message.
+- **Shift + F3**: Move to the previous search match in the current message.
 - **j** or **n**: Move to the next message in the list.
 - **k** or **p**: Move to the previous message in the list.
 - **Esc**: Clear the search filter and return focus to the message list. This works from anywhere in the application.
@@ -274,7 +276,7 @@ qwk archive.qwk --to "Alice"
 ```
 
 **Keyword Search:**
-Search for keywords in the author, recipient, subject, and message body. Results are highlighted in the terminal for easy identification.
+Search for keywords in the author, recipient, subject, message body, conference, BBS, and attachments. Results are highlighted in the terminal for easy identification.
 ```bash
 qwk archive.qwk --search "BBS"
 ```
@@ -431,7 +433,7 @@ for msg in messages:
 | `--toc` | Add a table of contents and summary to the output. |
 | `-m`, `--merge` | Combine multiple archives into one file. |
 | `-u`, `--unique` | Remove duplicate messages when merging archives. |
-| `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, and message body. |
+| `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, body, conference, BBS, and attachments. |
 | `--regex` | Use regular expressions for searching and filtering. |
 | `-C`, `--conference [id]` | Only show messages from this conference (can be used multiple times). |
 | `--bbs [name/id]` | Only show messages from this BBS (can be used multiple times). |
