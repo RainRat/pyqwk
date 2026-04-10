@@ -4297,12 +4297,14 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
                 continue
 
             if child_idx in path:
-                child_msg = messages[child_idx]
-                logger.warning(
-                    "Circular reference detected (conf %s, msgnum %s).",
-                    child_msg.confnum,
-                    child_msg.msgnum,
-                )
+                if child_idx not in cycle_reported:
+                    child_msg = messages[child_idx]
+                    logger.warning(
+                        "Circular reference detected (conf %s, msgnum %s).",
+                        child_msg.confnum,
+                        child_msg.msgnum,
+                    )
+                    cycle_reported.add(child_idx)
                 continue
 
             if child_idx in visited:
