@@ -121,7 +121,17 @@ examples:
     io_group.add_argument(
         '--organize-by-bbs',
         dest='organize_by_bbs',
-        help='Organize archives into folders named after the BBS.',
+        help='Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead.',
+        action='store_true',
+    )
+    io_group.add_argument(
+        '--organize-by-author',
+        help='Organize individual files into subfolders by author name.',
+        action='store_true',
+    )
+    io_group.add_argument(
+        '--organize-by-to',
+        help='Organize individual files into subfolders by recipient name.',
         action='store_true',
     )
     io_group.add_argument(
@@ -550,6 +560,8 @@ examples:
         organize=args.organize,
         organize_by_date=getattr(args, 'organize_by_date', False),
         organize_by_bbs=args.organize_by_bbs,
+        organize_by_author=getattr(args, 'organize_by_author', False),
+        organize_by_to=getattr(args, 'organize_by_to', False),
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
         msgnum_filters=msgnum_filters,
@@ -585,7 +597,7 @@ examples:
         max_length=getattr(args, 'max_length', None),
     )
 
-    if args.organize_by_bbs:
+    if args.organize_by_bbs and not args.output_path:
         organize_by_bbs(input_paths, settings, logger)
         sys.exit(0)
 

@@ -372,6 +372,8 @@ class ProcessingSettings:
     organize: bool = False
     organize_by_date: bool = False
     organize_by_bbs: bool = False
+    organize_by_author: bool = False
+    organize_by_to: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
     msgnum_filters: set[int] | None = None
@@ -2206,8 +2208,26 @@ def process_merged_files(
 
             target_dir = output_dir
             relative_sub_path = ""
-            if settings.organize or settings.organize_by_date:
+            if any([
+                settings.organize,
+                settings.organize_by_date,
+                settings.organize_by_bbs,
+                settings.organize_by_author,
+                settings.organize_by_to
+            ]):
                 sub_parts = []
+                if settings.organize_by_bbs:
+                    bbs_name = parsed_message.bbs_name or "unknown_bbs"
+                    sub_parts.append(_slugify(bbs_name, "bbs"))
+
+                if settings.organize_by_author:
+                    author = parsed_message.header.msgfrom or "unknown_author"
+                    sub_parts.append(_slugify(author, "author"))
+
+                if settings.organize_by_to:
+                    recipient = parsed_message.header.msgto or "unknown_to"
+                    sub_parts.append(_slugify(recipient, "to"))
+
                 if settings.organize:
                     conf_name = parsed_message.confname or "unknown"
                     conf_slug = _slugify(conf_name, "conference")
@@ -2341,10 +2361,10 @@ def process_merged_files(
 
                 parsed_message = replace(
                     parsed_message,
-                    confname=board_dict.get(parsed_message.confnum),
-                    bbs_name=bbs_info.name if bbs_info else None,
-                    bbs_id=bbs_info.bbs_id if bbs_info else None,
-                    source_file=os.path.basename(input_path),
+                    confname=parsed_message.confname or board_dict.get(parsed_message.confnum),
+                    bbs_name=parsed_message.bbs_name or (bbs_info.name if bbs_info else None),
+                    bbs_id=parsed_message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
+                    source_file=parsed_message.source_file or os.path.basename(input_path),
                 )
                 if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
                     continue
