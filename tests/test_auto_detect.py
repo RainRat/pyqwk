@@ -23,15 +23,15 @@ def test_main_auto_detects_json(monkeypatch, tmp_path, baseline_path):
     monkeypatch.setattr(sys, "argv", ["qwk", str(baseline_path), "-o", str(output_path)])
 
     # We want to verify that ProcessingSettings was created with format='json'
-    # We can mock process_file to check settings
+    # We can mock process_merged_files to check settings
 
     captured_settings = []
 
-    def mock_process_file(input_path, settings, logger):
+    def mock_process_merged_files(input_paths, settings, logger):
         captured_settings.append(settings)
 
     import pyqwk.cli as cli
-    monkeypatch.setattr(cli, "process_file", mock_process_file)
+    monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     main()
 
@@ -46,11 +46,11 @@ def test_main_auto_detects_html(monkeypatch, tmp_path, baseline_path):
     monkeypatch.setattr(sys, "argv", ["qwk", str(baseline_path), "-o", str(output_path)])
 
     captured_settings = []
-    def mock_process_file(input_path, settings, logger):
+    def mock_process_merged_files(input_paths, settings, logger):
         captured_settings.append(settings)
 
     import pyqwk.cli as cli
-    monkeypatch.setattr(cli, "process_file", mock_process_file)
+    monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     main()
 
@@ -65,11 +65,11 @@ def test_main_defaults_to_text_unknown_extension(monkeypatch, tmp_path, baseline
     monkeypatch.setattr(sys, "argv", ["qwk", str(baseline_path), "-o", str(output_path)])
 
     captured_settings = []
-    def mock_process_file(input_path, settings, logger):
+    def mock_process_merged_files(input_paths, settings, logger):
         captured_settings.append(settings)
 
     import pyqwk.cli as cli
-    monkeypatch.setattr(cli, "process_file", mock_process_file)
+    monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     main()
 
@@ -85,11 +85,11 @@ def test_main_respects_explicit_format(monkeypatch, tmp_path, baseline_path):
     monkeypatch.setattr(sys, "argv", ["qwk", str(baseline_path), "-o", str(output_path), "--format", "text"])
 
     captured_settings = []
-    def mock_process_file(input_path, settings, logger):
+    def mock_process_merged_files(input_paths, settings, logger):
         captured_settings.append(settings)
 
     import pyqwk.cli as cli
-    monkeypatch.setattr(cli, "process_file", mock_process_file)
+    monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     main()
 

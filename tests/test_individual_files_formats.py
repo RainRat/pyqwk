@@ -8,7 +8,7 @@ import logging
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import process_file, ProcessingSettings
+from pyqwk.core import process_merged_files, ProcessingSettings
 
 @pytest.fixture
 def baseline_path() -> Path:
@@ -46,10 +46,8 @@ def _make_settings(**overrides) -> ProcessingSettings:
 def test_individual_files_json_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
     output_dir = tmp_path / "json_out"
 
-    # Run process_file with individual_files=True and format='json'
-    process_file(
-        str(baseline_path),
-        _make_settings(
+    # Run process_merged_files with individual_files=True and format='json'
+    process_merged_files([str(baseline_path)], _make_settings(
             individual_files=True,
             format="json",
             output_mode="file",
@@ -76,9 +74,7 @@ def test_individual_files_json_format(tmp_path: Path, baseline_path: Path, logge
 def test_individual_files_xml_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
     output_dir = tmp_path / "xml_out"
 
-    process_file(
-        str(baseline_path),
-        _make_settings(
+    process_merged_files([str(baseline_path)], _make_settings(
             individual_files=True,
             format="xml",
             output_mode="file",
@@ -104,9 +100,7 @@ def test_individual_files_xml_format(tmp_path: Path, baseline_path: Path, logger
 def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
     output_dir = tmp_path / "html_out"
 
-    process_file(
-        str(baseline_path),
-        _make_settings(
+    process_merged_files([str(baseline_path)], _make_settings(
             individual_files=True,
             format="html",
             output_mode="file",
@@ -127,9 +121,7 @@ def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logge
 def test_individual_files_markdown_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
     output_dir = tmp_path / "md_out"
 
-    process_file(
-        str(baseline_path),
-        _make_settings(
+    process_merged_files([str(baseline_path)], _make_settings(
             individual_files=True,
             format="markdown",
             output_mode="file",
@@ -148,9 +140,7 @@ def test_individual_files_markdown_format(tmp_path: Path, baseline_path: Path, l
 def test_individual_files_mbox_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
     output_dir = tmp_path / "mbox_out"
 
-    process_file(
-        str(baseline_path),
-        _make_settings(
+    process_merged_files([str(baseline_path)], _make_settings(
             individual_files=True,
             format="mbox",
             output_mode="file",

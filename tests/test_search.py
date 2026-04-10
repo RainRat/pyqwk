@@ -2,7 +2,7 @@
 import pytest
 import logging
 from dataclasses import replace
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def mock_logger():
@@ -57,7 +57,7 @@ def test_search_in_author(tmp_path, mock_messages, mock_logger, monkeypatch):
         search_term="alice"
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "The quick brown fox" in content
@@ -83,7 +83,7 @@ def test_search_in_subject(tmp_path, mock_messages, mock_logger, monkeypatch):
         search_term="tech"
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Python is a programming language" in content
@@ -109,7 +109,7 @@ def test_search_in_body(tmp_path, mock_messages, mock_logger, monkeypatch):
         search_term="bbs"
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "BBS systems are cool" in content
@@ -139,7 +139,7 @@ def test_search_combined_with_filters(tmp_path, mock_messages, mock_logger, monk
         conferences=["2"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Python is a programming language" in content
@@ -165,7 +165,7 @@ def test_search_no_match(tmp_path, mock_messages, mock_logger, monkeypatch):
         search_term="nonexistent"
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert content == ""

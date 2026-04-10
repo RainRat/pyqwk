@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pyqwk.core import (
     load_data,
-    process_file,
+    process_merged_files,
     ProcessingSettings,
     ParsedMessage
 )
@@ -48,7 +48,7 @@ def test_mbox_export_reimport_symmetry(tmp_path, baseline_path, logger):
         output_mode="file",
         output_path=str(mbox_path)
     )
-    process_file(str(baseline_path), settings_export, logger)
+    process_merged_files([str(baseline_path)], settings_export, logger)
 
     assert mbox_path.exists()
 
@@ -75,7 +75,7 @@ def test_mbox_export_reimport_symmetry(tmp_path, baseline_path, logger):
         output_path=str(html_path)
     )
 
-    process_file(str(mbox_path), settings_html, logger)
+    process_merged_files([str(mbox_path)], settings_html, logger)
 
     assert html_path.exists()
     html_content = html_path.read_text(encoding="utf-8")
@@ -91,7 +91,7 @@ def test_eml_export_reimport_symmetry(tmp_path, baseline_path, logger):
         output_mode="file",
         output_path=str(eml_path)
     )
-    process_file(str(baseline_path), settings_export, logger)
+    process_merged_files([str(baseline_path)], settings_export, logger)
 
     assert eml_path.exists()
 

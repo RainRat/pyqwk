@@ -1,7 +1,7 @@
 import pytest
 import sys
 from pathlib import Path
-from pyqwk.core import process_file, ProcessingSettings
+from pyqwk.core import process_merged_files, ProcessingSettings
 from pyqwk.cli import main
 import logging
 
@@ -18,7 +18,7 @@ def logger() -> logging.Logger:
     logger.addHandler(logging.NullHandler())
     return logger
 
-def test_process_file_dry_run_no_files_created(tmp_path, baseline_path, logger):
+def test_process_merged_files_dry_run_no_files_created(tmp_path, baseline_path, logger):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
@@ -40,12 +40,12 @@ def test_process_file_dry_run_no_files_created(tmp_path, baseline_path, logger):
         dry_run=True
     )
 
-    process_file(str(baseline_path), settings, logger)
+    process_merged_files([str(baseline_path)], settings, logger)
 
     # Check that no files were created in the output directory
     assert len(list(output_dir.iterdir())) == 0
 
-def test_process_file_dry_run_summary_printed(capsys, baseline_path, logger):
+def test_process_merged_files_dry_run_summary_printed(capsys, baseline_path, logger):
     settings = ProcessingSettings(
         verbose=False,
         private=False,
@@ -65,7 +65,7 @@ def test_process_file_dry_run_summary_printed(capsys, baseline_path, logger):
         quiet=True
     )
 
-    process_file(str(baseline_path), settings, logger)
+    process_merged_files([str(baseline_path)], settings, logger)
 
     captured = capsys.readouterr()
     assert "--- Dry Run Summary ---" in captured.out

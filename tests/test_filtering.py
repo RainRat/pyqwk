@@ -2,8 +2,7 @@
 import pytest
 import logging
 from dataclasses import replace
-from pyqwk.core import (
-    process_file, ProcessingSettings, ParsedMessage, MessageHeader,
+from pyqwk.core import (process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader,
     matches_filters
 )
 
@@ -79,7 +78,7 @@ def test_excludes_private_messages_by_default(tmp_path, mock_messages, mock_boar
         output_path=str(output_path), encoding="cp437", quiet=True
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Private Message" not in content
@@ -103,7 +102,7 @@ def test_includes_private_messages_when_requested(tmp_path, mock_messages, mock_
         output_path=str(output_path), encoding="cp437", quiet=True
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Private Message" in content
@@ -128,7 +127,7 @@ def test_always_excludes_password_protected_messages(tmp_path, mock_messages, mo
         output_path=str(output_path), encoding="cp437", quiet=True
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Password Protected" not in content
@@ -153,7 +152,7 @@ def test_filtering_by_id(tmp_path, mock_messages, mock_board_dict, mock_logger, 
         conferences=["2"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 2 in Conf 2" in content
@@ -180,7 +179,7 @@ def test_filtering_by_name_exact(tmp_path, mock_messages, mock_board_dict, mock_
         conferences=["Python Dev"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 3 in Conf 3" in content
@@ -206,7 +205,7 @@ def test_filtering_by_name_substring_case_insensitive(tmp_path, mock_messages, m
         conferences=["tech"] # Should match "Tech Talk"
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 2 in Conf 2" in content
@@ -232,7 +231,7 @@ def test_filtering_multiple_criteria(tmp_path, mock_messages, mock_board_dict, m
         conferences=["1", "python"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 1 in Conf 1" in content # Match by ID "1"
@@ -260,7 +259,7 @@ def test_filtering_numeric_fallback_when_names_missing(tmp_path, mock_messages, 
         conferences=["2"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 2 in Conf 2" in content
@@ -286,7 +285,7 @@ def test_filtering_no_matches(tmp_path, mock_messages, mock_board_dict, mock_log
         conferences=["NonExistent"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert content == ""
@@ -311,7 +310,7 @@ def test_filtering_by_author_single(tmp_path, mock_messages, mock_board_dict, mo
         authors=["Alice"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 1 in Conf 1" in content # From Alice
@@ -338,7 +337,7 @@ def test_filtering_by_author_multiple(tmp_path, mock_messages, mock_board_dict, 
         authors=["Alice", "Bob"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 1 in Conf 1" in content # From Alice
@@ -365,7 +364,7 @@ def test_filtering_by_subject_substring(tmp_path, mock_messages, mock_board_dict
         subjects=["python"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 3 in Conf 3" in content # Subject "Python Rules" matches "python"
@@ -391,7 +390,7 @@ def test_filtering_by_subject_multiple(tmp_path, mock_messages, mock_board_dict,
         subjects=["hello", "tech"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 1 in Conf 1" in content # Subject "Hello World"
@@ -423,7 +422,7 @@ def test_filtering_combined_criteria(tmp_path, mock_messages, mock_board_dict, m
         authors=["Alice"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg 1 in Conf 1" in content

@@ -101,7 +101,7 @@ def test_cli_oneline(tmp_path):
     test_qwk = "testdata/test1_qwk.zip"
 
     with patch("sys.argv", ["qwk.py", test_qwk, "--oneline", "--dry-run"]):
-        with patch("pyqwk.cli.process_file") as mock_process:
+        with patch("pyqwk.cli.process_merged_files") as mock_process:
             try:
                 main()
             except SystemExit:

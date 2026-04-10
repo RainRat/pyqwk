@@ -2,7 +2,7 @@
 import pytest
 import logging
 from dataclasses import replace
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def mock_logger():
@@ -51,7 +51,7 @@ def test_filtering_by_recipient_single(tmp_path, mock_messages, mock_logger, mon
         recipients=["Bob"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Hello Bob" in content
@@ -72,7 +72,7 @@ def test_filtering_by_recipient_multiple(tmp_path, mock_messages, mock_logger, m
         recipients=["Bob", "Dave"]
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Hello Bob" in content
@@ -93,7 +93,7 @@ def test_filtering_by_recipient_case_insensitive(tmp_path, mock_messages, mock_l
         recipients=["alice"] # lowercase
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Hello Alice" in content
@@ -114,7 +114,7 @@ def test_search_includes_recipient(tmp_path, mock_messages, mock_logger, monkeyp
         search_term="Dave"
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Secret message" in content

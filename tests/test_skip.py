@@ -2,7 +2,7 @@
 import pytest
 import logging
 from dataclasses import replace
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def mock_logger():
@@ -46,7 +46,7 @@ def test_skip_ignores_first_n_messages(tmp_path, mock_messages, mock_logger, mon
         skip=skip
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     # Should NOT contain Message 1 to 5
@@ -79,7 +79,7 @@ def test_skip_and_limit_together(tmp_path, mock_messages, mock_logger, monkeypat
         limit=limit
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     # Should skip 1, 2. Process 3, 4, 5. Stop before 6.
@@ -110,7 +110,7 @@ def test_skip_exceeds_total(tmp_path, mock_messages, mock_logger, monkeypatch):
         skip=20
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert content == ""
@@ -146,7 +146,7 @@ def test_skip_with_unique(tmp_path, mock_messages, mock_logger, monkeypatch):
         limit=2
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Msg:01" not in content

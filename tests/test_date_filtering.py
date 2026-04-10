@@ -3,7 +3,7 @@ import pytest
 import datetime
 import logging
 from dataclasses import replace
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def mock_logger():
@@ -65,7 +65,7 @@ def test_filter_after(tmp_path, mock_messages_with_dates, mock_board_dict, mock_
         after=after_date
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Old Message" not in content
@@ -96,7 +96,7 @@ def test_filter_before(tmp_path, mock_messages_with_dates, mock_board_dict, mock
         before=before_date
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Old Message" in content
@@ -128,7 +128,7 @@ def test_filter_range(tmp_path, mock_messages_with_dates, mock_board_dict, mock_
         before=before_date
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Old Message" not in content
@@ -158,7 +158,7 @@ def test_filter_exact_boundary(tmp_path, mock_messages_with_dates, mock_board_di
         after=after_date
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Middle Message" in content # 2000-01-01 is >= 2000-01-01
@@ -187,7 +187,7 @@ def test_filter_before_boundary_inclusive(tmp_path, mock_messages_with_dates, mo
         before=before_date
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Middle Message" in content # 2000-01-01 12:00 is <= 2000-01-01 23:59:59
@@ -215,7 +215,7 @@ def test_filter_exclude_future(tmp_path, mock_messages_with_dates, mock_board_di
         before=before_date
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert content == ""

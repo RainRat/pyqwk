@@ -22,7 +22,7 @@ from pyqwk.core import (
     _order_messages_by_thread,
     load_data,
     parse_messages,
-    process_file,
+    process_merged_files,
     _write_xml,
     _write_html,
 )
@@ -206,13 +206,11 @@ def test_invalid_messages_dat_reports_clear_error(
 
 
 
-def test_process_file_writes_individual_files(
+def test_process_merged_files_writes_individual_files(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_dir = tmp_path / "messages"
-    process_file(
-        str(baseline_path),
-        _make_settings(
+    process_merged_files([str(baseline_path)], _make_settings(
             individual_files=True,
             output_mode="file",
             output_path=str(output_dir),
@@ -233,10 +231,8 @@ def test_process_file_writes_individual_files(
 
 
 
-def test_process_file_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
-    process_file(
-        str(baseline_path),
-        _make_settings(quiet=True),
+def test_process_merged_files_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
+    process_merged_files([str(baseline_path)], _make_settings(quiet=True),
         logger=logger,
     )
 
@@ -485,13 +481,11 @@ def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logg
     assert all("Conference:" not in message.text for message in messages)
 
 
-def test_process_file_writes_json(
+def test_process_merged_files_writes_json(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.json"
-    process_file(
-        str(baseline_path),
-        _make_settings(format="json", output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(format="json", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -512,7 +506,7 @@ def test_process_file_writes_json(
     assert message["header"]["msgnum"] == 28
 
 
-def test_process_file_preserves_thread_order_in_json(
+def test_process_merged_files_preserves_thread_order_in_json(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
 ) -> None:
     header = MessageHeader(
@@ -560,9 +554,7 @@ def test_process_file_preserves_thread_order_in_json(
 
     output_path = tmp_path / "threaded.json"
 
-    process_file(
-        "ignored.dat",
-        _make_settings(
+    process_merged_files(["ignored.dat"], _make_settings(
             threaded=True,
             format="json",
             no_header=True,
@@ -578,13 +570,11 @@ def test_process_file_preserves_thread_order_in_json(
     assert [message["text"] for message in data] == ["parent\r\n", "child\r\n"]
 
 
-def test_process_file_writes_xml(
+def test_process_merged_files_writes_xml(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.xml"
-    process_file(
-        str(baseline_path),
-        _make_settings(format="xml", output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(format="xml", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -604,13 +594,11 @@ def test_process_file_writes_xml(
     assert ("-" * 80) not in content
 
 
-def test_process_file_writes_html(
+def test_process_merged_files_writes_html(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.html"
-    process_file(
-        str(baseline_path),
-        _make_settings(format="html", output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(format="html", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -634,7 +622,7 @@ def test_process_file_writes_html(
     assert "-" * 80 not in content
 
 
-def test_process_file_writes_xml_with_special_characters(
+def test_process_merged_files_writes_xml_with_special_characters(
     tmp_path, logger: logging.Logger
 ) -> None:
     from pyqwk.core import _write_xml
@@ -899,12 +887,10 @@ def test_cli_batch_success(
     assert files[0].name == "test1_qwk.txt"
     assert files[1].name == "test2_qwk.txt"
 
-def test_process_file_noheader_combined_has_separator(
+def test_process_merged_files_noheader_combined_has_separator(
     capsys: pytest.CaptureFixture[str], baseline_path: Path, logger: logging.Logger
 ) -> None:
-    process_file(
-        str(baseline_path),
-        _make_settings(no_header=True),
+    process_merged_files([str(baseline_path)], _make_settings(no_header=True),
         logger=logger,
     )
 
@@ -915,12 +901,10 @@ def test_process_file_noheader_combined_has_separator(
     assert "Subject:" not in captured.out
 
 
-def test_process_file_separator_blank(
+def test_process_merged_files_separator_blank(
     capsys: pytest.CaptureFixture[str], baseline_path: Path, logger: logging.Logger
 ) -> None:
-    process_file(
-        str(baseline_path),
-        _make_settings(separator="blank"),
+    process_merged_files([str(baseline_path)], _make_settings(separator="blank"),
         logger=logger,
     )
 
@@ -963,9 +947,7 @@ def test_json_noheader_removes_header_text(
     tmp_path: Path, baseline_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.json"
-    process_file(
-        str(baseline_path),
-        _make_settings(format="json", no_header=True, output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(format="json", no_header=True, output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -981,9 +963,7 @@ def test_xml_noheader_removes_header_text(
     tmp_path: Path, baseline_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.xml"
-    process_file(
-        str(baseline_path),
-        _make_settings(format="xml", no_header=True, output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(format="xml", no_header=True, output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -1033,7 +1013,7 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
         output_path=str(output_path), encoding="cp437"
     )
 
-    process_file("dummy.qwk", settings, logger)
+    process_merged_files(["dummy.qwk"], settings, logger)
 
     with open(output_path, "rb") as f:
         content = f.read()
@@ -1046,12 +1026,12 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
 def test_process_multiple_files_handles_controldat_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
 ) -> None:
-    def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+    def mock_process_merged_files(input_paths: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
         if "bad" in input_path:
             raise ControlDatFormatError("Bad control.dat")
 
     import pyqwk.cli as cli
-    monkeypatch.setattr(cli, "process_file", mock_process_file)
+    monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     input_paths = ["bad.zip", "good.zip"]
     output_dir = tmp_path / "output"
@@ -1073,11 +1053,11 @@ def test_clean_flag_activates_cleaning_options(
 
     captured_settings = []
 
-    def mock_process_file(input_path: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+    def mock_process_merged_files(input_paths: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
         captured_settings.append(settings)
 
     import pyqwk.cli as cli
-    monkeypatch.setattr(cli, "process_file", mock_process_file)
+    monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     main()
 

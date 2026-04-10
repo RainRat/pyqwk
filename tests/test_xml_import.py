@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from pyqwk.core import (
     load_data,
-    process_file,
+    process_merged_files,
     ProcessingSettings,
     ParsedMessage
 )
@@ -49,7 +49,7 @@ def test_xml_export_reimport_symmetry(tmp_path, baseline_path, logger):
         output_mode="file",
         output_path=str(xml_path)
     )
-    process_file(str(baseline_path), settings_export, logger)
+    process_merged_files([str(baseline_path)], settings_export, logger)
 
     assert xml_path.exists()
 
@@ -74,8 +74,8 @@ def test_xml_export_reimport_symmetry(tmp_path, baseline_path, logger):
         output_path=str(html_path)
     )
 
-    # We can use process_file on the xml path directly now
-    process_file(str(xml_path), settings_html, logger)
+    # We can use process_merged_files on the xml path directly now
+    process_merged_files([str(xml_path)], settings_html, logger)
 
     assert html_path.exists()
     html_content = html_path.read_text(encoding="utf-8")
