@@ -725,11 +725,10 @@ class MessageHeader:
         to_name = self.msgto.strip()
         subject = self.msgsubject.strip()
 
-        def prepare_field(text: str, width: int, highlight: bool = True) -> str:
+        def prepare_field(text: str, width: int) -> str:
             truncated = text[:width]
             display_len = len(truncated)
-            if highlight:
-                truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
+            truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
             return truncated + (" " * (width - display_len))
 
         conf_part = prepare_field(conf_name, 12)
@@ -4278,14 +4277,12 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
                 continue
 
             if child_idx in path:
-                if child_idx not in cycle_reported:
-                    child_msg = messages[child_idx]
-                    logger.warning(
-                        "Circular reference detected (conf %s, msgnum %s).",
-                        child_msg.confnum,
-                        child_msg.msgnum,
-                    )
-                    cycle_reported.add(child_idx)
+                child_msg = messages[child_idx]
+                logger.warning(
+                    "Circular reference detected (conf %s, msgnum %s).",
+                    child_msg.confnum,
+                    child_msg.msgnum,
+                )
                 continue
 
             if child_idx in visited:
