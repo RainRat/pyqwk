@@ -474,12 +474,23 @@ class QwkGuiApp:
         search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
-            search_frame, textvariable=self.search_var, width=30
+            search_frame, textvariable=self.search_var, width=22
         )
         self.search_entry.pack(side=tk.LEFT, padx=(5, 0))
         ttk.Button(
             search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        ).pack(side=tk.LEFT, padx=(0, 2))
+
+        self.search_count_label = ttk.Label(search_frame, text="", width=8, anchor=tk.CENTER)
+        self.search_count_label.pack(side=tk.LEFT)
+
+        ttk.Button(
+            search_frame, text="▲", width=2, command=lambda: self._navigate_search_matches(-1)
+        ).pack(side=tk.LEFT, padx=1)
+        ttk.Button(
+            search_frame, text="▼", width=2, command=lambda: self._navigate_search_matches(1)
+        ).pack(side=tk.LEFT, padx=(1, 5))
+
         ttk.Checkbutton(
             search_frame, text="Regex", variable=self.regex_var, command=self.reload_messages
         ).pack(side=tk.LEFT, padx=5)
@@ -910,7 +921,10 @@ class QwkGuiApp:
         search_term = self.search_var.get().strip()
         self._search_matches = []
         self._current_match_idx = -1
-        if search_term:
+
+        if not search_term:
+            self.search_count_label.config(text="")
+        else:
             start_pos = "1.0"
             is_regex = self.regex_var.get()
             count_var = tk.IntVar()
@@ -943,11 +957,16 @@ class QwkGuiApp:
                 self.detail_text.tag_add("current_search_highlight", self._search_matches[0][0], self._search_matches[0][1])
                 self.detail_text.tag_raise("current_search_highlight")
 
+                # Update counters
+                self.search_count_label.config(text=f"1 / {len(self._search_matches)}")
+
                 # Update status feedback
                 source_display = self.root.title().split(" - ")[0]
                 self.status_label.config(
                     text=f"Match 1 of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
                 )
+            else:
+                self.search_count_label.config(text="0 / 0")
 
     def _navigate_search_matches(self, delta: int, _event: object | None = None) -> None:
         """Cycle through search matches in the detail view."""
@@ -965,6 +984,9 @@ class QwkGuiApp:
         self.detail_text.tag_add("current_search_highlight", start_pos, end_pos)
         self.detail_text.tag_raise("current_search_highlight")
         self.detail_text.see(start_pos)
+
+        # Update counters
+        self.search_count_label.config(text=f"{self._current_match_idx + 1} / {len(self._search_matches)}")
 
         # Update status feedback
         source_display = self.root.title().split(" - ")[0]
@@ -1334,6 +1356,7 @@ class QwkGuiApp:
                 self.message_list.focus(item_to_select)
                 self.message_list.see(item_to_select)
             else:
+                self.search_count_label.config(text="")
                 self._set_detail_text("No messages found.")
         except Exception as exc:
             # Restore previous state on failure
