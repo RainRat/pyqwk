@@ -3,8 +3,7 @@ from unittest.mock import patch
 import pytest
 from dataclasses import replace
 
-from pyqwk.core import (
-    process_file,
+from pyqwk.core import (process_merged_files,
     show_info,
     ProcessingSettings,
     BBSInfo,
@@ -72,7 +71,7 @@ def test_index_bbs_name_coverage(tmp_path, logger, default_settings):
 
     with patch('pyqwk.core.load_data') as mock_load:
         mock_load.return_value = (mock_data, board_dict)
-        process_file('mock.qwk', settings, logger)
+        process_merged_files(['mock.qwk'], settings, logger)
 
     index_path = output_dir / "index.html"
     assert index_path.exists()

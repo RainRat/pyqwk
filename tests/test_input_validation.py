@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import (
     load_data,
-    process_file,
+    process_merged_files,
     ProcessingSettings,
     MESSAGES_FILENAME
 )
@@ -54,7 +54,7 @@ def test_load_data_raises_if_messages_dat_missing_in_zip(
     assert "Neither" in str(exc_info.value)
     assert "found in the zip archive" in str(exc_info.value)
 
-def test_process_file_raises_if_stdout_with_output_path(
+def test_process_merged_files_raises_if_stdout_with_output_path(
     tmp_path: Path, logger: logging.Logger
 ) -> None:
     settings = _make_settings(
@@ -63,11 +63,11 @@ def test_process_file_raises_if_stdout_with_output_path(
     )
 
     with pytest.raises(ValueError) as exc_info:
-        process_file("dummy.qwk", settings, logger)
+        process_merged_files(["dummy.qwk"], settings, logger)
 
     assert "Output path cannot be provided when output mode is stdout" in str(exc_info.value)
 
-def test_process_file_raises_if_file_mode_without_output_path(
+def test_process_merged_files_raises_if_file_mode_without_output_path(
     logger: logging.Logger
 ) -> None:
     settings = _make_settings(
@@ -77,11 +77,11 @@ def test_process_file_raises_if_file_mode_without_output_path(
     )
 
     with pytest.raises(ValueError) as exc_info:
-        process_file("dummy.qwk", settings, logger)
+        process_merged_files(["dummy.qwk"], settings, logger)
 
     assert "output path is required when output mode is file" in str(exc_info.value)
 
-def test_process_file_raises_if_individual_files_without_output_path(
+def test_process_merged_files_raises_if_individual_files_without_output_path(
     logger: logging.Logger
 ) -> None:
     settings = _make_settings(
@@ -90,6 +90,6 @@ def test_process_file_raises_if_individual_files_without_output_path(
     )
 
     with pytest.raises(ValueError) as exc_info:
-        process_file("dummy.qwk", settings, logger)
+        process_merged_files(["dummy.qwk"], settings, logger)
 
     assert "output path is required when using individual files" in str(exc_info.value)

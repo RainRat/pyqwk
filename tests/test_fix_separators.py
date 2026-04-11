@@ -2,7 +2,7 @@ import logging
 import sqlite3
 import pytest
 from pathlib import Path
-from pyqwk.core import process_file, ProcessingSettings
+from pyqwk.core import process_merged_files, ProcessingSettings
 
 @pytest.fixture
 def logger():
@@ -31,7 +31,7 @@ def test_sqlite_no_separator_by_default(tmp_path, logger):
         encoding="latin1"
     )
 
-    process_file(str(input_path), settings, logger)
+    process_merged_files([str(input_path)], settings, logger)
 
     conn = sqlite3.connect(str(db_path))
     c = conn.cursor()
@@ -65,7 +65,7 @@ def test_mbox_no_separator_by_default(tmp_path, logger):
         encoding="latin1"
     )
 
-    process_file(str(input_path), settings, logger)
+    process_merged_files([str(input_path)], settings, logger)
 
     content = mbox_path.read_text(encoding='utf-8')
     # In mbox, the separator should NOT be there.

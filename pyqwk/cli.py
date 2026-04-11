@@ -10,7 +10,6 @@ from pyqwk.core import (
     ProcessingSettings,
     __version__,
     expand_paths,
-    process_file,
     process_merged_files,
     process_multiple_files,
     organize_by_bbs,
@@ -621,7 +620,7 @@ examples:
             sys.exit(1)
     else:
         try:
-            process_file(input_paths[0], settings, logger)
+            process_merged_files([input_paths[0]], settings, logger)
         except PROCESSING_EXCEPTIONS as error:
             logger.error(error)
             sys.exit(1)

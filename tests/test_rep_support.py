@@ -1,7 +1,7 @@
 import struct
 import zipfile
 import logging
-from pyqwk.core import load_data, parse_messages, ProcessingSettings, process_file, show_info
+from pyqwk.core import load_data, parse_messages, ProcessingSettings, process_merged_files, show_info
 
 def create_rep_packet(path, bbs_id=b"TESTBBS", msg_count=1):
     # Header record
@@ -76,7 +76,7 @@ def test_process_rep_file(tmp_path, capsys):
     )
 
     logger = logging.getLogger("pyqwk.test")
-    process_file(str(rep_path), settings, logger)
+    process_merged_files([str(rep_path)], settings, logger)
 
     captured = capsys.readouterr()
     assert "This is message 1." in captured.out

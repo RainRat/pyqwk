@@ -55,7 +55,7 @@ def test_single_file_mode_error(monkeypatch, testdata_dir, caplog):
     import pyqwk.cli as cli
     from pyqwk.core import MessagesDatFormatError
     with monkeypatch.context() as m:
-        m.setattr(cli, "process_file", MagicMock(side_effect=MessagesDatFormatError("Single file failure")))
+        m.setattr(cli, "process_merged_files", MagicMock(side_effect=MessagesDatFormatError("Single file failure")))
         with caplog.at_level(logging.ERROR):
             with pytest.raises(SystemExit) as exc:
                 main()

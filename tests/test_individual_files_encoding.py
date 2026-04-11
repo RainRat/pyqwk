@@ -6,7 +6,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def logger():
@@ -71,7 +71,7 @@ def test_individual_files_text_format_respects_encoding(tmp_path, logger, monkey
         output_path=str(output_dir)
     )
 
-    process_file("dummy.qwk", settings, logger)
+    process_merged_files(["dummy.qwk"], settings, logger)
 
     files = list(output_dir.iterdir())
     assert len(files) == 1
@@ -118,7 +118,7 @@ def test_individual_files_json_format_forces_utf8(tmp_path, logger, monkeypatch)
         output_path=str(output_dir)
     )
 
-    process_file("dummy.qwk", settings, logger)
+    process_merged_files(["dummy.qwk"], settings, logger)
 
     files = list(output_dir.iterdir())
     assert len(files) == 1

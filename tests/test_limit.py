@@ -2,7 +2,7 @@
 import pytest
 import logging
 from dataclasses import replace
-from pyqwk.core import process_file, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 
 @pytest.fixture
 def mock_logger():
@@ -46,7 +46,7 @@ def test_limit_restricts_output(tmp_path, mock_messages, mock_logger, monkeypatc
         limit=limit
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     # Should contain Message 1, 2, 3 but not 4
@@ -80,7 +80,7 @@ def test_limit_zero(tmp_path, mock_messages, mock_logger, monkeypatch):
         limit=0
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert content == ""
@@ -105,7 +105,7 @@ def test_limit_higher_than_total(tmp_path, mock_messages, mock_logger, monkeypat
         limit=20
     )
 
-    process_file("dummy.qwk", settings, mock_logger)
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
 
     content = output_path.read_text(encoding="latin1")
     assert "Message 10" in content

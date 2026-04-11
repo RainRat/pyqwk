@@ -149,7 +149,7 @@ def test_individual_files_mode_setup(monkeypatch, testdata_dir, tmp_path):
 
     import pyqwk.cli as cli
     with monkeypatch.context() as m:
-        m.setattr(cli, "process_file", lambda *args: None)
+        m.setattr(cli, "process_merged_files", lambda *args: None)
         main()
 
 def test_merge_mode_error(monkeypatch, testdata_dir, caplog):

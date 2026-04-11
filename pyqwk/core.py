@@ -2476,14 +2476,6 @@ def process_merged_files(
         print(f"{_colorize('No changes were made to the disk.', BOLD)}")
 
 
-def process_file(
-    input_path: str,
-    settings: ProcessingSettings,
-    logger: logging.Logger,
-) -> None:
-    process_merged_files([input_path], settings, logger)
-
-
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
     return {
         'header': message.header.as_dict,
@@ -4152,7 +4144,7 @@ def process_multiple_files(
                 output_mode='file',
                 output_path=output_path,
             )
-            process_file(input_path, per_file_settings, logger)
+            process_merged_files([input_path], per_file_settings, logger)
         except PROCESSING_EXCEPTIONS as error:
             logger.error("Error processing file %s: %s", input_path, error)
             had_errors = True

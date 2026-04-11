@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import pyqwk.core as qwk
-from pyqwk.core import ProcessingSettings, ParsedMessage, parse_messages, process_file
+from pyqwk.core import ProcessingSettings, ParsedMessage, parse_messages, process_merged_files
 
 @pytest.fixture
 def baseline_path() -> Path:
@@ -60,13 +60,11 @@ def test_parse_messages_headers_only(baseline_path: Path, logger: logging.Logger
     assert message.header.msgto.strip() == "All"
 
 def test_cli_headers_only_text_output(capsys, baseline_path: Path, logger: logging.Logger) -> None:
-    # When headers_only=True, process_file should output the formatted header but NO body.
+    # When headers_only=True, process_merged_files should output the formatted header but NO body.
     # The default text output prepends formatted header to body.
     # If body is empty, we just get formatted header.
 
-    process_file(
-        str(baseline_path),
-        _make_settings(headers_only=True),
+    process_merged_files([str(baseline_path)], _make_settings(headers_only=True),
         logger=logger,
     )
 
@@ -81,9 +79,7 @@ def test_cli_headers_only_text_output(capsys, baseline_path: Path, logger: loggi
 
 def test_cli_headers_only_json_output(tmp_path: Path, baseline_path: Path, logger: logging.Logger) -> None:
     output_path = tmp_path / "metadata.json"
-    process_file(
-        str(baseline_path),
-        _make_settings(headers_only=True, format="json", output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(headers_only=True, format="json", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -98,9 +94,7 @@ def test_cli_headers_only_json_output(tmp_path: Path, baseline_path: Path, logge
 
 def test_cli_headers_only_csv_output(tmp_path: Path, baseline_path: Path, logger: logging.Logger) -> None:
     output_path = tmp_path / "metadata.csv"
-    process_file(
-        str(baseline_path),
-        _make_settings(headers_only=True, format="csv", output_mode="file", output_path=str(output_path)),
+    process_merged_files([str(baseline_path)], _make_settings(headers_only=True, format="csv", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -120,9 +114,7 @@ def test_headers_only_and_noheader_results_in_empty_output(capsys, baseline_path
     # If we ask for headers only (empty body) AND no header (don't print header),
     # we should get almost nothing (just separator)
 
-    process_file(
-        str(baseline_path),
-        _make_settings(headers_only=True, no_header=True),
+    process_merged_files([str(baseline_path)], _make_settings(headers_only=True, no_header=True),
         logger=logger,
     )
 

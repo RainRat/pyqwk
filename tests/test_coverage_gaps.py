@@ -5,7 +5,7 @@ from dataclasses import replace
 
 from pyqwk.core import (
     process_multiple_files,
-    process_file,
+    process_merged_files,
     show_info,
     show_stats,
     ProcessingSettings,
@@ -79,7 +79,7 @@ def test_process_multiple_files_error_handling(tmp_path, logger, default_setting
     input_paths = ['testdata/test1_qwk.zip']
     output_dir = tmp_path / "out_error"
 
-    with patch('pyqwk.core.process_file') as mock_process:
+    with patch('pyqwk.core.process_merged_files') as mock_process:
         mock_process.side_effect = OSError("Mocked OS Error")
 
         with patch.object(logger, 'error') as mock_log_error:
@@ -121,7 +121,7 @@ def test_individual_files_csv(tmp_path, logger, default_settings):
         output_path=str(output_dir)
     )
 
-    process_file(input_path, settings, logger)
+    process_merged_files([input_path], settings, logger)
 
     assert output_dir.exists()
     files = list(output_dir.iterdir())

@@ -6,7 +6,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import ProcessingSettings, process_file
+from pyqwk.core import ProcessingSettings, process_merged_files
 
 @pytest.fixture
 def testdata_dir() -> Path:
@@ -52,7 +52,7 @@ def test_eml_export_individual_files(tmp_path: Path, testdata_dir: Path) -> None
         output_path=str(output_dir)
     )
 
-    process_file(str(input_file), settings, logger)
+    process_merged_files([str(input_file)], settings, logger)
 
     files = list(output_dir.iterdir())
     assert len(files) == 1
@@ -115,7 +115,7 @@ def test_eml_aggregated_output(tmp_path: Path, testdata_dir: Path, capsys) -> No
         output_mode="stdout"
     )
 
-    process_file(str(input_file), settings, logger)
+    process_merged_files([str(input_file)], settings, logger)
 
     captured = capsys.readouterr()
     # messages.dat has one message. Aggregated EML should contain the content.

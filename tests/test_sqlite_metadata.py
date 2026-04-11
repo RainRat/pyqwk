@@ -66,7 +66,7 @@ def test_sqlite_metadata_preservation(tmp_path, baseline_path, logger):
 
     # We need to manually call load_data then write_messages to use our custom metadata
     # Or mock the environment. Easier: use the existing baseline but ensure its metadata is set.
-    # Actually, process_file will call load_data which finds messages.dat and (optionally) control.dat.
+    # Actually, process_merged_files will call load_data which finds messages.dat and (optionally) control.dat.
     # To test OUR metadata, let's write a small helper that uses write_messages directly.
 
     from pyqwk.core import parse_messages, write_messages
