@@ -1026,9 +1026,10 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
 def test_process_multiple_files_handles_controldat_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
 ) -> None:
-    def mock_process_merged_files(input_paths: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
-        if "bad" in input_path:
-            raise ControlDatFormatError("Bad control.dat")
+    def mock_process_merged_files(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+        for path in input_paths:
+            if "bad" in path:
+                raise ControlDatFormatError("Bad control.dat")
 
     import pyqwk.cli as cli
     monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)

@@ -134,5 +134,8 @@ class TestSearchNavigation:
                 found_prev = True
                 assert call.kwargs.get('accelerator') == "Shift+F3"
 
+        assert found_next, "Find Next menu item not found"
+        assert found_prev, "Find Previous menu item not found"
+
         # Note: multiple menus are created, so we need to be careful.
         # If the above fails, it might be because the mock returned different Menu objects.

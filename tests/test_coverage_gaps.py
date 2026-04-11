@@ -11,7 +11,6 @@ from pyqwk.core import (
     ProcessingSettings,
     ParsedMessage,
     MessageHeader,
-    process_merged_files,
     LogFormatter,
     _message_to_xml_element,
     parse_messages,
