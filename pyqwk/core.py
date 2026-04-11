@@ -1024,8 +1024,11 @@ def _reconstruct_archive_information(messages: list[ParsedMessage]) -> Conferenc
     bbs_info = BBSInfo()
     for msg in messages:
         if msg.confnum is not None:
-            if msg.confnum not in board_dict or (not board_dict[msg.confnum] and msg.confname):
-                board_dict[msg.confnum] = msg.confname or f"Conference {msg.confnum}"
+            default_name = f"Conference {msg.confnum}"
+            if msg.confnum not in board_dict:
+                board_dict[msg.confnum] = msg.confname or default_name
+            elif msg.confname and board_dict[msg.confnum] == default_name:
+                board_dict[msg.confnum] = msg.confname
         if msg.bbs_name:
             bbs_info.name = msg.bbs_name
         if msg.bbs_id:
