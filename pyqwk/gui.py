@@ -275,6 +275,8 @@ class QwkGuiApp:
             ("Ctrl + G", "Go to Message Number"),
             ("Ctrl + Q", "Quit Application"),
             ("Esc", "Clear Search / Filters"),
+            ("Enter", "Find Next (Search)"),
+            ("Shift+Enter", "Find Previous (Search)"),
             ("J / N", "Next Message"),
             ("K / P", "Previous Message"),
         ]
@@ -560,6 +562,7 @@ class QwkGuiApp:
 
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
+        self.search_entry.bind("<Shift-Return>", self._on_search_shift_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
         self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
@@ -1043,9 +1046,23 @@ class QwkGuiApp:
         self._search_timer = self.root.after(250, self.reload_messages)
 
     def _on_search_enter(self, _event: object) -> None:
-        """Execute search immediately when Enter is pressed."""
-        self.reload_messages()
-        self.message_list.focus_set()
+        """Execute search or navigate matches when Enter is pressed."""
+        # If a debounced search is pending, trigger it immediately and focus the list
+        if self._search_timer is not None:
+            self.reload_messages()
+            self.message_list.focus_set()
+            return
+
+        if self._search_matches:
+            self._navigate_search_matches(1)
+        else:
+            self.reload_messages()
+            self.message_list.focus_set()
+
+    def _on_search_shift_enter(self, _event: object) -> None:
+        """Navigate backwards through matches when Shift+Enter is pressed."""
+        if self._search_matches:
+            self._navigate_search_matches(-1)
 
     def reload_messages(self) -> None:
         if self._search_timer is not None:
