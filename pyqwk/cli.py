@@ -140,7 +140,7 @@ examples:
     io_group.add_argument(
         '-E',
         '--encoding',
-        help="Set the character set of the input files. Default is 'cp437' (standard for DOS-based BBSs). Use this if messages show strange characters.",
+        help="Set the text encoding of the input files. Default is 'cp437' (standard for older BBSs). Use this if messages show incorrect characters.",
         default='cp437',
     )
 
