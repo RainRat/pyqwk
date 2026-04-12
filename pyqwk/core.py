@@ -2426,9 +2426,14 @@ def process_merged_files(
             # Reconstruct dummy messages for stats if necessary, or just extract info from collected_for_index
             def gen_dummy_messages():
                 for info in collected_for_index:
+                    # Date is stored as "msgdate msgtime", split carefully to avoid IndexError
+                    date_parts = info['date'].split(' ', 1)
+                    msgdate = date_parts[0]
+                    msgtime = date_parts[1] if len(date_parts) > 1 else ""
+
                     h = MessageHeader(
-                        status=" ", msgnum=info['msgnum'], msgdate=info['date'].split()[0],
-                        msgtime=info['date'].split()[1], msgto=info['to'], msgfrom=info['from'],
+                        status=" ", msgnum=info['msgnum'], msgdate=msgdate,
+                        msgtime=msgtime, msgto=info['to'], msgfrom=info['from'],
                         msgsubject=info['subject'], msgpassword="", refnum=None, numblocks=None,
                         msgflag=" ", confnum=info['conf_num'], lognum=0, nettag=""
                     )
