@@ -2423,7 +2423,22 @@ def process_merged_files(
 
     if settings.individual_files:
         if not settings.dry_run and collected_for_index:
-            _write_index(collected_for_index, resolved_output_path, settings, bbs_info_to_use)
+            # Reconstruct dummy messages for stats if necessary, or just extract info from collected_for_index
+            def gen_dummy_messages():
+                for info in collected_for_index:
+                    h = MessageHeader(
+                        status=" ", msgnum=info['msgnum'], msgdate=info['date'].split()[0],
+                        msgtime=info['date'].split()[1], msgto=info['to'], msgfrom=info['from'],
+                        msgsubject=info['subject'], msgpassword="", refnum=None, numblocks=None,
+                        msgflag=" ", confnum=info['conf_num'], lognum=0, nettag=""
+                    )
+                    yield ParsedMessage(
+                        text="", msgnum=info['msgnum'], refnum=None, confnum=info['conf_num'],
+                        header=h, confname=info['conf_name'], attachments=info['attachments']
+                    )
+
+            export_stats = _compute_stats_from_messages(gen_dummy_messages())
+            _write_index(collected_for_index, resolved_output_path, settings, bbs_info_to_use, stats=export_stats)
     else:
         if not settings.dry_run:
             ordered_messages = (
@@ -2599,6 +2614,14 @@ def _get_html_header(title: str) -> list[str]:
         '.header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }',
         '.body { white-space: pre-wrap; font-family: monospace; }',
         '.quote { color: #4e9a06; }',
+        '.stats-container { margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; background-color: #fcfcfc; }',
+        '.stats-grid { display: flex; flex-wrap: wrap; gap: 2em; }',
+        '.stats-box { flex: 1; min-width: 300px; }',
+        '.stats-bar-container { display: flex; align-items: center; margin-bottom: 0.5em; }',
+        '.stats-bar-label { width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }',
+        '.stats-bar-count { width: 40px; text-align: right; margin-right: 10px; font-weight: bold; font-size: 0.9em; }',
+        '.stats-bar { height: 1.2em; background-color: #00aaaa; min-width: 1px; }',
+        '.stats-summary-info { margin-bottom: 1em; font-size: 0.95em; color: #555; }',
         '</style>',
         '</head>',
         '<body>',
@@ -2610,6 +2633,58 @@ def _get_html_footer() -> list[str]:
         '</body>',
         '</html>',
     ]
+
+
+def _render_stats_html(stats: dict[str, Any]) -> list[str]:
+    """Render a statistics summary as an HTML fragment."""
+    parts = []
+    parts.append('<div class="stats-container">')
+    parts.append('<h2>Archive Summary</h2>')
+
+    parts.append('<div class="stats-summary-info">')
+    parts.append(f'<div><strong>Messages:</strong> {stats["matching_messages"]} matching / {stats["total_messages"]} total</div>')
+    if stats['dates']['earliest']:
+        earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
+        latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+        parts.append(f'<div><strong>Date Range:</strong> {earliest} to {latest}</div>')
+    parts.append(f'<div><strong>Reply Rate:</strong> {stats["reply_rate"]}%</div>')
+    parts.append('</div>')
+
+    parts.append('<div class="stats-grid">')
+
+    # Top Authors
+    if stats['authors']:
+        parts.append('<div class="stats-box">')
+        parts.append('<h3>Top Authors</h3>')
+        authors = stats['authors'][:5]
+        max_count = authors[0]['count'] if authors else 1
+        for author in authors:
+            width = int(author['count'] * 100 / max_count)
+            parts.append('<div class="stats-bar-container">')
+            parts.append(f'<div class="stats-bar-label" title="{html.escape(author["name"])}">{html.escape(author["name"])}</div>')
+            parts.append(f'<div class="stats-bar-count">{author["count"]}</div>')
+            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
+            parts.append('</div>')
+        parts.append('</div>')
+
+    # Top Conferences
+    if stats['conferences']:
+        parts.append('<div class="stats-box">')
+        parts.append('<h3>Top Conferences</h3>')
+        confs = stats['conferences'][:5]
+        max_count = confs[0]['count'] if confs else 1
+        for conf in confs:
+            width = int(conf['count'] * 100 / max_count)
+            parts.append('<div class="stats-bar-container">')
+            parts.append(f'<div class="stats-bar-label" title="{html.escape(conf["name"])}">{html.escape(conf["name"])}</div>')
+            parts.append(f'<div class="stats-bar-count">{conf["count"]}</div>')
+            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
+            parts.append('</div>')
+        parts.append('</div>')
+
+    parts.append('</div>')  # stats-grid
+    parts.append('</div>')  # stats-container
+    return parts
 
 
 def _render_single_message_html(
@@ -2700,6 +2775,49 @@ def _serialize_message_html(
     html_parts.extend(_get_html_footer())
 
     return '\n'.join(html_parts)
+
+
+def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
+    """Render a statistics summary as a Markdown fragment."""
+    parts = []
+    parts.append("### Archive Summary\n")
+
+    parts.append(f"- **Messages:** {stats['matching_messages']} matching / {stats['total_messages']} total")
+    if stats['dates']['earliest']:
+        earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
+        latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+        parts.append(f"- **Date Range:** {earliest} to {latest}")
+    parts.append(f"- **Reply Rate:** {stats['reply_rate']}%")
+    parts.append("")
+
+    def render_bar(count, max_count):
+        bar_len = int(count * 20 / max_count) if max_count > 0 else 0
+        return "#" * bar_len
+
+    if stats['authors']:
+        parts.append("#### Top Authors\n")
+        parts.append("| Author | Messages | |")
+        parts.append("|---|---|---|")
+        authors = stats['authors'][:5]
+        max_count = authors[0]['count'] if authors else 1
+        for author in authors:
+            bar = render_bar(author['count'], max_count)
+            parts.append(f"| {author['name']} | {author['count']} | `{bar}` |")
+        parts.append("")
+
+    if stats['conferences']:
+        parts.append("#### Top Conferences\n")
+        parts.append("| Conference | Messages | |")
+        parts.append("|---|---|---|")
+        confs = stats['conferences'][:5]
+        max_count = confs[0]['count'] if confs else 1
+        for conf in confs:
+            bar = render_bar(conf['count'], max_count)
+            parts.append(f"| {conf['name']} | {conf['count']} | `{bar}` |")
+        parts.append("")
+
+    parts.append("---\n")
+    return parts
 
 
 def _render_single_message_markdown(
@@ -2809,6 +2927,11 @@ def _write_html(
 
     if settings and settings.include_toc:
         html_parts.append(f"<h1>{html.escape(title)}</h1>")
+
+        # Add Statistics Summary
+        stats = _compute_stats_from_messages(iter(messages))
+        html_parts.extend(_render_stats_html(stats))
+
         if bbs_info:
             html_parts.append('<div class="bbs-info">')
             if bbs_info.sysop:
@@ -2889,6 +3012,10 @@ def _write_markdown(
     attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
 
     if settings and settings.include_toc:
+        # Add Statistics Summary
+        stats = _compute_stats_from_messages(iter(messages))
+        md_parts.extend(_render_stats_markdown(stats))
+
         if bbs_info:
             if bbs_info.sysop:
                 md_parts.append(f"- **SysOp:** {bbs_info.sysop}")
@@ -3502,7 +3629,8 @@ def _write_index(
     collected_info: list[dict[str, Any]],
     output_dir: str | None,
     settings: ProcessingSettings,
-    bbs_info: BBSInfo | None = None
+    bbs_info: BBSInfo | None = None,
+    stats: dict[str, Any] | None = None,
 ) -> None:
     """Generate a browsable index (HTML or Markdown) for individual message files."""
     if not output_dir or not collected_info:
@@ -3518,18 +3646,22 @@ def _write_index(
         title = f"{bbs_info.name} Message Archive"
 
     if settings.format == 'html':
-        _write_html_index(by_conf, title, output_dir)
+        _write_html_index(by_conf, title, output_dir, stats=stats)
     elif settings.format == 'markdown':
-        _write_markdown_index(by_conf, title, output_dir)
+        _write_markdown_index(by_conf, title, output_dir, stats=stats)
 
 
 def _write_html_index(
     by_conf: Mapping[tuple[int, str], list[dict[str, Any]]],
     title: str,
-    output_dir: str
+    output_dir: str,
+    stats: dict[str, Any] | None = None,
 ) -> None:
     html_parts = _get_html_header(title)
     html_parts.append(f"<h1>{html.escape(title)}</h1>")
+
+    if stats:
+        html_parts.extend(_render_stats_html(stats))
 
     for (conf_num, conf_name), messages in sorted(by_conf.items()):
         html_parts.append(f"<h2>{html.escape(conf_name)} (Conference {conf_num})</h2>")
@@ -3557,9 +3689,13 @@ def _write_html_index(
 def _write_markdown_index(
     by_conf: Mapping[tuple[int, str], list[dict[str, Any]]],
     title: str,
-    output_dir: str
+    output_dir: str,
+    stats: dict[str, Any] | None = None,
 ) -> None:
     md_parts = [f"# {title}\n"]
+
+    if stats:
+        md_parts.extend(_render_stats_markdown(stats))
 
     for (conf_num, conf_name), messages in sorted(by_conf.items()):
         md_parts.append(f"## {conf_name} (Conference {conf_num})\n")
@@ -3825,14 +3961,13 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
         print(json.dumps(all_info, indent=4, ensure_ascii=False))
 
 
-def calculate_archive_stats(
-    input_paths: list[str],
-    settings: ProcessingSettings,
-    logger: logging.Logger
+def _compute_stats_from_messages(
+    messages: Iterator[ParsedMessage],
+    file_label: str = "Archive",
 ) -> dict[str, Any]:
-    """Calculate detailed statistics for one or more archives."""
+    """Aggregate statistics from an iterator of messages."""
     stats_entry: dict[str, Any] = {
-        "file": input_paths[0] if len(input_paths) == 1 else "Multiple Archives",
+        "file": file_label,
         "total_messages": 0,
         "matching_messages": 0,
         "dates": {"earliest": None, "latest": None},
@@ -3875,126 +4010,80 @@ def calculate_archive_stats(
     latest_dt = None
     private_count = 0
     attachments_count = 0
-    matching_count = 0
-    total_count = 0
     processed_count = 0
     reply_count = 0
     total_chars = 0
 
-    for input_path in input_paths:
-        if settings.limit is not None and processed_count >= settings.limit:
-            break
-        file_data, board_dict = load_data(input_path, logger, settings.encoding)
-        bbs_info = getattr(board_dict, 'bbs_info', None)
-        user_name = bbs_info.user_name if bbs_info else None
-        allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+    for message in messages:
+        processed_count += 1
 
-        for num, name in board_dict.items():
-            if num not in conf_names:
-                conf_names[num] = name
+        # Date/Time
+        dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+        if earliest_dt is None or dt < earliest_dt:
+            earliest_dt = dt
+        if latest_dt is None or dt > latest_dt:
+            latest_dt = dt
 
-        desc = f"Analyzing {os.path.basename(input_path)}"
-        need_body = True
+        author_counter[message.header.msgfrom.strip()] += 1
+        recipient_counter[message.header.msgto.strip()] += 1
+        conf_counter[message.confnum] += 1
+        if message.confname:
+            conf_names[message.confnum] = message.confname
 
-        is_structured = isinstance(file_data, list)
-        total_progress = len(file_data)
+        bbs_display = message.bbs_name or message.bbs_id or "Unknown BBS"
+        bbs_counter[bbs_display] += 1
 
-        with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
-            if is_structured:
-                messages_to_process = file_data
-                if progress_bar is not None:
-                    progress_bar.unit = 'msg'
-                    progress_bar.unit_scale = False
+        subject_counter[_normalize_subject(message.header.msgsubject)] += 1
+
+        dow_counter[dt.strftime('%A')] += 1
+        hour_counter[dt.hour] += 1
+        year_counter[dt.year] += 1
+        month_counter[dt.strftime('%Y-%m')] += 1
+
+        if message.header.is_private:
+            private_count += 1
+
+        # Detect if it's a reply
+        is_reply = (
+            (message.header.refnum is not None and message.header.refnum != 0)
+            or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
+        )
+        if is_reply:
+            reply_count += 1
+
+        # Check for attachments in the full message
+        if message.text:
+            total_chars += len(message.text)
+
+            # Use cached attachments if available to avoid re-scanning
+            if message.attachments is not None:
+                attachments_count += len(message.attachments)
             else:
-                messages_to_process = parse_messages(
-                    file_data, progress_bar, settings.encoding, headers_only=not need_body
-                )
+                found_binaries = extract_binaries(message.text)
+                attachments_count += len(found_binaries)
 
-            for message in messages_to_process:
-                if is_structured and progress_bar is not None:
-                    progress_bar.update(1)
-                total_count += 1
+            # Keyword analysis
+            words = re.findall(r'\b\w{3,}\b', message.text.lower())
+            for word in words:
+                if word not in DEFAULT_STOP_WORDS and not word.isdigit():
+                    keyword_counter[word] += 1
 
-                message = replace(
-                    message,
-                    confname=message.confname or board_dict.get(message.confnum),
-                    bbs_name=message.bbs_name or (bbs_info.name if bbs_info else None),
-                    bbs_id=message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
-                    source_file=message.source_file or os.path.basename(input_path),
-                )
+            # URL analysis
+            urls = RE_URL_PATTERN.findall(message.text)
+            for url in urls:
+                link_counter[url.lower()] += 1
 
-                if not matches_filters(message, settings, allowed_conferences, user_name):
-                    continue
+            # Email analysis
+            emails = RE_EMAIL_PATTERN.findall(message.text)
+            for email_addr in emails:
+                email_counter[email_addr.lower()] += 1
 
-                matching_count += 1
+            # Phone analysis
+            phones = RE_PHONE_PATTERN.findall(message.text)
+            for phone in phones:
+                phone_counter[phone.strip()] += 1
 
-                if settings.skip is not None and matching_count <= settings.skip:
-                    continue
-
-                if settings.limit is not None and processed_count >= settings.limit:
-                    break
-                processed_count += 1
-
-                # Date/Time
-                dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
-                if earliest_dt is None or dt < earliest_dt:
-                    earliest_dt = dt
-                if latest_dt is None or dt > latest_dt:
-                    latest_dt = dt
-
-                author_counter[message.header.msgfrom.strip()] += 1
-                recipient_counter[message.header.msgto.strip()] += 1
-                conf_counter[message.confnum] += 1
-
-                bbs_display = message.bbs_name or message.bbs_id or "Unknown BBS"
-                bbs_counter[bbs_display] += 1
-
-                subject_counter[_normalize_subject(message.header.msgsubject)] += 1
-
-                dow_counter[dt.strftime('%A')] += 1
-                hour_counter[dt.hour] += 1
-                year_counter[dt.year] += 1
-                month_counter[dt.strftime('%Y-%m')] += 1
-
-                if message.header.is_private:
-                    private_count += 1
-
-                # Detect if it's a reply
-                is_reply = (
-                    (message.header.refnum is not None and message.header.refnum != 0)
-                    or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
-                )
-                if is_reply:
-                    reply_count += 1
-
-                # Check for attachments in the full message
-                if message.text:
-                    total_chars += len(message.text)
-                    found_binaries = extract_binaries(message.text)
-                    attachments_count += len(found_binaries)
-
-                    # Keyword analysis
-                    words = re.findall(r'\b\w{3,}\b', message.text.lower())
-                    for word in words:
-                        if word not in DEFAULT_STOP_WORDS and not word.isdigit():
-                            keyword_counter[word] += 1
-
-                    # URL analysis
-                    urls = RE_URL_PATTERN.findall(message.text)
-                    for url in urls:
-                        link_counter[url.lower()] += 1
-
-                    # Email analysis
-                    emails = RE_EMAIL_PATTERN.findall(message.text)
-                    for email_addr in emails:
-                        email_counter[email_addr.lower()] += 1
-
-                    # Phone analysis
-                    phones = RE_PHONE_PATTERN.findall(message.text)
-                    for phone in phones:
-                        phone_counter[phone.strip()] += 1
-
-    stats_entry["total_messages"] = total_count
+    stats_entry["total_messages"] = processed_count
     stats_entry["matching_messages"] = processed_count
     stats_entry["private_count"] = private_count
     stats_entry["attachments_count"] = attachments_count
@@ -4020,6 +4109,76 @@ def calculate_archive_stats(
     stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
     stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
     stats_entry["month_distribution"] = dict(sorted(month_counter.items()))
+
+    return stats_entry
+
+
+def calculate_archive_stats(
+    input_paths: list[str],
+    settings: ProcessingSettings,
+    logger: logging.Logger
+) -> dict[str, Any]:
+    """Calculate detailed statistics for one or more archives."""
+    total_count = 0
+    matching_count = 0
+    processed_count = 0
+
+    def filtered_messages_gen():
+        nonlocal total_count, matching_count, processed_count
+        for input_path in input_paths:
+            if settings.limit is not None and processed_count >= settings.limit:
+                break
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, 'bbs_info', None)
+            user_name = bbs_info.user_name if bbs_info else None
+            allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+
+            desc = f"Analyzing {os.path.basename(input_path)}"
+            is_structured = isinstance(file_data, list)
+            total_progress = len(file_data)
+
+            with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+                if is_structured:
+                    messages_to_process = file_data
+                    if progress_bar is not None:
+                        progress_bar.unit = 'msg'
+                        progress_bar.unit_scale = False
+                else:
+                    messages_to_process = parse_messages(
+                        file_data, progress_bar, settings.encoding, headers_only=False
+                    )
+
+                for message in messages_to_process:
+                    if is_structured and progress_bar is not None:
+                        progress_bar.update(1)
+                    total_count += 1
+
+                    message = replace(
+                        message,
+                        confname=message.confname or board_dict.get(message.confnum),
+                        bbs_name=message.bbs_name or (bbs_info.name if bbs_info else None),
+                        bbs_id=message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
+                        source_file=message.source_file or os.path.basename(input_path),
+                    )
+
+                    if not matches_filters(message, settings, allowed_conferences, user_name):
+                        continue
+
+                    matching_count += 1
+                    if settings.skip is not None and matching_count <= settings.skip:
+                        continue
+
+                    if settings.limit is not None and processed_count >= settings.limit:
+                        break
+                    processed_count += 1
+                    yield message
+
+    file_label = input_paths[0] if len(input_paths) == 1 else "Multiple Archives"
+    stats_entry = _compute_stats_from_messages(filtered_messages_gen(), file_label=file_label)
+
+    # Override counts with actual values tracked during filtering
+    stats_entry["total_messages"] = total_count
+    stats_entry["matching_messages"] = processed_count
 
     return stats_entry
 
