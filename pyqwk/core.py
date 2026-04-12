@@ -869,7 +869,7 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
 
             header = MessageHeader.from_dict(header_dict)
 
-            attachments = row['attachments'].split(';') if row['attachments'] else []
+            attachments = row['attachments'].split(';') if row['attachments'] else None
 
             msg = ParsedMessage(
                 text=row['text'],
@@ -997,7 +997,7 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     for row in data:
         header = MessageHeader.from_dict(row)
 
-        attachments = row.get('attachments', "").split(';') if row.get('attachments') else []
+        attachments = row.get('attachments', "").split(';') if row.get('attachments') else None
 
         msg = ParsedMessage(
             text=row.get('text', ""),
