@@ -100,7 +100,7 @@ qwk-gui archive.eml
 - **Viewing Options:** Toggle the **Clean** view to hide signatures, quoted replies, and attachments. Use **Remove Colors** to strip ANSI color codes from the text.
 - **Threading:** Group replies together to follow the flow of a conversation.
 - **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
-- **Statistics:** View detailed activity reports, top authors, and charts showing activity over time for the current archive and filters.
+- **Statistics:** View detailed activity reports, top authors, and charts showing activity over time for the current archive and filters. You can click on chart labels for Authors, BBSes, or Conferences to instantly filter the message list to that selection.
 
 **Keyboard Shortcuts:**
 - **Ctrl + O**: Open any supported message archive.
