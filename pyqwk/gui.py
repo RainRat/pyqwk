@@ -285,6 +285,62 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, f"{key:<12}", "header_label")
             self.detail_text.insert(tk.END, f"{desc}\n", "body")
 
+    def _render_empty_state(self) -> None:
+        """Render an interactive empty state when no messages match the filters."""
+        self.detail_text.delete("1.0", tk.END)
+        self.search_count_label.config(text="")
+
+        self.detail_text.insert(tk.END, "No Messages Found\n", "header_subject")
+        self.detail_text.insert(tk.END, " \n", "header_hr")
+        self.detail_text.insert(tk.END, "\n")
+
+        self.detail_text.insert(tk.END, "Your current filters returned no results. Check the settings below:\n\n", "body")
+
+        # List active filters
+        search_val = self.search_var.get().strip()
+        if search_val:
+            label = "Regex Search" if self.regex_var.get() else "Search"
+            self.detail_text.insert(tk.END, f"  {label:<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"'{search_val}'\n", "body")
+
+        bbs_val = self.bbs_combo.get()
+        if bbs_val and not bbs_val.startswith("All BBSes"):
+            self.detail_text.insert(tk.END, f"  {'BBS':<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"{bbs_val}\n", "body")
+
+        conf_val = self.conf_combo.get()
+        if conf_val and not conf_val.startswith("All Conferences"):
+            self.detail_text.insert(tk.END, f"  {'Conference':<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"{conf_val}\n", "body")
+
+        active_bools = []
+        for text, var in [
+            ("Attachments", self.has_attach_var),
+            ("My Messages", self.mine_var),
+            ("On This Day", self.on_this_day_var),
+            ("Links", self.has_links_var),
+            ("Emails", self.has_emails_var),
+            ("Phones", self.has_phones_var),
+            ("ANSI", self.has_ansi_var),
+        ]:
+            if var.get():
+                active_bools.append(text)
+
+        if active_bools:
+            self.detail_text.insert(tk.END, f"  {'Filters':<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"{', '.join(active_bools)}\n", "body")
+
+        self.detail_text.insert(tk.END, "\n")
+
+        # Action links
+        self.detail_text.insert(tk.END, "Reset all filters and search", ("link", "body", "reset_all"))
+        self.detail_text.tag_bind("reset_all", "<Button-1>", self.clear_filters)
+
+        self.detail_text.insert(tk.END, "\n\n", "body")
+        self.detail_text.insert(tk.END, "Tip: Press ", "body")
+        self.detail_text.insert(tk.END, "Esc", "header_label")
+        self.detail_text.insert(tk.END, " to progressively clear search and filters.", "body")
+
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -1373,8 +1429,7 @@ class QwkGuiApp:
                 self.message_list.focus(item_to_select)
                 self.message_list.see(item_to_select)
             else:
-                self.search_count_label.config(text="")
-                self._set_detail_text("No messages found.")
+                self._render_empty_state()
         except Exception as exc:
             # Restore previous state on failure
             self.messages = old_messages
