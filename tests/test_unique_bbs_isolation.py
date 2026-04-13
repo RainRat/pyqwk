@@ -1,5 +1,3 @@
-import logging
-import hashlib
 from unittest.mock import MagicMock, patch
 from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
 

@@ -34,7 +34,7 @@ def app():
          patch("tkinter.StringVar", return_value=MagicMock()), \
          patch("tkinter.ttk.Treeview", return_value=MagicMock()) as mock_tree, \
          patch("tkinter.Text", return_value=MagicMock()) as mock_text, \
-         patch("tkinter.ttk.Combobox") as mock_combo, \
+         patch("tkinter.ttk.Combobox"), \
          patch("tkinter.ttk.Label") as mock_label:
 
         a = QwkGuiApp(root)
