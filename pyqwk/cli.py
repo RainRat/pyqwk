@@ -608,21 +608,15 @@ examples:
         show_stats(input_paths, settings, logger)
         sys.exit(0)
 
-    if args.merge:
+    if args.merge or (len(input_paths) == 1 and not has_directory_input):
         try:
             process_merged_files(input_paths, settings, logger)
         except PROCESSING_EXCEPTIONS as error:
             logger.error(error)
             sys.exit(1)
-    elif len(input_paths) > 1 or has_directory_input:
+    else:
         had_errors = process_multiple_files(input_paths, output_path, settings, logger)
         if had_errors:
-            sys.exit(1)
-    else:
-        try:
-            process_merged_files([input_paths[0]], settings, logger)
-        except PROCESSING_EXCEPTIONS as error:
-            logger.error(error)
             sys.exit(1)
 
 
