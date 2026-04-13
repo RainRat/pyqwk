@@ -2374,13 +2374,16 @@ def process_merged_files(
 
                 if settings.unique:
                     msg_id: tuple[str, int, int | str]
+                    # Use the message's own BBS information for the ID to ensure
+                    # correct deduplication across mixed sources (e.g. JSONL)
+                    current_bbs_key = f"{parsed_message.bbs_name}|{parsed_message.bbs_id}" if parsed_message.bbs_name or parsed_message.bbs_id else bbs_key
                     if parsed_message.msgnum is not None:
-                        msg_id = (bbs_key, parsed_message.confnum, parsed_message.msgnum)
+                        msg_id = (current_bbs_key, parsed_message.confnum, parsed_message.msgnum)
                     else:
                         content_hash = hashlib.sha1(
                             parsed_message.text.encode(settings.encoding, errors='replace')
                         ).hexdigest()
-                        msg_id = (bbs_key, parsed_message.confnum, content_hash)
+                        msg_id = (current_bbs_key, parsed_message.confnum, content_hash)
 
                     if msg_id in seen_ids:
                         continue
