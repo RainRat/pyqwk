@@ -1252,12 +1252,14 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
                 attachments = [a.strip() for a in attach_str.split(',') if a.strip()]
 
         # Message body: everything after the information lines
+        # In our Markdown format, metadata ends at the first blank line.
         lines = working_section.splitlines()
         body_start_idx = 0
         for i, line in enumerate(lines):
             line_strip = line.strip()
             if not line_strip:
-                continue
+                body_start_idx = i + 1
+                break
             if line_strip.startswith('## ') or line_strip.startswith('- **'):
                 body_start_idx = i + 1
             else:

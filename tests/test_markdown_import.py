@@ -251,5 +251,31 @@ This is the second part (after a horizontal rule).
         self.assertIn("---", messages[0].text)
         self.assertIn("second part", messages[0].text)
 
+    def test_markdown_import_preserves_body_headers(self):
+        """Verify that Markdown headers in the body are not stripped during import."""
+        markdown_content = """
+# Archive
+
+## Metadata Subject
+- **Date:** 01-01-24 12:00
+- **From:** Alice
+- **To:** Bob
+- **Conference:** General (1)
+
+## Body Header
+Body text here.
+
+- **Bullet in body**
+More text.
+"""
+        markdown_path = os.path.join(self.test_dir, "test_body_headers.md")
+        with open(markdown_path, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+
+        messages, _ = load_data(markdown_path, self.logger)
+        self.assertEqual(len(messages), 1)
+        self.assertIn("## Body Header", messages[0].text)
+        self.assertIn("- **Bullet in body**", messages[0].text)
+
 if __name__ == '__main__':
     unittest.main()
