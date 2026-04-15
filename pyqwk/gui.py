@@ -1689,7 +1689,7 @@ class QwkGuiApp:
 
     def prompt_jump_to_message(self, _event: object | None = None) -> None:
         """Prompt the user for a message number and jump to it."""
-        if not self.current_paths:
+        if not self.messages:
             return
 
         msgnum = simpledialog.askinteger("Jump to Message", "Enter message number:")
