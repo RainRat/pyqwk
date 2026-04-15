@@ -84,11 +84,16 @@ qwk-gui
 # Or open a specific file immediately
 qwk-gui archive.qwk
 qwk-gui archive.rep
+qwk-gui archive.json
 qwk-gui archive.jsonl
 qwk-gui archive.csv
+qwk-gui archive.db
+qwk-gui archive.sqlite
 qwk-gui archive.xml
 qwk-gui archive.mbox
 qwk-gui archive.eml
+qwk-gui archive.md
+qwk-gui archive.markdown
 ```
 
 **Key Features:**
@@ -113,7 +118,7 @@ qwk-gui archive.eml
 - **Shift + F3**: Move to the previous search match in the current message.
 - **j** or **n**: Move to the next message in the list.
 - **k** or **p**: Move to the previous message in the list.
-- **Esc**: Clear the search filter and return focus to the message list. This works from anywhere in the application.
+- **Esc**: Clear search and filters. Press once to clear the search bar; press again to reset all active filters and return focus to the message list.
 - **Enter**: Move to the next search match (or execute the search and move focus to the list if a search was just typed).
 - **Shift + Enter**: Move to the previous search match in the current message.
 
