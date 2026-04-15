@@ -1,22 +1,22 @@
 # pyqwk
 
-pyqwk is a tool to convert `.QWK`, `.REP`, `.JSON`, `.JSONL`, `.CSV`, `.XML`, SQLite, `.mbox`, `.eml`, and Markdown (`.md`, `.markdown`) mail archives into modern formats like Text, HTML, JSON, JSONL, XML, Markdown, CSV, mbox, EML, and SQLite.
+pyqwk converts message archives (like .QWK, .REP, .JSON, .CSV, and .mbox) into modern formats such as HTML, Markdown, and SQLite.
 
 ## What are QWK and REP files?
 
-QWK is a file format created in the late 1980s for Bulletin Board Systems (BBS). In the days before the modern internet, it allowed users to download all their new messages in a single "packet." They could then disconnect their phone line, read the messages at their own pace, and write replies without keeping the BBS's phone line busy. Once finished, they would upload their replies back to the BBS in a `.REP` packet.
+QWK files were created in the 1980s for Bulletin Board Systems (BBS). Users downloaded their messages in a single "packet," read them offline, and then uploaded their replies in a `.REP` packet.
 
-Today, these files are valuable pieces of digital history. `pyqwk` helps you open both downloaded archives and your own sent replies, converting them into modern, easy-to-read formats.
+pyqwk helps you open these archives and convert them into modern, readable formats.
 
 ## Features
 
-- **Multiple Formats:** Export to Text, HTML, JSON, JSONL, XML, Markdown, CSV, mbox, EML, or SQLite. Import from QWK, REP, JSON, JSONL, CSV, XML, SQLite, mbox, EML, or Markdown.
-- **Conversation Threading:** Group replies together to follow discussions easily.
-- **Content Cleaning:** Automatically remove signatures, old quotes, and attachments like images.
-- **Privacy:** Hide personal information and handle private messages.
-- **Process many files:** Convert many archives at once or merge them into a single file.
-- **Dry Run Mode:** Preview the results of a conversion without writing any files to disk.
-- **Built-in Reader:** A simple graphical interface to read messages without converting them. It includes search and filtering tools.
+- **Support many formats:** Import and export between QWK, JSON, HTML, Markdown, mbox, and more.
+- **Group conversations:** Use "threading" to group replies and follow discussions easily.
+- **Clean content:** Automatically remove signatures, old quotes, and attachments.
+- **Protect privacy:** Hide personal information or private messages.
+- **Process many files:** Convert several archives at once or merge them into one file.
+- **Preview changes:** Use "Dry Run" mode to see results before writing any files.
+- **Read messages:** Use the built-in graphical reader to browse archives without converting them.
 
 ## Prerequisites
 
@@ -24,41 +24,39 @@ Today, these files are valuable pieces of digital history. `pyqwk` helps you ope
 - **Python 3.10** or newer.
 
 ### Optional
-- **Tkinter**: Needed for the graphical reader. Most Python installations include it. If you use Linux, you may need to install it manually:
+- **Tkinter:** Needed for the graphical reader. Most Python installations already have it. Linux users may need to install it:
   - **Ubuntu/Debian:** `sudo apt install python3-tk`
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
-- **tqdm**: Shows a progress bar when processing many messages. Install it with: `python -m pip install tqdm`
-- **unzip**: A system tool used to handle older archives with special compression. If `pyqwk` cannot open a file with Python's built-in tools, it will try to use `unzip`.
-  - **Ubuntu/Debian:** `sudo apt install unzip`
-  - **Fedora:** `sudo dnf install unzip`
+- **tqdm:** Adds a progress bar. Install with: `python -m pip install tqdm`
+- **unzip:** Helps open older archives. Install it if `pyqwk` cannot open your file:
+  - **Ubuntu/Debian/Fedora:** `sudo apt install unzip` or `sudo dnf install unzip`
   - **Arch Linux:** `sudo pacman -S unzip`
   - **macOS:** `brew install unzip`
-  - **Windows:** Run `winget install GnuWin32.UnZip` or install via [Git Bash](https://git-scm.com/downloads).
+  - **Windows:** `winget install GnuWin32.UnZip`
 
 ## Quick Start
 
-Run the tool on any supported message archive (QWK, REP, JSON, JSONL, CSV, XML, mbox, EML, Markdown, or SQLite):
+Run the tool on any supported archive:
 
 ```bash
 # Process a single archive
 python qwk.py archive.qwk
-python qwk.py replies.rep
 
-# Process an entire directory of archives
+# Process an entire folder
 python qwk.py my_archives/
 ```
 
 ## Installation
 
-Install `pyqwk` to use it from any folder on your computer.
+Install `pyqwk` to use it from any folder.
 
-1. Open your terminal in the folder where you downloaded `pyqwk`.
+1. Open your terminal in the `pyqwk` folder.
 2. Install the package:
    ```bash
    python -m pip install .
    ```
-3. Use the `qwk` command to process archives:
+3. Use the `qwk` command:
    ```bash
    qwk archive.qwk
    ```
@@ -67,64 +65,49 @@ Install `pyqwk` to use it from any folder on your computer.
    qwk-gui
    ```
 
-*Note: You can also run the reader directly without installing:*
+*Note: You can also run the reader without installing:*
 ```bash
 python -m pyqwk.gui
 ```
 
 ## Graphical Reader
 
-If you prefer a visual interface, you can use the built-in reader. It allows you to browse conferences, search for messages, and follow threaded conversations. It supports all input formats (QWK, REP, JSON, JSONL, CSV, XML, SQLite, mbox, EML, and Markdown).
+Use the built-in reader to browse conferences, search messages, and follow conversations.
 
 **To start the reader:**
 ```bash
-# Open the reader and select a file from the menu
+# Open the reader
 qwk-gui
 
-# Or open a specific file immediately
+# Open a specific file
 qwk-gui archive.qwk
-qwk-gui archive.rep
-qwk-gui archive.json
-qwk-gui archive.jsonl
-qwk-gui archive.csv
-qwk-gui archive.db
-qwk-gui archive.sqlite
-qwk-gui archive.xml
-qwk-gui archive.mbox
-qwk-gui archive.eml
-qwk-gui archive.md
-qwk-gui archive.markdown
 ```
 
 **Key Features:**
-- **Search:** Quickly find messages by keyword. Use the **Regex** checkbox to search with advanced patterns (regular expressions). Results are highlighted in the text. You can cycle through matches using **F3** or **Enter** (Next) and **Shift + F3** or **Shift + Enter** (Previous). You can also highlight any text in a message, right-click, and select **Search for '[Selected Text]'** to instantly find related messages.
-- **Attachments:** Messages containing attachments (UUE, Base64, yEnc) display clickable links in the header. Click any attachment name to save it to your computer. You can also use **File > Extract All Attachments...** to batch-save all attachments from the current filtered view to a folder.
-- **Filtering:** View messages from specific BBSes or conferences, include private messages, filter by the presence of attachments, or only show messages from/to yourself.
-- **Context Menus:** Right-click on any message in the list to copy its information (Subject, From, To) or instantly filter the entire view by that author, conference, or BBS. You can also right-click in the message text to copy selected sections.
-- **Exporting:** Save your current filtered and sorted view to any supported format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Toggle the **Clean** view to hide signatures, quoted replies, and attachments. Use **Remove Colors** to strip ANSI color codes from the text.
-- **Threading:** Group replies together to follow the flow of a conversation.
-- **Sorting:** Click on column headers (like "Num" or "Date") to sort the message list.
-- **Statistics:** View detailed activity reports, top authors, and charts showing activity over time for the current archive and filters. You can click on chart labels for Authors, BBSes, or Conferences to instantly filter the message list to that selection.
+- **Search:** Find messages by keyword or use "Regex" for advanced patterns. Cycle through matches with **F3** or **Shift + F3**. You can also right-click any highlighted text to search for it instantly.
+- **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
+- **Filtering:** Narrow your view by BBS, conference, author, or recipient. You can also filter for private messages or messages with attachments.
+- **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
+- **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
+- **Viewing Options:** Use "Clean" view to hide signatures and quotes. Use "Remove Colors" to strip ANSI color codes.
+- **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
-- **Ctrl + O**: Open any supported message archive.
-- **Ctrl + S**: Export the current view to a file.
-- **Ctrl + I**: View archive statistics.
+- **Ctrl + O**: Open an archive.
+- **Ctrl + S**: Export the current view.
+- **Ctrl + I**: View statistics.
 - **Ctrl + F**: Jump to the search bar.
-- **Ctrl + G**: Jump to a specific message number.
-- **Ctrl + Q**: Exit the application.
-- **F3**: Move to the next search match in the current message.
-- **Shift + F3**: Move to the previous search match in the current message.
-- **j** or **n**: Move to the next message in the list.
-- **k** or **p**: Move to the previous message in the list.
-- **Esc**: Clear search and filters. Press once to clear the search bar; press again to reset all active filters and return focus to the message list.
-- **Enter**: Move to the next search match (or execute the search and move focus to the list if a search was just typed).
-- **Shift + Enter**: Move to the previous search match in the current message.
+- **Ctrl + G**: Jump to a message number.
+- **Ctrl + Q**: Exit.
+- **F3 / Enter**: Next search match.
+- **Shift + F3 / Shift + Enter**: Previous search match.
+- **j / n**: Next message.
+- **k / p**: Previous message.
+- **Esc**: Clear search (first press) and filters (second press).
 
 ## Usage Examples
 
-**Read an archive on your screen:**
+**Read an archive:**
 ```bash
 qwk archive.qwk
 ```
@@ -134,7 +117,7 @@ qwk archive.qwk
 qwk archive.qwk -o messages.txt
 ```
 
-**Group messages by thread (conversations):**
+**Group messages by thread:**
 ```bash
 qwk archive.qwk --threaded -o messages.txt
 ```
@@ -148,86 +131,38 @@ qwk archive.qwk --format html -o messages.html
 ```bash
 qwk archive.qwk --format mbox -o messages.mbox
 ```
-*Tip: Use `--threaded` to help your mail app group messages into conversations.*
-
-**Convert to EML files (individual messages for mail apps):**
-```bash
-qwk archive.qwk --format eml -o ./output_folder/
-```
-*Tip: This automatically saves each message as a separate `.eml` file with a human-readable name.*
-
-**Convert to JSON for your own scripts:**
-```bash
-qwk archive.qwk --format json -o data.json
-```
-
-**Convert to JSON Lines (streaming-friendly):**
-```bash
-qwk archive.qwk --format jsonl -o data.jsonl
-```
-
-**Show a one-line summary for each message (great for quick scanning):**
-```bash
-qwk archive.qwk --oneline
-```
-
-**Save as Markdown:**
-```bash
-qwk archive.qwk --format markdown -o messages.md
-```
 
 **Save each message as a separate file:**
 ```bash
 qwk archive.qwk --individual-files -o output_folder/
 ```
 
-**Save each message as a separate file organized by conference:**
+**Organize files by conference:**
 ```bash
 qwk archive.qwk --individual-files --organize -o output_folder/
 ```
-*Tip: This creates subfolders for each conference (e.g., `001-general_chat/`) to keep the output tidy.*
 
-**Save each message as a separate file organized by date:**
+**Organize files by date:**
 ```bash
 qwk archive.qwk --individual-files --organize-by-date -o output_folder/
 ```
-*Tip: This creates a `YYYY/MM/` subfolder structure (e.g., `2023/05/`) to organize messages chronologically.*
 
-**Save each message as a separate file organized by Author and Recipient:**
-```bash
-qwk archive.qwk --individual-files --organize-by-author --organize-by-to -o output_folder/
-```
-*Tip: This creates a nested folder structure (e.g., `author_name/recipient_name/`) to group correspondence.*
-
-**Organize archive files into folders by BBS name:**
-```bash
-qwk my_archives/ --organize-by-bbs
-```
-*Tip: This automatically sorts your archives into folders named after the BBS they came from.*
-
-**Save messages with custom filenames:**
-```bash
-qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}" -o output/
-```
-*Tip: Use variables like `{date}`, `{author}`, `{subject}`, and `{length}` to create descriptive filenames instead of just numbers.*
-
-**Merge multiple archives into one file (removing any duplicate messages):**
+**Merge archives and remove duplicates:**
 ```bash
 qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
 ```
 
-**Clean up messages (removes signatures, quotes, and attachments):**
+**Clean up messages (removes signatures and quotes):**
 ```bash
 qwk archive.qwk --clean -o clean.txt
 ```
 
-**Extract attachments (like images or files) to a folder:**
+**Extract attachments to a folder:**
 ```bash
 qwk archive.qwk --extract-attachments -o output/
 ```
-*Tip: This finds UUE, Base64, and yEnc files hidden in messages and saves them to an `attachments/` subfolder.*
 
-**Hide personal information (emails and phone numbers):**
+**Hide personal information (emails and phones):**
 ```bash
 qwk archive.qwk --redact-pii -o safe.txt
 ```
@@ -237,172 +172,80 @@ qwk archive.qwk --redact-pii -o safe.txt
 qwk archive.qwk --format sqlite -o messages.db
 ```
 
-**Export to a spreadsheet-friendly format (CSV):**
-```bash
-qwk archive.qwk --format csv -o messages.csv
-```
-
-**Import from a CSV file (spreadsheet):**
+**Import from a spreadsheet (CSV):**
 ```bash
 qwk messages.csv -o updated.html
 ```
 
-**Import from an XML file:**
-```bash
-qwk archive.xml -o messages.html
-```
-
-**Import from Markdown:**
-```bash
-qwk archive.md -o messages.html
-```
-
-*Note for Windows users: If you use symbols like `*` (wildcards) to select multiple files, use PowerShell instead of the standard Command Prompt.*
-
 ## Filtering & Searching
 
 **Filter by Conference:**
-Find messages in a specific conference by its name or number.
 ```bash
 qwk archive.qwk -C "General Chat"
-qwk archive.qwk -C 123
 ```
 
 **Filter by BBS:**
-Find messages from a specific BBS by its name or ID.
 ```bash
 qwk my_archives/ --bbs "The Digital Horizon"
-qwk my_archives/ --bbs "DIGIHORZ"
 ```
 
 **Filter by Person:**
-Find messages from or to a specific person.
 ```bash
-qwk archive.qwk --from "Sysop"
-qwk archive.qwk --to "Alice"
+qwk archive.qwk --from "Sysop" --to "Alice"
 ```
 
 **Keyword Search:**
-Search for keywords in the author, recipient, subject, message body, conference, BBS, and attachments. Results are highlighted in the terminal for easy identification.
 ```bash
 qwk archive.qwk --search "BBS"
 ```
 
-**Regular Expression Search:**
-Search using advanced patterns (regex) by adding the `--regex` flag.
-```bash
-qwk archive.qwk --search "BBS|Board" --regex
-```
-
-**Processing in Chunks:**
-Skip a number of messages or limit the total results. This is useful for processing large archives in chunks.
-```bash
-# Skip the first 100 messages and process the next 50
-qwk archive.qwk --skip 100 --limit 50
-```
-
-**Rich Terminal Output:**
-When viewing messages in your terminal, pyqwk automatically uses colors to make them easier to read. Message headers are bolded, and search terms are highlighted using inverted colors. This only applies to terminal output; file exports remain clean.
-
-**Sorting Results:**
-You can sort the output by various fields such as date, author, subject, length, or size.
-```bash
-# Show the 10 most recent messages
-qwk archive.qwk --sort date --reverse --limit 10
-
-# Show the longest messages first
-qwk archive.qwk --sort length --reverse --limit 5
-```
-
 **Filter by Date:**
-Find messages from a specific date range (use YYYY-MM-DD).
 ```bash
 qwk archive.qwk --after 2023-01-01 --before 2023-12-31
 ```
 
 **Filter by Length:**
-Only show messages within a specific character count range.
 ```bash
-# Show messages with at least 1000 characters
+# At least 1000 characters
 qwk archive.qwk --min-length 1000
-
-# Show short messages (at most 500 characters)
-qwk archive.qwk --max-length 500
 ```
 
 **Filter by Message Number:**
-Find specific messages or ranges of messages by their BBS number.
 ```bash
-qwk archive.qwk --msgnum 100
 qwk archive.qwk --msgnum 100-200
-qwk archive.qwk --msgnum 10,20,50-100
-```
-
-**Filter by Attachments:**
-Only show messages that contain attachments (UUE, yEnc, Base64).
-```bash
-qwk archive.qwk --has-attachments
-```
-
-**Filter Your Own Messages:**
-Only show messages from or to your user name (as defined in the archive's information).
-```bash
-qwk archive.qwk --mine
-```
-
-**Filter by Anniversary (On This Day):**
-Only show messages sent on this same month and day in any year. This is a great way to explore what was happening on the BBS in previous years.
-```bash
-qwk archive.qwk --on-this-day
-```
-
-**Filter by Entity (Links, Emails, Phones, ANSI):**
-Only show messages that contain specific types of content.
-```bash
-# Show messages with web, gopher, ftp, or telnet links
-qwk archive.qwk --has-links
-
-# Show messages with email addresses
-qwk archive.qwk --has-emails
-
-# Show messages with phone numbers
-qwk archive.qwk --has-phones
-
-# Show messages with ANSI color codes
-qwk archive.qwk --has-ansi
 ```
 
 **Dry Run:**
-Preview exactly how many messages match your filters and how many files will be created without actually making any changes.
+Preview your changes without writing files:
 ```bash
 qwk archives/ --search "BBS" --dry-run
 ```
 
 ## Library Usage
 
-You can use `pyqwk` in your own Python projects:
+Use `pyqwk` in your own Python projects:
 
 ```python
 import logging
 from pyqwk.core import load_data, parse_messages, process_message
 
-# Configure logging to see progress and warnings
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyqwk")
 
-# Load the archive and conference list
-# file_data can be raw data (for QWK/REP) or a list of messages (for JSON/CSV/etc.)
+# Load the archive
+# file_data can be raw data or a list of messages
 file_data, board_dict = load_data("archive.qwk", logger)
 
-# Determine if we need to parse raw data or use pre-parsed messages
+# Parse raw data if needed
 if isinstance(file_data, list):
     messages = file_data
 else:
     messages = parse_messages(file_data, None)
 
-# Loop through all messages
+# Process messages
 for msg in messages:
-    # Clean the message content (remove signatures, quotes, and attachments)
+    # Remove signatures and quotes
     clean_text = process_message(
         msg.text,
         truncate_signatures=True,
@@ -411,99 +254,44 @@ for msg in messages:
         redact_pii=False
     )
 
-    # Get the conference name from the board dictionary
     conf_name = board_dict.get(msg.confnum, f"Conference {msg.confnum}")
-
     print(f"[{conf_name}] From: {msg.header.msgfrom}")
-    print(f"Subject: {msg.header.msgsubject}")
     print(clean_text)
-    print("-" * 40)
 ```
 
 ## Common Options
 
 | Flag | Description |
 | :--- | :--- |
-| `-o`, `--output [path]` | Save output to a file or folder. Prints to the screen by default. |
-| `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
-| `--filename-pattern [pat]` | Set a pattern for naming individual files (e.g., `{date}_{author}_{subject}`). |
-| `--organize` | Organize files into subfolders by conference. |
-| `--organize-by-date` | Organize files into subfolders by year and month. |
-| `--organize-by-bbs` | Organize archives into folders named after the BBS. |
-| `--organize-by-author` | Organize files into subfolders by author name. |
-| `--organize-by-to` | Organize files into subfolders by recipient name. |
-| `-F, --format [type]` | Set output format: `text`, `html`, `json`, `jsonl`, `xml`, `markdown`, `csv`, `mbox`, `eml`, `sqlite`. |
-| `-j`, `--json` | Use JSON output format (shortcut for `--format json`). |
-| `-J`, `--jsonl` | Use JSON Lines output format (shortcut for `--format jsonl`). |
+| `-o`, `--output` | Save results to a file or folder. |
+| `-i`, `--individual-files` | Save each message as a separate file. |
+| `-F, --format` | Set output format (html, json, markdown, etc.). |
 | `-T`, `--threaded` | Group replies into conversations. |
-| `-1`, `--oneline` | Show a one-line summary (Conference, Date, From, To, Subject). |
-| `--toc` | Add a table of contents and summary to the output. |
-| `-m`, `--merge` | Combine multiple archives into one file. |
-| `-u`, `--unique` | Remove duplicate messages when merging archives. |
-| `-S`, `--search [term]` | Search for a keyword in author, recipient, subject, body, conference, BBS, and attachments. |
-| `--regex` | Use regular expressions for searching and filtering. |
-| `-C`, `--conference [id]` | Only show messages from this conference (can be used multiple times). |
-| `--bbs [name/id]` | Only show messages from this BBS (can be used multiple times). |
-| `--clean` | Remove signatures, quotes, attachments, and color codes. |
-| `-x, --extract-attachments` | Extract attachments (UUE, Base64, yEnc) to an `attachments/` folder. |
-| `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
-| `-c, --cut-quoting` | Remove text quoted from earlier messages. |
-| `-b, --binaries-removal` | Remove attachments like images or programs. |
-| `-r, --redact-pii` | Hide personal information like email addresses and phone numbers. |
-| `-H, --headers-only` | Show message headers only. |
-| `-E, --encoding [name]` | Set text encoding (default is `cp437`). |
-| `-p`, `--private` | Include private messages in the output. |
-| `-f, --from [name]` | Only show messages from this author (can be used multiple times). |
-| `--to [name]` | Only show messages to this recipient (can be used multiple times). |
-| `-s, --subject [text]` | Only show messages with this word in the subject (can be used multiple times). |
-| `--after [date]` | Only show messages from this date or later (YYYY-MM-DD). |
-| `--before [date]` | Only show messages from this date or earlier (YYYY-MM-DD). |
-| `-N, --msgnum [list]` | Only show specific message numbers or ranges (e.g., '100', '200-300'). |
-| `-n, --noheader` | Hide message header information in the output. |
-| `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
-| `--separator [type]` | Choose message separator (`auto`, `none`, `dashes`, `blank`). |
-| `-v`, `--verbose` | Show more details like conference names and message numbers. |
-| `-q`, `--quiet` | Hide the progress bar and other information. |
-| `--dry-run` | Preview actions without writing files to disk. |
-| `-l, --loglevel [level]` | Set log detail level (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
-| `-L, --limit [num]` | Stop after processing this many matching messages. |
-| `-K, --skip [num]` | Skip the first matching messages. |
-| `--sort [field]` | Sort results by: `date`, `author`, `to`, `subject`, `num`, `conference`, `bbs`, `length`, or `size`. |
-| `--reverse` | Reverse the output order. |
-| `--has-attachments` | Only show messages that contain attachments. |
-| `--mine` | Only show messages from or to your user name. |
-| `--on-this-day` | Only show messages sent on this same month and day in any year. |
-| `--has-links` | Only show messages that contain web, gopher, ftp, or telnet links. |
-| `--has-emails` | Only show messages that contain email addresses. |
-| `--has-phones` | Only show messages that contain phone numbers. |
-| `--has-ansi` | Only show messages that contain ANSI color codes. |
-| `--min-length [n]` | Only show messages with at least `n` characters. |
-| `--max-length [n]` | Only show messages with at most `n` characters. |
-| `-I, --info` | Show archive summary and exit. |
-| `--stats` | Show detailed message statistics and exit. |
-| `--merge-stats` | Show a single merged report for multiple archives. |
-| `-V, --version` | Show the version number and exit. |
+| `--clean` | Remove signatures, quotes, and attachments. |
+| `-x, --extract-attachments` | Save attachments to a folder. |
+| `-r, --redact-pii` | Hide emails and phone numbers. |
+| `-E, --encoding` | Set text encoding (default is `cp437`). |
+| `-S, --search` | Search for keywords. |
+| `--stats` | Show message statistics and exit. |
+| `--dry-run` | Preview actions without writing files. |
 
-Run `qwk --help` to see all available options.
+Run `qwk --help` for all options.
 
 ## Troubleshooting
 
-- **Unsupported Compression:** Some old QWK or REP packets use special ZIP methods. `pyqwk` automatically attempts to use the system `unzip` tool if Python's built-in tools fail. If you still see an error, unzip the file manually and run `qwk` on the `messages.dat` (or `reply.dat`) file inside.
-- **Incorrect Text:** If messages show incorrect characters, use the `--encoding` flag (e.g., `--encoding cp850`) to match the original BBS's text format.
-- **Conflicting Options:** Some options cannot be used together. You will get an error if you try to use:
-  - `--threaded` and `--individual-files`
-  - `--oneline` and `--individual-files`
-  - `--threaded` and `--format eml`
+- **Unsupported Compression:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **Incorrect Text:** If you see strange characters, use the `--encoding` flag (for example, `--encoding cp850`).
+- **Conflicting Options:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
 
 ## Contributing
 
-We welcome your contributions! To help develop `pyqwk`:
+We welcome your contributions!
 
-1. Install the development and testing dependencies:
+1. Install development tools:
    ```bash
    pip install -e . pytest pytest-mock pytest-cov
    ```
-2. Run the tests to make sure everything is working:
+2. Run tests:
    ```bash
    python -m pytest
    ```
