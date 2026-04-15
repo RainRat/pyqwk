@@ -217,6 +217,64 @@ class QwkGuiApp:
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
 
+    def _is_any_filter_active(self) -> bool:
+        """Return True if any visibility filters are currently active."""
+        if self.search_var.get().strip():
+            return True
+
+        bbs_val = self.bbs_combo.get()
+        if bbs_val and not bbs_val.startswith("All BBSes"):
+            return True
+
+        conf_val = self.conf_combo.get()
+        if conf_val and not conf_val.startswith("All Conferences"):
+            return True
+
+        for var in [
+            self.has_attach_var,
+            self.mine_var,
+            self.on_this_day_var,
+            self.has_links_var,
+            self.has_emails_var,
+            self.has_phones_var,
+            self.has_ansi_var,
+        ]:
+            if var.get():
+                return True
+
+        if not self.private_var.get():
+            return True
+
+        return False
+
+    def _find_message_index(self, msgnum: int, confnum: int | None = None) -> int | None:
+        """Locate a message index by its number and optional conference."""
+        if not self.messages:
+            return None
+
+        # 1. Search in the target or current conference
+        target_conf = confnum
+        if target_conf is None:
+            current_selection = self.message_list.selection()
+            if current_selection:
+                try:
+                    idx = int(current_selection[0])
+                    target_conf = self.messages[idx].header.confnum
+                except (ValueError, IndexError):
+                    pass
+
+        if target_conf is not None:
+            for i, m in enumerate(self.messages):
+                if m.header.msgnum == msgnum and m.header.confnum == target_conf:
+                    return i
+
+        # 2. Search in any conference
+        for i, m in enumerate(self.messages):
+            if m.header.msgnum == msgnum:
+                return i
+
+        return None
+
     def _pivot_filter(self, author: str | None = None, conf_num: int | None = None, bbs_name: str | None = None) -> None:
         """Update filters based on the selected author, conference, or BBS."""
         if author:
@@ -1631,34 +1689,29 @@ class QwkGuiApp:
 
     def prompt_jump_to_message(self, _event: object | None = None) -> None:
         """Prompt the user for a message number and jump to it."""
-        if not self.messages:
+        if not self.current_paths:
             return
 
         msgnum = simpledialog.askinteger("Jump to Message", "Enter message number:")
         if msgnum is None:
             return
 
-        # Try to find it in the current conference first if something is selected
-        current_conf = None
-        current_selection = self.message_list.selection()
-        if current_selection:
-            try:
-                idx = int(current_selection[0])
-                current_conf = self.messages[idx].header.confnum
-            except (ValueError, IndexError):
-                pass
+        idx = self._find_message_index(msgnum)
+        if idx is not None:
+            self._select_by_index(idx)
+            return
 
-        if current_conf is not None:
-            for i, m in enumerate(self.messages):
-                if m.header.msgnum == msgnum and m.header.confnum == current_conf:
-                    self._select_by_index(i)
+        if self._is_any_filter_active():
+            if messagebox.askyesno(
+                "Not Found",
+                f"Message #{msgnum} was not found in the current view. "
+                "Would you like to reset all filters to find it?"
+            ):
+                self.clear_filters()
+                idx = self._find_message_index(msgnum)
+                if idx is not None:
+                    self._select_by_index(idx)
                     return
-
-        # Otherwise just find the first match
-        for i, m in enumerate(self.messages):
-            if m.header.msgnum == msgnum:
-                self._select_by_index(i)
-                return
 
         messagebox.showinfo(
             "Not Found", f"Message #{msgnum} was not found in the current view."
@@ -1674,10 +1727,23 @@ class QwkGuiApp:
 
     def jump_to_message(self, confnum: int, msgnum: int) -> None:
         """Find and select a message by conference and message number."""
-        for i, m in enumerate(self.messages):
-            if m.header.confnum == confnum and m.header.msgnum == msgnum:
-                self._select_by_index(i)
-                return
+        idx = self._find_message_index(msgnum, confnum)
+        if idx is not None:
+            self._select_by_index(idx)
+            return
+
+        if self._is_any_filter_active():
+            if messagebox.askyesno(
+                "Not Found",
+                f"Referenced message #{msgnum} was not found in the current view. "
+                "Would you like to reset all filters to find it?"
+            ):
+                self.clear_filters()
+                idx = self._find_message_index(msgnum, confnum)
+                if idx is not None:
+                    self._select_by_index(idx)
+                    return
+
         messagebox.showinfo(
             "Not Found",
             f"Referenced message #{msgnum} was not found in the current view.",

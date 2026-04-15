@@ -31,6 +31,7 @@ def app():
 
     with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.simpledialog"), patch("pyqwk.gui.filedialog"):
         app = QwkGuiApp(root)
+        app.current_paths = ["fake.qwk"]
         app.message_list = MagicMock()
         app.bbs_combo = MagicMock()
         app.conf_combo = MagicMock()
@@ -41,6 +42,18 @@ def app():
         app.has_attach_var = MagicMock()
         app.mine_var = MagicMock()
         app.on_this_day_var = MagicMock()
+        app.has_links_var = MagicMock()
+        app.has_emails_var = MagicMock()
+        app.has_phones_var = MagicMock()
+        app.has_ansi_var = MagicMock()
+
+        for var in [app.has_attach_var, app.mine_var, app.on_this_day_var,
+                    app.has_links_var, app.has_emails_var, app.has_phones_var, app.has_ansi_var]:
+            var.get.return_value = False
+
+        app.bbs_combo.get.return_value = "All BBSes"
+        app.conf_combo.get.return_value = "All Conferences"
+
         return app
 
 def test_clear_filters_exception_handling(app):
@@ -56,6 +69,7 @@ def test_clear_filters_exception_handling(app):
     app.conf_combo.set.assert_called_with("All Conferences")
 
 def test_open_folder_cancellation(app):
+    app.current_paths = []
     with patch("pyqwk.gui.filedialog.askdirectory", return_value=""):
         app.open_folder()
 

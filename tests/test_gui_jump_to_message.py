@@ -19,6 +19,7 @@ def app_with_messages():
     root = MagicMock()
     with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.simpledialog"):
         app = QwkGuiApp(root)
+        app.current_paths = ["fake.qwk"]
 
         # Create some dummy messages
         h1 = MessageHeader(" ", 101, "01-01-23", "12:00", "To1", "From1", "Subj1", "", None, 1, " ", 1, 1, "")
@@ -33,6 +34,14 @@ def app_with_messages():
 
         # Mock message_list behavior
         app.message_list.exists.return_value = True
+
+        # Ensure filters appear inactive
+        app.search_var.get.return_value = ""
+        app.bbs_combo.get.return_value = "All BBSes"
+        app.conf_combo.get.return_value = "All Conferences"
+        for var in [app.has_attach_var, app.mine_var, app.on_this_day_var,
+                    app.has_links_var, app.has_emails_var, app.has_phones_var, app.has_ansi_var]:
+            var.get.return_value = False
 
         return app
 
