@@ -41,7 +41,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml', '.md', '.markdown')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -1143,6 +1143,127 @@ def _parse_eml_messages(path: str) -> list[ParsedMessage]:
     return [_message_from_email(msg_obj)]
 
 
+def _parse_html_messages(path: str) -> list[ParsedMessage]:
+    """Import messages from an HTML file."""
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    messages = []
+
+    # Identify message blocks
+    msg_blocks = list(re.finditer(r'<div class="message"(?: id="[^"]*")?>', content))
+
+    re_date = re.compile(r'<strong>Date:</strong>\s*(.*?)\s*</div>')
+    re_from = re.compile(r'<strong>From:</strong>\s*(.*?)\s*</div>')
+    re_to = re.compile(r'<strong>To:</strong>\s*(.*?)\s*</div>')
+    re_subject = re.compile(r'<strong>Subject:</strong>\s*(.*?)\s*</div>')
+    re_conf = re.compile(r'<strong>Conference:</strong>\s*(.*?)\s*\((\d+)\)\s*</div>')
+    re_bbs = re.compile(r'<strong>BBS:</strong>\s*(.*?)\s*</div>')
+    re_source = re.compile(r'<strong>Source:</strong>\s*(.*?)\s*</div>')
+    re_number = re.compile(r'<strong>Number:</strong>\s*(\d+)\s*</div>')
+    re_attachments = re.compile(r'<strong>Attachments:</strong>\s*(.*?)\s*</div>')
+    re_body = re.compile(r'<pre class="body">(.*?)</pre>', re.DOTALL)
+
+    def clean_html(text: str) -> str:
+        # Remove tags like <mark>, </mark>, <span class="quote">, </span>, and <a> tags
+        text = re.sub(r'<[^>]+>', '', text)
+        return html.unescape(text).strip()
+
+    for i, match in enumerate(msg_blocks):
+        start = match.start()
+        end = msg_blocks[i+1].start() if i+1 < len(msg_blocks) else len(content)
+        block = content[start:end]
+
+        # Determine depth by tracking div nesting
+        depth = 0
+        stack = []
+        for m_tag in re.finditer(r"<(div|/div)([^>]*)>", content):
+            if m_tag.start() >= start:
+                break
+            tag_name = m_tag.group(1)
+            attrs = m_tag.group(2)
+            if tag_name == "div":
+                if "class=\"reply\"" in attrs:
+                    stack.append("reply")
+                    depth += 1
+                else:
+                    stack.append("other")
+            elif tag_name == "/div":
+                if stack:
+                    if stack.pop() == "reply":
+                        depth -= 1
+        depth = max(0, depth)
+        header_match = re.search(r'<div class="header">(.*?)</div>\s*<pre', block, re.DOTALL)
+        header_part = header_match.group(1) if header_match else block
+
+        date_match = re_date.search(header_part)
+        from_match = re_from.search(header_part)
+        to_match = re_to.search(header_part)
+        subject_match = re_subject.search(header_part)
+        conf_match = re_conf.search(header_part)
+        bbs_match = re_bbs.search(header_part)
+        source_match = re_source.search(header_part)
+        number_match = re_number.search(header_part)
+        attach_match = re_attachments.search(header_part)
+
+        msg_date = "01-01-70"
+        msg_time = "00:00"
+        if date_match:
+            dt_parts = clean_html(date_match.group(1)).split()
+            if len(dt_parts) >= 1:
+                msg_date = dt_parts[0]
+            if len(dt_parts) >= 2:
+                msg_time = dt_parts[1]
+
+        conf_num = 0
+        conf_name = None
+        if conf_match:
+            conf_name = clean_html(conf_match.group(1))
+            conf_num = int(conf_match.group(2))
+
+        attachments = None
+        if attach_match:
+            attachments = [clean_html(a) for a in attach_match.group(1).split(',')]
+
+        body = ""
+        body_match = re_body.search(block)
+        if body_match:
+            body = clean_html(body_match.group(1))
+
+        header = MessageHeader(
+            status=" ",
+            msgnum=int(number_match.group(1)) if number_match else None,
+            msgdate=msg_date,
+            msgtime=msg_time,
+            msgto=clean_html(to_match.group(1)) if to_match else "",
+            msgfrom=clean_html(from_match.group(1)) if from_match else "",
+            msgsubject=clean_html(subject_match.group(1)) if subject_match else "(no subject)",
+            msgpassword="",
+            refnum=None,
+            numblocks=None,
+            msgflag=" ",
+            confnum=conf_num,
+            lognum=0,
+            nettag="",
+        )
+
+        msg = ParsedMessage(
+            text=body,
+            msgnum=header.msgnum,
+            refnum=None,
+            confnum=conf_num,
+            header=header,
+            depth=depth,
+            confname=conf_name,
+            bbs_name=clean_html(bbs_match.group(1)) if bbs_match else None,
+            source_file=clean_html(source_match.group(1)) if source_match else None,
+            attachments=attachments,
+        )
+        messages.append(msg)
+
+    return messages
+
+
 def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
     """Import messages from a Markdown file."""
     with open(path, 'r', encoding='utf-8') as f:
@@ -1351,6 +1472,15 @@ def load_data(
                 if line.strip():
                     data = json.loads(line)
                     messages.extend(_parse_json_messages(data))
+
+        board_dict = _reconstruct_archive_information(messages)
+        return messages, board_dict
+
+    if input_path.lower().endswith(('.html', '.htm')):
+        try:
+            messages = _parse_html_messages(input_path)
+        except Exception as e:
+            raise ValueError(f"Failed to load HTML archive: {e}")
 
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
