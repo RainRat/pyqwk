@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk converts message archives (like .QWK, .REP, .JSON, .CSV, and .mbox) into modern formats such as HTML, Markdown, and SQLite.
+pyqwk converts message archives (like .QWK, .REP, .JSON, .JSONL, .CSV, .XML, .db, .sqlite, .mbox, .eml, and .md) into modern formats such as HTML, Markdown, and SQLite.
 
 ## What are QWK and REP files?
 
@@ -81,6 +81,15 @@ qwk-gui
 
 # Open a specific file
 qwk-gui archive.qwk
+
+# Open several archives at once
+qwk-gui archive1.qwk archive2.qwk
+
+# Open all archives in a folder
+qwk-gui archives/
+
+# Open a database
+qwk-gui messages.db
 ```
 
 **Key Features:**
@@ -145,6 +154,21 @@ qwk archive.qwk --individual-files --organize -o output_folder/
 **Organize files by date:**
 ```bash
 qwk archive.qwk --individual-files --organize-by-date -o output_folder/
+```
+
+**Organize files by author:**
+```bash
+qwk archive.qwk --individual-files --organize-by-author -o output_folder/
+```
+
+**Organize files by recipient:**
+```bash
+qwk archive.qwk --individual-files --organize-by-to -o output_folder/
+```
+
+**Use custom filenames:**
+```bash
+qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}" -o output_folder/
 ```
 
 **Merge archives and remove duplicates:**
