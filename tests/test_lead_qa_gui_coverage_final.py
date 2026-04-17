@@ -17,22 +17,46 @@ from pyqwk.core import ParsedMessage, MessageHeader
 @pytest.fixture
 def app():
     root = MagicMock()
-    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.simpledialog"):
+    with patch("pyqwk.gui.tk") as mock_tk, \
+         patch("pyqwk.gui.ttk") as mock_ttk, \
+         patch("pyqwk.gui.simpledialog"):
+
+        # Ensure distinct mocks for each Variable call to avoid crosstalk
+        mock_tk.BooleanVar.side_effect = lambda **kwargs: MagicMock()
+        mock_tk.StringVar.side_effect = lambda **kwargs: MagicMock()
+        mock_tk.IntVar.side_effect = lambda **kwargs: MagicMock()
+
         app = QwkGuiApp(root)
         app.message_list = MagicMock()
         return app
 
 def test_is_any_filter_active_private_false(app):
     """Test _is_any_filter_active returns True when private_var is False (line 246)."""
-    app.search_var.set("")
-    app.bbs_combo.get.return_value = "All BBSes"
-    app.conf_combo.get.return_value = "All Conferences"
+    app.search_var.get.return_value = ""
     for var in [app.has_attach_var, app.mine_var, app.on_this_day_var,
                 app.has_links_var, app.has_emails_var, app.has_phones_var, app.has_ansi_var]:
         var.get.return_value = False
-
     app.private_var.get.return_value = False
-    assert app._is_any_filter_active() is True
+
+    with patch.object(app, "bbs_combo") as m_bbs, \
+         patch.object(app, "conf_combo") as m_conf:
+        m_bbs.get.return_value = "All BBSes"
+        m_conf.get.return_value = "All Conferences"
+        assert app._is_any_filter_active() is True
+
+def test_is_any_filter_active_none(app):
+    """Test _is_any_filter_active returns False when no filters are active."""
+    app.search_var.get.return_value = ""
+    for var in [app.has_attach_var, app.mine_var, app.on_this_day_var,
+                app.has_links_var, app.has_emails_var, app.has_phones_var, app.has_ansi_var]:
+        var.get.return_value = False
+    app.private_var.get.return_value = True
+
+    with patch.object(app, "bbs_combo") as m_bbs, \
+         patch.object(app, "conf_combo") as m_conf:
+        m_bbs.get.return_value = "All BBSes"
+        m_conf.get.return_value = "All Conferences"
+        assert app._is_any_filter_active() is False
 
 def test_set_detail_text(app):
     """Test _set_detail_text helper method (lines 1511-1512)."""
