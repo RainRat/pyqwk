@@ -632,24 +632,13 @@ class QwkGuiApp:
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
             ("On This Day", self.on_this_day_var),
-        ]:
-            ttk.Checkbutton(
-                filters_frame, text=text, variable=var, command=self.reload_messages
-            ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
-
-        discovery_frame = ttk.Frame(row2)
-        discovery_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(discovery_frame, text="Discovery:").pack(side=tk.LEFT)
-        for text, var in [
             ("Links", self.has_links_var),
             ("Emails", self.has_emails_var),
             ("Phones", self.has_phones_var),
             ("ANSI", self.has_ansi_var),
         ]:
             ttk.Checkbutton(
-                discovery_frame, text=text, variable=var, command=self.reload_messages
+                filters_frame, text=text, variable=var, command=self.reload_messages
             ).pack(side=tk.LEFT, padx=5)
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
