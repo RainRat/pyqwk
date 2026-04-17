@@ -89,7 +89,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help='Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, MBOX, EML, SQLite, and Markdown.',
+        help='Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, MBOX, EML, SQLite, Markdown, and HTML.',
         nargs='+',
     )
 
