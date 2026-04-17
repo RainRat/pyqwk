@@ -1153,6 +1153,33 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
     # Identify message blocks
     msg_blocks = list(re.finditer(r'<div class="message"(?: id="[^"]*")?>', content))
 
+    # Pre-calculate depths for all message starts in a single pass
+    div_tags = list(re.finditer(r"<(div|/div)([^>]*)>", content))
+    msg_depths = {}
+    current_depth = 0
+    stack = []
+    div_idx = 0
+
+    for block in msg_blocks:
+        start = block.start()
+        # Advance div_idx and update depth until we reach the current message block
+        while div_idx < len(div_tags) and div_tags[div_idx].start() < start:
+            m_tag = div_tags[div_idx]
+            tag_name = m_tag.group(1)
+            attrs = m_tag.group(2)
+            if tag_name == "div":
+                if 'class="reply"' in attrs:
+                    stack.append("reply")
+                    current_depth += 1
+                else:
+                    stack.append("other")
+            elif tag_name == "/div":
+                if stack:
+                    if stack.pop() == "reply":
+                        current_depth -= 1
+            div_idx += 1
+        msg_depths[start] = max(0, current_depth)
+
     re_date = re.compile(r'<strong>Date:</strong>\s*(.*?)\s*</div>')
     re_from = re.compile(r'<strong>From:</strong>\s*(.*?)\s*</div>')
     re_to = re.compile(r'<strong>To:</strong>\s*(.*?)\s*</div>')
@@ -1174,25 +1201,7 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
         end = msg_blocks[i+1].start() if i+1 < len(msg_blocks) else len(content)
         block = content[start:end]
 
-        # Determine depth by tracking div nesting
-        depth = 0
-        stack = []
-        for m_tag in re.finditer(r"<(div|/div)([^>]*)>", content):
-            if m_tag.start() >= start:
-                break
-            tag_name = m_tag.group(1)
-            attrs = m_tag.group(2)
-            if tag_name == "div":
-                if "class=\"reply\"" in attrs:
-                    stack.append("reply")
-                    depth += 1
-                else:
-                    stack.append("other")
-            elif tag_name == "/div":
-                if stack:
-                    if stack.pop() == "reply":
-                        depth -= 1
-        depth = max(0, depth)
+        depth = msg_depths.get(start, 0)
         header_match = re.search(r'<div class="header">(.*?)</div>\s*<pre', block, re.DOTALL)
         header_part = header_match.group(1) if header_match else block
 
