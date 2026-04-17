@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk converts message archives (like .QWK, .REP, .JSON, .JSONL, .CSV, .XML, .db, .sqlite, .mbox, .eml, and .md) into modern formats such as HTML, Markdown, and SQLite.
+pyqwk converts message archives into modern, readable formats like HTML, Markdown, and SQLite. It supports many file types, including QWK, ZIP, JSON, CSV, mbox, EML, and more.
 
 ## What are QWK and REP files?
 
@@ -304,7 +304,7 @@ Run `qwk --help` for all options.
 ## Troubleshooting
 
 - **Unsupported Compression:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
-- **Incorrect Text:** If you see strange characters, use the `--encoding` flag (for example, `--encoding cp850`).
+- **Incorrect Text:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
 - **Conflicting Options:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
 
 ## Contributing
