@@ -1202,7 +1202,7 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
         block = content[start:end]
 
         depth = msg_depths.get(start, 0)
-        header_match = re.search(r'<div class="header">(.*?)</div>\s*<pre', block, re.DOTALL)
+        header_match = re.search(r'<div class="header">(.*?)\s*<pre', block, re.DOTALL)
         header_part = header_match.group(1) if header_match else block
 
         date_match = re_date.search(header_part)
