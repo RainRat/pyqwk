@@ -2831,6 +2831,21 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
             parts.append('</div>')
         parts.append('</div>')
 
+    # Top Attachments
+    if stats.get('top_attachments'):
+        parts.append('<div class="stats-box">')
+        parts.append('<h3>Top Attachments</h3>')
+        attaches = stats['top_attachments'][:5]
+        max_count = attaches[0]['count'] if attaches else 1
+        for attach in attaches:
+            width = int(attach['count'] * 100 / max_count)
+            parts.append('<div class="stats-bar-container">')
+            parts.append(f'<div class="stats-bar-label" title="{html.escape(attach["name"])}">{html.escape(attach["name"])}</div>')
+            parts.append(f'<div class="stats-bar-count">{attach["count"]}</div>')
+            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
+            parts.append('</div>')
+        parts.append('</div>')
+
     parts.append('</div>')  # stats-grid
     parts.append('</div>')  # stats-container
     return parts
@@ -2963,6 +2978,17 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
         for conf in confs:
             bar = render_bar(conf['count'], max_count)
             parts.append(f"| {conf['name']} | {conf['count']} | `{bar}` |")
+        parts.append("")
+
+    if stats.get('top_attachments'):
+        parts.append("#### Top Attachments\n")
+        parts.append("| Attachment | Count | |")
+        parts.append("|---|---|---|")
+        attaches = stats['top_attachments'][:5]
+        max_count = attaches[0]['count'] if attaches else 1
+        for attach in attaches:
+            bar = render_bar(attach['count'], max_count)
+            parts.append(f"| {attach['name']} | {attach['count']} | `{bar}` |")
         parts.append("")
 
     parts.append("---\n")
@@ -4129,6 +4155,8 @@ def _compute_stats_from_messages(
         "links": [],
         "emails": [],
         "phones": [],
+        "top_attachments": [],
+        "top_attachment_types": [],
         "attachments_count": 0,
         "day_of_week": {},
         "hour_of_day": {},
@@ -4150,6 +4178,8 @@ def _compute_stats_from_messages(
     link_counter: Counter = Counter()
     email_counter: Counter = Counter()
     phone_counter: Counter = Counter()
+    attachment_counter: Counter = Counter()
+    attachment_type_counter: Counter = Counter()
     dow_counter: Counter = Counter()
     hour_counter: Counter = Counter()
     year_counter: Counter = Counter()
@@ -4205,11 +4235,22 @@ def _compute_stats_from_messages(
             total_chars += len(message.text)
 
             # Use cached attachments if available to avoid re-scanning
-            if message.attachments is not None:
-                attachments_count += len(message.attachments)
-            else:
+            current_attachments = message.attachments
+            if current_attachments is None:
                 found_binaries = extract_binaries(message.text)
-                attachments_count += len(found_binaries)
+                current_attachments = [name for name, data in found_binaries]
+                # Lazily cache them back for other filters to use
+                message.attachments = current_attachments
+
+            if current_attachments:
+                attachments_count += len(current_attachments)
+                for filename in current_attachments:
+                    attachment_counter[filename] += 1
+                    _, ext = os.path.splitext(filename.lower())
+                    if ext:
+                        attachment_type_counter[ext] += 1
+                    else:
+                        attachment_type_counter["(no extension)"] += 1
 
             # Keyword analysis
             words = re.findall(r'\b\w{3,}\b', message.text.lower())
@@ -4254,6 +4295,8 @@ def _compute_stats_from_messages(
     stats_entry["links"] = [{"url": u, "count": c} for u, c in link_counter.most_common(10)]
     stats_entry["emails"] = [{"email": e, "count": c} for e, c in email_counter.most_common(10)]
     stats_entry["phones"] = [{"phone": p, "count": c} for p, c in phone_counter.most_common(10)]
+    stats_entry["top_attachments"] = [{"name": n, "count": c} for n, c in attachment_counter.most_common(10)]
+    stats_entry["top_attachment_types"] = [{"extension": e, "count": c} for e, c in attachment_type_counter.most_common(10)]
     stats_entry["day_of_week"] = dict(dow_counter)
     stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
     stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
@@ -4390,6 +4433,12 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
 
     if stats.get('phones'):
         parts.extend(_render_stats_bar_chart('Top Phone Numbers:', [(p["phone"], p["count"]) for p in stats['phones']], use_colors=use_colors))
+
+    if stats.get('top_attachments'):
+        parts.extend(_render_stats_bar_chart('Top Attachments:', [(a["name"], a["count"]) for a in stats['top_attachments']], use_colors=use_colors))
+
+    if stats.get('top_attachment_types'):
+        parts.extend(_render_stats_bar_chart('Top Attachment Types:', [(t["extension"], t["count"]) for t in stats['top_attachment_types']], use_colors=use_colors))
 
     if stats['day_of_week']:
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

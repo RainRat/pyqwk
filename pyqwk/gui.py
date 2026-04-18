@@ -1790,7 +1790,7 @@ class QwkGuiApp:
             # Rendering logic
             display_name = os.path.basename(stats['file']) if len(self.current_paths) == 1 else "Multiple Archives"
             txt.insert(tk.END, f"Statistics for: {display_name}\n\n", "h1")
-            txt.insert(tk.END, "Tip: Click on Authors, Conferences, or BBSes to filter the main view.\n", "dim")
+            txt.insert(tk.END, "Tip: Click on Authors, Conferences, BBSes, or Attachments to filter the main view.\n", "dim")
 
             def insert_info(label, value):
                 txt.insert(tk.END, f"  {label:<15}: ", "info_label")
@@ -1843,6 +1843,9 @@ class QwkGuiApp:
                                     self._pivot_filter(conf_num=fv)
                                 elif ft == 'bbs':
                                     self._pivot_filter(bbs_name=fv)
+                                elif ft == 'search':
+                                    self.search_var.set(fv)
+                                    self.reload_messages()
                             return callback
 
                         txt.tag_bind(item_tag, "<Button-1>", make_callback(filter_type, filter_val))
@@ -1884,6 +1887,12 @@ class QwkGuiApp:
 
             if stats.get('phones'):
                 render_gui_bar_chart('Top Phone Numbers', [(p["phone"], p["count"]) for p in stats['phones']])
+
+            if stats.get('top_attachments'):
+                render_gui_bar_chart('Top Attachments', [(a["name"], a["count"], a["name"]) for a in stats['top_attachments']], filter_type='search')
+
+            if stats.get('top_attachment_types'):
+                render_gui_bar_chart('Top Attachment Types', [(t["extension"], t["count"]) for t in stats['top_attachment_types']])
 
             if stats['day_of_week']:
                 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
