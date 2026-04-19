@@ -637,6 +637,7 @@ class MessageHeader:
         highlight_term: str | None = None,
         is_regex: bool = False,
         attachments: list[str] | None = None,
+        bbs_name: str | None = None,
     ) -> str:
         """Render a message header into readable text.
 
@@ -686,6 +687,12 @@ class MessageHeader:
         if verbose or not not_found_flag:
             header_parts.append(fmt_line("Conference:", str(conf_name)))
 
+        if bbs_name:
+            header_parts.append(fmt_line("BBS:", bbs_name))
+
+        if self.is_private:
+            header_parts.append(fmt_line("Status:", "[PRIVATE]"))
+
         if verbose:
             message_number = str(self.msgnum) if self.msgnum is not None else ""
             # Message number and Date share a line in verbose mode for better information density
@@ -718,6 +725,8 @@ class MessageHeader:
         verbose: bool = False,
         depth: int = 0,
         conf_name: str | None = None,
+        is_private: bool = False,
+        has_attachments: bool = False,
     ) -> str:
         """Render a message header as a single line summary."""
         if conf_name is None:
@@ -736,6 +745,20 @@ class MessageHeader:
         conf_part = prepare_field(conf_name, 12)
         from_part = prepare_field(from_name, 15)
         to_part = prepare_field(to_name, 15)
+
+        # Indicators for private and attachments
+        flags = ""
+        if is_private:
+            flags += "*"
+        if has_attachments:
+            flags += "@"
+
+        if flags:
+            flags_display = flags.ljust(2)
+            if use_colors:
+                # Dim the flags
+                flags_display = f"\x1b[90m{flags_display}\x1b[0m"
+            subject = f"{flags_display} {subject}"
 
         # Apply threading indent to subject
         if depth > 0:
@@ -2306,6 +2329,8 @@ def process_merged_files(
                 verbose=settings.verbose,
                 depth=parsed_message.depth,
                 conf_name=parsed_message.confname,
+                is_private=parsed_message.header.is_private,
+                has_attachments=bool(parsed_message.attachments),
             )
         else:
             processed_buffer = cleaned_body
@@ -2327,6 +2352,7 @@ def process_merged_files(
                     highlight_term=settings.search_term,
                     is_regex=settings.regex,
                     attachments=parsed_message.attachments,
+                    bbs_name=parsed_message.bbs_name,
                 )
                 processed_buffer = header_text + processed_buffer
 
@@ -3533,6 +3559,8 @@ def _write_text(
                 verbose=settings.verbose,
                 depth=message.depth,
                 conf_name=message.confname,
+                is_private=message.header.is_private,
+                has_attachments=bool(message.attachments),
             )
         else:
             text = message.text
