@@ -60,6 +60,7 @@ FORMAT_EXTENSIONS = {
     'eml': '.eml',
     'qwk': '.qwk',
     'rep': '.rep',
+    'rss': '.rss',
 }
 
 
@@ -97,6 +98,7 @@ def resolve_output_format(
             '.db': 'sqlite',
             '.qwk': 'qwk',
             '.rep': 'rep',
+            '.rss': 'rss',
         }
         if ext in mapping:
             return mapping[ext]
@@ -2750,6 +2752,68 @@ def _write_xml(
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
+def _write_rss(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    """Write messages to an RSS 2.0 feed."""
+    rss = ET.Element('rss', version='2.0')
+    channel = ET.SubElement(rss, 'channel')
+
+    if bbs_info and bbs_info.name:
+        title = f"{bbs_info.name} Feed"
+        description = f"Message feed from {bbs_info.name}"
+    else:
+        title = 'QWK Message Feed'
+        description = "Message feed from QWK archive"
+
+    ET.SubElement(channel, 'title').text = title
+    ET.SubElement(channel, 'link').text = 'https://github.com/mprokop/pyqwk'
+    ET.SubElement(channel, 'description').text = description
+
+    if messages:
+        try:
+            latest_msg = max(messages, key=lambda m: _parse_qwk_date(m.header.msgdate, m.header.msgtime))
+            dt = _parse_qwk_date(latest_msg.header.msgdate, latest_msg.header.msgtime)
+            ET.SubElement(channel, 'pubDate').text = email.utils.format_datetime(dt)
+        except Exception:
+            pass
+
+    for message in messages:
+        item = ET.SubElement(channel, 'item')
+        header = message.header
+
+        conf_name = message.confname or (board_dict.get(header.confnum) if board_dict else str(header.confnum))
+        item_title = f"[{conf_name}] {header.msgsubject.strip()}"
+        ET.SubElement(item, 'title').text = item_title
+
+        # RSS items should ideally have a link, but these are offline messages.
+        ET.SubElement(item, 'link').text = ""
+
+        # Description contains the message text
+        desc = ET.SubElement(item, 'description')
+        desc.text = message.text
+
+        # Author (RSS 2.0 expects an email address if possible, but we use the name)
+        ET.SubElement(item, 'author').text = header.msgfrom.strip()
+
+        # Publication Date
+        dt = _parse_qwk_date(header.msgdate, header.msgtime)
+        ET.SubElement(item, 'pubDate').text = email.utils.format_datetime(dt)
+
+        # Unique identifier
+        guid_val = f"{header.confnum}.{header.msgnum if header.msgnum is not None else id(message)}@qwk"
+        guid = ET.SubElement(item, 'guid', isPermaLink='false')
+        guid.text = guid_val
+
+    xml_text = _xml_element_to_str(rss)
+    _write_text_output(xml_text, output_path, encoding='utf-8')
+
+
 def _get_html_header(title: str) -> list[str]:
     return [
         '<!DOCTYPE html>',
@@ -3790,6 +3854,7 @@ def write_messages(
         'sqlite': _write_sqlite,
         'qwk': _write_qwk,
         'rep': _write_qwk,
+        'rss': _write_rss,
     }
 
     writer = writers.get(settings.format, _write_text)

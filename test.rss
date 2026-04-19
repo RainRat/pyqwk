@@ -1,0 +1,18 @@
+<rss version="2.0">
+  <channel>
+    <title>TestBBS Feed</title>
+    <link>https://github.com/mprokop/pyqwk</link>
+    <description>Message feed from TestBBS Feed</description>
+    <pubDate>Sun, 01 Jan 2023 10:00:00 -0000</pubDate>
+    <item>
+      <title>[General] Test Subject</title>
+      <link />
+      <description>Hello world
+This is a test.
+</description>
+      <author>Author</author>
+      <pubDate>Sun, 01 Jan 2023 10:00:00 -0000</pubDate>
+      <guid isPermaLink="false">1.1@qwk</guid>
+    </item>
+  </channel>
+</rss>
