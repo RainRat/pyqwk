@@ -1496,10 +1496,6 @@ class QwkGuiApp:
                 
             messagebox.showerror("Failed to load QWK", str(exc))
 
-    def _set_detail_text(self, text: str) -> None:
-        self.detail_text.delete("1.0", tk.END)
-        self.detail_text.insert(tk.END, text)
-
     def save_attachment(self, filename: str, attachment_index: int) -> None:
         """Save a specific attachment from the currently selected message."""
         current_selection = self.message_list.selection()
