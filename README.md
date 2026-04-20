@@ -10,7 +10,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 ## Features
 
-- **Support many formats:** Import and export between QWK, JSON, HTML, Markdown, mbox, and more.
+- **Support many formats:** Import and export between QWK, JSON, HTML, Markdown, mbox, RSS, and more.
 - **Group conversations:** Use "threading" to group replies and follow discussions easily.
 - **Clean content:** Automatically remove signatures, old quotes, and attachments.
 - **Protect privacy:** Hide personal information or private messages.
@@ -196,6 +196,11 @@ qwk archive.qwk --redact-pii -o safe.txt
 qwk archive.qwk --format sqlite -o messages.db
 ```
 
+**Export to an RSS feed:**
+```bash
+qwk archive.qwk --format rss -o messages.rss
+```
+
 **Import from a spreadsheet (CSV):**
 ```bash
 qwk messages.csv -o updated.html
@@ -289,7 +294,7 @@ for msg in messages:
 | :--- | :--- |
 | `-o`, `--output` | Save results to a file or folder. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
-| `-F, --format` | Set output format (html, json, markdown, etc.). |
+| `-F, --format` | Set output format (html, json, markdown, rss, etc.). |
 | `-T`, `--threaded` | Group replies into conversations. |
 | `--clean` | Remove signatures, quotes, and attachments. |
 | `-x, --extract-attachments` | Save attachments to a folder. |

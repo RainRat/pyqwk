@@ -60,6 +60,7 @@ FORMAT_EXTENSIONS = {
     'eml': '.eml',
     'qwk': '.qwk',
     'rep': '.rep',
+    'rss': '.rss',
 }
 
 
@@ -97,6 +98,7 @@ def resolve_output_format(
             '.db': 'sqlite',
             '.qwk': 'qwk',
             '.rep': 'rep',
+            '.rss': 'rss',
         }
         if ext in mapping:
             return mapping[ext]
@@ -2750,6 +2752,43 @@ def _write_xml(
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
+def _write_rss(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    """Write messages to an RSS 2.0 feed."""
+    title = 'QWK Messages'
+    if bbs_info and bbs_info.name:
+        title = f"{bbs_info.name} Archive"
+
+    rss = ET.Element('rss', version='2.0')
+    channel = ET.SubElement(rss, 'channel')
+    ET.SubElement(channel, 'title').text = title
+    ET.SubElement(channel, 'link').text = "http://example.com"
+    ET.SubElement(channel, 'description').text = f"Message feed from {title}"
+
+    for message in messages:
+        item = ET.SubElement(channel, 'item')
+        header = message.header
+        dt = _parse_qwk_date(header.msgdate, header.msgtime)
+        pub_date = email.utils.format_datetime(dt)
+
+        ET.SubElement(item, 'title').text = header.msgsubject.strip() or "(no subject)"
+        ET.SubElement(item, 'author').text = header.msgfrom.strip()
+        ET.SubElement(item, 'pubDate').text = pub_date
+        ET.SubElement(item, 'description').text = message.text
+
+        guid = f"{header.confnum}.{header.msgnum if header.msgnum is not None else id(message)}@qwk"
+        ET.SubElement(item, 'guid', isPermaLink='false').text = guid
+
+    rss_text = _xml_element_to_str(rss)
+    _write_text_output(rss_text, output_path, encoding='utf-8')
+
+
 def _get_html_header(title: str) -> list[str]:
     return [
         '<!DOCTYPE html>',
@@ -3787,6 +3826,7 @@ def write_messages(
         'csv': _write_csv,
         'mbox': _write_mbox,
         'eml': _write_eml,
+        'rss': _write_rss,
         'sqlite': _write_sqlite,
         'qwk': _write_qwk,
         'rep': _write_qwk,

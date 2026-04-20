@@ -214,7 +214,7 @@ examples:
             'If omitted, the format is determined by the output file extension.'
         ),
         default=None,
-        choices=['text', 'json', 'jsonl', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
+        choices=['text', 'json', 'jsonl', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite', 'rss'],
     )
     format_group.add_argument(
         '-j',
