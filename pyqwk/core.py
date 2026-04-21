@@ -450,7 +450,7 @@ class ParsedMessage:
 
 
 
-# Aliases for backward compatibility
+# Keep old names for compatibility
 ProcessedMessage = ParsedMessage
 
 
@@ -913,7 +913,7 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
     finally:
         conn.close()
 
-    # If board_dict is empty, we reconstruct it from messages for backward compatibility
+    # If board_dict is empty, we reconstruct it from messages to keep compatibility
     if not board_dict:
         # Preserve existing bbs_info if it was loaded from a table.
         # We only restore it if it's not a default empty BBSInfo object.
@@ -1405,7 +1405,7 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
                 attachments = [a.strip() for a in attach_str.split(',') if a.strip()]
 
         # Message body: everything after the information lines
-        # In our Markdown format, metadata ends at the first blank line.
+        # In our Markdown format, the information section ends at the first blank line.
         lines = working_section.splitlines()
         body_start_idx = 0
         for i, line in enumerate(lines):
@@ -2454,7 +2454,7 @@ def process_merged_files(
             filename = _generate_safe_filename(parsed_message, settings, processed_count)
             full_path = os.path.join(target_dir, filename)
 
-            # Collision avoidance
+            # Avoid duplicate filenames
             if os.path.exists(full_path):
                 base, ext = os.path.splitext(filename)
                 counter = 0
@@ -4584,7 +4584,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
         if subj:
             index_by_subject[(message.confnum, subj)].append(index)
 
-    # Establish parent-child relationships using explicit references or subject-based heuristics
+    # Link replies to their parent messages using message numbers or subjects
     parent_map: dict[int, int] = {}
 
     for index, message in enumerate(messages):
@@ -4628,7 +4628,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
         else:
             roots.append(index)
 
-    # Perform an iterative depth-first traversal to group threads while safely handling potential cycles and recursion depth
+    # Group messages into threads while handling loops and deep nests
     ordered_messages: list[ProcessedMessage] = []
     visited: set[int] = set()
     cycle_reported: set[int] = set()
