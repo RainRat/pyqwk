@@ -89,7 +89,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help='Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, MBOX, EML, SQLite, Markdown, and HTML.',
+        help='Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, and HTML.',
         nargs='+',
     )
 
@@ -214,7 +214,7 @@ examples:
             'If omitted, the format is determined by the output file extension.'
         ),
         default=None,
-        choices=['text', 'json', 'jsonl', 'xml', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
+        choices=['text', 'json', 'jsonl', 'xml', 'rss', 'html', 'markdown', 'csv', 'mbox', 'eml', 'sqlite'],
     )
     format_group.add_argument(
         '-j',
