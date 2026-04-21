@@ -56,6 +56,7 @@ FORMAT_EXTENSIONS = {
     'markdown': '.md',
     'mbox': '.mbox',
     'csv': '.csv',
+    'rss': '.rss',
     'sqlite': '.db',
     'eml': '.eml',
     'qwk': '.qwk',
@@ -91,6 +92,7 @@ def resolve_output_format(
             '.csv': 'csv',
             '.mbox': 'mbox',
             '.eml': 'eml',
+            '.rss': 'rss',
             '.md': 'markdown',
             '.markdown': 'markdown',
             '.sqlite': 'sqlite',
@@ -2750,6 +2752,52 @@ def _write_xml(
     _write_text_output(xml_text, output_path, encoding='utf-8')
 
 
+def _write_rss(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = 'utf-8',
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    """Export messages to an RSS 2.0 feed."""
+    title = 'QWK Message Archive'
+    if bbs_info and bbs_info.name:
+        title = f"{bbs_info.name} Archive"
+
+    rss = ET.Element('rss', version='2.0')
+    channel = ET.SubElement(rss, 'channel')
+    ET.SubElement(channel, 'title').text = title
+    ET.SubElement(channel, 'link').text = "https://github.com/v86/pyqwk"
+    ET.SubElement(channel, 'description').text = f"Syndicated messages from {title}"
+    ET.SubElement(channel, 'generator').text = f"pyqwk {__version__}"
+
+    for message in messages:
+        item = ET.SubElement(channel, 'item')
+        ET.SubElement(item, 'title').text = XML_INVALID_CHAR_PATTERN.sub('', message.header.msgsubject)
+
+        # pubDate
+        dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+        ET.SubElement(item, 'pubDate').text = email.utils.format_datetime(dt)
+
+        ET.SubElement(item, 'author').text = XML_INVALID_CHAR_PATTERN.sub('', message.header.msgfrom)
+
+        # GUID
+        msg_id = f"{message.header.confnum}.{message.header.msgnum if message.header.msgnum is not None else 'x'}@qwk"
+        guid = ET.SubElement(item, 'guid', isPermaLink='false')
+        guid.text = msg_id
+
+        # Description (body)
+        desc = ET.SubElement(item, 'description')
+        desc.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
+
+        if message.confname:
+            ET.SubElement(item, 'category').text = XML_INVALID_CHAR_PATTERN.sub('', message.confname)
+
+    xml_text = '<?xml version="1.0" encoding="utf-8"?>\n' + _xml_element_to_str(rss)
+    _write_text_output(xml_text, output_path, encoding='utf-8')
+
+
 def _get_html_header(title: str) -> list[str]:
     return [
         '<!DOCTYPE html>',
@@ -3781,6 +3829,7 @@ def write_messages(
         'json': _write_json,
         'jsonl': _write_jsonl,
         'xml': _write_xml,
+        'rss': _write_rss,
         'html': _write_html,
         'markdown': _write_markdown,
         'text': _write_text,
