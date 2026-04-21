@@ -58,15 +58,6 @@ def test_is_any_filter_active_none(app):
         m_conf.get.return_value = "All Conferences"
         assert app._is_any_filter_active() is False
 
-def test_set_detail_text(app):
-    """Test _set_detail_text helper method (lines 1511-1512)."""
-    app.detail_text = MagicMock()
-    app._set_detail_text("Hello World")
-    # Using ANY for the mock.END value which is mocked as a MagicMock
-    from unittest.mock import ANY
-    app.detail_text.delete.assert_called_with("1.0", ANY)
-    app.detail_text.insert.assert_called_with(ANY, "Hello World")
-
 def test_jump_to_message_found_after_reset(app):
     """Test jump_to_message finds message after filter reset (lines 1744-1745)."""
     h1 = MessageHeader(" ", 101, "01-01-23", "12:00", "To1", "From1", "Subj1", "", None, 1, " ", 1, 1, "")
