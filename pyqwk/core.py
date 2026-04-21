@@ -1232,7 +1232,11 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
 
         attachments = None
         if attach_match:
-            attachments = [clean_html(a) for a in attach_match.group(1).split(',')]
+            attachments = [
+                clean_html(a) for a in attach_match.group(1).split(',') if clean_html(a)
+            ]
+            if not attachments:
+                attachments = None
 
         body = ""
         body_match = re_body.search(block)
@@ -1380,6 +1384,8 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
                 attachments = re.findall(r'\[(.*?)\]', attach_str)
             else:
                 attachments = [a.strip() for a in attach_str.split(',') if a.strip()]
+            if not attachments:
+                attachments = None
 
         # Message body: everything after the information lines
         # In our Markdown format, metadata ends at the first blank line.
