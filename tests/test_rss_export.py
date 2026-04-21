@@ -1,4 +1,3 @@
-import os
 import xml.etree.ElementTree as ET
 import pytest
 from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, write_messages, BBSInfo

@@ -2800,7 +2800,7 @@ def _write_rss(
     rss = ET.Element('rss', version='2.0')
     channel = ET.SubElement(rss, 'channel')
     ET.SubElement(channel, 'title').text = title
-    ET.SubElement(channel, 'link').text = "https://github.com/v86/pyqwk"
+    ET.SubElement(channel, 'link').text = "https://github.com/RainRat/pyqwk"
     ET.SubElement(channel, 'description').text = f"Syndicated messages from {title}"
     ET.SubElement(channel, 'generator').text = f"pyqwk {__version__}"
 

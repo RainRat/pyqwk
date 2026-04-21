@@ -1,7 +1,6 @@
 import sys
 from unittest.mock import MagicMock, patch
 import pytest
-import os
 
 # Mock tkinter before any pyqwk.gui imports
 mock_tk = MagicMock()
@@ -19,7 +18,7 @@ from pyqwk.core import ParsedMessage, MessageHeader, _compute_stats_from_message
 def app():
     root = MagicMock()
     with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
+         patch("pyqwk.gui.ttk"), \
          patch("pyqwk.gui.simpledialog"):
 
         # Ensure distinct mocks for each Variable call to avoid crosstalk
@@ -100,7 +99,7 @@ def test_show_stats_attachment_charts_and_callback(app):
         "top_attachment_types": [{"extension": ".txt", "count": 1}]
     }
 
-    with patch("pyqwk.gui.tk.Toplevel") as mock_top, \
+    with patch("pyqwk.gui.tk.Toplevel"), \
          patch("pyqwk.gui.tk.Text") as mock_text, \
          patch.object(app, "reload_messages") as mock_reload:
 
