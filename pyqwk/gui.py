@@ -63,13 +63,13 @@ class QwkGuiApp:
 
         self.column_labels = {
             "#0": "Subject",
-            "Flags": "!",
+            "Flags": "Flags",
             "Num": "Num",
             "From": "From",
             "To": "To",
             "Date": "Date",
             "Size": "Size",
-            "Conference": "Conf",
+            "Conference": "Conference",
             "BBS": "BBS",
         }
 
@@ -707,14 +707,14 @@ class QwkGuiApp:
             )
 
         self.message_list.column("#0", minwidth=200, width=300)
-        self.message_list.column("Flags", minwidth=40, width=45, anchor=tk.CENTER)
-        self.message_list.column("Num", minwidth=50, width=60, anchor=tk.E)
+        self.message_list.column("Flags", minwidth=60, width=60, stretch=False, anchor=tk.CENTER)
+        self.message_list.column("Num", minwidth=60, width=60, stretch=False, anchor=tk.E)
         self.message_list.column("From", minwidth=80, width=150)
         self.message_list.column("To", minwidth=80, width=150)
         self.message_list.column("Date", minwidth=80, width=120)
-        self.message_list.column("Size", minwidth=60, width=70, anchor=tk.E)
-        self.message_list.column("Conference", minwidth=50, width=60)
-        self.message_list.column("BBS", minwidth=80, width=100)
+        self.message_list.column("Size", minwidth=70, width=70, stretch=False, anchor=tk.E)
+        self.message_list.column("Conference", minwidth=80, width=120)
+        self.message_list.column("BBS", minwidth=80, width=120)
 
         scrollbar = ttk.Scrollbar(
             list_frame, orient=tk.VERTICAL, command=self.message_list.yview
