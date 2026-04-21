@@ -1,4 +1,4 @@
-"""Backward-compatible wrapper for the pyqwk package."""
+"""Run the pyqwk tool directly from this folder."""
 
 from pyqwk import core as _core
 from pyqwk.cli import main
