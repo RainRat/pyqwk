@@ -691,20 +691,7 @@ class QwkGuiApp:
             selectmode="browse",
         )
 
-        for col, label in self.column_labels.items():
-            if col in ("Num", "Size"):
-                header_anchor = tk.E
-            elif col == "Flags":
-                header_anchor = tk.CENTER
-            else:
-                header_anchor = tk.W
-
-            self.message_list.heading(
-                col,
-                text=label,
-                anchor=header_anchor,
-                command=lambda c=col: self.sort_column(c, False),
-            )
+        self._reset_column_headers()
 
         self.message_list.column("#0", minwidth=200, width=300)
         self.message_list.column("Flags", minwidth=60, width=60, stretch=False, anchor=tk.CENTER)
@@ -1175,9 +1162,17 @@ class QwkGuiApp:
         if self.current_paths:
             self.load_messages(self.current_paths)
 
-    def _reset_column_headers(self) -> None:
-        """Reset all column headers to their original labels without sort indicators."""
+    def _reset_column_headers(self, sort_col: str | None = None, reverse: bool = False) -> None:
+        """Reset column headers to their original labels and optionally apply sort indicators."""
         for col, label in self.column_labels.items():
+            if col == sort_col:
+                label += " ▼" if reverse else " ▲"
+                # If we just sorted this column, the next click should reverse it
+                next_reverse = not reverse
+            else:
+                # If we click a different column, it should start as ascending
+                next_reverse = False
+
             if col in ("Num", "Size"):
                 header_anchor = tk.E
             elif col == "Flags":
@@ -1189,7 +1184,7 @@ class QwkGuiApp:
                 col,
                 text=label,
                 anchor=header_anchor,
-                command=lambda c=col: self.sort_column(c, False)
+                command=lambda c=col, r=next_reverse: self.sort_column(c, r)
             )
 
     def load_messages(self, paths: str | list[str]) -> None:
@@ -2018,29 +2013,7 @@ class QwkGuiApp:
         self._apply_zebra_striping()
 
         # Update all headings to show indicators and set correct toggle commands
-        for c in self.column_labels:
-            label = self.column_labels[c]
-            if c == col:
-                label += " ▼" if reverse else " ▲"
-                # If we just sorted this column, the next click should reverse it
-                next_reverse = not reverse
-            else:
-                # If we click a different column, it should start as ascending
-                next_reverse = False
-
-            if c in ("Num", "Size"):
-                header_anchor = tk.E
-            elif c == "Flags":
-                header_anchor = tk.CENTER
-            else:
-                header_anchor = tk.W
-
-            self.message_list.heading(
-                c,
-                text=label,
-                anchor=header_anchor,
-                command=lambda _c=c, _r=next_reverse: self.sort_column(_c, _r)
-            )
+        self._reset_column_headers(col, reverse)
 
 
 def main() -> None:
