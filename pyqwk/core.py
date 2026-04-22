@@ -41,7 +41,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file == 'messages.dat':
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -970,6 +970,78 @@ def _safe_to_int(v: Any) -> int | None:
         return None
 
 
+def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
+    """Convert an RSS XML tree into ParsedMessage objects."""
+    messages = []
+    channel = root.find('channel')
+    if channel is None:
+        return messages
+
+    # Global BBS info from channel title/description if available
+    channel_title = channel.findtext('title') or ""
+    if channel_title == 'QWK Message Archive':
+        bbs_name = ""
+    else:
+        bbs_name = channel_title.removesuffix(' Archive') if channel_title.endswith(' Archive') else channel_title
+
+    for item in channel.findall('item'):
+        title = item.findtext('title') or ""
+        author = item.findtext('author') or ""
+        pub_date_str = item.findtext('pubDate')
+        guid = item.findtext('guid') or ""
+        description = item.findtext('description') or ""
+        category = item.findtext('category') or ""
+
+        # Parse date
+        msg_date = "01-01-70"
+        msg_time = "00:00"
+        if pub_date_str:
+            try:
+                dt = email.utils.parsedate_to_datetime(pub_date_str)
+                msg_date = dt.strftime('%m-%d-%y')
+                msg_time = dt.strftime('%H:%M')
+            except (ValueError, TypeError):
+                pass
+
+        # Parse GUID: {confnum}.{msgnum}@qwk
+        confnum = 0
+        msgnum = None
+        if '@qwk' in guid:
+            parts = guid.split('@')[0].split('.')
+            if len(parts) == 2:
+                confnum = _safe_to_int(parts[0]) or 0
+                msgnum = _safe_to_int(parts[1])
+
+        header = MessageHeader(
+            status=' ',
+            msgnum=msgnum,
+            msgdate=msg_date,
+            msgtime=msg_time,
+            msgto='All',
+            msgfrom=author,
+            msgsubject=title,
+            msgpassword='',
+            refnum=None,
+            numblocks=None,
+            msgflag=' ',
+            confnum=confnum,
+            lognum=0,
+            nettag=' ',
+        )
+
+        msg = ParsedMessage(
+            text=description,
+            msgnum=msgnum,
+            refnum=None,
+            confnum=confnum,
+            header=header,
+            confname=category or None,
+            bbs_name=bbs_name or None,
+        )
+        messages.append(msg)
+    return messages
+
+
 def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
     """Convert an XML tree into ParsedMessage objects."""
     messages = []
@@ -1552,11 +1624,14 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith('.xml'):
+    if input_path.lower().endswith(('.xml', '.rss')):
         try:
             tree = ET.parse(input_path)
             root = tree.getroot()
-            messages = _parse_xml_messages(root)
+            if input_path.lower().endswith('.rss') or root.tag == 'rss':
+                messages = _parse_rss_messages(root)
+            else:
+                messages = _parse_xml_messages(root)
         except Exception as e:
             raise ValueError(f"Failed to load XML archive: {e}")
 
