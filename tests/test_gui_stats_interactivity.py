@@ -91,7 +91,7 @@ def test_stats_window_interactivity(app):
 
         # Verify instructional tip was inserted
         inserted_texts = [call.args[1] for call in mock_txt.insert.call_args_list if len(call.args) > 1]
-        assert any("Tip: Click on Authors" in text for text in inserted_texts)
+        assert any("Tip: Click on any chart label" in text for text in inserted_texts)
 
         # Find tags
         author_tags = [tag for tag in tag_callbacks if tag.startswith("filter_author")]

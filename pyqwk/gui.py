@@ -1749,6 +1749,7 @@ class QwkGuiApp:
             title_suffix = os.path.basename(self.current_paths[0]) if len(self.current_paths) == 1 else f"{len(self.current_paths)} archives"
             stats_win.title(f"Statistics - {title_suffix}")
             stats_win.geometry("750x700")
+            stats_win.bind("<Escape>", lambda e: stats_win.destroy())
 
             main_frame = ttk.Frame(stats_win, padding=10)
             main_frame.pack(fill=tk.BOTH, expand=True)
@@ -1781,7 +1782,7 @@ class QwkGuiApp:
             # Rendering logic
             display_name = os.path.basename(stats['file']) if len(self.current_paths) == 1 else "Multiple Archives"
             txt.insert(tk.END, f"Statistics for: {display_name}\n\n", "h1")
-            txt.insert(tk.END, "Tip: Click on Authors, Conferences, BBSes, or Attachments to filter the main view.\n", "dim")
+            txt.insert(tk.END, "Tip: Click on any chart label to filter the main view.\n", "dim")
 
             def insert_info(label, value):
                 txt.insert(tk.END, f"  {label:<15}: ", "info_label")
@@ -1867,23 +1868,23 @@ class QwkGuiApp:
                 items = [(f"{c['number']:3} {c['name']}", c["count"], c["number"]) for c in stats['conferences']]
                 render_gui_bar_chart('Top Conferences', items, filter_type='conf')
 
-            render_gui_bar_chart('Top Subjects', [(s["subject"], s["count"]) for s in stats['subjects']])
-            render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']])
+            render_gui_bar_chart('Top Subjects', [(s["subject"], s["count"]) for s in stats['subjects']], filter_type='search')
+            render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']], filter_type='search')
 
             if stats.get('links'):
-                render_gui_bar_chart('Top Links', [(link["url"], link["count"]) for link in stats['links']])
+                render_gui_bar_chart('Top Links', [(link["url"], link["count"]) for link in stats['links']], filter_type='search')
 
             if stats.get('emails'):
-                render_gui_bar_chart('Top Emails', [(e["email"], e["count"]) for e in stats['emails']])
+                render_gui_bar_chart('Top Emails', [(e["email"], e["count"]) for e in stats['emails']], filter_type='search')
 
             if stats.get('phones'):
-                render_gui_bar_chart('Top Phone Numbers', [(p["phone"], p["count"]) for p in stats['phones']])
+                render_gui_bar_chart('Top Phone Numbers', [(p["phone"], p["count"]) for p in stats['phones']], filter_type='search')
 
             if stats.get('top_attachments'):
                 render_gui_bar_chart('Top Attachments', [(a["name"], a["count"], a["name"]) for a in stats['top_attachments']], filter_type='search')
 
             if stats.get('top_attachment_types'):
-                render_gui_bar_chart('Top Attachment Types', [(t["extension"], t["count"]) for t in stats['top_attachment_types']])
+                render_gui_bar_chart('Top Attachment Types', [(t["extension"], t["count"]) for t in stats['top_attachment_types']], filter_type='search')
 
             if stats['day_of_week']:
                 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
