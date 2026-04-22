@@ -247,7 +247,7 @@ qwk archives/ --search "BBS" --dry-run
 
 ## Library Usage
 
-Use `pyqwk` in your own Python projects:
+You can use `pyqwk` as a library in your own Python projects:
 
 ```python
 import logging
@@ -258,10 +258,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyqwk")
 
 # Load the archive
-# file_data can be raw data or a list of messages
+# file_data contains either original bytes (for QWK/REP) or a list of messages
 file_data, board_dict = load_data("archive.qwk", logger)
 
-# Parse raw data if needed
+# Parse the bytes if the archive is in a legacy format
 if isinstance(file_data, list):
     messages = file_data
 else:
