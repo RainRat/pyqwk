@@ -20,6 +20,8 @@ from pyqwk.core import (
     _order_messages_by_thread,
     organize_by_bbs,
     matches_filters,
+    _parse_html_messages,
+    _parse_markdown_messages,
 )
 from unittest.mock import MagicMock, patch
 
@@ -251,3 +253,93 @@ def test_matches_filters_password():
     )
     # Passworded messages are always filtered out
     assert not matches_filters(msg, settings, set())
+
+def test_format_text_private():
+    header = MessageHeader(
+        status="*",
+        msgnum=1,
+        msgdate="01-01-24",
+        msgtime="12:00",
+        msgto="To",
+        msgfrom="From",
+        msgsubject="Subject",
+        msgpassword="",
+        refnum=0,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag=""
+    )
+    formatted = header.format_text({1: "General"}, verbose=False)
+    assert "Status:         [PRIVATE]" in formatted
+
+def test_format_oneline_flags():
+    header = MessageHeader(
+        status="*",
+        msgnum=1,
+        msgdate="01-01-24",
+        msgtime="12:00",
+        msgto="To",
+        msgfrom="From",
+        msgsubject="Subject",
+        msgpassword="",
+        refnum=0,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag=""
+    )
+
+    formatted = header.format_oneline({1: "General"}, is_private=True)
+    assert "*  Subject" in formatted
+
+    formatted = header.format_oneline({1: "General"}, has_attachments=True)
+    assert "@  Subject" in formatted
+
+    formatted = header.format_oneline({1: "General"}, is_private=True, has_attachments=True)
+    assert "*@ Subject" in formatted
+
+    formatted = header.format_oneline({1: "General"}, is_private=True, use_colors=True)
+    assert "\x1b[90m* \x1b[0m Subject" in formatted
+
+def test_parse_html_empty_attachments(tmp_path):
+    html_content = """
+    <div class="message">
+    <div class="header">
+    <strong>Number:</strong> 1<br>
+    <strong>Date:</strong> 01-01-24 12:00<br>
+    <strong>From:</strong> Alice<br>
+    <strong>To:</strong> Bob<br>
+    <strong>Subject:</strong> Hello<br>
+    <strong>Conference:</strong> General (1)<br>
+    <strong>Attachments:</strong>  </div>
+    <pre class="body">Hello world</pre>
+    </div>
+    """
+    p = tmp_path / "test.html"
+    p.write_text(html_content)
+
+    messages = list(_parse_html_messages(str(p)))
+    assert len(messages) == 1
+    assert messages[0].attachments is None
+
+def test_parse_markdown_empty_attachments(tmp_path):
+    md_content = """
+## Message 1
+- **Date:** 01-01-24 12:00
+- **From:** Alice
+- **To:** Bob
+- **Subject:** Hello
+- **Conference:** General (1)
+- **Attachments:**
+
+Hello world
+"""
+    p = tmp_path / "test.md"
+    p.write_text(md_content)
+
+    messages = list(_parse_markdown_messages(str(p)))
+    assert len(messages) == 1
+    assert messages[0].attachments is None
