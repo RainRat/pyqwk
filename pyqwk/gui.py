@@ -60,6 +60,7 @@ class QwkGuiApp:
         self.bbs_mapping = {}
         self._search_matches = []
         self._current_match_idx = -1
+        self._pending_match_idx: int | None = None
 
         self.column_labels = {
             "#0": "Subject",
@@ -481,18 +482,22 @@ class QwkGuiApp:
             traverse(root_item)
         return items
 
-    def _select_relative_message(self, delta: int, force: bool = False) -> None:
-        """Move the selection up or down in the treeview display order."""
+    def _select_relative_message(self, delta: int, force: bool = False) -> bool:
+        """Move the selection up or down in the treeview display order.
+
+        Returns:
+            True if the selection changed, False otherwise.
+        """
         if not self.messages:
-            return
+            return False
 
         # If the search entry has focus, don't hijack keyboard navigation unless forced
         if not force and self.root.focus_get() == self.search_entry:
-            return
+            return False
 
         all_items = self._get_all_tree_items()
         if not all_items:
-            return
+            return False
 
         current_selection = self.message_list.selection()
         if not current_selection:
@@ -503,12 +508,15 @@ class QwkGuiApp:
                 current_idx = all_items.index(current_iid)
                 new_idx = max(0, min(len(all_items) - 1, current_idx + delta))
                 new_item = all_items[new_idx]
+                if new_item == current_iid:
+                    return False
             except ValueError:
                 new_item = all_items[0]
 
         self.message_list.selection_set(new_item)
         self.message_list.see(new_item)
         self.message_list.focus(new_item)
+        return True
 
     def clear_search(self, _event: object | None = None) -> None:
         """Clear the search bar first, and if already empty, reset all filters."""
@@ -1045,43 +1053,79 @@ class QwkGuiApp:
 
             self.detail_text.tag_raise("search_highlight")
             if self._search_matches:
-                self._current_match_idx = 0
-                self.detail_text.see(self._search_matches[0][0])
-                self.detail_text.tag_add("current_search_highlight", self._search_matches[0][0], self._search_matches[0][1])
+                # Determine initial match index
+                if self._pending_match_idx is not None:
+                    self._current_match_idx = self._pending_match_idx % len(self._search_matches)
+                    self._pending_match_idx = None
+                else:
+                    self._current_match_idx = 0
+
+                start_pos, end_pos = self._search_matches[self._current_match_idx]
+                self.detail_text.see(start_pos)
+                self.detail_text.tag_add("current_search_highlight", start_pos, end_pos)
                 self.detail_text.tag_raise("current_search_highlight")
 
                 # Update counters
-                self.search_count_label.config(text=f"1 / {len(self._search_matches)}")
+                self.search_count_label.config(text=f"{self._current_match_idx + 1} / {len(self._search_matches)}")
 
                 # Update status feedback
                 source_display = self.root.title().split(" - ")[0]
                 self.status_label.config(
-                    text=f"Match 1 of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
+                    text=f"Match {self._current_match_idx + 1} of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
                 )
             else:
                 self.search_count_label.config(text="0 / 0")
 
     def _navigate_search_matches(self, delta: int, _event: object | None = None) -> None:
-        """Cycle through search matches in the detail view."""
+        """Cycle through search matches in the detail view, navigating across messages if needed."""
         if not self._search_matches:
+            # If no matches in current message, but search is active, try to find in other messages
+            if self.search_var.get().strip():
+                if self._select_relative_message(delta, force=True):
+                    self._pending_match_idx = 0 if delta > 0 else -1
+                    return
             return
 
-        # Remove existing current highlight
+        new_idx = self._current_match_idx + delta
+
+        # Cross-message navigation
+        if new_idx < 0 or new_idx >= len(self._search_matches):
+            if self._select_relative_message(delta, force=True):
+                self._pending_match_idx = 0 if delta > 0 else -1
+                return
+            else:
+                # Boundary reached, implement archive-wide wrap-around
+                all_items = self._get_all_tree_items()
+                if not all_items:
+                    return
+                target_iid = all_items[0] if delta > 0 else all_items[-1]
+
+                # Handle case where the wrap-around target is the current message
+                current_sel = self.message_list.selection()
+                if current_sel and current_sel[0] == target_iid:
+                    # Manually trigger render since selection_set won't trigger event
+                    self._pending_match_idx = 0 if delta > 0 else -1
+                    try:
+                        self._render_message(int(target_iid))
+                    except (ValueError, IndexError):
+                        pass
+                else:
+                    self.message_list.selection_set(target_iid)
+                    self.message_list.see(target_iid)
+                    self.message_list.focus(target_iid)
+                    self._pending_match_idx = 0 if delta > 0 else -1
+                return
+
+        # Single-message navigation
         self.detail_text.tag_remove("current_search_highlight", "1.0", tk.END)
-
-        # Update index
-        self._current_match_idx = (self._current_match_idx + delta) % len(self._search_matches)
-
-        # Apply new highlight and scroll
+        self._current_match_idx = new_idx
         start_pos, end_pos = self._search_matches[self._current_match_idx]
         self.detail_text.tag_add("current_search_highlight", start_pos, end_pos)
         self.detail_text.tag_raise("current_search_highlight")
         self.detail_text.see(start_pos)
 
-        # Update counters
+        # Update counters and status
         self.search_count_label.config(text=f"{self._current_match_idx + 1} / {len(self._search_matches)}")
-
-        # Update status feedback
         source_display = self.root.title().split(" - ")[0]
         self.status_label.config(
             text=f"Match {self._current_match_idx + 1} of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"

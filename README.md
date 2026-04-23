@@ -93,7 +93,7 @@ qwk-gui messages.db
 ```
 
 **Key Features:**
-- **Search:** Find messages by keyword or use "Regex" for advanced patterns. Cycle through matches with **F3** or **Shift + F3**. You can also right-click any highlighted text to search for it instantly.
+- **Search:** Find messages by keyword or use "Regex" for advanced patterns. Traversal is seamless: cycle through matches with **F3** or **Shift + F3**, and the reader will automatically move to the next or previous message when you reach the end of the current one. You can also right-click any highlighted text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
 - **Filtering:** Narrow your view by BBS, conference, author, or recipient. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.

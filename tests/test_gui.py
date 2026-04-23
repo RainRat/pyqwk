@@ -565,14 +565,13 @@ class TestQwkGui:
         app._select_relative_message(1)
         app.message_list.selection_set.assert_called_with("1")
 
-        # Selection at index 2 -> move to next (stay at 2)
+        # Selection at index 2 -> move to next (stay at 2, returns False)
         app.message_list.selection.return_value = ("2",)
-        app._select_relative_message(1)
-        app.message_list.selection_set.assert_called_with("2")
+        assert app._select_relative_message(1) is False
 
         # Move back
         app.message_list.selection.return_value = ("1",)
-        app._select_relative_message(-1)
+        assert app._select_relative_message(-1) is True
         app.message_list.selection_set.assert_called_with("0")
 
     def test_render_message_stripping(self, mock_gui_deps):
