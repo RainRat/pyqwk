@@ -1541,22 +1541,22 @@ def load_data(
 ) -> tuple[bytearray | list[ParsedMessage], ConferenceMap]:
     """Load message data and conference mappings from an archive file.
 
-    This function handles both raw legacy formats (QWK, REP) and modern
-    structured formats (JSON, SQLite, XML, CSV, mbox, EML).
+    This function handles both older formats (QWK, REP) and modern
+    formats (JSON, SQLite, XML, CSV, mbox, EML).
 
     Args:
-        input_path: Path to the archive file or a raw 'MESSAGES.DAT' file.
+        input_path: Path to the archive file or an original 'MESSAGES.DAT' file.
         logger: Logger for reporting warnings and informational messages.
-        encoding: The character set used to decode legacy text (default is 'cp437').
+        encoding: The character set used to decode text (default is 'cp437').
 
     Returns:
         A tuple of (file_data, board_dict):
-        - file_data: A 'bytearray' of raw records for QWK/REP files, or
-          a list of 'ParsedMessage' objects for modern structured formats.
+        - file_data: A 'bytearray' of original bytes for QWK/REP files, or
+          a list of 'ParsedMessage' objects for modern formats.
         - board_dict: A 'ConferenceMap' linking conference numbers to names,
           which may also include BBS information.
 
-        Note: When loading a raw 'MESSAGES.DAT' file, it automatically searches
+        Note: When loading an original 'MESSAGES.DAT' file, it automatically searches
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
     board_dict: dict[int, str] = {}
@@ -1847,10 +1847,10 @@ def parse_messages(
     encoding: str = 'cp437',
     headers_only: bool = False,
 ) -> Iterator[ParsedMessage]:
-    """Convert the raw data from a QWK message file into a list of messages.
+    """Convert the original bytes from a QWK message file into a list of messages.
 
     Args:
-        file_data: Raw bytes from a messages.dat file.
+        file_data: Original bytes from a messages.dat file.
         progress_bar: Optional progress reporter to update as blocks are read.
         encoding: The text format to use when reading messages.
         headers_only: If True, skips reading the message body content.
@@ -1947,7 +1947,7 @@ def process_message(
     redact_pii: bool,
     strip_ansi: bool = False,
 ) -> str:
-    """Clean up and format a raw message body.
+    """Clean up and format a message body.
 
     Args:
         message_buffer: The original message text.
@@ -2363,7 +2363,7 @@ def process_merged_files(
                 if not settings.dry_run:
                     os.makedirs(attach_dir, exist_ok=True)
                     for filename, data in found_attachments:
-                        # Sanitize filename to prevent path traversal
+                        # Use only the filename to prevent saving files in unexpected locations
                         filename = os.path.basename(filename)
                         if not filename:
                             filename = "attachment.bin"
@@ -2439,11 +2439,11 @@ def process_merged_files(
                 )
                 processed_buffer = header_text + processed_buffer
 
-            # Add separator for text format, or if headers are enabled (legacy behavior for non-text formats)
+            # Add separator for text format, or if headers are enabled (standard behavior for non-text formats)
             if settings.format == 'text' or include_header:
                 processed_buffer = separator_str + processed_buffer
 
-        # Determine appropriate text content for structured formats
+        # Determine appropriate text content for modern formats
         if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml') and settings.headers_only:
             text_content = ""
         elif (

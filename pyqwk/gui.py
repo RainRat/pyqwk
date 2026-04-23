@@ -1501,7 +1501,7 @@ class QwkGuiApp:
             idx = int(current_selection[0])
             msg = self.messages[idx]
 
-            # Re-extract to get the raw data
+            # Re-extract to get the original bytes
             if not msg.text:
                 return
             found = extract_binaries(msg.text)
@@ -1553,7 +1553,7 @@ class QwkGuiApp:
                             filename = "attachment.bin"
 
                         target_path = os.path.join(folder, filename)
-                        # Collision avoidance
+                        # Avoid duplicate filenames
                         if os.path.exists(target_path):
                             base, ext = os.path.splitext(filename)
                             counter = 1
