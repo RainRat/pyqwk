@@ -106,10 +106,11 @@ class TestSearchNavigation:
         app._navigate_search_matches(-1)
         assert app._current_match_idx == 0
 
-        # Navigate backward again (wrap around to end)
+        # Navigate backward again (wrap around)
+        app._select_relative_message = MagicMock(return_value=False)
+        app._get_all_tree_items = MagicMock(return_value=["0", "1", "2"])
         app._navigate_search_matches(-1)
-        assert app._current_match_idx == 2
-        app.detail_text.see.assert_called_with("3.0")
+        assert app._pending_match_idx == -1
 
     def test_menu_and_bindings(self, mock_gui_deps):
         app = get_app()

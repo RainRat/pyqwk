@@ -38,9 +38,13 @@ def app():
         return app
 
 def test_navigate_search_matches_cycling(app):
-    """Test _navigate_search_matches cycling and UI updates (lines 1090-1110)."""
+    """Test _navigate_search_matches cycling and UI updates."""
     app._search_matches = [("1.0", "1.5"), ("2.0", "2.5")]
     app._current_match_idx = 0
+    # Mock _select_relative_message to return False (no other messages)
+    app._select_relative_message = MagicMock(return_value=False)
+    # Mock treeview items for wrap-around
+    app._get_all_tree_items = MagicMock(return_value=["0", "1"])
 
     # Cycle forward
     app._navigate_search_matches(1)
@@ -48,15 +52,19 @@ def test_navigate_search_matches_cycling(app):
     app.detail_text.tag_add.assert_called_with("current_search_highlight", "2.0", "2.5")
     app.search_count_label.config.assert_called_with(text="2 / 2")
 
-    # Cycle forward again (wrap around)
+    # Cycle forward again (wrap around archive-wide)
     app._navigate_search_matches(1)
-    assert app._current_match_idx == 0
-    app.detail_text.tag_add.assert_called_with("current_search_highlight", "1.0", "1.5")
-    app.search_count_label.config.assert_called_with(text="1 / 2")
+    app.message_list.selection_set.assert_called_with("0")
+    assert app._pending_match_idx == 0
 
-    # Cycle backward (wrap around to end)
+    # Reset for backward test
+    app._current_match_idx = 0
+    app.message_list.selection_set.reset_mock()
+
+    # Cycle backward (wrap around archive-wide)
     app._navigate_search_matches(-1)
-    assert app._current_match_idx == 1
+    app.message_list.selection_set.assert_called_with("1")
+    assert app._pending_match_idx == -1
 
 def test_on_search_changed_debouncing(app):
     """Test _on_search_changed debouncing logic (lines 1158-1160)."""
