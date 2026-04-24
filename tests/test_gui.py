@@ -752,3 +752,49 @@ class TestQwkGui:
         app._focus_search()
         app.search_entry.focus_set.assert_called_once()
         app.search_entry.selection_range.assert_called_with(0, mock_gui_deps["tk"].END)
+
+class TestSearchNavigationGaps:
+    def test_gui_search_nav_no_matches_but_active(self, mock_gui_deps):
+        app = get_app()
+        app._search_matches = []
+        app.search_var.get.return_value = "test"
+
+        with patch.object(app, '_select_relative_message', return_value=True) as mock_select:
+            app._navigate_search_matches(1)
+            mock_select.assert_called_with(1, force=True)
+            assert app._pending_match_idx == 0
+
+    def test_gui_search_nav_wrap_empty_tree(self, mock_gui_deps):
+        app = get_app()
+        app._search_matches = [1]
+        app._current_match_idx = 0
+
+        with patch.object(app, '_select_relative_message', return_value=False),              patch.object(app, '_get_all_tree_items', return_value=[]):
+            # Trigger wrap-around with delta=1, but tree is empty
+            app._navigate_search_matches(1)
+            # Should return early (line 1100)
+
+    def test_gui_search_nav_wrap_current_message(self, mock_gui_deps):
+        app = get_app()
+        app._search_matches = [1]
+        app._current_match_idx = 0
+
+        with patch.object(app, '_select_relative_message', return_value=False),              patch.object(app, '_get_all_tree_items', return_value=["0"]),              patch.object(app, '_render_message') as mock_render:
+
+            app.message_list.selection.return_value = ("0",)
+            # Target IID will be "0" since it's the only item
+            app._navigate_search_matches(1)
+
+            mock_render.assert_called_with(0)
+            assert app._pending_match_idx == 0
+
+    def test_gui_search_nav_wrap_current_message_invalid_iid(self, mock_gui_deps):
+        app = get_app()
+        app._search_matches = [1]
+        app._current_match_idx = 0
+
+        with patch.object(app, '_select_relative_message', return_value=False),              patch.object(app, '_get_all_tree_items', return_value=["not-an-int"]),              patch.object(app, '_render_message', side_effect=ValueError):
+
+            app.message_list.selection.return_value = ("not-an-int",)
+            app._navigate_search_matches(1)
+            # Should catch ValueError and pass (line 1111)
