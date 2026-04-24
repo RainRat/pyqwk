@@ -594,6 +594,15 @@ class QwkGuiApp:
 
         ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
+        nav_frame = ttk.Frame(row1)
+        nav_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Label(nav_frame, text="Msg:").pack(side=tk.LEFT)
+        ttk.Button(nav_frame, text="Prev", width=6, command=lambda: self._select_relative_message(-1)).pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Button(nav_frame, text="Next", width=6, command=lambda: self._select_relative_message(1)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(nav_frame, text="Jump", width=6, command=self.prompt_jump_to_message).pack(side=tk.LEFT, padx=2)
+
+        ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
         search_frame = ttk.Frame(row1)
         search_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
