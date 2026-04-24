@@ -26,7 +26,7 @@ if "tkinter.simpledialog" not in sys.modules:
 
 import pyqwk.gui
 from pyqwk.gui import QwkGuiApp
-from pyqwk.core import ParsedMessage, MessageHeader
+from pyqwk.core import ParsedMessage, MessageHeader, format_size
 
 @pytest.fixture
 def app():
@@ -53,9 +53,9 @@ def app():
         return a
 
 def test_format_size_kb_mb(app):
-    """Cover lines 188-191: KB and MB formatting in _format_size."""
-    assert app._format_size(1500) == "1.5 KB"
-    assert app._format_size(2000000) == "1.9 MB"
+    """Cover KB and MB formatting in format_size."""
+    assert format_size(1500) == "1.5 KB"
+    assert format_size(2000000) == "1.9 MB"
 
 def test_show_stats_window_with_links(app):
     """Cover line 1545: Top Links in stats window."""

@@ -12,6 +12,7 @@ from tkinter import filedialog, messagebox, ttk, simpledialog
 from pyqwk.core import (
     ProcessingSettings,
     _order_messages_by_thread,
+    format_size,
     load_data,
     parse_messages,
     process_message,
@@ -190,15 +191,6 @@ class QwkGuiApp:
             pass
 
         menu.post(event.x_root, event.y_root)
-
-    def _format_size(self, size: int) -> str:
-        """Format byte count into a human-readable string (B, KB, MB)."""
-        if size < 1024:
-            return f"{size} B"
-        elif size < 1024 * 1024:
-            return f"{size / 1024:.1f} KB"
-        else:
-            return f"{size / (1024 * 1024):.1f} MB"
 
     def _search_from_selection(self) -> None:
         """Search for the currently selected text in the detail viewer."""
@@ -1475,7 +1467,7 @@ class QwkGuiApp:
                         header.msgfrom.strip(),
                         header.msgto.strip(),
                         f"{header.msgdate} {header.msgtime}",
-                        self._format_size(len(message.text)) if message.text else "0 B",
+                        format_size(len(message.text)) if message.text else "0 B",
                         conf_name,
                         message.bbs_name or message.bbs_id or "",
                     ),

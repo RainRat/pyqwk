@@ -2211,6 +2211,16 @@ def _slugify(text: str, default: str) -> str:
     return slug if slug else default
 
 
+def format_size(size: int) -> str:
+    """Format byte count into a human-readable string (B, KB, MB)."""
+    if size < 1024:
+        return f"{size} B"
+    elif size < 1024 * 1024:
+        return f"{size / 1024:.1f} KB"
+    else:
+        return f"{size / (1024 * 1024):.1f} MB"
+
+
 def _generate_safe_filename(message: ParsedMessage, settings_or_format: ProcessingSettings | str, count: int) -> str:
     """Generate a human-readable filename for an individual message."""
     if isinstance(settings_or_format, ProcessingSettings):
@@ -2747,7 +2757,7 @@ def process_merged_files(
         else:
             print("Files to create:    1 (merged)")
 
-        size_str = f"{estimated_bytes / 1024:.1f} KB" if estimated_bytes < 1024 * 1024 else f"{estimated_bytes / (1024 * 1024):.1f} MB"
+        size_str = format_size(estimated_bytes)
         print(f"Estimated size:     {size_str}")
         print(f"{_colorize('No changes were made to the disk.', BOLD)}")
 
