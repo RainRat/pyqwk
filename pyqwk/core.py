@@ -2952,54 +2952,59 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
         latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
         parts.append(f'<div><strong>Date Range:</strong> {earliest} to {latest}</div>')
     parts.append(f'<div><strong>Reply Rate:</strong> {stats["reply_rate"]}%</div>')
+    parts.append(f'<div><strong>Avg Length:</strong> {int(stats.get("avg_message_length", 0))} characters</div>')
     parts.append('</div>')
+
+    def render_html_bar_chart(title, items, label_key, count_key):
+        if not items:
+            return
+        parts.append('<div class="stats-box">')
+        parts.append(f'<h3>{title}</h3>')
+        max_count = max(item[count_key] for item in items) if items else 1
+        for item in items[:5]:
+            width = int(item[count_key] * 100 / max_count)
+            label = str(item[label_key])
+            parts.append('<div class="stats-bar-container">')
+            parts.append(f'<div class="stats-bar-label" title="{html.escape(label)}">{html.escape(label)}</div>')
+            parts.append(f'<div class="stats-bar-count">{item[count_key]}</div>')
+            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
+            parts.append('</div>')
+        parts.append('</div>')
 
     parts.append('<div class="stats-grid">')
 
-    # Top Authors
-    if stats['authors']:
-        parts.append('<div class="stats-box">')
-        parts.append('<h3>Top Authors</h3>')
-        authors = stats['authors'][:5]
-        max_count = authors[0]['count'] if authors else 1
-        for author in authors:
-            width = int(author['count'] * 100 / max_count)
-            parts.append('<div class="stats-bar-container">')
-            parts.append(f'<div class="stats-bar-label" title="{html.escape(author["name"])}">{html.escape(author["name"])}</div>')
-            parts.append(f'<div class="stats-bar-count">{author["count"]}</div>')
-            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
-            parts.append('</div>')
-        parts.append('</div>')
+    render_html_bar_chart('Top Authors', stats.get('authors'), 'name', 'count')
+    render_html_bar_chart('Top Recipients', stats.get('recipients'), 'name', 'count')
+    render_html_bar_chart('Top BBSes', stats.get('bbses'), 'name', 'count')
 
-    # Top Conferences
-    if stats['conferences']:
-        parts.append('<div class="stats-box">')
-        parts.append('<h3>Top Conferences</h3>')
-        confs = stats['conferences'][:5]
-        max_count = confs[0]['count'] if confs else 1
-        for conf in confs:
-            width = int(conf['count'] * 100 / max_count)
-            parts.append('<div class="stats-bar-container">')
-            parts.append(f'<div class="stats-bar-label" title="{html.escape(conf["name"])}">{html.escape(conf["name"])}</div>')
-            parts.append(f'<div class="stats-bar-count">{conf["count"]}</div>')
-            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
-            parts.append('</div>')
-        parts.append('</div>')
+    confs = [{"name": f"{c['number']}: {c['name']}", "count": c['count']} for c in stats.get('conferences', [])]
+    render_html_bar_chart('Top Conferences', confs, 'name', 'count')
 
-    # Top Attachments
-    if stats.get('top_attachments'):
-        parts.append('<div class="stats-box">')
-        parts.append('<h3>Top Attachments</h3>')
-        attaches = stats['top_attachments'][:5]
-        max_count = attaches[0]['count'] if attaches else 1
-        for attach in attaches:
-            width = int(attach['count'] * 100 / max_count)
-            parts.append('<div class="stats-bar-container">')
-            parts.append(f'<div class="stats-bar-label" title="{html.escape(attach["name"])}">{html.escape(attach["name"])}</div>')
-            parts.append(f'<div class="stats-bar-count">{attach["count"]}</div>')
-            parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
-            parts.append('</div>')
-        parts.append('</div>')
+    render_html_bar_chart('Top Subjects', stats.get('subjects'), 'subject', 'count')
+    render_html_bar_chart('Top Keywords', stats.get('keywords'), 'word', 'count')
+    render_html_bar_chart('Top Links', stats.get('links'), 'url', 'count')
+    render_html_bar_chart('Top Emails', stats.get('emails'), 'email', 'count')
+    render_html_bar_chart('Top Phones', stats.get('phones'), 'phone', 'count')
+    render_html_bar_chart('Top Attachments', stats.get('top_attachments'), 'name', 'count')
+    render_html_bar_chart('Top Attachment Types', stats.get('top_attachment_types'), 'extension', 'count')
+
+    # Activity Distributions
+    if stats.get('year_distribution'):
+        years = [{"label": y, "count": c} for y, c in sorted(stats['year_distribution'].items())]
+        render_html_bar_chart('Yearly Activity', years, 'label', 'count')
+
+    if stats.get('month_distribution'):
+        months = [{"label": m, "count": c} for m, c in sorted(stats['month_distribution'].items())]
+        render_html_bar_chart('Monthly Activity', months, 'label', 'count')
+
+    if stats.get('day_of_week'):
+        days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        days = [{"label": d, "count": stats['day_of_week'].get(d, 0)} for d in days_order]
+        render_html_bar_chart('Day of Week Distribution', days, 'label', 'count')
+
+    if stats.get('hour_of_day'):
+        hours = [{"label": f"{int(h):02}:00", "count": c} for h, c in sorted(stats['hour_of_day'].items(), key=lambda x: int(x[0]))]
+        render_html_bar_chart('Hourly Distribution', hours, 'label', 'count')
 
     parts.append('</div>')  # stats-grid
     parts.append('</div>')  # stats-container
@@ -3107,44 +3112,55 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
         latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
         parts.append(f"- **Date Range:** {earliest} to {latest}")
     parts.append(f"- **Reply Rate:** {stats['reply_rate']}%")
+    parts.append(f"- **Avg Length:** {int(stats.get('avg_message_length', 0))} characters")
     parts.append("")
 
-    def render_bar(count, max_count):
-        bar_len = int(count * 20 / max_count) if max_count > 0 else 0
-        return "#" * bar_len
-
-    if stats['authors']:
-        parts.append("#### Top Authors\n")
-        parts.append("| Author | Messages | |")
+    def render_md_bar_chart(title, items, label_key, count_key):
+        if not items:
+            return
+        parts.append(f"#### {title}\n")
+        parts.append(f"| {label_key.capitalize()} | Count | |")
         parts.append("|---|---|---|")
-        authors = stats['authors'][:5]
-        max_count = authors[0]['count'] if authors else 1
-        for author in authors:
-            bar = render_bar(author['count'], max_count)
-            parts.append(f"| {author['name']} | {author['count']} | `{bar}` |")
+        max_count = max(item[count_key] for item in items) if items else 1
+        for item in items[:5]:
+            bar_len = int(item[count_key] * 20 / max_count) if max_count > 0 else 0
+            bar = "#" * bar_len
+            label = str(item[label_key]).replace('|', '\\|')
+            parts.append(f"| {label} | {item[count_key]} | `{bar}` |")
         parts.append("")
 
-    if stats['conferences']:
-        parts.append("#### Top Conferences\n")
-        parts.append("| Conference | Messages | |")
-        parts.append("|---|---|---|")
-        confs = stats['conferences'][:5]
-        max_count = confs[0]['count'] if confs else 1
-        for conf in confs:
-            bar = render_bar(conf['count'], max_count)
-            parts.append(f"| {conf['name']} | {conf['count']} | `{bar}` |")
-        parts.append("")
+    render_md_bar_chart('Top Authors', stats.get('authors'), 'name', 'count')
+    render_md_bar_chart('Top Recipients', stats.get('recipients'), 'name', 'count')
+    render_md_bar_chart('Top BBSes', stats.get('bbses'), 'name', 'count')
 
-    if stats.get('top_attachments'):
-        parts.append("#### Top Attachments\n")
-        parts.append("| Attachment | Count | |")
-        parts.append("|---|---|---|")
-        attaches = stats['top_attachments'][:5]
-        max_count = attaches[0]['count'] if attaches else 1
-        for attach in attaches:
-            bar = render_bar(attach['count'], max_count)
-            parts.append(f"| {attach['name']} | {attach['count']} | `{bar}` |")
-        parts.append("")
+    confs = [{"name": f"{c['number']}: {c['name']}", "count": c['count']} for c in stats.get('conferences', [])]
+    render_md_bar_chart('Top Conferences', confs, 'name', 'count')
+
+    render_md_bar_chart('Top Subjects', stats.get('subjects'), 'subject', 'count')
+    render_md_bar_chart('Top Keywords', stats.get('keywords'), 'word', 'count')
+    render_md_bar_chart('Top Links', stats.get('links'), 'url', 'count')
+    render_md_bar_chart('Top Emails', stats.get('emails'), 'email', 'count')
+    render_md_bar_chart('Top Phones', stats.get('phones'), 'phone', 'count')
+    render_md_bar_chart('Top Attachments', stats.get('top_attachments'), 'name', 'count')
+    render_md_bar_chart('Top Attachment Types', stats.get('top_attachment_types'), 'extension', 'count')
+
+    # Activity Distributions
+    if stats.get('year_distribution'):
+        years = [{"label": y, "count": c} for y, c in sorted(stats['year_distribution'].items())]
+        render_md_bar_chart('Yearly Activity', years, 'label', 'count')
+
+    if stats.get('month_distribution'):
+        months = [{"label": m, "count": c} for m, c in sorted(stats['month_distribution'].items())]
+        render_md_bar_chart('Monthly Activity', months, 'label', 'count')
+
+    if stats.get('day_of_week'):
+        days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        days = [{"label": d, "count": stats['day_of_week'].get(d, 0)} for d in days_order]
+        render_md_bar_chart('Day of Week Distribution', days, 'label', 'count')
+
+    if stats.get('hour_of_day'):
+        hours = [{"label": f"{int(h):02}:00", "count": c} for h, c in sorted(stats['hour_of_day'].items(), key=lambda x: int(x[0]))]
+        render_md_bar_chart('Hourly Distribution', hours, 'label', 'count')
 
     parts.append("---\n")
     return parts
