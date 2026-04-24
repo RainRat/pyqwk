@@ -10,13 +10,13 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 ## Features
 
-- **Support many formats:** Import and export between QWK, JSON, HTML, Markdown, mbox, and more.
-- **Group conversations:** Use "threading" to group replies and follow discussions easily.
-- **Clean content:** Automatically remove signatures, old quotes, and attachments.
-- **Protect privacy:** Hide personal information or private messages.
-- **Process many files:** Convert several archives at once or merge them into one file.
-- **Preview changes:** Use "Dry Run" mode to see results before writing any files.
-- **Read messages:** Use the built-in graphical reader to browse archives without converting them.
+- **Supports many formats:** Import and export between QWK, JSON, HTML, Markdown, mbox, and more.
+- **Groups conversations:** Use "threading" to group replies and follow discussions easily.
+- **Cleans content:** Automatically remove signatures, old quotes, and attachments.
+- **Protects privacy:** Hide personal information or private messages.
+- **Processes many files:** Convert several archives at once or merge them into one file.
+- **Previews changes:** Use "Dry Run" mode to see results before writing any files.
+- **Reads messages:** Use the built-in graphical reader to browse archives without converting them.
 
 ## Prerequisites
 
@@ -93,7 +93,7 @@ qwk-gui messages.db
 ```
 
 **Key Features:**
-- **Search:** Find messages by keyword or use "Regex" for advanced patterns. Traversal is seamless: cycle through matches with **F3** or **Shift + F3**, and the reader will automatically move to the next or previous message when you reach the end of the current one. You can also right-click any highlighted text to search for it instantly.
+- **Search:** Find messages by keyword or use "Regex" for advanced patterns. You can easily cycle through matches with **F3** or **Shift + F3**, and the reader will automatically move to the next or previous message when you reach the end of the current one. You can also right-click any highlighted text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
 - **Filtering:** Narrow your view by BBS, conference, author, or recipient. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
@@ -261,7 +261,7 @@ logger = logging.getLogger("pyqwk")
 # file_data contains either original bytes (for QWK/REP) or a list of messages
 file_data, board_dict = load_data("archive.qwk", logger)
 
-# Parse the bytes if the archive is in a legacy format
+# Parse the bytes if the archive is in an older format
 if isinstance(file_data, list):
     messages = file_data
 else:
