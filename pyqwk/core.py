@@ -1559,7 +1559,7 @@ def load_data(
         Note: When loading an original 'MESSAGES.DAT' file, it automatically searches
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
-    board_dict: dict[int, str] = {}
+    board_dict = ConferenceMap()
 
     if input_path.lower().endswith(('.db', '.sqlite')) or input_path == ':memory:':
         try:
@@ -1647,41 +1647,85 @@ def load_data(
             return messages, board_dict
 
     if zipfile.is_zipfile(input_path):
-        messages_name = ''
-        reply_name = ''
-        control_name = ''
-
         # First try using Python's built-in zipfile
         try:
             with zipfile.ZipFile(input_path) as myzip:
                 file_list = myzip.namelist()
-                for file_name in file_list:
-                    lower_name = file_name.lower()
-                    if lower_name == MESSAGES_FILENAME:
-                        messages_name = file_name
-                    elif lower_name == REPLY_FILENAME:
-                        reply_name = file_name
-                    if lower_name == CONTROL_FILENAME:
-                        control_name = file_name
+
+                messages_paths = []
+                reply_paths = []
+                other_paths = []
+
+                supported_others = ('.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')
+
+                for f_name in file_list:
+                    lower_f = f_name.lower()
+                    base_f = os.path.basename(lower_f)
+
+                    if base_f == MESSAGES_FILENAME:
+                        messages_paths.append(f_name)
+                    elif base_f == REPLY_FILENAME:
+                        reply_paths.append(f_name)
+                    elif lower_f.endswith(supported_others):
+                        other_paths.append(f_name)
 
                 # Prioritize MESSAGES.DAT, then REPLY.DAT
-                actual_messages_name = messages_name or reply_name
+                actual_messages_path = None
+                if messages_paths:
+                    # Prefer root or shallowest path
+                    actual_messages_path = sorted(messages_paths, key=lambda x: x.count('/'))[0]
+                elif reply_paths:
+                    actual_messages_path = sorted(reply_paths, key=lambda x: x.count('/'))[0]
 
-                if not actual_messages_name:
-                    raise FileNotFoundError(
-                        f"Error: Neither '{MESSAGES_FILENAME}' nor '{REPLY_FILENAME}' found in the zip archive {input_path}."
-                    )
-                
-                # Check if we can actually read the messages file
-                with myzip.open(actual_messages_name) as f:
-                    file_data = bytearray(f.read())
-                
-                if control_name:
-                    with myzip.open(control_name) as f:
-                        control_data = f.read().splitlines()
-                    board_dict = _parse_control_dat(control_data, logger, encoding)
-                else:
-                    logger.warning("CONTROL.DAT not found, conference names will not be available.")
+                if actual_messages_path:
+                    # Look for CONTROL.DAT in the same directory
+                    target_dir = os.path.dirname(actual_messages_path)
+                    control_path = None
+                    for f_name in file_list:
+                        if os.path.dirname(f_name) == target_dir and os.path.basename(f_name).lower() == CONTROL_FILENAME:
+                            control_path = f_name
+                            break
+
+                    with myzip.open(actual_messages_path) as f:
+                        file_data = bytearray(f.read())
+
+                    if control_path:
+                        with myzip.open(control_path) as f:
+                            control_data = f.read().splitlines()
+                        board_dict = _parse_control_dat(control_data, logger, encoding)
+                    else:
+                        logger.warning("CONTROL.DAT not found in the same directory as %s.", actual_messages_path)
+                        board_dict = ConferenceMap()
+
+                    return file_data, board_dict
+
+                # If no QWK files, look for other supported formats
+                if other_paths:
+                    # Pick the shallowest supported file
+                    actual_other_path = sorted(other_paths, key=lambda x: x.count('/'))[0]
+
+                    # Extract to temp file because some parsers expect a real path
+                    ext = os.path.splitext(actual_other_path)[1]
+                    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                        with myzip.open(actual_other_path) as f:
+                            tmp.write(f.read())
+                        tmp_path = tmp.name
+
+                    try:
+                        # Recursively call load_data on the extracted file
+                        messages, board_dict = load_data(tmp_path, logger, encoding)
+                        if isinstance(messages, list):
+                            for m in messages:
+                                if not m.source_file:
+                                    m.source_file = f"{os.path.basename(input_path)}/{actual_other_path}"
+                        return messages, board_dict
+                    finally:
+                        if os.path.exists(tmp_path):
+                            os.remove(tmp_path)
+
+                raise FileNotFoundError(
+                    f"Error: No supported message files found in the zip archive {input_path}."
+                )
                     
         except (RuntimeError, NotImplementedError, zipfile.BadZipFile) as e:
             # Fallback to system 'unzip' if built-in zipfile fails (e.g., unsupported compression)

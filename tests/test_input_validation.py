@@ -50,8 +50,7 @@ def test_load_data_raises_if_messages_dat_missing_in_zip(
     with pytest.raises(FileNotFoundError) as exc_info:
         load_data(str(zip_path), logger)
 
-    assert MESSAGES_FILENAME in str(exc_info.value)
-    assert "Neither" in str(exc_info.value)
+    assert "No supported message files found" in str(exc_info.value)
     assert "found in the zip archive" in str(exc_info.value)
 
 def test_process_merged_files_raises_if_stdout_with_output_path(
