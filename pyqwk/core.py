@@ -2449,8 +2449,8 @@ def process_merged_files(
                 )
                 processed_buffer = header_text + processed_buffer
 
-            # Add separator for text format, or if headers are enabled (standard behavior for non-text formats)
-            if settings.format == 'text' or include_header:
+            # Add separator for text format
+            if settings.format == 'text':
                 processed_buffer = separator_str + processed_buffer
 
         # Determine appropriate text content for modern formats
