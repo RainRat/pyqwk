@@ -343,3 +343,96 @@ Hello world
     messages = list(_parse_markdown_messages(str(p)))
     assert len(messages) == 1
     assert messages[0].attachments is None
+
+def test_parse_rss_messages_no_channel():
+    import xml.etree.ElementTree as ET
+    from pyqwk.core import _parse_rss_messages
+    root = ET.Element('rss')
+    # No channel element
+    messages = _parse_rss_messages(root)
+    assert messages == []
+
+def test_parse_rss_messages_generic_title():
+    import xml.etree.ElementTree as ET
+    from pyqwk.core import _parse_rss_messages
+    xml_data = """<?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0">
+    <channel>
+        <title>QWK Message Archive</title>
+        <item>
+            <title>Test Subject</title>
+            <author>Tester</author>
+            <description>Test Body</description>
+        </item>
+    </channel>
+    </rss>
+    """
+    root = ET.fromstring(xml_data)
+    messages = _parse_rss_messages(root)
+    assert len(messages) == 1
+    assert messages[0].bbs_name is None
+
+def test_parse_rss_messages_invalid_pubdate():
+    import xml.etree.ElementTree as ET
+    from pyqwk.core import _parse_rss_messages
+    xml_data = """<?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0">
+    <channel>
+        <item>
+            <pubDate>Invalid Date</pubDate>
+        </item>
+    </channel>
+    </rss>
+    """
+    root = ET.fromstring(xml_data)
+    messages = _parse_rss_messages(root)
+    assert len(messages) == 1
+    assert messages[0].header.msgdate == "01-01-70"
+    assert messages[0].header.msgtime == "00:00"
+
+def test_parse_rss_messages_guid_parsing():
+    import xml.etree.ElementTree as ET
+    from pyqwk.core import _parse_rss_messages
+    xml_data = """<?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0">
+    <channel>
+        <title>Test Archive</title>
+        <item>
+            <title>Test Subject</title>
+            <guid>123.456@qwk</guid>
+        </item>
+    </channel>
+    </rss>
+    """
+    root = ET.fromstring(xml_data)
+    messages = _parse_rss_messages(root)
+    assert len(messages) == 1
+    assert messages[0].confnum == 123
+    assert messages[0].msgnum == 456
+
+def test_parse_markdown_messages_empty_attachments_list(tmp_path):
+    from pyqwk.core import _parse_markdown_messages
+    md_content = """## Message 1
+- **Attachments:** , ,
+
+Body
+"""
+    p = tmp_path / "test_empty_attach_v2.md"
+    p.write_text(md_content)
+    messages = list(_parse_markdown_messages(str(p)))
+    assert len(messages) == 1
+    assert messages[0].attachments is None
+
+def test_parse_markdown_messages_no_blank_line_v2(tmp_path):
+    from pyqwk.core import _parse_markdown_messages
+    md_content = """## Message 1
+- **From:** Alice
+- **To:** Bob
+- **Subject:** Hello
+Body text immediately following metadata.
+"""
+    p = tmp_path / "test_v2.md"
+    p.write_text(md_content)
+    messages = list(_parse_markdown_messages(str(p)))
+    assert len(messages) == 1
+    assert "Body text immediately following metadata." in messages[0].text
