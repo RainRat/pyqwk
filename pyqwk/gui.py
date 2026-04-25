@@ -588,7 +588,7 @@ class QwkGuiApp:
 
         nav_frame = ttk.Frame(row1)
         nav_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(nav_frame, text="Msg:").pack(side=tk.LEFT)
+        ttk.Label(nav_frame, text="Messages:").pack(side=tk.LEFT)
         ttk.Button(nav_frame, text="Prev", width=6, command=lambda: self._select_relative_message(-1)).pack(side=tk.LEFT, padx=(5, 2))
         ttk.Button(nav_frame, text="Next", width=6, command=lambda: self._select_relative_message(1)).pack(side=tk.LEFT, padx=2)
         ttk.Button(nav_frame, text="Jump", width=6, command=self.prompt_jump_to_message).pack(side=tk.LEFT, padx=2)
@@ -1136,7 +1136,7 @@ class QwkGuiApp:
         filetypes = [
             (
                 "All supported formats",
-                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.mbox *.eml *.md *.markdown",
+                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm",
             ),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
@@ -1145,9 +1145,11 @@ class QwkGuiApp:
             ("CSV archives", "*.csv"),
             ("SQLite databases", "*.db *.sqlite"),
             ("XML archives", "*.xml"),
+            ("RSS feeds", "*.rss"),
             ("mbox files", "*.mbox"),
             ("EML files", "*.eml"),
             ("Markdown files", "*.md *.markdown"),
+            ("HTML archives", "*.html *.htm"),
             ("messages.dat", "messages.dat"),
             ("All files", "*.*"),
         ]
@@ -2067,7 +2069,7 @@ def main() -> None:
     parser.add_argument(
         "paths",
         nargs="*",
-        help="Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, MBOX, EML, SQLite, and Markdown.",
+        help="Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, and HTML.",
     )
     args = parser.parse_args()
 
