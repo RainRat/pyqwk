@@ -22,24 +22,24 @@ def test_toolbar_consolidation():
         root = MagicMock()
         app = QwkGuiApp(root)
 
-        # Check that "Filters:" label exists
+        # Check that "Filters" label exists
         filter_label_calls = [
             call for call in mock_ttk.Label.call_args_list
-            if call[1].get('text') == "Filters:"
+            if call[1].get('text') == "Filters"
         ]
-        assert len(filter_label_calls) == 1, "Expected one 'Filters:' label"
+        assert len(filter_label_calls) == 1, "Expected one 'Filters' label"
 
-        # Check that "Discovery:" label DOES NOT exist
+        # Check that "Discovery" label DOES NOT exist
         discovery_label_calls = [
             call for call in mock_ttk.Label.call_args_list
-            if call[1].get('text') == "Discovery:"
+            if call[1].get('text') == "Discovery"
         ]
-        assert len(discovery_label_calls) == 0, "Expected 'Discovery:' label to be removed"
+        assert len(discovery_label_calls) == 0, "Expected 'Discovery' label to be removed"
 
         # Verify all 7 filter checkboxes exist
         expected_filters = {
             "Attachments", "My Messages", "On This Day",
-            "Links", "Emails", "Phones", "ANSI"
+            "Links", "Emails", "Phones", "Colors"
         }
 
         checkbutton_calls = [
