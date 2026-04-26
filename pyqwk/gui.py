@@ -1366,10 +1366,7 @@ class QwkGuiApp:
                             )
 
                             # Ensure attachments are detected for the status icon
-                            attachments = parsed_message.attachments
-                            if attachments is None and parsed_message.text:
-                                found = extract_binaries(parsed_message.text)
-                                attachments = [name for name, data in found]
+                            attachments = parsed_message.discover_attachments()
 
                             all_messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
 

@@ -450,6 +450,12 @@ class ParsedMessage:
     source_file: str | None = None
     attachments: list[str] | None = None
 
+    def discover_attachments(self) -> list[str] | None:
+        """Lazily discover and cache attachment filenames from the message text."""
+        if self.text and self.attachments is None:
+            found_binaries = extract_binaries(self.text)
+            self.attachments = [name for name, data in found_binaries]
+        return self.attachments
 
 
 # Keep old names for compatibility
@@ -2162,10 +2168,7 @@ def matches_filters(
 
     # 7. Full-Text Search
     if settings.search_term:
-        if message.text and message.attachments is None:
-            found_attachments = extract_binaries(message.text)
-            message.attachments = [name for name, data in found_attachments]
-
+        message.discover_attachments()
         found = (
             check_str_match(settings.search_term, message.header.msgfrom)
             or check_str_match(settings.search_term, message.header.msgto)
@@ -2194,9 +2197,7 @@ def matches_filters(
 
     # 9. Attachment Filter
     if settings.has_attachments or settings.extract_attachments:
-        if message.text and message.attachments is None:
-            found = extract_binaries(message.text)
-            message.attachments = [name for name, data in found]
+        message.discover_attachments()
 
         if settings.has_attachments and not message.attachments:
             return False
@@ -4445,12 +4446,7 @@ def _compute_stats_from_messages(
             total_chars += len(message.text)
 
             # Use cached attachments if available to avoid re-scanning
-            current_attachments = message.attachments
-            if current_attachments is None:
-                found_binaries = extract_binaries(message.text)
-                current_attachments = [name for name, data in found_binaries]
-                # Lazily cache them back for other filters to use
-                message.attachments = current_attachments
+            current_attachments = message.discover_attachments()
 
             if current_attachments:
                 attachments_count += len(current_attachments)
