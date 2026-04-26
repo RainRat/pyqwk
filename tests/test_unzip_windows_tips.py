@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import pyqwk.core as core
+import os
 
 class TestUnzipWindowsTips(unittest.TestCase):
     @patch('zipfile.is_zipfile', return_value=True)
@@ -12,7 +13,8 @@ class TestUnzipWindowsTips(unittest.TestCase):
         # Setup: Python's zipfile fails
         mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
         mock_zip_instance.namelist.return_value = ['MESSAGES.DAT']
-        mock_zip_instance.open.side_effect = NotImplementedError()
+        # Fail the first try (extractall for classic)
+        mock_zip_instance.extractall.side_effect = NotImplementedError()
 
         # Mock unzip failure with return code 127
         mock_run.return_value = MagicMock(returncode=127, stderr="not found")
@@ -21,7 +23,7 @@ class TestUnzipWindowsTips(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             core.load_data("dummy.qwk", logger)
 
-        self.assertIn("GnuWin32.UnZip", str(cm.exception))
+        self.assertIn("unzip.exe", str(cm.exception))
         self.assertIn("return code 127", str(cm.exception))
 
     @patch('zipfile.is_zipfile', return_value=True)
@@ -33,7 +35,7 @@ class TestUnzipWindowsTips(unittest.TestCase):
         # Setup: Python's zipfile fails
         mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
         mock_zip_instance.namelist.return_value = ['MESSAGES.DAT']
-        mock_zip_instance.open.side_effect = NotImplementedError()
+        mock_zip_instance.extractall.side_effect = NotImplementedError()
 
         # Mock subprocess.run raising FileNotFoundError (simulating missing command)
         mock_run.side_effect = FileNotFoundError("[WinError 2] The system cannot find the file specified")
@@ -42,8 +44,8 @@ class TestUnzipWindowsTips(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             core.load_data("dummy.qwk", logger)
 
-        self.assertIn("GnuWin32.UnZip", str(cm.exception))
-        self.assertIn("tool is missing", str(cm.exception))
+        self.assertIn("winget", str(cm.exception))
+        self.assertIn("Git Bash", str(cm.exception))
 
 if __name__ == '__main__':
     unittest.main()

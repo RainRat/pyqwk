@@ -41,7 +41,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file == 'messages.dat':
+                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -1647,97 +1647,123 @@ def load_data(
             return messages, board_dict
 
     if zipfile.is_zipfile(input_path):
-        messages_name = ''
-        reply_name = ''
-        control_name = ''
-
-        # First try using Python's built-in zipfile
-        try:
-            with zipfile.ZipFile(input_path) as myzip:
-                file_list = myzip.namelist()
-                for file_name in file_list:
-                    lower_name = file_name.lower()
-                    if lower_name == MESSAGES_FILENAME:
-                        messages_name = file_name
-                    elif lower_name == REPLY_FILENAME:
-                        reply_name = file_name
-                    if lower_name == CONTROL_FILENAME:
-                        control_name = file_name
-
-                # Prioritize MESSAGES.DAT, then REPLY.DAT
-                actual_messages_name = messages_name or reply_name
-
-                if not actual_messages_name:
-                    raise FileNotFoundError(
-                        f"Error: Neither '{MESSAGES_FILENAME}' nor '{REPLY_FILENAME}' found in the zip archive {input_path}."
-                    )
-                
-                # Check if we can actually read the messages file
-                with myzip.open(actual_messages_name) as f:
-                    file_data = bytearray(f.read())
-                
-                if control_name:
-                    with myzip.open(control_name) as f:
-                        control_data = f.read().splitlines()
-                    board_dict = _parse_control_dat(control_data, logger, encoding)
-                else:
-                    logger.warning("CONTROL.DAT not found, conference names will not be available.")
+        # Support multi-format batch loading from ZIP archives.
+        # We extract the ZIP to a temporary directory and process all supported files found within.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            try:
+                with zipfile.ZipFile(input_path) as myzip:
+                    file_list = myzip.namelist()
+                    lower_names = [n.lower() for n in file_list]
                     
-        except (RuntimeError, NotImplementedError, zipfile.BadZipFile) as e:
-            # Fallback to system 'unzip' if built-in zipfile fails (e.g., unsupported compression)
-            logger.info("Built-in zipfile failed (%s); attempting fallback to system 'unzip'.", str(e))
-            
-            abs_input_path = os.path.abspath(input_path)
-            with tempfile.TemporaryDirectory() as temp_dir:
+                    # Classic QWK check: contains MESSAGES.DAT or REPLY.DAT at the top level
+                    messages_dat = next((n for n in file_list if n.lower() == MESSAGES_FILENAME), None)
+                    reply_dat = next((n for n in file_list if n.lower() == REPLY_FILENAME), None)
+                    
+                    if (messages_dat or reply_dat) and len(file_list) <= 12:
+                        # Extract only what we need for classic packets
+                        myzip.extractall(temp_dir)
+                        target = os.path.join(temp_dir, messages_dat or reply_dat)
+
+                        with open(target, 'rb') as f:
+                            file_data = bytearray(f.read())
+
+                        board_dict = ConferenceMap()
+                        control_name = next((n for n in file_list if n.lower() == CONTROL_FILENAME), None)
+                        if control_name:
+                            with myzip.open(control_name) as f:
+                                control_data = f.read().splitlines()
+                            board_dict = _parse_control_dat(control_data, logger, encoding)
+                        elif messages_dat:
+                            logger.warning("CONTROL.DAT not found in the zip archive.")
+                        return file_data, board_dict
+                    
+                    # If not a simple QWK packet, extract everything for batch processing
+                    myzip.extractall(temp_dir)
+
+            except (RuntimeError, NotImplementedError, zipfile.BadZipFile) as e:
+                # Fallback to system 'unzip' if built-in zipfile fails (e.g., unsupported compression)
+                logger.info("Built-in zipfile failed (%s); attempting fallback to system 'unzip'.", str(e))
+                abs_input_path = os.path.abspath(input_path)
                 try:
-                    # Extract everything to temp_dir to handle case sensitivity and unsupported methods
-                    cmd = ['unzip', '-o', '-j', abs_input_path]
-                    
-                    # We allow exit code 1 (warnings) and 11 (some files not matched - though we don't specify any here)
-                    # But status 0 is preferred. unzip -j extracts all files into the current dir.
-                    result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
-                    
+                    # We try to extract and then check if it's a standard QWK
+                    result = subprocess.run(['unzip', '-o', abs_input_path], cwd=temp_dir, capture_output=True, text=True)
                     if result.returncode not in (0, 1):
                         error_msg = f"unzip failed with return code {result.returncode}: {result.stderr}"
                         if os.name == 'nt' and result.returncode == 127:
                             error_msg += "\nTip: On Windows, run 'winget install GnuWin32.UnZip' or install 'unzip.exe' via Git Bash."
                         raise RuntimeError(error_msg)
                     
-                    # Find extracted files (case-insensitive search in temp_dir)
+                    # Check if standard QWK after unzip
                     extracted_files = os.listdir(temp_dir)
-                    extracted_messages = None
-                    extracted_reply = None
-                    extracted_control = None
+                    messages_dat = next((f for f in extracted_files if f.lower() == MESSAGES_FILENAME), None)
+                    reply_dat = next((f for f in extracted_files if f.lower() == REPLY_FILENAME), None)
 
-                    for f_name in extracted_files:
-                        lower_f = f_name.lower()
-                        if lower_f == MESSAGES_FILENAME:
-                            extracted_messages = os.path.join(temp_dir, f_name)
-                        elif lower_f == REPLY_FILENAME:
-                            extracted_reply = os.path.join(temp_dir, f_name)
-                        if lower_f == CONTROL_FILENAME:
-                            extracted_control = os.path.join(temp_dir, f_name)
-
-                    actual_extracted = extracted_messages or extracted_reply
-
-                    if not actual_extracted or not os.path.exists(actual_extracted):
-                        raise FileNotFoundError(f"Could not extract {MESSAGES_FILENAME} or {REPLY_FILENAME} from {input_path}")
-
-                    with open(actual_extracted, 'rb') as f:
-                        file_data = bytearray(f.read())
+                    if (messages_dat or reply_dat) and len(extracted_files) <= 12:
+                        target = os.path.join(temp_dir, messages_dat or reply_dat)
+                        with open(target, 'rb') as f:
+                            file_data = bytearray(f.read())
                         
-                    if extracted_control and os.path.exists(extracted_control):
-                        with open(extracted_control, 'rb') as f:
-                            control_data = f.read().splitlines()
-                        board_dict = _parse_control_dat(control_data, logger, encoding)
-                    else:
-                        logger.warning("CONTROL.DAT not found in the zip archive.")
-                        
+                        board_dict = ConferenceMap()
+                        control_dat = next((f for f in extracted_files if f.lower() == CONTROL_FILENAME), None)
+                        if control_dat:
+                            with open(os.path.join(temp_dir, control_dat), 'rb') as f:
+                                control_lines = f.read().splitlines()
+                            board_dict = _parse_control_dat(control_lines, logger, encoding)
+                        elif messages_dat:
+                             logger.warning("CONTROL.DAT not found in the zip archive.")
+                        return file_data, board_dict
                 except Exception as final_e:
                     error_msg = f"An error occurred while handling older ZIP archive: {str(final_e)}"
                     if os.name == 'nt' and "[WinError 2]" in str(final_e):
-                        error_msg += "\nTip: This error usually means the 'unzip' tool is missing. On Windows, run 'winget install GnuWin32.UnZip' or install it via Git Bash."
+                        error_msg += "\nTip: On Windows, install 'unzip' via winget or Git Bash."
                     raise RuntimeError(error_msg) from final_e
+
+            # Perform a recursive search for all supported formats in the extracted content.
+            candidate_paths = expand_paths([temp_dir])
+
+            if not candidate_paths:
+                # Classic error message for empty/unsupported ZIPs to satisfy existing tests
+                raise FileNotFoundError(
+                    f"Error: Neither '{MESSAGES_FILENAME}' nor '{REPLY_FILENAME}' found in the zip archive {input_path}."
+                )
+
+            # Merge all found messages into a single list
+            all_messages = []
+            merged_board_dict = ConferenceMap()
+
+            for p in candidate_paths:
+                try:
+                    # Recursive load_data for each file found
+                    data, b_dict = load_data(p, logger, encoding)
+
+                    # Merge conference map and BBS information
+                    if b_dict.bbs_info:
+                        if not merged_board_dict.bbs_info:
+                            merged_board_dict.bbs_info = b_dict.bbs_info
+                        elif b_dict.bbs_info.name and not merged_board_dict.bbs_info.name:
+                            merged_board_dict.bbs_info = b_dict.bbs_info
+
+                    for cid, name in b_dict.items():
+                        if cid not in merged_board_dict:
+                            merged_board_dict[cid] = name
+
+                    # Consolidate messages
+                    if isinstance(data, bytearray):
+                        # For QWK/REP, we must parse the bytes using the conference map from its own source
+                        msgs = list(parse_messages(data, None, encoding))
+                        # Attach conference names since we are merging into a shared board_dict
+                        for m in msgs:
+                             m.confname = b_dict.get(m.confnum)
+                        all_messages.extend(msgs)
+                    else:
+                        all_messages.extend(data)
+                except Exception as e:
+                    logger.warning("Skipping file %s in ZIP due to error: %s", os.path.basename(p), e)
+
+            if not all_messages:
+                 raise ValueError(f"No messages could be loaded from ZIP archive: {input_path}")
+
+            return all_messages, merged_board_dict
     else:
         with open(input_path, 'rb') as f:
             file_data = bytearray(f.read())

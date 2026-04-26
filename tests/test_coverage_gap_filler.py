@@ -2,7 +2,7 @@ import logging
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
 from pyqwk.cli import main
-from pyqwk.core import load_data
+from pyqwk.core import load_data, MESSAGES_FILENAME
 
 def test_cli_invalid_loglevel(monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["qwk", "test.qwk", "--loglevel", "INVALID"])
@@ -32,7 +32,7 @@ def test_load_data_unzip_missing_messages(mock_exists, mock_listdir, mock_run, m
     # Zipfile fails
     mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
     mock_zip_instance.namelist.return_value = ['messages.dat'] # Avoid FileNotFoundError in zip block
-    mock_zip_instance.open.side_effect = NotImplementedError()
+    mock_zip_instance.extractall.side_effect = NotImplementedError()
 
     # Subprocess run "succeeds"
     mock_run.return_value = MagicMock(returncode=0)
@@ -42,8 +42,8 @@ def test_load_data_unzip_missing_messages(mock_exists, mock_listdir, mock_run, m
     mock_exists.return_value = False
 
     logger = logging.getLogger("pyqwk.test")
-    # FileNotFoundError is caught and re-raised as RuntimeError in core.py:793
-    with pytest.raises(RuntimeError, match="Could not extract messages.dat"):
+    # In classic mode, it checks for MESSAGES.DAT
+    with pytest.raises(FileNotFoundError, match="found in the zip archive"):
         load_data("dummy.qwk", logger)
 
 @patch('zipfile.is_zipfile', return_value=True)
@@ -55,16 +55,12 @@ def test_load_data_unzip_missing_control(mock_exists, mock_listdir, mock_run, mo
     # Zipfile fails
     mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
     mock_zip_instance.namelist.return_value = ['messages.dat'] # Avoid FileNotFoundError in zip block
-    mock_zip_instance.open.side_effect = NotImplementedError()
+    mock_zip_instance.extractall.side_effect = NotImplementedError()
 
     # Subprocess run "succeeds"
     mock_run.return_value = MagicMock(returncode=0)
 
     # Messages exists, but Control is missing
-    def exists_side_effect(path):
-        return "MESSAGES.DAT" in path.upper()
-
-    mock_exists.side_effect = exists_side_effect
     mock_listdir.return_value = ["MESSAGES.DAT"]
 
     logger = logging.getLogger("pyqwk.test")

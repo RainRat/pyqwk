@@ -1,28 +1,26 @@
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import pyqwk.core as core
+import os
 
 class TestUnzipFallback(unittest.TestCase):
     @patch('zipfile.is_zipfile', return_value=True)
     @patch('zipfile.ZipFile')
     @patch('subprocess.run')
     @patch('os.listdir')
-    @patch('os.path.exists')
-    def test_load_data_unzip_fallback(self, mock_exists, mock_listdir, mock_run, mock_zipfile, mock_is_zipfile):
-        # Setup: Python's zipfile.open raises NotImplementedError (unsupported compression)
+    def test_load_data_unzip_fallback(self, mock_listdir, mock_run, mock_zipfile, mock_is_zipfile):
+        # Setup: Python's zipfile.extractall raises NotImplementedError (unsupported compression)
         mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
         mock_zip_instance.namelist.return_value = ['MESSAGES.DAT', 'CONTROL.DAT']
-        mock_zip_instance.open.side_effect = NotImplementedError("That compression method is not supported")
+        mock_zip_instance.extractall.side_effect = NotImplementedError("That compression method is not supported")
 
         # Mock listdir for the temporary directory
         mock_listdir.return_value = ['MESSAGES.DAT', 'CONTROL.DAT']
-        mock_exists.return_value = True
         
         # Mock subprocess.run to simulate successful unzip
         mock_run.return_value = MagicMock(returncode=0)
 
         # Mock reading from the extracted files
-        # MESSAGES.DAT needs some data, CONTROL.DAT needs 11+ lines
         mock_messages_data = b"MESSAGES DATA"
         mock_control_data = b"Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10\n0\n"
         
@@ -41,8 +39,8 @@ class TestUnzipFallback(unittest.TestCase):
             file_data, board_dict = core.load_data("dummy.qwk", logger)
 
             # Assertions
-            # 1. zipfile was tried first
-            mock_zip_instance.open.assert_called()
+            # 1. zipfile.extractall was tried first
+            mock_zip_instance.extractall.assert_called()
             
             # 2. unzip fallback was triggered
             mock_run.assert_called()
@@ -58,7 +56,7 @@ class TestUnzipFallback(unittest.TestCase):
         # Setup: Python's zipfile fails, and unzip also fails
         mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
         mock_zip_instance.namelist.return_value = ['MESSAGES.DAT']
-        mock_zip_instance.open.side_effect = NotImplementedError()
+        mock_zip_instance.extractall.side_effect = NotImplementedError()
 
         # Mock unzip failure
         mock_run.return_value = MagicMock(returncode=9, stderr="unzip error message")
