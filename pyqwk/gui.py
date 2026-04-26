@@ -372,7 +372,7 @@ class QwkGuiApp:
             ("Links", self.has_links_var),
             ("Emails", self.has_emails_var),
             ("Phones", self.has_phones_var),
-            ("ANSI", self.has_ansi_var),
+            ("Colors", self.has_ansi_var),
         ]:
             if var.get():
                 active_bools.append(text)
@@ -578,7 +578,7 @@ class QwkGuiApp:
 
         actions_frame = ttk.Frame(row1)
         actions_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(actions_frame, text="File:").pack(side=tk.LEFT)
+        ttk.Label(actions_frame, text="File").pack(side=tk.LEFT)
         ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(5, 2))
         ttk.Button(actions_frame, text="Folder", command=self.open_folder).pack(side=tk.LEFT, padx=2)
         ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
@@ -588,7 +588,7 @@ class QwkGuiApp:
 
         nav_frame = ttk.Frame(row1)
         nav_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(nav_frame, text="Msg:").pack(side=tk.LEFT)
+        ttk.Label(nav_frame, text="Messages").pack(side=tk.LEFT)
         ttk.Button(nav_frame, text="Prev", width=6, command=lambda: self._select_relative_message(-1)).pack(side=tk.LEFT, padx=(5, 2))
         ttk.Button(nav_frame, text="Next", width=6, command=lambda: self._select_relative_message(1)).pack(side=tk.LEFT, padx=2)
         ttk.Button(nav_frame, text="Jump", width=6, command=self.prompt_jump_to_message).pack(side=tk.LEFT, padx=2)
@@ -597,7 +597,7 @@ class QwkGuiApp:
 
         search_frame = ttk.Frame(row1)
         search_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text="Search").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
             search_frame, textvariable=self.search_var, width=22
         )
@@ -606,7 +606,7 @@ class QwkGuiApp:
             search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
         ).pack(side=tk.LEFT, padx=(0, 2))
 
-        self.search_count_label = ttk.Label(search_frame, text="", width=8, anchor=tk.CENTER)
+        self.search_count_label = ttk.Label(search_frame, text="", width=12, anchor=tk.CENTER)
         self.search_count_label.pack(side=tk.LEFT)
 
         ttk.Button(
@@ -626,7 +626,7 @@ class QwkGuiApp:
 
         archives_frame = ttk.Frame(row2)
         archives_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(archives_frame, text="Archives:").pack(side=tk.LEFT)
+        ttk.Label(archives_frame, text="Archives").pack(side=tk.LEFT)
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.pack(side=tk.LEFT, padx=(5, 2))
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
@@ -636,7 +636,7 @@ class QwkGuiApp:
 
         filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(filters_frame, text="Filters:").pack(side=tk.LEFT)
+        ttk.Label(filters_frame, text="Filters").pack(side=tk.LEFT)
         for text, var in [
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
@@ -644,7 +644,7 @@ class QwkGuiApp:
             ("Links", self.has_links_var),
             ("Emails", self.has_emails_var),
             ("Phones", self.has_phones_var),
-            ("ANSI", self.has_ansi_var),
+            ("Colors", self.has_ansi_var),
         ]:
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
@@ -654,7 +654,7 @@ class QwkGuiApp:
 
         options_frame = ttk.Frame(row2)
         options_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(options_frame, text="View:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(options_frame, text="View").pack(side=tk.LEFT, padx=(0, 5))
 
         for text, var, cmd in [
             ("Threaded", self.threaded_var, self.reload_messages),
