@@ -189,3 +189,18 @@ def test_organize_by_bbs_empty_safe_name(tmp_path, mock_settings, logger):
 
         mock_makedirs.assert_called_once_with("Unknown_BBS")
         mock_move.assert_called_once_with(str(qwk_file), os.path.join("Unknown_BBS", "TEST.QWK"))
+
+def test_organize_by_bbs_messages_dat(tmp_path, mock_settings, logger):
+    msg_file = tmp_path / "messages.dat"
+    msg_file.write_text("dummy content")
+
+    board_dict = ConferenceMap()
+    board_dict.bbs_info = BBSInfo(name="BBS")
+
+    with patch("pyqwk.core.load_data", return_value=(bytearray(), board_dict)), \
+         patch("shutil.move") as mock_move, \
+         patch("os.makedirs"):
+
+        organize_by_bbs([str(msg_file)], mock_settings, logger)
+
+        mock_move.assert_called_once_with(str(msg_file), os.path.join("BBS", "messages.dat"))
