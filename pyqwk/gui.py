@@ -572,14 +572,18 @@ class QwkGuiApp:
         toolbar = ttk.Frame(self.root, padding=(10, 5))
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
+        # Create a style for group headers to improve visual hierarchy
+        style = ttk.Style()
+        style.configure("GroupHeader.TLabel", font=("TkDefaultFont", 9, "bold"))
+
         # Row 1: Primary Actions and Search
         row1 = ttk.Frame(toolbar)
-        row1.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
+        row1.pack(side=tk.TOP, fill=tk.X, pady=(0, 10))
 
         actions_frame = ttk.Frame(row1)
         actions_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(actions_frame, text="File").pack(side=tk.LEFT)
-        ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Label(actions_frame, text="File", style="GroupHeader.TLabel").pack(side=tk.LEFT)
+        ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(10, 2))
         ttk.Button(actions_frame, text="Folder", command=self.open_folder).pack(side=tk.LEFT, padx=2)
         ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
         ttk.Button(actions_frame, text="Stats", command=self.show_stats_window).pack(side=tk.LEFT, padx=2)
@@ -588,8 +592,8 @@ class QwkGuiApp:
 
         nav_frame = ttk.Frame(row1)
         nav_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(nav_frame, text="Messages").pack(side=tk.LEFT)
-        ttk.Button(nav_frame, text="Prev", width=6, command=lambda: self._select_relative_message(-1)).pack(side=tk.LEFT, padx=(5, 2))
+        ttk.Label(nav_frame, text="Messages", style="GroupHeader.TLabel").pack(side=tk.LEFT)
+        ttk.Button(nav_frame, text="Prev", width=6, command=lambda: self._select_relative_message(-1)).pack(side=tk.LEFT, padx=(10, 2))
         ttk.Button(nav_frame, text="Next", width=6, command=lambda: self._select_relative_message(1)).pack(side=tk.LEFT, padx=2)
         ttk.Button(nav_frame, text="Jump", width=6, command=self.prompt_jump_to_message).pack(side=tk.LEFT, padx=2)
 
@@ -597,11 +601,11 @@ class QwkGuiApp:
 
         search_frame = ttk.Frame(row1)
         search_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(search_frame, text="Search").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text="Search", style="GroupHeader.TLabel").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
             search_frame, textvariable=self.search_var, width=22
         )
-        self.search_entry.pack(side=tk.LEFT, padx=(5, 0))
+        self.search_entry.pack(side=tk.LEFT, padx=(10, 0))
         ttk.Button(
             search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
         ).pack(side=tk.LEFT, padx=(0, 2))
@@ -626,9 +630,9 @@ class QwkGuiApp:
 
         archives_frame = ttk.Frame(row2)
         archives_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(archives_frame, text="Archives").pack(side=tk.LEFT)
+        ttk.Label(archives_frame, text="Archives", style="GroupHeader.TLabel").pack(side=tk.LEFT)
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
-        self.bbs_combo.pack(side=tk.LEFT, padx=(5, 2))
+        self.bbs_combo.pack(side=tk.LEFT, padx=(10, 2))
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.conf_combo.pack(side=tk.LEFT, padx=2)
 
@@ -636,8 +640,8 @@ class QwkGuiApp:
 
         filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(filters_frame, text="Filters").pack(side=tk.LEFT)
-        for text, var in [
+        ttk.Label(filters_frame, text="Filters", style="GroupHeader.TLabel").pack(side=tk.LEFT)
+        for i, (text, var) in enumerate([
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
             ("On This Day", self.on_this_day_var),
@@ -645,26 +649,26 @@ class QwkGuiApp:
             ("Emails", self.has_emails_var),
             ("Phones", self.has_phones_var),
             ("Colors", self.has_ansi_var),
-        ]:
+        ]):
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).pack(side=tk.LEFT, padx=5)
+            ).pack(side=tk.LEFT, padx=(10 if i == 0 else 5, 5))
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
         options_frame = ttk.Frame(row2)
         options_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(options_frame, text="View").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(options_frame, text="View", style="GroupHeader.TLabel").pack(side=tk.LEFT)
 
-        for text, var, cmd in [
+        for i, (text, var, cmd) in enumerate([
             ("Threaded", self.threaded_var, self.reload_messages),
             ("Clean", self.clean_var, self.reload_messages),
             ("Wrap", self.wrap_var, self._update_wrap),
             ("Remove Colors", self.ansi_var, self.reload_messages),
-        ]:
+        ]):
             ttk.Checkbutton(
                 options_frame, text=text, variable=var, command=cmd
-            ).pack(side=tk.LEFT, padx=5)
+            ).pack(side=tk.LEFT, padx=(10 if i == 0 else 5, 5))
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
