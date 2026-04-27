@@ -1123,7 +1123,7 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
 
 def _reconstruct_archive_information(messages: list[ParsedMessage]) -> ConferenceMap:
     """Reconstruct conference and BBS information from a list of messages."""
-    board_dict = ConferenceMap()
+    board_dict: ConferenceMap = ConferenceMap()
     bbs_info = BBSInfo()
     for msg in messages:
         if msg.confnum is not None:
@@ -1565,7 +1565,7 @@ def load_data(
         Note: When loading an original 'MESSAGES.DAT' file, it automatically searches
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
-    board_dict: dict[int, str] = {}
+    board_dict: ConferenceMap = ConferenceMap()
 
     if input_path.lower().endswith(('.db', '.sqlite')) or input_path == ':memory:':
         try:
