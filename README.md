@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk converts message archives into modern, readable formats like HTML, Markdown, and SQLite. It supports many file types, including QWK, ZIP, JSON, CSV, mbox, EML, and more.
+pyqwk converts message archives into modern, readable formats like HTML, Markdown, and SQLite. It supports many file types, including QWK, ZIP, TAR, JSON, CSV, mbox, EML, and more.
 
 ## What are QWK and REP files?
 

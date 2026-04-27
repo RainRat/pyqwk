@@ -312,7 +312,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
 
         self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
-        formats = "QWK, REP, JSON, JSONL, CSV, SQLite (.db), XML, mbox, EML, Markdown, and MESSAGES.DAT"
+        formats = "QWK, ZIP, TAR, REP, JSON, JSONL, CSV, SQLite (.db), XML, mbox, EML, Markdown, and MESSAGES.DAT"
         self.detail_text.insert(tk.END, f"{formats}\n\n", "body")
 
         self.detail_text.insert(tk.END, "Keyboard Shortcuts:\n", "header_label")
@@ -1136,7 +1136,7 @@ class QwkGuiApp:
         filetypes = [
             (
                 "All supported formats",
-                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm",
+                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm *.tar *.tar.gz *.tar.bz2 *.tgz",
             ),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
@@ -2066,7 +2066,7 @@ def main() -> None:
     parser.add_argument(
         "paths",
         nargs="*",
-        help="Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, and HTML.",
+        help="Path to message archives, ZIP, TAR files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, and HTML.",
     )
     args = parser.parse_args()
 
