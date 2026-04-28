@@ -10,13 +10,28 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 ## Features
 
-- **Supports many formats:** Import and export between QWK, JSON, HTML, Markdown, mbox, and more.
+- **Supports many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, EML, Markdown, HTML, and Plain Text.
 - **Groups conversations:** Use "threading" to group replies and follow discussions easily.
 - **Cleans content:** Automatically remove signatures, old quotes, and attachments.
 - **Protects privacy:** Hide personal information or private messages.
 - **Processes many files:** Convert several archives at once or merge them into one file.
 - **Previews changes:** Use "Dry Run" mode to see results before writing any files.
 - **Reads messages:** Use the built-in graphical reader to browse archives without converting them.
+
+## Supported Formats
+
+| Format | Import | Export | Notes |
+| :--- | :---: | :---: | :--- |
+| **QWK / REP** | ✅ | ✅ | Classic BBS message packets |
+| **JSON / JSONL** | ✅ | ✅ | Modern structured data |
+| **HTML** | ✅ | ✅ | Browsable files with threading and charts |
+| **Markdown** | ✅ | ✅ | Readable text files |
+| **CSV** | ✅ | ✅ | Spreadsheets and databases |
+| **RSS** | ✅ | ✅ | Feed readers and syndication |
+| **XML** | ✅ | ✅ | Generic structured data |
+| **SQLite** | ✅ | ✅ | Relational databases (.db) |
+| **mbox / EML** | ✅ | ✅ | Email applications |
+| **Plain Text** | ❌ | ✅ | Simple readable text |
 
 ## Prerequisites
 
@@ -199,6 +214,21 @@ qwk archive.qwk --format sqlite -o messages.db
 **Import from a spreadsheet (CSV):**
 ```bash
 qwk messages.csv -o updated.html
+```
+
+**Export to JSONL (for big data and scripts):**
+```bash
+qwk archive.qwk --format jsonl -o messages.jsonl
+```
+
+**Create an RSS feed:**
+```bash
+qwk archive.qwk --format rss -o feed.xml
+```
+
+**Convert between modern formats (mbox to EML):**
+```bash
+qwk messages.mbox --format eml -o ./emails/
 ```
 
 ## Filtering & Searching
