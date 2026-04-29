@@ -1806,7 +1806,7 @@ def load_data(
                     if isinstance(data, bytearray):
                         msgs = list(parse_messages(data, None, encoding))
                         for m in msgs:
-                             m.confname = b_dict.get(m.confnum)
+                            m.confname = b_dict.get(m.confnum)
                         all_messages.extend(msgs)
                     else:
                         all_messages.extend(data)
@@ -1814,7 +1814,7 @@ def load_data(
                     logger.warning("Skipping file %s in TAR due to error: %s", os.path.basename(p), e)
 
             if not all_messages:
-                 raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
+                raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
 
             return all_messages, merged_board_dict
     else:
