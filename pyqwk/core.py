@@ -29,6 +29,7 @@ import base64
 __version__ = "0.1.0"
 
 BLOCK_SIZE = 128
+QWK_HEADER_FORMAT = '<c7s8s5s25s25s25s12s8s6scHHc'
 MESSAGES_FILENAME = 'messages.dat'
 REPLY_FILENAME = 'reply.dat'
 CONTROL_FILENAME = 'control.dat'
@@ -520,7 +521,7 @@ class MessageHeader:
 
         # Re-pack the data using the same format as from_bytes
         return struct.pack(
-            '<c7s8s5s25s25s25s12s8s6scHHc',
+            QWK_HEADER_FORMAT,
             get_char_bytes(self.status),
             encode_pad(msgnum_raw, 7, 'right'),
             encode_pad(self.msgdate, 8),
@@ -540,7 +541,7 @@ class MessageHeader:
     @classmethod
     def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> "MessageHeader":
         try:
-            header_data = struct.unpack('<c7s8s5s25s25s25s12s8s6scHHc', record)
+            header_data = struct.unpack(QWK_HEADER_FORMAT, record)
         except struct.error as error:
             raise MessagesDatFormatError(
                 "messages.dat header record has invalid size or format."
