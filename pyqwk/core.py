@@ -1072,23 +1072,19 @@ def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
                 if attach_el.text:
                     attachments.append(attach_el.text)
 
-        def get_text(tag):
-            el = entry.find(tag)
-            return el.text if el is not None and el.text is not None else ""
-
         msg = ParsedMessage(
-            text=get_text('text'),
+            text=entry.findtext('text', default=""),
             msgnum=header.msgnum,
             refnum=header.refnum,
             confnum=header.confnum,
             header=header,
-            depth=_safe_to_int(get_text('depth') or 0) or 0,
-            thread_id=get_text('thread_id') or None,
-            parent_msgnum=_safe_to_int(get_text('parent_msgnum')),
-            confname=get_text('conference_name') or get_text('conference'),
-            bbs_name=get_text('bbs_name'),
-            bbs_id=get_text('bbs_id'),
-            source_file=get_text('source_file'),
+            depth=_safe_to_int(entry.findtext('depth')) or 0,
+            thread_id=entry.findtext('thread_id') or None,
+            parent_msgnum=_safe_to_int(entry.findtext('parent_msgnum')),
+            confname=entry.findtext('conference_name') or entry.findtext('conference') or None,
+            bbs_name=entry.findtext('bbs_name') or None,
+            bbs_id=entry.findtext('bbs_id') or None,
+            source_file=entry.findtext('source_file') or None,
             attachments=attachments or None,
         )
         messages.append(msg)
