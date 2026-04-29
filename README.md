@@ -31,7 +31,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 | **XML** | ✅ | ✅ | Generic structured data |
 | **SQLite** | ✅ | ✅ | Relational databases (.db) |
 | **mbox / EML** | ✅ | ✅ | Email applications |
-| **Plain Text** | ❌ | ✅ | Simple readable text |
+| **Plain Text** | ✅ | ✅ | Simple readable text |
 
 ## Prerequisites
 

@@ -140,4 +140,4 @@ def test_expand_paths_html():
             found = expand_paths(['/fake'])
             assert '/fake/msg1.html' in found
             assert '/fake/msg2.htm' in found
-            assert '/fake/other.txt' not in found
+            assert '/fake/other.txt' in found

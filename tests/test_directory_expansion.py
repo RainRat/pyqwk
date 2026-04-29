@@ -30,9 +30,9 @@ class TestDirectoryExpansion:
         assert "test2.rep" in filenames
         assert "archive.zip" in filenames
         assert "messages.dat" in filenames
-        assert "test.txt" not in filenames
+        assert "test.txt" in filenames
         assert "image.png" not in filenames
-        assert len(expanded) == 4
+        assert len(expanded) == 5
 
     def test_expand_recursive_directory(self, tmp_path):
         """Test recursive file finding in subdirectories."""

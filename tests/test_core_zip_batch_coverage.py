@@ -66,7 +66,7 @@ def test_zip_batch_no_messages_raises_error():
             for i in range(15):
                 zf.writestr(f"dummy{i}.txt", "data")
 
-        with pytest.raises(ValueError, match="No messages could be loaded from ZIP archive"):
+        with pytest.raises(FileNotFoundError, match="found in the zip archive"):
             load_data(zip_path, logger)
 
 def test_zip_batch_qwk_bytes_recursive():

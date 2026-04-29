@@ -89,7 +89,7 @@ examples:
     )
     parser.add_argument(
         'input_paths',
-        help='Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, and HTML. ZIP and TAR archives can contain multiple files and formats which will be merged.',
+        help='Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, HTML, and Plain Text. ZIP and TAR archives can contain multiple files and formats which will be merged.',
         nargs='+',
     )
 
