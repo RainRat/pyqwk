@@ -1,5 +1,6 @@
 import sys
 import zipfile
+import tarfile
 import subprocess
 import tempfile
 import struct
@@ -42,7 +43,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
+                    if lower_file.endswith(('.qwk', '.zip', '.tar', '.tar.gz', '.tar.bz2', '.tgz', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -1766,6 +1767,55 @@ def load_data(
 
             if not all_messages:
                  raise ValueError(f"No messages could be loaded from ZIP archive: {input_path}")
+
+            return all_messages, merged_board_dict
+    elif tarfile.is_tarfile(input_path) if os.path.isfile(input_path) else False:
+        # Support multi-format batch loading from TAR archives.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            try:
+                with tarfile.open(input_path) as mytar:
+                    # In Python 3.12+, we should use the 'data' filter for safety
+                    if hasattr(tarfile, 'data_filter'):
+                        mytar.extractall(temp_dir, filter='data')
+                    else:
+                        mytar.extractall(temp_dir)
+            except Exception as e:
+                raise RuntimeError(f"An error occurred while extracting TAR archive: {str(e)}")
+
+            candidate_paths = expand_paths([temp_dir])
+
+            if not candidate_paths:
+                raise ValueError(f"No supported message files found in TAR archive: {input_path}")
+
+            all_messages = []
+            merged_board_dict = ConferenceMap()
+
+            for p in candidate_paths:
+                try:
+                    data, b_dict = load_data(p, logger, encoding)
+
+                    if b_dict.bbs_info:
+                        if not merged_board_dict.bbs_info:
+                            merged_board_dict.bbs_info = b_dict.bbs_info
+                        elif b_dict.bbs_info.name and not merged_board_dict.bbs_info.name:
+                            merged_board_dict.bbs_info = b_dict.bbs_info
+
+                    for cid, name in b_dict.items():
+                        if cid not in merged_board_dict:
+                            merged_board_dict[cid] = name
+
+                    if isinstance(data, bytearray):
+                        msgs = list(parse_messages(data, None, encoding))
+                        for m in msgs:
+                             m.confname = b_dict.get(m.confnum)
+                        all_messages.extend(msgs)
+                    else:
+                        all_messages.extend(data)
+                except Exception as e:
+                    logger.warning("Skipping file %s in TAR due to error: %s", os.path.basename(p), e)
+
+            if not all_messages:
+                 raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
 
             return all_messages, merged_board_dict
     else:
@@ -4883,7 +4933,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
 
 def organize_by_bbs(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
     """Organize archive files into directories based on their BBS name and ID."""
-    supported_extensions = ('.qwk', '.rep', '.json', '.csv', '.xml', '.db', '.sqlite', '.mbox', '.eml')
+    supported_extensions = ('.qwk', '.rep', '.json', '.csv', '.xml', '.db', '.sqlite', '.mbox', '.eml', '.tar', '.tar.gz', '.tar.bz2', '.tgz', '.zip')
 
     for input_path in input_paths:
         if not os.path.isfile(input_path):

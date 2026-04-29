@@ -1146,7 +1146,7 @@ class QwkGuiApp:
         filetypes = [
             (
                 "All supported formats",
-                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm",
+                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm *.tar *.tar.gz *.tar.bz2 *.tgz",
             ),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
