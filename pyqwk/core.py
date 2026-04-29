@@ -1658,7 +1658,6 @@ def load_data(
             try:
                 with zipfile.ZipFile(input_path) as myzip:
                     file_list = myzip.namelist()
-                    lower_names = [n.lower() for n in file_list]
                     
                     # Classic QWK check: contains MESSAGES.DAT or REPLY.DAT at the top level
                     messages_dat = next((n for n in file_list if n.lower() == MESSAGES_FILENAME), None)
