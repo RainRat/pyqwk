@@ -181,13 +181,14 @@ def _is_binary_line(
 ) -> tuple[bool, bool, bool, bool]:
     """Check if a line of text is part of an attachment (like an image).
 
-    This function uses a simple state machine to identify the start, data, and end
-    of common binary attachment formats (yEnc, UUE, and Base64) embedded in
-    plain text messages.
+    This function tracks whether we are currently inside an attachment block
+    (yEnc, UUE, or Base64) to find where they start and end within a message.
 
     Returns a group of four values:
-    - A boolean that is True if the line should be hidden.
-    - Three booleans representing if we are currently inside a specific type of attachment (yEnc, UUE, or Base64).
+    - True if the line is part of an attachment and should be hidden.
+    - True if we are currently in a yEnc block.
+    - True if we are currently in a UUE block.
+    - True if we are currently in a Base64 block.
     """
     stripped_line = line.strip()
 
