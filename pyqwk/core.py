@@ -110,7 +110,7 @@ def resolve_output_format(
 RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s+\d{3}\s+')
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
-RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
+RE_UUE_LOOSE_PATTERN = re.compile(r'^[\x21-\x4d][\x21-\x60]{1,60}$')
 RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
 RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
 RE_BASE64_LOOSE_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{4,}$')
@@ -207,9 +207,11 @@ def _is_binary_line(
         return True, True, in_uue_block, in_base64_block
 
     if in_uue_block:
-        if stripped_line in ('end', '`'):
+        if stripped_line == 'end':
             return True, in_yenc_block, False, in_base64_block
-        return True, in_yenc_block, True, in_base64_block
+        if stripped_line == '`' or RE_UUE_DATA_PATTERN.match(stripped_line) or RE_UUE_LOOSE_PATTERN.match(stripped_line):
+            return True, in_yenc_block, True, in_base64_block
+        return False, in_yenc_block, False, in_base64_block
 
     if RE_BASE64_PATTERN.match(stripped_line):
         return True, in_yenc_block, in_uue_block, True
