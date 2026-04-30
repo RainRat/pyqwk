@@ -13,7 +13,7 @@ class TestZipCompatibility(unittest.TestCase):
             # Create a ZIP with an unsupported file
             zip_path = os.path.join(tmpdir, "empty.zip")
             with zipfile.ZipFile(zip_path, 'w') as zf:
-                zf.writestr("readme.txt", "nothing here")
+                zf.writestr("readme.bin", "nothing here")
 
             with self.assertRaises(FileNotFoundError):
                 core.load_data(zip_path, logger)

@@ -43,7 +43,7 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.tar', '.tar.gz', '.tar.bz2', '.tgz', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm')) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
+                    if lower_file.endswith(('.qwk', '.zip', '.tar', '.tar.gz', '.tar.bz2', '.tgz', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm', '.txt')) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
@@ -1386,6 +1386,134 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
     return messages
 
 
+def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessage]:
+    """Import messages from a Plain Text file."""
+    try:
+        with open(path, 'r', encoding=encoding) as f:
+            content = f.read()
+    except (UnicodeDecodeError, LookupError):
+        with open(path, 'r', encoding='latin1') as f:
+            content = f.read()
+
+    # Split by horizontal separators (dashes) or double newlines
+    content_norm = content.replace('\r\n', '\n')
+    sections = re.split(r'\n-{20,}\n', content_norm)
+    if len(sections) <= 1:
+        # Try splitting by double newlines if no dashes found, looking ahead for headers
+        sections = re.split(r'\n\n(?=Conference:|Message #:|Date:)', content_norm)
+
+    messages = []
+
+    re_conf = re.compile(r'^Conference:\s*(.*?)(?:\s*\((\d+)\))?$', re.MULTILINE)
+    re_bbs = re.compile(r'^BBS:\s*(.*)$', re.MULTILINE)
+    re_status = re.compile(r'^Status:\s*(.*)$', re.MULTILINE)
+    re_msgnum_verbose = re.compile(r'^Message #:\s*(\d+)', re.MULTILINE)
+    re_date_verbose = re.compile(r'Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)', re.MULTILINE)
+    re_date_std = re.compile(r'^Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)', re.MULTILINE)
+    re_from = re.compile(r'^From:\s*(.*)$', re.MULTILINE)
+    re_to = re.compile(r'^To:\s*(.*)$', re.MULTILINE)
+    re_subject = re.compile(r'^Subject:\s*(.*)$', re.MULTILINE)
+    re_refnum = re.compile(r'^Reference #:\s*(\d+)', re.MULTILINE)
+    re_attachments = re.compile(r'^Attachments:\s*(.*)$', re.MULTILINE)
+
+    for section in sections:
+        section = section.strip()
+        if not section:
+            continue
+
+        from_match = re_from.search(section)
+        to_match = re_to.search(section)
+        subj_match = re_subject.search(section)
+
+        # Minimum required headers to consider it a message
+        if not (from_match and to_match and subj_match):
+            continue
+
+        conf_match = re_conf.search(section)
+        bbs_match = re_bbs.search(section)
+        status_match = re_status.search(section)
+        msgnum_v_match = re_msgnum_verbose.search(section)
+        date_v_match = re_date_verbose.search(section)
+        date_s_match = re_date_std.search(section)
+        ref_match = re_refnum.search(section)
+        attach_match = re_attachments.search(section)
+
+        msgnum = None
+        if msgnum_v_match:
+            msgnum = int(msgnum_v_match.group(1))
+
+        date_str = ""
+        if date_v_match:
+            date_str = date_v_match.group(1)
+        elif date_s_match:
+            date_str = date_s_match.group(1)
+
+        msg_date = "01-01-70"
+        msg_time = "00:00"
+        if date_str:
+            parts = date_str.split()
+            if len(parts) >= 1:
+                msg_date = parts[0]
+            if len(parts) >= 2:
+                msg_time = parts[1]
+
+        refnum = None
+        ref_match = re_refnum.search(section)
+        if ref_match:
+            refnum = int(ref_match.group(1))
+
+        attachments = None
+        attach_match = re_attachments.search(section)
+        if attach_match:
+            attachments = [a.strip() for a in attach_match.group(1).split(',') if a.strip()]
+
+        conf_num = 0
+        conf_name = None
+        if conf_match:
+            conf_name = conf_match.group(1).strip()
+            if conf_match.group(2):
+                conf_num = int(conf_match.group(2))
+
+        # Body starts after headers
+        header_end = 0
+        for m in [conf_match, bbs_match, status_match, msgnum_v_match, date_v_match, date_s_match, from_match, to_match, subj_match, ref_match, attach_match]:
+            if m:
+                header_end = max(header_end, m.end())
+
+        body = section[header_end:].strip()
+
+        header = MessageHeader(
+            status='*' if status_match and "[PRIVATE]" in status_match.group(1) else ' ',
+            msgnum=msgnum,
+            msgdate=msg_date,
+            msgtime=msg_time,
+            msgto=to_match.group(1).strip(),
+            msgfrom=from_match.group(1).strip(),
+            msgsubject=subj_match.group(1).strip(),
+            msgpassword="",
+            refnum=refnum,
+            numblocks=None,
+            msgflag=" ",
+            confnum=conf_num,
+            lognum=0,
+            nettag="",
+        )
+
+        msg = ParsedMessage(
+            text=body,
+            msgnum=msgnum,
+            refnum=refnum,
+            confnum=conf_num,
+            header=header,
+            confname=conf_name,
+            bbs_name=bbs_match.group(1).strip() if bbs_match else None,
+            attachments=attachments,
+        )
+        messages.append(msg)
+
+    return messages
+
+
 def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
     """Import messages from a Markdown file."""
     with open(path, 'r', encoding='utf-8') as f:
@@ -1657,6 +1785,15 @@ def load_data(
 
             board_dict = _reconstruct_archive_information(messages)
             return messages, board_dict
+
+    if input_path.lower().endswith('.txt'):
+        try:
+            messages = _parse_text_messages(input_path, encoding)
+        except Exception as e:
+            raise ValueError(f"Failed to load text archive: {e}")
+
+        board_dict = _reconstruct_archive_information(messages)
+        return messages, board_dict
 
     if zipfile.is_zipfile(input_path):
         # Support multi-format batch loading from ZIP archives.

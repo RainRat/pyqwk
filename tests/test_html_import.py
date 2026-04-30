@@ -1,5 +1,6 @@
 import os
 import logging
+import unittest.mock
 from pyqwk.core import (
     ParsedMessage, MessageHeader, process_merged_files, ProcessingSettings,
     load_data, expand_paths
@@ -45,7 +46,6 @@ def test_html_import_roundtrip(tmp_path):
         include_toc=True, quiet=True
     )
 
-    import unittest.mock
     mock_logger = unittest.mock.MagicMock()
 
     # We need to mock load_data to return our test messages during process_merged_files
@@ -106,7 +106,6 @@ def test_html_individual_files_import(tmp_path):
         quiet=True
     )
 
-    import unittest.mock
     mock_logger = unittest.mock.MagicMock()
 
     with unittest.mock.patch('pyqwk.core.load_data') as mock_load:
@@ -128,16 +127,12 @@ def test_html_individual_files_import(tmp_path):
 
 def test_expand_paths_html():
     """Verify that expand_paths finds .html and .htm files."""
-    files = expand_paths(["tests"])
-    # This should be true now, but let's test with a controlled environment if possible
-    # For simplicity, we just check if any .html file would be found in a mock structure
-    import unittest.mock
     with unittest.mock.patch('os.path.isdir', return_value=True):
         with unittest.mock.patch('os.walk') as mock_walk:
             mock_walk.return_value = [
-                ('/fake', ('subdir',), ('msg1.html', 'msg2.htm', 'other.txt')),
+                ('/fake', ('subdir',), ('msg1.html', 'msg2.htm', 'other.exe')),
             ]
             found = expand_paths(['/fake'])
             assert '/fake/msg1.html' in found
             assert '/fake/msg2.htm' in found
-            assert '/fake/other.txt' not in found
+            assert '/fake/other.exe' not in found
