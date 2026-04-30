@@ -40,13 +40,13 @@ def test_tar_extraction_error():
 def test_tar_no_supported_files():
     logger = logging.getLogger("test")
     with tempfile.TemporaryDirectory() as tmpdir:
-        dummy_file = os.path.join(tmpdir, "dummy.txt")
+        dummy_file = os.path.join(tmpdir, "dummy.dummy")
         with open(dummy_file, "w") as f:
             f.write("not a message file")
 
         tar_path = os.path.join(tmpdir, "empty.tar")
         with tarfile.open(tar_path, "w") as tar:
-            tar.add(dummy_file, arcname="dummy.txt")
+            tar.add(dummy_file, arcname="dummy.dummy")
 
         with pytest.raises(ValueError, match="No supported message files found in TAR archive"):
             load_data(tar_path, logger)
