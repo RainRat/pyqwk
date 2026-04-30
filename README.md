@@ -1,6 +1,6 @@
 # pyqwk
 
-pyqwk converts message archives into modern, readable formats like HTML, Markdown, and SQLite. It supports many file types, including QWK, ZIP, JSON, CSV, mbox, EML, and more.
+pyqwk converts message archives into modern, readable formats like HTML, Markdown, and SQLite. It supports many file types, including QWK, ZIP, TAR, JSON, CSV, mbox, EML, and more.
 
 ## What are QWK and REP files?
 
@@ -22,7 +22,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 | Format | Import | Export | Notes |
 | :--- | :---: | :---: | :--- |
-| **QWK / REP** | ✅ | ✅ | Classic BBS message packets |
+| **QWK / REP** | ✅ | ✅ | Classic BBS message packets (ZIP or TAR) |
 | **JSON / JSONL** | ✅ | ✅ | Modern structured data |
 | **HTML** | ✅ | ✅ | Browsable files with threading and charts |
 | **Markdown** | ✅ | ✅ | Readable text files |
@@ -44,7 +44,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
 - **tqdm:** Adds a progress bar. Install with: `python -m pip install tqdm`
-- **unzip:** Helps open older archives. Install it if `pyqwk` cannot open your file:
+- **unzip:** Helps open older ZIP archives. Install it if `pyqwk` cannot open your file:
   - **Ubuntu/Debian/Fedora:** `sudo apt install unzip` or `sudo dnf install unzip`
   - **Arch Linux:** `sudo pacman -S unzip`
   - **macOS:** `brew install unzip`
@@ -60,6 +60,9 @@ python qwk.py archive.qwk
 
 # Process an entire folder
 python qwk.py my_archives/
+
+# Process a compressed TAR archive
+python qwk.py messages.tar.gz
 ```
 
 ## Installation
