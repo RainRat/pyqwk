@@ -20,7 +20,7 @@ class TestDirectoryExpansion:
         (tmp_path / "messages.dat").touch()
 
         # Create invalid files
-        (tmp_path / "test.txt").touch()
+        (tmp_path / "test.exe").touch()
         (tmp_path / "image.png").touch()
 
         expanded = _expand_directories([str(tmp_path)])
@@ -30,7 +30,7 @@ class TestDirectoryExpansion:
         assert "test2.rep" in filenames
         assert "archive.zip" in filenames
         assert "messages.dat" in filenames
-        assert "test.txt" not in filenames
+        assert "test.exe" not in filenames
         assert "image.png" not in filenames
         assert len(expanded) == 4
 

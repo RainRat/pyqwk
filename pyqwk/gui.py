@@ -1146,7 +1146,7 @@ class QwkGuiApp:
         filetypes = [
             (
                 "All supported formats",
-                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm *.tar *.tar.gz *.tar.bz2 *.tgz",
+                "*.qwk *.rep *.json *.jsonl *.csv *.db *.sqlite *.xml *.rss *.mbox *.eml *.md *.markdown *.html *.htm *.tar *.tar.gz *.tar.bz2 *.tgz *.txt",
             ),
             ("QWK archives", "*.qwk"),
             ("REP archives", "*.rep"),
@@ -1160,6 +1160,7 @@ class QwkGuiApp:
             ("EML files", "*.eml"),
             ("Markdown files", "*.md *.markdown"),
             ("HTML archives", "*.html *.htm"),
+            ("Plain Text", "*.txt"),
             ("messages.dat", "messages.dat"),
             ("All files", "*.*"),
         ]
