@@ -1721,7 +1721,7 @@ def load_data(
                                 control_lines = f.read().splitlines()
                             board_dict = _parse_control_dat(control_lines, logger, encoding)
                         elif messages_dat:
-                             logger.warning("CONTROL.DAT not found in the zip archive.")
+                            logger.warning("CONTROL.DAT not found in the zip archive.")
                         return file_data, board_dict
                 except Exception as final_e:
                     error_msg = f"An error occurred while handling older ZIP archive: {str(final_e)}"
@@ -1764,7 +1764,7 @@ def load_data(
                         msgs = list(parse_messages(data, None, encoding))
                         # Attach conference names since we are merging into a shared board_dict
                         for m in msgs:
-                             m.confname = b_dict.get(m.confnum)
+                            m.confname = b_dict.get(m.confnum)
                         all_messages.extend(msgs)
                     else:
                         all_messages.extend(data)
@@ -1772,7 +1772,7 @@ def load_data(
                     logger.warning("Skipping file %s in ZIP due to error: %s", os.path.basename(p), e)
 
             if not all_messages:
-                 raise ValueError(f"No messages could be loaded from ZIP archive: {input_path}")
+                raise ValueError(f"No messages could be loaded from ZIP archive: {input_path}")
 
             return all_messages, merged_board_dict
     elif tarfile.is_tarfile(input_path) if os.path.isfile(input_path) else False:
@@ -1813,7 +1813,7 @@ def load_data(
                     if isinstance(data, bytearray):
                         msgs = list(parse_messages(data, None, encoding))
                         for m in msgs:
-                             m.confname = b_dict.get(m.confnum)
+                            m.confname = b_dict.get(m.confnum)
                         all_messages.extend(msgs)
                     else:
                         all_messages.extend(data)
@@ -1821,7 +1821,7 @@ def load_data(
                     logger.warning("Skipping file %s in TAR due to error: %s", os.path.basename(p), e)
 
             if not all_messages:
-                 raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
+                raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
 
             return all_messages, merged_board_dict
     else:
