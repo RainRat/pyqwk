@@ -109,8 +109,10 @@ def resolve_output_format(
 
 RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
 RE_UUE_PATTERN = re.compile(r'^begin\s+\d{3}\s+')
+# Match UUE data lines, which traditionally start with 'M' and contain 60 characters of encoded data.
 RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
 RE_UUE_LOOSE_PATTERN = re.compile(r'[\x21-\x4c][\x21-\x60]{4,60}$')
+# Identify Base64 blocks by looking for long strings of characters commonly used in Base64 encoding.
 RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
 RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
 RE_BASE64_LOOSE_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{4,}$')
@@ -119,6 +121,8 @@ RE_URL_PATTERN = re.compile(
     r'\b(?:https?|ftp|telnet|gopher)://[^\s<>"]+|www\.[^\s<>"]+',
     re.IGNORECASE
 )
+# Match phone numbers while avoiding false positives from dates (like 2023-10-12).
+# It requires at least 7 digits to ensure the match is likely a phone number.
 RE_PHONE_PATTERN = re.compile(
     r'(?<!\w)'
     r'(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)'
@@ -139,6 +143,7 @@ RE_SUBJECT_PREFIX_PATTERN = re.compile(
 
 RE_ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 
+# Exclude common words from keyword statistics to ensure the report highlights unique and meaningful terms.
 DEFAULT_STOP_WORDS = {
     'the', 'and', 'for', 'that', 'this', 'with', 'from', 'have', 'was', 'were',
     'but', 'not', 'are', 'you', 'your', 'his', 'her', 'they', 'them', 'their',
@@ -150,6 +155,8 @@ DEFAULT_STOP_WORDS = {
     'give', 'take', 'find', 'look', 'work', 'part',
 }
 
+# Identify common markers that separate a message's body from the user's signature.
+# This allows the tool to hide signatures for a cleaner reading experience.
 SIGNATURE_PATTERNS_EXACT = {
     "---",
     "___",
