@@ -62,14 +62,14 @@ class TestBinaryDetection:
         assert skip is True
         assert in_uue is False
 
-    def test_uue_skips_until_end(self):
-        # Any garbage inside a UUE block should be skipped until 'end'
+    def test_uue_exits_on_non_uue_data(self):
+        # Improved logic should exit UUE block if line is not UUE data or terminator
         line = "This is not UUE data"
         skip, in_yenc, in_uue, in_b64 = _is_binary_line(
             line, previous_line=None, in_yenc_block=False, in_uue_block=True, in_base64_block=False
         )
-        assert skip is True
-        assert in_uue is True
+        assert skip is False
+        assert in_uue is False
 
     def test_detects_yenc_body(self):
         line = "random_yenc_data"
@@ -158,15 +158,15 @@ class TestBinaryDetection:
         assert in_yenc is False
         assert in_uue is False
 
-    def test_stays_in_uue_on_invalid_line(self):
+    def test_exits_uue_on_invalid_line(self):
         line = "Not a uue line"
         skip, in_yenc, in_uue, in_b64 = _is_binary_line(
             line, previous_line=None, in_yenc_block=False, in_uue_block=True, in_base64_block=False
         )
-        # We should stay in UUE block and skip the line
-        assert skip is True
+        # We should exit UUE block if it's garbage
+        assert skip is False
         assert in_yenc is False
-        assert in_uue is True
+        assert in_uue is False
 
     def test_detects_base64(self):
         line = "VGhpcyBpcyBhIHRlc3QgbWVzc2FnZQ==" # Base64 for "This is a test message"
