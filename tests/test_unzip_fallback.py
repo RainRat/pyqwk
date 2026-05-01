@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import pyqwk.core as core
-import os
 
 class TestUnzipFallback(unittest.TestCase):
     @patch('zipfile.is_zipfile', return_value=True)

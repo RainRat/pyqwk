@@ -1,8 +1,6 @@
-import os
 import datetime
 import email
 from unittest.mock import MagicMock, patch
-import pytest
 from pyqwk.core import (
     _message_from_email,
     _generate_safe_filename,

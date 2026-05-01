@@ -4,7 +4,6 @@ from pyqwk.core import (
     _parse_rss_messages, _write_rss, _parse_html_messages,
     _order_messages_by_thread, MessageHeader, ParsedMessage, BBSInfo
 )
-from unittest.mock import MagicMock, patch
 
 def test_parse_rss_messages_malformed_guid():
     xml_data = """<?xml version="1.0" encoding="UTF-8" ?>

@@ -1,6 +1,5 @@
-import os
 import pytest
-from pyqwk.core import _parse_text_messages, load_data, ProcessingSettings
+from pyqwk.core import _parse_text_messages, load_data
 import logging
 
 def test_parse_text_messages_latin1_fallback(tmp_path):

@@ -1702,7 +1702,7 @@ def load_data(
         Note: When loading an original 'MESSAGES.DAT' file, it automatically searches
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
-    board_dict: dict[int, str] = {}
+    board_dict = ConferenceMap()
 
     if input_path.lower().endswith(('.db', '.sqlite')) or input_path == ':memory:':
         try:

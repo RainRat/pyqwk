@@ -2,7 +2,7 @@ import os
 import zipfile
 import tempfile
 import logging
-from pyqwk.core import load_data, ParsedMessage, MessageHeader
+from pyqwk.core import load_data
 
 def test_zip_multi_format_loading():
     logger = logging.getLogger("test")

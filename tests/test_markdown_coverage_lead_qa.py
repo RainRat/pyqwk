@@ -69,7 +69,6 @@ def test_markdown_load_data_error_handling_gap(test_dir):
     path = os.path.join(test_dir, "corrupt.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write("dummy")
-    from unittest.mock import patch
     with patch("pyqwk.core._parse_markdown_messages", side_effect=Exception("Parsing error")):
         with pytest.raises(ValueError, match="Failed to load Markdown archive"):
             load_data(path, logging.getLogger())
@@ -112,7 +111,6 @@ def test_markdown_subject_regex_failure_gap(test_dir):
             return mock_regex
         return original_compile(pattern, flags)
 
-    from unittest.mock import patch
     with patch("re.compile", side_effect=side_effect):
         messages, _ = load_data(path, logging.getLogger())
         assert len(messages) == 0

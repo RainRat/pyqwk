@@ -1,7 +1,5 @@
-import os
-import pytest
 import logging
-from pyqwk.core import load_data, ParsedMessage
+from pyqwk.core import load_data
 
 def test_text_import_standard(tmp_path):
     text_content = """Conference: General (1)

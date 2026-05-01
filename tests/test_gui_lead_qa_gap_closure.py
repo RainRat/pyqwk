@@ -1,9 +1,6 @@
 import sys
-import runpy
-import os
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 import pytest
-import tkinter as tk
 
 # Mock tkinter before any pyqwk.gui imports to avoid Tcl/Tk dependency in headless environments
 mock_tk = MagicMock()
@@ -20,7 +17,7 @@ class MockTclError(Exception):
 mock_tk.TclError = MockTclError
 
 from pyqwk.gui import QwkGuiApp
-from pyqwk.core import ParsedMessage, MessageHeader, BBSInfo
+from pyqwk.core import ParsedMessage, MessageHeader
 
 @pytest.fixture
 def app():

@@ -1,5 +1,4 @@
 import sys
-import os
 from unittest.mock import MagicMock, patch
 import pytest
 from pyqwk.core import ParsedMessage, MessageHeader

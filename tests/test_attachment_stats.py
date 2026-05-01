@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import _compute_stats_from_messages, ParsedMessage, MessageHeader, render_stats_as_text, _render_stats_html, _render_stats_markdown
 
 def test_attachment_stats_calculation():

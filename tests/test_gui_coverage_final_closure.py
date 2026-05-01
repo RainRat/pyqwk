@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 
 # Mock tkinter BEFORE any pyqwk imports
 class MockTclError(Exception):

@@ -1,10 +1,7 @@
-import pytest
 from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, matches_filters, process_merged_files
 from pyqwk.cli import main
 import sys
 import io
-import os
-import tempfile
 import json
 
 def test_length_filtering_unit():

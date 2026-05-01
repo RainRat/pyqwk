@@ -1,7 +1,6 @@
 import os
 import logging
 import datetime
-import pytest
 from pyqwk.core import (
     _parse_qwk_date,
     MessageHeader,

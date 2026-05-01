@@ -1,7 +1,6 @@
 import sys
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 import pytest
-import datetime
 
 # Mock tkinter before any pyqwk.gui imports
 class MockTclError(Exception):
@@ -24,7 +23,6 @@ if "tkinter.messagebox" not in sys.modules:
 if "tkinter.simpledialog" not in sys.modules:
     sys.modules["tkinter.simpledialog"] = MagicMock()
 
-import pyqwk.gui
 from pyqwk.gui import QwkGuiApp
 from pyqwk.core import ParsedMessage, MessageHeader, format_size
 

@@ -1,7 +1,6 @@
 import sys
 from unittest.mock import MagicMock, patch
 import pytest
-import tkinter as tk
 
 # Mock tkinter before any pyqwk.gui imports
 mock_tk = MagicMock()
@@ -13,7 +12,6 @@ sys.modules["tkinter.ttk"] = mock_ttk
 sys.modules["tkinter.simpledialog"] = MagicMock()
 
 from pyqwk.gui import QwkGuiApp
-from pyqwk.core import ParsedMessage, MessageHeader
 
 @pytest.fixture
 def app():

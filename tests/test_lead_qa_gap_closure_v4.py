@@ -3,7 +3,6 @@ import os
 import sqlite3
 import io
 import xml.etree.ElementTree as ET
-from pathlib import Path
 import pytest
 from pyqwk.core import (
     LogFormatter,
@@ -21,9 +20,7 @@ from pyqwk.core import (
     matches_filters,
     ProcessingSettings,
     ParsedMessage,
-    MessageHeader,
-    BBSInfo,
-    ConferenceMap
+    MessageHeader
 )
 
 @pytest.fixture

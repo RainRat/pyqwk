@@ -1,6 +1,5 @@
-import os
 import logging
-from pyqwk.core import load_data, ProcessedMessage, ProcessingSettings
+from pyqwk.core import load_data
 
 def test_rss_roundtrip(tmp_path):
     # Create a dummy message

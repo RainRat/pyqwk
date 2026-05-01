@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from pyqwk.core import calculate_archive_stats, ProcessingSettings, ParsedMessage, MessageHeader, ConferenceMap
 
 def test_calculate_archive_stats_limit_break():

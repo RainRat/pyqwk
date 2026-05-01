@@ -1,7 +1,6 @@
 import sys
 from unittest.mock import MagicMock, patch
 import pytest
-import tkinter as tk
 
 # Mock tkinter for GUI tests
 mock_tk = MagicMock()

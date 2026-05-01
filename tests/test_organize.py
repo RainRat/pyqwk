@@ -1,7 +1,5 @@
-import os
 import logging
 from unittest.mock import MagicMock, patch
-import pytest
 from pyqwk.core import (
     ProcessingSettings,
     ParsedMessage,
