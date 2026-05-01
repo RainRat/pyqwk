@@ -22,16 +22,16 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 | Format | Import | Export | Notes |
 | :--- | :---: | :---: | :--- |
-| **QWK / REP** | ✅ | ✅ | Classic BBS message packets (ZIP or TAR) |
-| **JSON / JSONL** | ✅ | ✅ | Modern structured data |
-| **HTML** | ✅ | ✅ | Browsable files with threading and charts |
-| **Markdown** | ✅ | ✅ | Readable text files |
-| **CSV** | ✅ | ✅ | Spreadsheets and databases |
-| **RSS** | ✅ | ✅ | Feed readers and syndication |
-| **XML** | ✅ | ✅ | Generic structured data |
-| **SQLite** | ✅ | ✅ | Relational databases (.db) |
-| **mbox / EML** | ✅ | ✅ | Email applications |
-| **Plain Text** | ✅ | ✅ | Simple readable text |
+| **QWK / REP** | ✅ | ✅ | Classic BBS packets (.qwk, .rep, .zip, .tar, .tar.gz, .tar.bz2, .tgz, messages.dat) |
+| **JSON / JSONL** | ✅ | ✅ | Modern structured data (.json, .jsonl) |
+| **HTML** | ✅ | ✅ | Browsable files with threading and charts (.html, .htm) |
+| **Markdown** | ✅ | ✅ | Readable text files (.md, .markdown) |
+| **CSV** | ✅ | ✅ | Spreadsheets and databases (.csv) |
+| **RSS** | ✅ | ✅ | Feed readers and syndication (.rss) |
+| **XML** | ✅ | ✅ | Generic structured data (.xml) |
+| **SQLite** | ✅ | ✅ | Relational databases (.db, .sqlite) |
+| **mbox / EML** | ✅ | ✅ | Email applications (.mbox, .eml) |
+| **Plain Text** | ✅ | ✅ | Simple readable text (.txt) |
 
 ## Prerequisites
 
