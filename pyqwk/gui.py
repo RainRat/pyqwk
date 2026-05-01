@@ -303,7 +303,17 @@ class QwkGuiApp:
         if event.state & 0x4:  # Control mask
             if event.keysym.lower() in ('c', 'a'):
                 return None
-        # Allow navigation keys
+
+        # Handle message navigation shortcuts
+        key = event.keysym.lower()
+        if key in ('j', 'n'):
+            self._select_relative_message(1)
+            return "break"
+        if key in ('k', 'p'):
+            self._select_relative_message(-1)
+            return "break"
+
+        # Allow text navigation keys
         if event.keysym in ('Up', 'Down', 'Left', 'Right', 'Prior', 'Next', 'Home', 'End'):
             return None
         return "break"
