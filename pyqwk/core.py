@@ -1447,11 +1447,9 @@ def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessa
         if msgnum_v_match:
             msgnum = int(msgnum_v_match.group(1))
 
-        date_str = ""
-        if date_v_match:
-            date_str = date_v_match.group(1)
-        elif date_s_match:
-            date_str = date_s_match.group(1)
+        # Use date from verbose or standard header
+        date_match = date_v_match or date_s_match
+        date_str = date_match.group(1) if date_match else ""
 
         msg_date = "01-01-70"
         msg_time = "00:00"
