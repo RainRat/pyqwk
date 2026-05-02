@@ -330,7 +330,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
 
         self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
-        formats = "QWK, REP, JSON, JSONL, CSV, SQLite (.db), XML, mbox, EML, Markdown, and MESSAGES.DAT"
+        formats = "QWK, REP, ZIP, TAR, JSON, JSONL, CSV, RSS, SQLite (.db), XML, mbox, EML, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT)"
         self.detail_text.insert(tk.END, f"{formats}\n\n", "body")
 
         self.detail_text.insert(tk.END, "Keyboard Shortcuts:\n", "header_label")
@@ -2087,7 +2087,7 @@ def main() -> None:
     parser.add_argument(
         "paths",
         nargs="*",
-        help="Path to message archives, ZIP files, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, and HTML.",
+        help="Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, MBOX, EML, SQLite, Markdown, HTML, and Plain Text. ZIP and TAR archives can contain multiple files and formats which will be merged.",
     )
     args = parser.parse_args()
 
