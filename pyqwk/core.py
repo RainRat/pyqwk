@@ -1685,7 +1685,7 @@ def load_data(
     """Load message data and conference mappings from an archive file.
 
     This function handles both older formats (QWK, REP) and modern
-    formats (JSON, SQLite, XML, CSV, mbox, EML).
+    formats (JSON, JSONL, SQLite, XML, RSS, CSV, mbox, EML, Markdown, HTML, Plain Text).
 
     Args:
         input_path: Path to the archive file or an original 'MESSAGES.DAT' file.
