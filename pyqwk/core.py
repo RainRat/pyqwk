@@ -1462,12 +1462,10 @@ def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessa
                 msg_time = parts[1]
 
         refnum = None
-        ref_match = re_refnum.search(section)
         if ref_match:
             refnum = int(ref_match.group(1))
 
         attachments = None
-        attach_match = re_attachments.search(section)
         if attach_match:
             attachments = [a.strip() for a in attach_match.group(1).split(',') if a.strip()]
 
