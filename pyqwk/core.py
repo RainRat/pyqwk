@@ -1266,10 +1266,10 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
     messages = []
 
     # Identify message blocks
-    msg_blocks = list(re.finditer(r'<div class="message"(?: id="[^"]*")?>', content))
+    msg_blocks = list(re.finditer(r'<div class="message"(?: id="[^"]*")?>', content, re.IGNORECASE))
 
     # Pre-calculate depths for all message starts in a single pass
-    div_tags = list(re.finditer(r"<(div|/div)([^>]*)>", content))
+    div_tags = list(re.finditer(r"<(div|/div)([^>]*)>", content, re.IGNORECASE))
     msg_depths = {}
     current_depth = 0
     stack = []
@@ -1280,8 +1280,8 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
         # Advance div_idx and update depth until we reach the current message block
         while div_idx < len(div_tags) and div_tags[div_idx].start() < start:
             m_tag = div_tags[div_idx]
-            tag_name = m_tag.group(1)
-            attrs = m_tag.group(2)
+            tag_name = m_tag.group(1).lower()
+            attrs = m_tag.group(2).lower()
             if tag_name == "div":
                 if 'class="reply"' in attrs:
                     stack.append("reply")
@@ -1295,16 +1295,16 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
             div_idx += 1
         msg_depths[start] = max(0, current_depth)
 
-    re_date = re.compile(r'<strong>Date:</strong>\s*(.*?)\s*</div>')
-    re_from = re.compile(r'<strong>From:</strong>\s*(.*?)\s*</div>')
-    re_to = re.compile(r'<strong>To:</strong>\s*(.*?)\s*</div>')
-    re_subject = re.compile(r'<strong>Subject:</strong>\s*(.*?)\s*</div>')
-    re_conf = re.compile(r'<strong>Conference:</strong>\s*(.*?)\s*\((\d+)\)\s*</div>')
-    re_bbs = re.compile(r'<strong>BBS:</strong>\s*(.*?)\s*</div>')
-    re_source = re.compile(r'<strong>Source:</strong>\s*(.*?)\s*</div>')
-    re_number = re.compile(r'<strong>Number:</strong>\s*(\d+)\s*</div>')
-    re_attachments = re.compile(r'<strong>Attachments:</strong>\s*(.*?)\s*</div>')
-    re_body = re.compile(r'<pre class="body">(.*?)</pre>', re.DOTALL)
+    re_date = re.compile(r'<strong>Date:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_from = re.compile(r'<strong>From:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_to = re.compile(r'<strong>To:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_subject = re.compile(r'<strong>Subject:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_conf = re.compile(r'<strong>Conference:</strong>\s*(.*?)\s*\((\d+)\)\s*</div>', re.IGNORECASE)
+    re_bbs = re.compile(r'<strong>BBS:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_source = re.compile(r'<strong>Source:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_number = re.compile(r'<strong>Number:</strong>\s*(\d+)\s*</div>', re.IGNORECASE)
+    re_attachments = re.compile(r'<strong>Attachments:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_body = re.compile(r'<pre class="body">(.*?)</pre>', re.DOTALL | re.IGNORECASE)
 
     def clean_html(text: str) -> str:
         # Remove tags like <mark>, </mark>, <span class="quote">, </span>, and <a> tags
