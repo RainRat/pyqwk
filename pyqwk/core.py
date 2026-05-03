@@ -377,6 +377,7 @@ class ProcessingSettings:
     output_path: str | None
     encoding: str
     filename_pattern: str | None = None
+    oneline_pattern: str | None = None
     min_length: int | None = None
     max_length: int | None = None
     regex: bool = False
@@ -2442,6 +2443,57 @@ def format_size(size: int) -> str:
         return f"{size / (1024 * 1024):.1f} MB"
 
 
+def _get_message_mapping(message: ParsedMessage, count: int) -> dict[str, Any]:
+    """Generate a dictionary of variables representing a message's metadata."""
+    header = message.header
+    dt = _parse_qwk_date(header.msgdate, header.msgtime)
+
+    flags = ""
+    if header.is_private:
+        flags += "*"
+    if message.attachments:
+        flags += "@"
+
+    snippet = ""
+    if message.text:
+        # Get first non-empty line
+        for line in message.text.splitlines():
+            clean_line = line.strip()
+            if clean_line:
+                snippet = clean_line[:50]
+                break
+
+    indent = ""
+    if message.depth > 0:
+        indent = "  " * (message.depth - 1) + "└ "
+
+    return {
+        'confnum': header.confnum,
+        'confname': message.confname or "",
+        'msgnum': header.msgnum if header.msgnum is not None else count,
+        'author': header.msgfrom.strip(),
+        'to': header.msgto.strip(),
+        'subject': header.msgsubject.strip(),
+        'date': header.msgdate,
+        'time': header.msgtime,
+        'year': dt.year,
+        'month': f"{dt.month:02d}",
+        'day': f"{dt.day:02d}",
+        'hour': f"{dt.hour:02d}",
+        'minute': f"{dt.minute:02d}",
+        'second': f"{dt.second:02d}",
+        'iso_date': dt.date().isoformat(),
+        'iso_time': dt.time().isoformat(),
+        'bbs_name': message.bbs_name or "",
+        'bbs_id': message.bbs_id or "",
+        'length': len(message.text) if message.text else 0,
+        'size': format_size(len(message.text)) if message.text else "0 B",
+        'flags': flags,
+        'snippet': snippet,
+        'indent': indent,
+    }
+
+
 def _generate_safe_filename(message: ParsedMessage, settings_or_format: ProcessingSettings | str, count: int) -> str:
     """Generate a human-readable filename for an individual message."""
     if isinstance(settings_or_format, ProcessingSettings):
@@ -2455,19 +2507,27 @@ def _generate_safe_filename(message: ParsedMessage, settings_or_format: Processi
 
     if settings and settings.filename_pattern:
         try:
-            mapping = {
-                'date': _slugify(message.header.msgdate, "date"),
-                'time': _slugify(message.header.msgtime, "time"),
-                'author': _slugify(message.header.msgfrom, "author"),
-                'to': _slugify(message.header.msgto, "to"),
-                'subject': _slugify(message.header.msgsubject, "subject"),
-                'msgnum': message.msgnum if message.msgnum is not None else count,
-                'confnum': message.confnum,
-                'confname': _slugify(message.confname or f"conf_{message.confnum}", "conf"),
-                'bbs_name': _slugify(message.bbs_name or "bbs", "bbs"),
-                'bbs_id': _slugify(message.bbs_id or "id", "id"),
-                'length': len(message.text) if message.text else 0,
+            raw_mapping = _get_message_mapping(message, count)
+
+            # Map of variable names to their slugify defaults for filename compatibility
+            defaults = {
+                'confname': 'conf',
+                'bbs_name': 'bbs',
+                'bbs_id': 'id',
             }
+
+            # Slugify all string values for use in a filename
+            mapping = {}
+            for k, v in raw_mapping.items():
+                if isinstance(v, str):
+                    df = defaults.get(k, k)
+                    if k == 'confname' and not v:
+                        mapping[k] = _slugify(f"conf_{message.confnum}", "conf")
+                    else:
+                        mapping[k] = _slugify(v, df)
+                else:
+                    mapping[k] = v
+
             # Use formatting while preserving the pattern's intent
             filename = settings.filename_pattern.format(**mapping)
             # Basic sanitization of the resulting filename (replace any remaining odd chars)
@@ -2635,17 +2695,46 @@ def process_merged_files(
             )
 
         if settings.oneline:
-            processed_buffer = parsed_message.header.format_oneline(
-                board_dict,
-                use_colors=use_colors,
-                highlight_term=settings.search_term,
-                is_regex=settings.regex,
-                verbose=settings.verbose,
-                depth=parsed_message.depth,
-                conf_name=parsed_message.confname,
-                is_private=parsed_message.header.is_private,
-                has_attachments=bool(parsed_message.attachments),
-            )
+            if settings.oneline_pattern:
+                try:
+                    mapping = _get_message_mapping(parsed_message, processed_count)
+                    # Apply fallbacks for oneline display
+                    if not mapping['confname']:
+                        mapping['confname'] = f"Conference {parsed_message.confnum}"
+
+                    processed_buffer = settings.oneline_pattern.format(**mapping) + "\r\n"
+                    # Apply search highlighting to the resulting line
+                    processed_buffer = _highlight_text(
+                        processed_buffer,
+                        settings.search_term,
+                        settings.regex,
+                        use_colors=use_colors
+                    )
+                except (KeyError, ValueError):
+                    # Fallback if pattern is invalid
+                    processed_buffer = parsed_message.header.format_oneline(
+                        board_dict,
+                        use_colors=use_colors,
+                        highlight_term=settings.search_term,
+                        is_regex=settings.regex,
+                        verbose=settings.verbose,
+                        depth=parsed_message.depth,
+                        conf_name=parsed_message.confname,
+                        is_private=parsed_message.header.is_private,
+                        has_attachments=bool(parsed_message.attachments),
+                    )
+            else:
+                processed_buffer = parsed_message.header.format_oneline(
+                    board_dict,
+                    use_colors=use_colors,
+                    highlight_term=settings.search_term,
+                    is_regex=settings.regex,
+                    verbose=settings.verbose,
+                    depth=parsed_message.depth,
+                    conf_name=parsed_message.confname,
+                    is_private=parsed_message.header.is_private,
+                    has_attachments=bool(parsed_message.attachments),
+                )
         else:
             processed_buffer = cleaned_body
 
@@ -3868,7 +3957,7 @@ def _write_text(
         and sys.stdout.isatty()
     )
 
-    if settings and settings.oneline:
+    if settings and settings.oneline and not settings.oneline_pattern:
         msgnum_hdr = f"{'Num':<6} " if settings.verbose else ""
         conf_hdr = f"{'Conference':<12}"
         date_hdr = f"{'Date':<14}"
@@ -3924,20 +4013,49 @@ def _write_text(
             separator_line = f"\x1b[90m{separator_line}\x1b[0m"
         parts.append(separator_line)
 
-    for message in messages:
+    for i, message in enumerate(messages):
         if settings and settings.oneline:
-            # Re-format oneline summary to account for threading depth
-            text = message.header.format_oneline(
-                {},  # board_dict not needed when conf_name is provided
-                use_colors=use_colors,
-                highlight_term=settings.search_term,
-                is_regex=settings.regex,
-                verbose=settings.verbose,
-                depth=message.depth,
-                conf_name=message.confname,
-                is_private=message.header.is_private,
-                has_attachments=bool(message.attachments),
-            )
+            if settings.oneline_pattern:
+                try:
+                    mapping = _get_message_mapping(message, i + 1)
+                    # Apply fallbacks for oneline display
+                    if not mapping['confname']:
+                        mapping['confname'] = f"Conference {message.confnum}"
+
+                    text = settings.oneline_pattern.format(**mapping) + "\r\n"
+                    # Apply search highlighting to the resulting line
+                    text = _highlight_text(
+                        text,
+                        settings.search_term,
+                        settings.regex,
+                        use_colors=use_colors
+                    )
+                except (KeyError, ValueError):
+                    # Fallback if pattern is invalid
+                    text = message.header.format_oneline(
+                        {},
+                        use_colors=use_colors,
+                        highlight_term=settings.search_term,
+                        is_regex=settings.regex,
+                        verbose=settings.verbose,
+                        depth=message.depth,
+                        conf_name=message.confname,
+                        is_private=message.header.is_private,
+                        has_attachments=bool(message.attachments),
+                    )
+            else:
+                # Re-format oneline summary to account for threading depth
+                text = message.header.format_oneline(
+                    {},  # board_dict not needed when conf_name is provided
+                    use_colors=use_colors,
+                    highlight_term=settings.search_term,
+                    is_regex=settings.regex,
+                    verbose=settings.verbose,
+                    depth=message.depth,
+                    conf_name=message.confname,
+                    is_private=message.header.is_private,
+                    has_attachments=bool(message.attachments),
+                )
         else:
             text = message.text
 

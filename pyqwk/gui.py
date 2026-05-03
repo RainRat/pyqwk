@@ -870,6 +870,8 @@ class QwkGuiApp:
             has_attachments=self.has_attach_var.get(),
             mine=self.mine_var.get(),
             on_this_day=self.on_this_day_var.get(),
+            oneline=False,
+            oneline_pattern=None,
             has_links=self.has_links_var.get(),
             has_emails=self.has_emails_var.get(),
             has_phones=self.has_phones_var.get(),
