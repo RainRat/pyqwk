@@ -89,6 +89,7 @@ class QwkGuiApp:
         self.has_emails_var = tk.BooleanVar(value=False)
         self.has_phones_var = tk.BooleanVar(value=False)
         self.has_ansi_var = tk.BooleanVar(value=False)
+        self.redact_pii_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -560,6 +561,7 @@ class QwkGuiApp:
         self.has_emails_var.set(False)
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
+        self.redact_pii_var.set(False)
         self.wrap_var.set(True)
         self._update_wrap()
         self.reload_messages()
@@ -680,6 +682,7 @@ class QwkGuiApp:
             ("Clean", self.clean_var, self.reload_messages),
             ("Wrap", self.wrap_var, self._update_wrap),
             ("Remove Colors", self.ansi_var, self.reload_messages),
+            ("Redact PII", self.redact_pii_var, self.reload_messages),
         ]):
             l_padx = (10, 5) if i == 0 else 5
             ttk.Checkbutton(
@@ -855,7 +858,7 @@ class QwkGuiApp:
             individual_files=False,
             threaded=self.threaded_var.get(),
             binaries_removal=clean,
-            redact_pii=False,
+            redact_pii=self.redact_pii_var.get(),
             strip_ansi=clean or self.ansi_var.get(),
             format='text',
             separator='none',
