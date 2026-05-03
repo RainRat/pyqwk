@@ -662,6 +662,7 @@ class MessageHeader:
         is_regex: bool = False,
         attachments: list[str] | None = None,
         bbs_name: str | None = None,
+        redact_pii: bool = False,
     ) -> str:
         """Render a message header into readable text.
 
@@ -672,6 +673,7 @@ class MessageHeader:
             use_colors: Whether to use ANSI colors for terminal output.
             highlight_term: Optional term to highlight in the header values.
             is_regex: Whether the highlight_term is a regular expression.
+            redact_pii: Whether to hide personal information.
 
         Returns:
             The formatted header text with DOS-style newlines appended.
@@ -684,6 +686,8 @@ class MessageHeader:
             not_found_flag = True
 
         def fmt_val(val: str) -> str:
+            if redact_pii:
+                val = _redact_pii(val)
             return _highlight_text(val, highlight_term, is_regex, use_colors)
 
         def fmt_line(label: str, value: str, newline: bool = True, pad: int = 16) -> str:
@@ -692,7 +696,7 @@ class MessageHeader:
             if use_colors:
                 # Use Dim (90) for labels to create better visual hierarchy
                 return f"\x1b[90m{label_fmt}\x1b[0m{fmt_val(value)}{suffix}"
-            return f"{label_fmt}{value}{suffix}"
+            return f"{label_fmt}{fmt_val(value)}{suffix}"
 
         header_parts: list[str] = []
         if include_separator:
@@ -751,6 +755,7 @@ class MessageHeader:
         conf_name: str | None = None,
         is_private: bool = False,
         has_attachments: bool = False,
+        redact_pii: bool = False,
     ) -> str:
         """Render a message header as a single line summary."""
         if conf_name is None:
@@ -759,6 +764,11 @@ class MessageHeader:
         from_name = self.msgfrom.strip()
         to_name = self.msgto.strip()
         subject = self.msgsubject.strip()
+
+        if redact_pii:
+            from_name = _redact_pii(from_name)
+            to_name = _redact_pii(to_name)
+            subject = _redact_pii(subject)
 
         def prepare_field(text: str, width: int) -> str:
             truncated = text[:width]
@@ -2164,6 +2174,15 @@ def parse_messages(
         )
 
 
+def _redact_pii(text: str) -> str:
+    """Hide email addresses and phone numbers in text."""
+    if not text:
+        return text
+    text = RE_EMAIL_PATTERN.sub('[EMAIL]', text)
+    text = RE_PHONE_PATTERN.sub('[PHONE]', text)
+    return text
+
+
 def process_message(
     message_buffer: str,
     truncate_signatures: bool,
@@ -2217,8 +2236,7 @@ def process_message(
                 continue
 
         if redact_pii:
-            line = RE_EMAIL_PATTERN.sub('[EMAIL]', line)
-            line = RE_PHONE_PATTERN.sub('[PHONE]', line)
+            line = _redact_pii(line)
         if strip_ansi:
             line = RE_ANSI_ESCAPE_PATTERN.sub('', line)
         new_lines.append(line)
@@ -2441,7 +2459,7 @@ def format_size(size: int) -> str:
         return f"{size / (1024 * 1024):.1f} MB"
 
 
-def _get_message_mapping(message: ParsedMessage, count: int) -> dict[str, Any]:
+def _get_message_mapping(message: ParsedMessage, count: int, redact_pii: bool = False) -> dict[str, Any]:
     """Generate a dictionary of variables representing a message's metadata."""
     header = message.header
     dt = _parse_qwk_date(header.msgdate, header.msgtime)
@@ -2461,6 +2479,15 @@ def _get_message_mapping(message: ParsedMessage, count: int) -> dict[str, Any]:
                 snippet = clean_line[:50]
                 break
 
+    author = header.msgfrom.strip()
+    to = header.msgto.strip()
+    subject = header.msgsubject.strip()
+    if redact_pii:
+        author = _redact_pii(author)
+        to = _redact_pii(to)
+        subject = _redact_pii(subject)
+        snippet = _redact_pii(snippet)
+
     indent = ""
     if message.depth > 0:
         indent = "  " * (message.depth - 1) + "└ "
@@ -2469,9 +2496,9 @@ def _get_message_mapping(message: ParsedMessage, count: int) -> dict[str, Any]:
         'confnum': header.confnum,
         'confname': message.confname or "",
         'msgnum': header.msgnum if header.msgnum is not None else count,
-        'author': header.msgfrom.strip(),
-        'to': header.msgto.strip(),
-        'subject': header.msgsubject.strip(),
+        'author': author,
+        'to': to,
+        'subject': subject,
         'date': header.msgdate,
         'time': header.msgtime,
         'year': dt.year,
@@ -2505,7 +2532,7 @@ def _generate_safe_filename(message: ParsedMessage, settings_or_format: Processi
 
     if settings and settings.filename_pattern:
         try:
-            raw_mapping = _get_message_mapping(message, count)
+            raw_mapping = _get_message_mapping(message, count, redact_pii=settings.redact_pii if settings else False)
 
             # Map of variable names to their slugify defaults for filename compatibility
             defaults = {
@@ -2695,7 +2722,7 @@ def process_merged_files(
         if settings.oneline:
             if settings.oneline_pattern:
                 try:
-                    mapping = _get_message_mapping(parsed_message, processed_count)
+                    mapping = _get_message_mapping(parsed_message, processed_count, redact_pii=settings.redact_pii)
                     # Apply fallbacks for oneline display
                     if not mapping['confname']:
                         mapping['confname'] = f"Conference {parsed_message.confnum}"
@@ -2720,6 +2747,7 @@ def process_merged_files(
                         conf_name=parsed_message.confname,
                         is_private=parsed_message.header.is_private,
                         has_attachments=bool(parsed_message.attachments),
+                        redact_pii=settings.redact_pii,
                     )
             else:
                 processed_buffer = parsed_message.header.format_oneline(
@@ -2732,6 +2760,7 @@ def process_merged_files(
                     conf_name=parsed_message.confname,
                     is_private=parsed_message.header.is_private,
                     has_attachments=bool(parsed_message.attachments),
+                    redact_pii=settings.redact_pii,
                 )
         else:
             processed_buffer = cleaned_body
@@ -2754,6 +2783,7 @@ def process_merged_files(
                     is_regex=settings.regex,
                     attachments=parsed_message.attachments,
                     bbs_name=parsed_message.bbs_name,
+                    redact_pii=settings.redact_pii,
                 )
                 processed_buffer = header_text + processed_buffer
 
@@ -4015,7 +4045,7 @@ def _write_text(
         if settings and settings.oneline:
             if settings.oneline_pattern:
                 try:
-                    mapping = _get_message_mapping(message, i + 1)
+                    mapping = _get_message_mapping(message, i + 1, redact_pii=settings.redact_pii if settings else False)
                     # Apply fallbacks for oneline display
                     if not mapping['confname']:
                         mapping['confname'] = f"Conference {message.confnum}"
@@ -4040,6 +4070,7 @@ def _write_text(
                         conf_name=message.confname,
                         is_private=message.header.is_private,
                         has_attachments=bool(message.attachments),
+                        redact_pii=settings.redact_pii,
                     )
             else:
                 # Re-format oneline summary to account for threading depth
@@ -4053,6 +4084,7 @@ def _write_text(
                     conf_name=message.confname,
                     is_private=message.header.is_private,
                     has_attachments=bool(message.attachments),
+                    redact_pii=settings.redact_pii,
                 )
         else:
             text = message.text

@@ -886,6 +886,7 @@ class QwkGuiApp:
         message = self.messages[message_index]
         header = message.header
         conf_name = self.board_dict.get(header.confnum, str(header.confnum))
+        settings = self._current_settings()
 
         self.detail_text.delete("1.0", tk.END)
 
@@ -893,28 +894,38 @@ class QwkGuiApp:
         header_start = "1.0"
 
         # Subject as a prominent title
-        self.detail_text.insert(tk.END, (header.msgsubject.strip() or "(no subject)") + "\n", "header_subject")
+        subject = header.msgsubject.strip() or "(no subject)"
+        msg_from = header.msgfrom.strip()
+        msg_to = header.msgto.strip()
+
+        if settings.redact_pii:
+            from pyqwk.core import _redact_pii
+            subject = _redact_pii(subject)
+            msg_from = _redact_pii(msg_from)
+            msg_to = _redact_pii(msg_to)
+
+        self.detail_text.insert(tk.END, subject + "\n", "header_subject")
         self.detail_text.insert(tk.END, " \n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
         # Primary fields
         self.detail_text.insert(tk.END, "From: ", "header_label")
         from_tag = f"from_link_{id(message)}"
-        self.detail_text.insert(tk.END, header.msgfrom.strip(), ("link", "header_value", from_tag))
+        self.detail_text.insert(tk.END, msg_from, ("link", "header_value", from_tag))
         self.detail_text.tag_bind(
             from_tag,
             "<Button-1>",
-            lambda e, a=header.msgfrom.strip(): self._pivot_filter(author=a),
+            lambda e, a=msg_from: self._pivot_filter(author=a),
         )
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "To:   ", "header_label")
         to_tag = f"to_link_{id(message)}"
-        self.detail_text.insert(tk.END, header.msgto.strip(), ("link", "header_value", to_tag))
+        self.detail_text.insert(tk.END, msg_to, ("link", "header_value", to_tag))
         self.detail_text.tag_bind(
             to_tag,
             "<Button-1>",
-            lambda e, a=header.msgto.strip(): self._pivot_filter(author=a),
+            lambda e, a=msg_to: self._pivot_filter(author=a),
         )
         self.detail_text.insert(tk.END, "\n\n")
 
@@ -1467,6 +1478,14 @@ class QwkGuiApp:
                 header = message.header
                 conf_name = self.board_dict.get(header.confnum, str(header.confnum))
                 subject = header.msgsubject.strip() or "(no subject)"
+                msg_from = header.msgfrom.strip()
+                msg_to = header.msgto.strip()
+
+                if settings.redact_pii:
+                    from pyqwk.core import _redact_pii
+                    subject = _redact_pii(subject)
+                    msg_from = _redact_pii(msg_from)
+                    msg_to = _redact_pii(msg_to)
 
                 flags = ""
                 if header.is_private:
@@ -1498,8 +1517,8 @@ class QwkGuiApp:
                     values=(
                         flags,
                         header.msgnum if header.msgnum is not None else "",
-                        header.msgfrom.strip(),
-                        header.msgto.strip(),
+                        msg_from,
+                        msg_to,
                         f"{header.msgdate} {header.msgtime}",
                         format_size(len(message.text)) if message.text else "0 B",
                         conf_name,
