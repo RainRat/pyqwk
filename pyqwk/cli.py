@@ -257,6 +257,10 @@ examples:
         action='store_true',
     )
     format_group.add_argument(
+        '--oneline-pattern',
+        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: confnum, confname, msgnum, author, to, subject, date, time, year, month, day, hour, minute, second, iso_date, iso_time, bbs_name, bbs_id, length, size, flags, snippet, indent.",
+    )
+    format_group.add_argument(
         '--toc',
         dest='include_toc',
         help='Add a table of contents and archive summary to the output.',
@@ -582,7 +586,8 @@ examples:
         sort=args.sort,
         reverse=args.reverse,
         dry_run=args.dry_run,
-        oneline=args.oneline,
+        oneline=args.oneline or bool(getattr(args, 'oneline_pattern', None)),
+        oneline_pattern=getattr(args, 'oneline_pattern', None),
         has_attachments=args.has_attachments,
         mine=args.mine,
         on_this_day=args.on_this_day,
