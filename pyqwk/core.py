@@ -241,7 +241,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     """Scan text for attachment blocks (UUE, yEnc, Base64) and decode them.
 
     Returns:
-        A list of (filename, data) tuples.
+        A list of (filename, data) pairs.
     """
     lines = text.splitlines()
     binaries: list[tuple[str, bytes]] = []
@@ -519,7 +519,7 @@ class MessageHeader:
         return result
 
     def to_bytes(self, encoding: str = 'cp437') -> bytes:
-        """Serialize the message header into a 128-byte QWK record."""
+        """Convert the message header into a 128-byte QWK record."""
         def encode_pad(text: str, length: int, align: str = 'left') -> bytes:
             if align == 'right':
                 return text.rjust(length).encode(encoding)[:length]
@@ -1702,7 +1702,7 @@ def load_data(
         encoding: The character set used to decode text (default is 'cp437').
 
     Returns:
-        A tuple of (file_data, board_dict):
+        A pair of values (file_data, board_dict):
         - file_data: A 'bytearray' of original bytes for QWK/REP files, or
           a list of 'ParsedMessage' objects for modern formats.
         - board_dict: A 'ConferenceMap' linking conference numbers to names,
@@ -2460,7 +2460,7 @@ def format_size(size: int) -> str:
 
 
 def _get_message_mapping(message: ParsedMessage, count: int, redact_pii: bool = False) -> dict[str, Any]:
-    """Generate a dictionary of variables representing a message's metadata."""
+    """Generate a dictionary of variables representing a message's archive information."""
     header = message.header
     dt = _parse_qwk_date(header.msgdate, header.msgtime)
 
@@ -3184,7 +3184,7 @@ def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
 
 
 def _xml_element_to_str(element: ET.Element) -> str:
-    """Helper to indent and serialize an XML element to a string."""
+    """Helper to indent and convert an XML element to a string."""
     ET.indent(element, space='  ')
     return ET.tostring(element, encoding='unicode')
 
@@ -3434,6 +3434,7 @@ def _serialize_message_html(
     search_term: str | None = None,
     is_regex: bool = False,
 ) -> str:
+    """Convert a single message to an HTML string."""
     title = f"Search Results for '{search_term}'" if search_term else 'QWK Message'
     html_parts = _get_html_header(title)
     html_parts.extend(
@@ -3585,6 +3586,7 @@ def _serialize_message_markdown(
     search_term: str | None = None,
     is_regex: bool = False,
 ) -> str:
+    """Convert a single message to a Markdown string."""
     title = f"Search Results for '{search_term}'" if search_term else 'QWK Message'
     md_parts = [f"# {title}\n"]
     md_parts.extend(
@@ -3799,7 +3801,7 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
 
 
 def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = True) -> str:
-    """Serialize a message to RFC 822 (Email) format with optional MBOX header.
+    """Convert a message to RFC 822 (Email) format with optional MBOX header.
 
     Includes standard email headers for threading (Message-ID, In-Reply-To, References)
     and custom X-QWK headers for conference names, message numbers, and statuses.
@@ -3931,7 +3933,7 @@ def _serialize_control_dat(
     board_dict: Mapping[int, str] | None,
     encoding: str = 'cp437'
 ) -> list[bytes]:
-    """Serialize BBS information and conference list into CONTROL.DAT format."""
+    """Convert BBS information and conference list into CONTROL.DAT format."""
     lines = [b""] * 11
     if bbs_info:
         lines[0] = bbs_info.name.encode(encoding)
@@ -4457,7 +4459,7 @@ def _write_text_output(content: str, output_path: str | None, *, encoding: str =
 
 
 def _colorize(text: str, *attributes: str) -> str:
-    """Apply ANSI color codes if stdout is a TTY."""
+    """Apply ANSI color codes if the output is a terminal."""
     if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
         return f"\033[{';'.join(attributes)}m{text}\033[0m"
     return text
@@ -4563,7 +4565,7 @@ def _render_stats_bar_chart(
 
     Args:
         title: The section title.
-        items: List of (label, count) tuples.
+        items: List of (label, count) pairs.
         use_colors: Whether to apply ANSI colors.
         bold: ANSI code for bold text.
         cyan: ANSI code for cyan color.
