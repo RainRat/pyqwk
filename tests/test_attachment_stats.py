@@ -1,4 +1,12 @@
-from pyqwk.core import _compute_stats_from_messages, ParsedMessage, MessageHeader, render_stats_as_text, _render_stats_html, _render_stats_markdown
+from pyqwk.core import (
+    _compute_stats_from_messages,
+    ParsedMessage,
+    MessageHeader,
+    render_stats_as_text,
+    _render_stats_html,
+    _render_stats_markdown,
+)
+
 
 def test_attachment_stats_calculation():
     # Message with 2 UUE attachments
@@ -8,9 +16,72 @@ def test_attachment_stats_calculation():
     # Message with no attachments
     body3 = "Plain text"
 
-    msg1 = ParsedMessage(body1, 1, None, 1, MessageHeader(" ", 1, "01-01-24", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""))
-    msg2 = ParsedMessage(body2, 2, None, 1, MessageHeader(" ", 2, "01-01-24", "12:05", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""))
-    msg3 = ParsedMessage(body3, 3, None, 1, MessageHeader(" ", 3, "01-01-24", "12:10", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""))
+    msg1 = ParsedMessage(
+        body1,
+        1,
+        None,
+        1,
+        MessageHeader(
+            " ",
+            1,
+            "01-01-24",
+            "12:00",
+            "To",
+            "From",
+            "Subj",
+            "",
+            None,
+            1,
+            " ",
+            1,
+            0,
+            "",
+        ),
+    )
+    msg2 = ParsedMessage(
+        body2,
+        2,
+        None,
+        1,
+        MessageHeader(
+            " ",
+            2,
+            "01-01-24",
+            "12:05",
+            "To",
+            "From",
+            "Subj",
+            "",
+            None,
+            1,
+            " ",
+            1,
+            0,
+            "",
+        ),
+    )
+    msg3 = ParsedMessage(
+        body3,
+        3,
+        None,
+        1,
+        MessageHeader(
+            " ",
+            3,
+            "01-01-24",
+            "12:10",
+            "To",
+            "From",
+            "Subj",
+            "",
+            None,
+            1,
+            " ",
+            1,
+            0,
+            "",
+        ),
+    )
 
     stats = _compute_stats_from_messages(iter([msg1, msg2, msg3]))
 
@@ -25,6 +96,7 @@ def test_attachment_stats_calculation():
     top_types = {t["extension"]: t["count"] for t in stats["top_attachment_types"]}
     assert top_types[".txt"] == 2
     assert top_types[".jpg"] == 1
+
 
 def test_attachment_stats_rendering():
     stats = {
@@ -46,8 +118,14 @@ def test_attachment_stats_rendering():
         "keywords": [],
         "day_of_week": {},
         "hour_of_day": {},
-        "top_attachments": [{"name": "image.png", "count": 3}, {"name": "doc.pdf", "count": 2}],
-        "top_attachment_types": [{"extension": ".png", "count": 3}, {"extension": ".pdf", "count": 2}]
+        "top_attachments": [
+            {"name": "image.png", "count": 3},
+            {"name": "doc.pdf", "count": 2},
+        ],
+        "top_attachment_types": [
+            {"extension": ".png", "count": 3},
+            {"extension": ".pdf", "count": 2},
+        ],
     }
 
     # Text rendering

@@ -2,6 +2,7 @@ import pytest
 import sys
 from pyqwk.cli import main
 
+
 def test_stats_multiple_files_no_output(monkeypatch, capsys):
     """Test that --stats works with multiple files without requiring -o."""
     # testdata/test1_qwk.zip and testdata/test2_qwk.zip exist
@@ -24,6 +25,7 @@ def test_stats_multiple_files_no_output(monkeypatch, capsys):
     assert "Messages: 1 matching / 1 total" in captured.out
     assert "Messages: 2 matching / 2 total" in captured.out
 
+
 def test_info_multiple_files_no_output(monkeypatch, capsys):
     """Test that --info already works with multiple files without requiring -o (baseline)."""
     test1 = "testdata/test1_qwk.zip"
@@ -41,13 +43,16 @@ def test_info_multiple_files_no_output(monkeypatch, capsys):
     assert "File: testdata/test1_qwk.zip" in captured.out
     assert "File: testdata/test2_qwk.zip" in captured.out
 
+
 def test_merge_stats_multiple_files(monkeypatch, capsys):
     """Test that --merge-stats produces a single merged report."""
     test1 = "testdata/test1_qwk.zip"
     test2 = "testdata/test2_qwk.zip"
 
     # Simulate: qwk.py testdata/test1_qwk.zip testdata/test2_qwk.zip --stats --merge-stats
-    monkeypatch.setattr(sys, "argv", ["qwk.py", test1, test2, "--stats", "--merge-stats", "--quiet"])
+    monkeypatch.setattr(
+        sys, "argv", ["qwk.py", test1, test2, "--stats", "--merge-stats", "--quiet"]
+    )
 
     try:
         main()

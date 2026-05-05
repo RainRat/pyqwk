@@ -8,10 +8,7 @@ for _name in dir(_core):
         continue
     globals()[_name] = getattr(_core, _name)
 
-__all__ = [
-    _name for _name in dir(_core)
-    if not _name.startswith("__")
-] + ["main"]
+__all__ = [_name for _name in dir(_core) if not _name.startswith("__")] + ["main"]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

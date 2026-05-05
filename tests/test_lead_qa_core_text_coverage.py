@@ -2,6 +2,7 @@ import pytest
 from pyqwk.core import _parse_text_messages, load_data
 import logging
 
+
 def test_parse_text_messages_latin1_fallback(tmp_path):
     # Create a file with Latin-1 specific characters that are invalid in UTF-8
     # 0xA9 is the copyright symbol in Latin-1
@@ -14,6 +15,7 @@ def test_parse_text_messages_latin1_fallback(tmp_path):
     assert "Alice" in messages[0].header.msgfrom
     assert "\xa9" in messages[0].header.msgsubject
 
+
 def test_parse_text_messages_empty_section(tmp_path):
     # Multiple separators with whitespace should trigger 'if not section: continue' (1427)
     content = "From: A\nTo: B\nSubject: S\n\nBody\n\n------------------------------\n   \n------------------------------\nFrom: C\nTo: D\nSubject: T\n\nBody 2"
@@ -22,6 +24,7 @@ def test_parse_text_messages_empty_section(tmp_path):
 
     messages = _parse_text_messages(str(txt_file))
     assert len(messages) == 2
+
 
 def test_parse_text_messages_invalid_section(tmp_path):
     # Section with missing mandatory headers (From, To, Subject) (1435)
@@ -40,6 +43,7 @@ def test_parse_text_messages_invalid_section(tmp_path):
     assert len(messages) == 2
     assert messages[0].header.msgfrom == "Alice"
     assert messages[1].header.msgfrom == "Charlie"
+
 
 def test_parse_text_messages_extra_headers(tmp_path):
     # Test Message # (1448), Reference # (1468), and Attachments (1473)
@@ -71,6 +75,7 @@ def test_parse_text_messages_extra_headers(tmp_path):
     assert msg.bbs_name == "MyBBS"
     assert msg.header.is_private
 
+
 def test_load_data_text_error_wrapping(tmp_path):
     # To trigger an exception in _parse_text_messages, we can pass a directory path
     # as the file path, which will cause 'open()' to raise an IsADirectoryError. (1797-1798)
@@ -81,6 +86,7 @@ def test_load_data_text_error_wrapping(tmp_path):
     logger = logging.getLogger("test")
     with pytest.raises(ValueError, match="Failed to load text archive"):
         load_data(str(dir_path), logger)
+
 
 def test_parse_text_messages_date_std_match_logic(tmp_path):
     # Currently date_s_match is unreachable because date_v_match is more greedy.

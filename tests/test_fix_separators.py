@@ -4,11 +4,13 @@ import pytest
 from pathlib import Path
 from pyqwk.core import process_merged_files, ProcessingSettings
 
+
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def test_sqlite_no_separator_by_default(tmp_path, logger):
     input_path = Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
@@ -28,7 +30,7 @@ def test_sqlite_no_separator_by_default(tmp_path, logger):
         separator="auto",
         output_mode="file",
         output_path=str(db_path),
-        encoding="latin1"
+        encoding="latin1",
     )
 
     process_merged_files([str(input_path)], settings, logger)
@@ -42,7 +44,11 @@ def test_sqlite_no_separator_by_default(tmp_path, logger):
     assert not text.startswith("-" * 80)
     # It should NOT start with the text header in structured formats even if no_header is False
     assert not text.startswith("Date:")
-    assert text == "Hello this is my first day in the wonderful world of BBSing and I need some\r\nhelp.\r\n"
+    assert (
+        text
+        == "Hello this is my first day in the wonderful world of BBSing and I need some\r\nhelp.\r\n"
+    )
+
 
 def test_mbox_no_separator_by_default(tmp_path, logger):
     input_path = Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
@@ -62,12 +68,12 @@ def test_mbox_no_separator_by_default(tmp_path, logger):
         separator="auto",
         output_mode="file",
         output_path=str(mbox_path),
-        encoding="latin1"
+        encoding="latin1",
     )
 
     process_merged_files([str(input_path)], settings, logger)
 
-    content = mbox_path.read_text(encoding='utf-8')
+    content = mbox_path.read_text(encoding="utf-8")
     # In mbox, the separator should NOT be there.
     # The body is separated from mbox headers by a blank line.
     # The formatted header is at the start of the body.

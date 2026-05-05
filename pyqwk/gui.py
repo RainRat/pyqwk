@@ -131,33 +131,61 @@ class QwkGuiApp:
         menu = tk.Menu(self.root, tearoff=0)
 
         # Copy section
-        menu.add_command(label="Copy Subject", command=lambda: self._copy_to_clipboard(msg.header.msgsubject.strip()))
-        menu.add_command(label="Copy From", command=lambda: self._copy_to_clipboard(msg.header.msgfrom.strip()))
-        menu.add_command(label="Copy To", command=lambda: self._copy_to_clipboard(msg.header.msgto.strip()))
-        menu.add_command(label="Copy Num", command=lambda: self._copy_to_clipboard(str(msg.header.msgnum or "")))
+        menu.add_command(
+            label="Copy Subject",
+            command=lambda: self._copy_to_clipboard(msg.header.msgsubject.strip()),
+        )
+        menu.add_command(
+            label="Copy From",
+            command=lambda: self._copy_to_clipboard(msg.header.msgfrom.strip()),
+        )
+        menu.add_command(
+            label="Copy To",
+            command=lambda: self._copy_to_clipboard(msg.header.msgto.strip()),
+        )
+        menu.add_command(
+            label="Copy Num",
+            command=lambda: self._copy_to_clipboard(str(msg.header.msgnum or "")),
+        )
         menu.add_separator()
 
         # Filter pivoting
-        menu.add_command(label=f"Filter by Author: {msg.header.msgfrom.strip()[:20]}...",
-                         command=lambda: self._pivot_filter(author=msg.header.msgfrom.strip()))
+        menu.add_command(
+            label=f"Filter by Author: {msg.header.msgfrom.strip()[:20]}...",
+            command=lambda: self._pivot_filter(author=msg.header.msgfrom.strip()),
+        )
 
         conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
-        menu.add_command(label=f"Filter by Conference: {conf_name[:20]}...",
-                         command=lambda: self._pivot_filter(conf_num=msg.confnum))
+        menu.add_command(
+            label=f"Filter by Conference: {conf_name[:20]}...",
+            command=lambda: self._pivot_filter(conf_num=msg.confnum),
+        )
 
         bbs_display = msg.bbs_name or msg.bbs_id
         if bbs_display:
-            menu.add_command(label=f"Filter by BBS: {bbs_display[:20]}...",
-                             command=lambda: self._pivot_filter(bbs_name=bbs_display))
+            menu.add_command(
+                label=f"Filter by BBS: {bbs_display[:20]}...",
+                command=lambda: self._pivot_filter(bbs_name=bbs_display),
+            )
 
         menu.post(event.x_root, event.y_root)
 
     def _show_text_context_menu(self, event: tk.Event) -> None:
         """Display a context menu for the detail viewer."""
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="Copy", command=lambda: self.detail_text.event_generate("<<Copy>>"))
-        menu.add_command(label="Select All", command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END))
-        menu.add_command(label="Copy Full Message", command=lambda: self._copy_to_clipboard(self.detail_text.get("1.0", tk.END).strip()))
+        menu.add_command(
+            label="Copy", command=lambda: self.detail_text.event_generate("<<Copy>>")
+        )
+        menu.add_command(
+            label="Select All",
+            command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END),
+        )
+        menu.add_command(
+            label="Copy Full Message",
+            command=lambda: self._copy_to_clipboard(
+                self.detail_text.get("1.0", tk.END).strip()
+            ),
+        )
 
         # Get current message for information filtering
         current_selection = self.message_list.selection()
@@ -168,20 +196,34 @@ class QwkGuiApp:
 
                 menu.add_separator()
                 author_text = msg.header.msgfrom.strip()
-                author_label = (author_text[:20] + "...") if len(author_text) > 20 else author_text
-                menu.add_command(label=f"Filter by Author: {author_label}",
-                                 command=lambda a=author_text: self._pivot_filter(author=a))
+                author_label = (
+                    (author_text[:20] + "...") if len(author_text) > 20 else author_text
+                )
+                menu.add_command(
+                    label=f"Filter by Author: {author_label}",
+                    command=lambda a=author_text: self._pivot_filter(author=a),
+                )
 
                 conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
-                conf_label = (conf_name[:20] + "...") if len(conf_name) > 20 else conf_name
-                menu.add_command(label=f"Filter by Conference: {conf_label}",
-                                 command=lambda c=msg.confnum: self._pivot_filter(conf_num=c))
+                conf_label = (
+                    (conf_name[:20] + "...") if len(conf_name) > 20 else conf_name
+                )
+                menu.add_command(
+                    label=f"Filter by Conference: {conf_label}",
+                    command=lambda c=msg.confnum: self._pivot_filter(conf_num=c),
+                )
 
                 bbs_display = msg.bbs_name or msg.bbs_id
                 if bbs_display:
-                    bbs_label = (bbs_display[:20] + "...") if len(bbs_display) > 20 else bbs_display
-                    menu.add_command(label=f"Filter by BBS: {bbs_label}",
-                                     command=lambda b=bbs_display: self._pivot_filter(bbs_name=b))
+                    bbs_label = (
+                        (bbs_display[:20] + "...")
+                        if len(bbs_display) > 20
+                        else bbs_display
+                    )
+                    menu.add_command(
+                        label=f"Filter by BBS: {bbs_label}",
+                        command=lambda b=bbs_display: self._pivot_filter(bbs_name=b),
+                    )
             except (ValueError, IndexError):
                 pass
 
@@ -190,11 +232,15 @@ class QwkGuiApp:
             if sel_range:
                 selected_text = self.detail_text.get(*sel_range).strip()
                 if selected_text:
-                    display_text = (selected_text[:20] + "...") if len(selected_text) > 20 else selected_text
+                    display_text = (
+                        (selected_text[:20] + "...")
+                        if len(selected_text) > 20
+                        else selected_text
+                    )
                     menu.add_separator()
                     menu.add_command(
                         label=f"Search for '{display_text}'",
-                        command=self._search_from_selection
+                        command=self._search_from_selection,
                     )
         except tk.TclError:
             pass
@@ -249,7 +295,9 @@ class QwkGuiApp:
 
         return False
 
-    def _find_message_index(self, msgnum: int, confnum: int | None = None) -> int | None:
+    def _find_message_index(
+        self, msgnum: int, confnum: int | None = None
+    ) -> int | None:
         """Locate a message index by its number and optional conference."""
         if not self.messages:
             return None
@@ -277,21 +325,26 @@ class QwkGuiApp:
 
         return None
 
-    def _pivot_filter(self, author: str | None = None, conf_num: int | None = None, bbs_name: str | None = None) -> None:
+    def _pivot_filter(
+        self,
+        author: str | None = None,
+        conf_num: int | None = None,
+        bbs_name: str | None = None,
+    ) -> None:
         """Update filters based on the selected author, conference, or BBS."""
         if author:
             self.search_var.set(author)
 
         if bbs_name:
             # Find match in BBS combobox
-            for i, val in enumerate(self.bbs_combo['values']):
+            for i, val in enumerate(self.bbs_combo["values"]):
                 if val.startswith(bbs_name):
                     self.bbs_combo.current(i)
                     break
 
         if conf_num is not None:
             # Find exact match in combobox
-            for i, val in enumerate(self.conf_combo['values']):
+            for i, val in enumerate(self.conf_combo["values"]):
                 if val.startswith(f"{conf_num}:"):
                     self.conf_combo.current(i)
                     break
@@ -302,20 +355,29 @@ class QwkGuiApp:
         """Block keyboard input in the detail view while allowing common shortcuts."""
         # Allow Control+C (copy) and Control+A (select all)
         if event.state & 0x4:  # Control mask
-            if event.keysym.lower() in ('c', 'a'):
+            if event.keysym.lower() in ("c", "a"):
                 return None
 
         # Handle message navigation shortcuts
         key = event.keysym.lower()
-        if key in ('j', 'n'):
+        if key in ("j", "n"):
             self._select_relative_message(1)
             return "break"
-        if key in ('k', 'p'):
+        if key in ("k", "p"):
             self._select_relative_message(-1)
             return "break"
 
         # Allow text navigation keys
-        if event.keysym in ('Up', 'Down', 'Left', 'Right', 'Prior', 'Next', 'Home', 'End'):
+        if event.keysym in (
+            "Up",
+            "Down",
+            "Left",
+            "Right",
+            "Prior",
+            "Next",
+            "Home",
+            "End",
+        ):
             return None
         return "break"
 
@@ -328,7 +390,11 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "Getting Started:\n", "header_label")
-        self.detail_text.insert(tk.END, "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n", "body")
+        self.detail_text.insert(
+            tk.END,
+            "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n",
+            "body",
+        )
 
         self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
         formats = "QWK, REP, ZIP, TAR, JSON, JSONL, CSV, SQLite (.db), XML, RSS, mbox, EML, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT)"
@@ -367,7 +433,11 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, " \n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "Your current filters returned no results. Check the settings below:\n\n", "body")
+        self.detail_text.insert(
+            tk.END,
+            "Your current filters returned no results. Check the settings below:\n\n",
+            "body",
+        )
 
         # List active filters
         search_val = self.search_var.get().strip()
@@ -406,13 +476,17 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         # Action links
-        self.detail_text.insert(tk.END, "Reset all filters and search", ("link", "body", "reset_all"))
+        self.detail_text.insert(
+            tk.END, "Reset all filters and search", ("link", "body", "reset_all")
+        )
         self.detail_text.tag_bind("reset_all", "<Button-1>", self.clear_filters)
 
         self.detail_text.insert(tk.END, "\n\n", "body")
         self.detail_text.insert(tk.END, "Tip: Press ", "body")
         self.detail_text.insert(tk.END, "Esc", "header_label")
-        self.detail_text.insert(tk.END, " to progressively clear search and filters.", "body")
+        self.detail_text.insert(
+            tk.END, " to progressively clear search and filters.", "body"
+        )
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
@@ -420,9 +494,7 @@ class QwkGuiApp:
         file_menu.add_command(
             label="Open Archive(s)...", command=self.open_file, accelerator="Ctrl+O"
         )
-        file_menu.add_command(
-            label="Open Folder...", command=self.open_folder
-        )
+        file_menu.add_command(label="Open Folder...", command=self.open_folder)
         file_menu.add_command(
             label="Export Current View...",
             command=self.export_messages,
@@ -553,7 +625,9 @@ class QwkGuiApp:
             return "break"
 
         # Shift+Space or BackSpace (Backward)
-        elif (event.keysym == "space" and (event.state & 0x1)) or event.keysym == "BackSpace":
+        elif (
+            event.keysym == "space" and (event.state & 0x1)
+        ) or event.keysym == "BackSpace":
             if top > 0.0:
                 self.detail_text.yview_scroll(-1, "pages")
             else:
@@ -631,26 +705,52 @@ class QwkGuiApp:
 
         actions_frame = ttk.Frame(row1)
         actions_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(actions_frame, text="Actions", style="GroupHeader.TLabel").pack(side=tk.LEFT)
-        ttk.Button(actions_frame, text="Open", command=self.open_file).pack(side=tk.LEFT, padx=(10, 2))
-        ttk.Button(actions_frame, text="Folder", command=self.open_folder).pack(side=tk.LEFT, padx=2)
-        ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(side=tk.LEFT, padx=2)
-        ttk.Button(actions_frame, text="Stats", command=self.show_stats_window).pack(side=tk.LEFT, padx=2)
+        ttk.Label(actions_frame, text="Actions", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT
+        )
+        ttk.Button(actions_frame, text="Open", command=self.open_file).pack(
+            side=tk.LEFT, padx=(10, 2)
+        )
+        ttk.Button(actions_frame, text="Folder", command=self.open_folder).pack(
+            side=tk.LEFT, padx=2
+        )
+        ttk.Button(actions_frame, text="Export", command=self.export_messages).pack(
+            side=tk.LEFT, padx=2
+        )
+        ttk.Button(actions_frame, text="Stats", command=self.show_stats_window).pack(
+            side=tk.LEFT, padx=2
+        )
 
         ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
         nav_frame = ttk.Frame(row1)
         nav_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(nav_frame, text="Navigation", style="GroupHeader.TLabel").pack(side=tk.LEFT)
-        ttk.Button(nav_frame, text="Prev", width=6, command=lambda: self._select_relative_message(-1)).pack(side=tk.LEFT, padx=(10, 2))
-        ttk.Button(nav_frame, text="Next", width=6, command=lambda: self._select_relative_message(1)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(nav_frame, text="Jump", width=6, command=self.prompt_jump_to_message).pack(side=tk.LEFT, padx=2)
+        ttk.Label(nav_frame, text="Navigation", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT
+        )
+        ttk.Button(
+            nav_frame,
+            text="Prev",
+            width=6,
+            command=lambda: self._select_relative_message(-1),
+        ).pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Button(
+            nav_frame,
+            text="Next",
+            width=6,
+            command=lambda: self._select_relative_message(1),
+        ).pack(side=tk.LEFT, padx=2)
+        ttk.Button(
+            nav_frame, text="Jump", width=6, command=self.prompt_jump_to_message
+        ).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
         search_frame = ttk.Frame(row1)
         search_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(search_frame, text="Search", style="GroupHeader.TLabel").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text="Search", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT
+        )
         self.search_entry = ttk.Entry(
             search_frame, textvariable=self.search_var, width=22
         )
@@ -659,18 +759,29 @@ class QwkGuiApp:
             search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
         ).pack(side=tk.LEFT, padx=(0, 2))
 
-        self.search_count_label = ttk.Label(search_frame, text="", width=12, anchor=tk.CENTER)
+        self.search_count_label = ttk.Label(
+            search_frame, text="", width=12, anchor=tk.CENTER
+        )
         self.search_count_label.pack(side=tk.LEFT)
 
         ttk.Button(
-            search_frame, text="▲", width=2, command=lambda: self._navigate_search_matches(-1)
+            search_frame,
+            text="▲",
+            width=2,
+            command=lambda: self._navigate_search_matches(-1),
         ).pack(side=tk.LEFT, padx=1)
         ttk.Button(
-            search_frame, text="▼", width=2, command=lambda: self._navigate_search_matches(1)
+            search_frame,
+            text="▼",
+            width=2,
+            command=lambda: self._navigate_search_matches(1),
         ).pack(side=tk.LEFT, padx=(1, 5))
 
         ttk.Checkbutton(
-            search_frame, text="Regex", variable=self.regex_var, command=self.reload_messages
+            search_frame,
+            text="Regex",
+            variable=self.regex_var,
+            command=self.reload_messages,
         ).pack(side=tk.LEFT, padx=5)
 
         # Row 2: Refinement and Filters
@@ -679,7 +790,9 @@ class QwkGuiApp:
 
         archives_frame = ttk.Frame(row2)
         archives_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(archives_frame, text="Archives", style="GroupHeader.TLabel").pack(side=tk.LEFT)
+        ttk.Label(archives_frame, text="Archives", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT
+        )
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.pack(side=tk.LEFT, padx=(10, 2))
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
@@ -689,16 +802,20 @@ class QwkGuiApp:
 
         filters_frame = ttk.Frame(row2)
         filters_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(filters_frame, text="Filters", style="GroupHeader.TLabel").pack(side=tk.LEFT)
-        for i, (text, var) in enumerate([
-            ("Attachments", self.has_attach_var),
-            ("My Messages", self.mine_var),
-            ("On This Day", self.on_this_day_var),
-            ("Links", self.has_links_var),
-            ("Emails", self.has_emails_var),
-            ("Phones", self.has_phones_var),
-            ("Colors", self.has_ansi_var),
-        ]):
+        ttk.Label(filters_frame, text="Filters", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT
+        )
+        for i, (text, var) in enumerate(
+            [
+                ("Attachments", self.has_attach_var),
+                ("My Messages", self.mine_var),
+                ("On This Day", self.on_this_day_var),
+                ("Links", self.has_links_var),
+                ("Emails", self.has_emails_var),
+                ("Phones", self.has_phones_var),
+                ("Colors", self.has_ansi_var),
+            ]
+        ):
             l_padx = (10, 5) if i == 0 else 5
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
@@ -708,19 +825,23 @@ class QwkGuiApp:
 
         options_frame = ttk.Frame(row2)
         options_frame.pack(side=tk.LEFT, padx=5)
-        ttk.Label(options_frame, text="View", style="GroupHeader.TLabel").pack(side=tk.LEFT)
+        ttk.Label(options_frame, text="View", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT
+        )
 
-        for i, (text, var, cmd) in enumerate([
-            ("Threaded", self.threaded_var, self.reload_messages),
-            ("Clean", self.clean_var, self.reload_messages),
-            ("Wrap", self.wrap_var, self._update_wrap),
-            ("Remove Colors", self.ansi_var, self.reload_messages),
-            ("Redact PII", self.redact_pii_var, self.reload_messages),
-        ]):
+        for i, (text, var, cmd) in enumerate(
+            [
+                ("Threaded", self.threaded_var, self.reload_messages),
+                ("Clean", self.clean_var, self.reload_messages),
+                ("Wrap", self.wrap_var, self._update_wrap),
+                ("Remove Colors", self.ansi_var, self.reload_messages),
+                ("Redact PII", self.redact_pii_var, self.reload_messages),
+            ]
+        ):
             l_padx = (10, 5) if i == 0 else 5
-            ttk.Checkbutton(
-                options_frame, text=text, variable=var, command=cmd
-            ).pack(side=tk.LEFT, padx=l_padx)
+            ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd).pack(
+                side=tk.LEFT, padx=l_padx
+            )
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
@@ -732,8 +853,12 @@ class QwkGuiApp:
         self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<Shift-Return>", self._on_search_shift_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
-        self.search_entry.bind("<Up>", lambda e: self._select_relative_message(-1, force=True))
-        self.search_entry.bind("<Down>", lambda e: self._select_relative_message(1, force=True))
+        self.search_entry.bind(
+            "<Up>", lambda e: self._select_relative_message(-1, force=True)
+        )
+        self.search_entry.bind(
+            "<Down>", lambda e: self._select_relative_message(1, force=True)
+        )
         self.root.bind("<Control-f>", self._focus_search)
         self.bbs_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
         self.bbs_combo.bind("<Escape>", lambda e: self.clear_filters())
@@ -759,12 +884,18 @@ class QwkGuiApp:
         self._reset_column_headers()
 
         self.message_list.column("#0", minwidth=200, width=300)
-        self.message_list.column("Flags", minwidth=60, width=60, stretch=False, anchor=tk.CENTER)
-        self.message_list.column("Num", minwidth=60, width=60, stretch=False, anchor=tk.E)
+        self.message_list.column(
+            "Flags", minwidth=60, width=60, stretch=False, anchor=tk.CENTER
+        )
+        self.message_list.column(
+            "Num", minwidth=60, width=60, stretch=False, anchor=tk.E
+        )
         self.message_list.column("From", minwidth=80, width=150)
         self.message_list.column("To", minwidth=80, width=150)
         self.message_list.column("Date", minwidth=80, width=120)
-        self.message_list.column("Size", minwidth=70, width=70, stretch=False, anchor=tk.E)
+        self.message_list.column(
+            "Size", minwidth=70, width=70, stretch=False, anchor=tk.E
+        )
         self.message_list.column("Conference", minwidth=80, width=120)
         self.message_list.column("BBS", minwidth=80, width=120)
 
@@ -809,7 +940,7 @@ class QwkGuiApp:
         )
         self.detail_text.configure(
             yscrollcommand=detail_scrollbar.set,
-            xscrollcommand=self.detail_h_scrollbar.set
+            xscrollcommand=self.detail_h_scrollbar.set,
         )
 
         detail_scrollbar.grid(row=0, column=1, sticky="ns")
@@ -830,8 +961,12 @@ class QwkGuiApp:
         self.detail_text.tag_configure(
             "header_label", font=("TkDefaultFont", 10, "bold"), foreground="#444444"
         )
-        self.detail_text.tag_configure("header_meta", font=("TkDefaultFont", 9), foreground="#888888")
-        self.detail_text.tag_configure("header_hr", font=("TkDefaultFont", 1), background="#eeeeee")
+        self.detail_text.tag_configure(
+            "header_meta", font=("TkDefaultFont", 9), foreground="#888888"
+        )
+        self.detail_text.tag_configure(
+            "header_hr", font=("TkDefaultFont", 1), background="#eeeeee"
+        )
         self.detail_text.tag_configure("header_area", background="#f9f9f9")
         self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 10))
         self.detail_text.tag_configure(
@@ -839,12 +974,16 @@ class QwkGuiApp:
         )
         self.detail_text.tag_configure("header_separator", foreground="#cccccc")
         self.detail_text.tag_configure(
-            "badge_private", background="#ffcccc", foreground="#990000",
-            font=("TkDefaultFont", 8, "bold")
+            "badge_private",
+            background="#ffcccc",
+            foreground="#990000",
+            font=("TkDefaultFont", 8, "bold"),
         )
         self.detail_text.tag_configure(
-            "badge_mine", background="#cce5ff", foreground="#004085",
-            font=("TkDefaultFont", 8, "bold")
+            "badge_mine",
+            background="#cce5ff",
+            foreground="#004085",
+            font=("TkDefaultFont", 8, "bold"),
         )
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
         self.detail_text.tag_configure("quote", foreground="#4e9a06")
@@ -893,11 +1032,11 @@ class QwkGuiApp:
             binaries_removal=clean,
             redact_pii=self.redact_pii_var.get(),
             strip_ansi=clean or self.ansi_var.get(),
-            format='text',
-            separator='none',
-            output_mode='stdout',
+            format="text",
+            separator="none",
+            output_mode="stdout",
             output_path=None,
-            encoding='cp437',
+            encoding="cp437",
             regex=self.regex_var.get(),
             quiet=True,
             search_term=search_val if search_val else None,
@@ -933,6 +1072,7 @@ class QwkGuiApp:
 
         if settings.redact_pii:
             from pyqwk.core import _redact_pii
+
             subject = _redact_pii(subject)
             msg_from = _redact_pii(msg_from)
             msg_to = _redact_pii(msg_to)
@@ -963,7 +1103,9 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n\n")
 
         # Information line (Date, Conference, BBS, Msg #)
-        self.detail_text.insert(tk.END, f"{header.msgdate} {header.msgtime}", "header_meta")
+        self.detail_text.insert(
+            tk.END, f"{header.msgdate} {header.msgtime}", "header_meta"
+        )
 
         # Badges
         if header.is_private:
@@ -992,7 +1134,9 @@ class QwkGuiApp:
         if message.bbs_name:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
             bbs_tag = f"bbs_link_{id(message)}"
-            self.detail_text.insert(tk.END, message.bbs_name, ("link", "header_meta", bbs_tag))
+            self.detail_text.insert(
+                tk.END, message.bbs_name, ("link", "header_meta", bbs_tag)
+            )
             self.detail_text.tag_bind(
                 bbs_tag,
                 "<Button-1>",
@@ -1010,13 +1154,17 @@ class QwkGuiApp:
             self.detail_text.tag_bind(
                 ref_tag,
                 "<Button-1>",
-                lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(c, r),
+                lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(
+                    c, r
+                ),
             )
 
         self.detail_text.insert(tk.END, "\n")
 
         if message.source_file:
-            self.detail_text.insert(tk.END, f"Source: {message.source_file}\n", "header_meta")
+            self.detail_text.insert(
+                tk.END, f"Source: {message.source_file}\n", "header_meta"
+            )
 
         if message.attachments:
             self.detail_text.insert(tk.END, "Attachments: ", "header_label")
@@ -1073,14 +1221,18 @@ class QwkGuiApp:
                 elif etype == "email":
                     uri = f"mailto:{evalue}"
                 else:  # phone
-                    uri = "tel:" + "".join(c for c in evalue if c.isdigit() or c == '+')
+                    uri = "tel:" + "".join(c for c in evalue if c.isdigit() or c == "+")
 
                 # Insert Entity
                 entity_tag = f"{etype}_{id(evalue)}_{start}"
                 # Combine link/body tags with the existing line tags (e.g. 'quote')
-                link_tags = ("link", "body", entity_tag) + tuple(t for t in tags if t != "body")
+                link_tags = ("link", "body", entity_tag) + tuple(
+                    t for t in tags if t != "body"
+                )
                 self.detail_text.insert(tk.END, evalue, link_tags)
-                self.detail_text.tag_bind(entity_tag, "<Button-1>", lambda e, u=uri: webbrowser.open(u))
+                self.detail_text.tag_bind(
+                    entity_tag, "<Button-1>", lambda e, u=uri: webbrowser.open(u)
+                )
 
                 last_idx = end
 
@@ -1103,8 +1255,12 @@ class QwkGuiApp:
             while True:
                 try:
                     start_pos = self.detail_text.search(
-                        search_term, start_pos, stopindex=tk.END,
-                        nocase=True, regexp=is_regex, count=count_var
+                        search_term,
+                        start_pos,
+                        stopindex=tk.END,
+                        nocase=True,
+                        regexp=is_regex,
+                        count=count_var,
                     )
                 except tk.TclError:
                     # Invalid regex
@@ -1125,7 +1281,9 @@ class QwkGuiApp:
             if self._search_matches:
                 # Determine initial match index
                 if self._pending_match_idx is not None:
-                    self._current_match_idx = self._pending_match_idx % len(self._search_matches)
+                    self._current_match_idx = self._pending_match_idx % len(
+                        self._search_matches
+                    )
                     self._pending_match_idx = None
                 else:
                     self._current_match_idx = 0
@@ -1136,7 +1294,9 @@ class QwkGuiApp:
                 self.detail_text.tag_raise("current_search_highlight")
 
                 # Update counters
-                self.search_count_label.config(text=f"{self._current_match_idx + 1} / {len(self._search_matches)}")
+                self.search_count_label.config(
+                    text=f"{self._current_match_idx + 1} / {len(self._search_matches)}"
+                )
 
                 # Update status feedback
                 source_display = self.root.title().split(" - ")[0]
@@ -1146,7 +1306,9 @@ class QwkGuiApp:
             else:
                 self.search_count_label.config(text="0 / 0")
 
-    def _navigate_search_matches(self, delta: int, _event: object | None = None) -> None:
+    def _navigate_search_matches(
+        self, delta: int, _event: object | None = None
+    ) -> None:
         """Cycle through search matches in the detail view, navigating across messages if needed."""
         if not self._search_matches:
             # If no matches in current message, but search is active, try to find in other messages
@@ -1195,7 +1357,9 @@ class QwkGuiApp:
         self.detail_text.see(start_pos)
 
         # Update counters and status
-        self.search_count_label.config(text=f"{self._current_match_idx + 1} / {len(self._search_matches)}")
+        self.search_count_label.config(
+            text=f"{self._current_match_idx + 1} / {len(self._search_matches)}"
+        )
         source_display = self.root.title().split(" - ")[0]
         self.status_label.config(
             text=f"Match {self._current_match_idx + 1} of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
@@ -1240,7 +1404,10 @@ class QwkGuiApp:
 
         paths = expand_paths([folder])
         if not paths:
-            messagebox.showinfo("Open Folder", "No supported message archives found in the selected folder.")
+            messagebox.showinfo(
+                "Open Folder",
+                "No supported message archives found in the selected folder.",
+            )
             return
 
         self.current_paths = paths
@@ -1279,7 +1446,9 @@ class QwkGuiApp:
         if self.current_paths:
             self.load_messages(self.current_paths)
 
-    def _reset_column_headers(self, sort_col: str | None = None, reverse: bool = False) -> None:
+    def _reset_column_headers(
+        self, sort_col: str | None = None, reverse: bool = False
+    ) -> None:
         """Reset column headers to their original labels and optionally apply sort indicators."""
         for col, label in self.column_labels.items():
             if col == sort_col:
@@ -1301,7 +1470,7 @@ class QwkGuiApp:
                 col,
                 text=label,
                 anchor=header_anchor,
-                command=lambda c=col, r=next_reverse: self.sort_column(c, r)
+                command=lambda c=col, r=next_reverse: self.sort_column(c, r),
             )
 
     def load_messages(self, paths: str | list[str]) -> None:
@@ -1323,7 +1492,7 @@ class QwkGuiApp:
             if len(paths) == 1:
                 path = paths[0]
                 # If opening a new file, clear stale conference mapping and selection
-                if self._cache.get('path') != path:
+                if self._cache.get("path") != path:
                     self.conf_mapping = {}
                     self.conf_combo.set("All Conferences")
             else:
@@ -1343,7 +1512,12 @@ class QwkGuiApp:
                     if 0 <= prev_index < len(self.messages):
                         m = self.messages[prev_index]
                         # Use conference and message number as a unique key
-                        selected_msg_key = (m.header.confnum, m.header.msgnum, m.header.msgsubject, m.header.msgfrom)
+                        selected_msg_key = (
+                            m.header.confnum,
+                            m.header.msgnum,
+                            m.header.msgsubject,
+                            m.header.msgfrom,
+                        )
                 except (ValueError, IndexError):
                     pass
 
@@ -1358,11 +1532,13 @@ class QwkGuiApp:
             bbs_identities = {}
 
             for path in paths:
-                if len(paths) == 1 and self._cache.get('path') == path:
-                    file_data = self._cache['file_data']
-                    board_dict = self._cache['board_dict']
+                if len(paths) == 1 and self._cache.get("path") == path:
+                    file_data = self._cache["file_data"]
+                    board_dict = self._cache["board_dict"]
                 else:
-                    file_data, board_dict = load_data(path, self.logger, settings.encoding)
+                    file_data, board_dict = load_data(
+                        path, self.logger, settings.encoding
+                    )
 
                 bbs_info = getattr(board_dict, "bbs_info", None)
                 if not merged_board_dict.bbs_info:
@@ -1392,12 +1568,16 @@ class QwkGuiApp:
                     if cid not in merged_board_dict:
                         merged_board_dict[cid] = name
 
-                allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+                allowed_conferences = get_allowed_conferences(
+                    settings.conferences, board_dict
+                )
 
                 if isinstance(file_data, list):
                     messages_to_process = file_data
                 else:
-                    messages_to_process = parse_messages(file_data, None, settings.encoding)
+                    messages_to_process = parse_messages(
+                        file_data, None, settings.encoding
+                    )
 
                 # Create settings objects without conference/BBS filters for counting
                 count_settings = replace(settings, conferences=None)
@@ -1409,25 +1589,38 @@ class QwkGuiApp:
                     # Add BBS and source file information
                     parsed_message = replace(
                         parsed_message,
-                        bbs_name=parsed_message.bbs_name or (bbs_info.name if bbs_info else None),
-                        bbs_id=parsed_message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
-                        source_file=parsed_message.source_file or os.path.basename(path)
+                        bbs_name=parsed_message.bbs_name
+                        or (bbs_info.name if bbs_info else None),
+                        bbs_id=parsed_message.bbs_id
+                        or (bbs_info.bbs_id if bbs_info else None),
+                        source_file=parsed_message.source_file
+                        or os.path.basename(path),
                     )
 
                     # Check if message matches filters ignoring the BBS filter itself
-                    if matches_filters(parsed_message, bbs_count_settings, set(), user_name):
-                        bbs_display = parsed_message.bbs_name or parsed_message.bbs_id or "Unknown BBS"
+                    if matches_filters(
+                        parsed_message, bbs_count_settings, set(), user_name
+                    ):
+                        bbs_display = (
+                            parsed_message.bbs_name
+                            or parsed_message.bbs_id
+                            or "Unknown BBS"
+                        )
                         # Use ID for exact filtering if available, else name
                         bbs_val = parsed_message.bbs_id or parsed_message.bbs_name or ""
                         bbs_counts[bbs_display] += 1
                         bbs_identities[bbs_display] = bbs_val
 
                     # Check if message matches filters ignoring the conference filter itself
-                    if matches_filters(parsed_message, count_settings, set(), user_name):
+                    if matches_filters(
+                        parsed_message, count_settings, set(), user_name
+                    ):
                         conf_counts[parsed_message.confnum] += 1
 
                         # Now apply the actual filters for the display list
-                        if matches_filters(parsed_message, settings, allowed_conferences, user_name):
+                        if matches_filters(
+                            parsed_message, settings, allowed_conferences, user_name
+                        ):
                             processed_buffer = process_message(
                                 parsed_message.text,
                                 settings.truncate_signatures,
@@ -1440,14 +1633,20 @@ class QwkGuiApp:
                             # Ensure attachments are detected for the status icon
                             attachments = parsed_message.discover_attachments()
 
-                            all_messages.append(replace(parsed_message, text=processed_buffer, attachments=attachments))
+                            all_messages.append(
+                                replace(
+                                    parsed_message,
+                                    text=processed_buffer,
+                                    attachments=attachments,
+                                )
+                            )
 
             # Update cache if it was a single file
             if len(paths) == 1:
                 self._cache = {
-                    'path': paths[0],
-                    'file_data': file_data, # From the last iteration
-                    'board_dict': board_dict
+                    "path": paths[0],
+                    "file_data": file_data,  # From the last iteration
+                    "board_dict": board_dict,
                 }
 
             # Re-populate BBS selector with dynamic counts
@@ -1467,7 +1666,7 @@ class QwkGuiApp:
                 if b_val == selected_bbs_id:
                     new_bbs_selection = display_str
 
-            self.bbs_combo['values'] = bbs_list
+            self.bbs_combo["values"] = bbs_list
             self.bbs_mapping = new_bbs_mapping
             self.bbs_combo.set(new_bbs_selection)
 
@@ -1489,7 +1688,7 @@ class QwkGuiApp:
                 if cid == selected_conf_id:
                     new_selection = display_str
 
-            self.conf_combo['values'] = conf_list
+            self.conf_combo["values"] = conf_list
             self.conf_mapping = new_conf_mapping
             self.conf_combo.set(new_selection)
 
@@ -1516,6 +1715,7 @@ class QwkGuiApp:
 
                 if settings.redact_pii:
                     from pyqwk.core import _redact_pii
+
                     subject = _redact_pii(subject)
                     msg_from = _redact_pii(msg_from)
                     msg_to = _redact_pii(msg_to)
@@ -1558,7 +1758,7 @@ class QwkGuiApp:
                         message.bbs_name or message.bbs_id or "",
                     ),
                     open=True,  # Expand by default
-                    tags=tuple(item_tags)
+                    tags=tuple(item_tags),
                 )
 
                 if settings.threaded:
@@ -1573,13 +1773,20 @@ class QwkGuiApp:
             self.status_label.config(
                 text=f"Showing {len(self.messages)} of {total_count} messages from {source_display if len(paths) == 1 else str(len(paths)) + ' archives'}"
             )
-            self.root.title(f"{source_display if len(paths) == 1 else str(len(paths)) + ' archives'} - PyQWK Reader")
+            self.root.title(
+                f"{source_display if len(paths) == 1 else str(len(paths)) + ' archives'} - PyQWK Reader"
+            )
 
             # Restore selection if possible
             new_iid_to_select = None
             if selected_msg_key:
                 for i, m in enumerate(self.messages):
-                    if (m.header.confnum, m.header.msgnum, m.header.msgsubject, m.header.msgfrom) == selected_msg_key:
+                    if (
+                        m.header.confnum,
+                        m.header.msgnum,
+                        m.header.msgsubject,
+                        m.header.msgfrom,
+                    ) == selected_msg_key:
                         new_iid_to_select = str(i)
                         break
 
@@ -1600,7 +1807,7 @@ class QwkGuiApp:
             self.board_dict = old_board_dict
             self._cache = old_cache
             self.current_paths = old_paths
-            
+
             # Reset status and show error
             if self.current_paths:
                 source_display = self.root.title().split(" - ")[0]
@@ -1610,7 +1817,7 @@ class QwkGuiApp:
             else:
                 self.status_label.config(text="Ready")
                 self.root.title("PyQWK Reader")
-                
+
             messagebox.showerror("Failed to load QWK", str(exc))
 
     def save_attachment(self, filename: str, attachment_index: int) -> None:
@@ -1639,9 +1846,11 @@ class QwkGuiApp:
             )
 
             if path:
-                with open(path, 'wb') as f:
+                with open(path, "wb") as f:
                     f.write(data)
-                self.status_label.config(text=f"Saved attachment to {os.path.basename(path)}")
+                self.status_label.config(
+                    text=f"Saved attachment to {os.path.basename(path)}"
+                )
         except Exception as e:
             messagebox.showerror("Save Attachment", f"Failed to save attachment: {e}")
 
@@ -1680,10 +1889,12 @@ class QwkGuiApp:
                             base, ext = os.path.splitext(filename)
                             counter = 1
                             while os.path.exists(target_path):
-                                target_path = os.path.join(folder, f"{base}_{counter}{ext}")
+                                target_path = os.path.join(
+                                    folder, f"{base}_{counter}{ext}"
+                                )
                                 counter += 1
 
-                        with open(target_path, 'wb') as f:
+                        with open(target_path, "wb") as f:
                             f.write(data)
                         count += 1
                 except (ValueError, IndexError):
@@ -1695,7 +1906,9 @@ class QwkGuiApp:
             )
             self.status_label.config(text=f"Extracted {count} attachments")
         except Exception as e:
-            messagebox.showerror("Extraction Failed", f"Failed to extract attachments: {e}")
+            messagebox.showerror(
+                "Extraction Failed", f"Failed to extract attachments: {e}"
+            )
 
     def export_messages(self, _event: object | None = None) -> None:
         """Export the currently filtered and sorted messages to a file."""
@@ -1742,16 +1955,16 @@ class QwkGuiApp:
 
             # Use messages in their current display order from the treeview
             ordered_item_ids = self._get_all_tree_items()
-            
+
             # Prepare messages for export (add headers if needed, clean text)
             export_list = []
             bbs_info = getattr(self.board_dict, "bbs_info", None)
-            
+
             for iid in ordered_item_ids:
                 try:
                     idx = int(iid)
                     msg = self.messages[idx]
-                    
+
                     # Clean the body text using standard processing
                     cleaned_body = process_message(
                         msg.text,
@@ -1761,9 +1974,9 @@ class QwkGuiApp:
                         settings.redact_pii,
                         settings.strip_ansi,
                     )
-                    
+
                     # If text format and headers requested, prepend them
-                    if settings.format == 'text' and not settings.no_header:
+                    if settings.format == "text" and not settings.no_header:
                         header_text = msg.header.format_text(
                             self.board_dict,
                             settings.verbose,
@@ -1773,7 +1986,7 @@ class QwkGuiApp:
                         processed_text = header_text + cleaned_body
                     else:
                         processed_text = cleaned_body
-                        
+
                     # Create a processed version of the message for the writer
                     export_msg = replace(msg, text=processed_text)
                     export_list.append(export_msg)
@@ -1807,7 +2020,7 @@ class QwkGuiApp:
             if messagebox.askyesno(
                 "Not Found",
                 f"Message #{msgnum} was not found in the current view. "
-                "Would you like to reset all filters to find it?"
+                "Would you like to reset all filters to find it?",
             ):
                 self.clear_filters()
                 idx = self._find_message_index(msgnum)
@@ -1838,7 +2051,7 @@ class QwkGuiApp:
             if messagebox.askyesno(
                 "Not Found",
                 f"Referenced message #{msgnum} was not found in the current view. "
-                "Would you like to reset all filters to find it?"
+                "Would you like to reset all filters to find it?",
             ):
                 self.clear_filters()
                 idx = self._find_message_index(msgnum, confnum)
@@ -1868,7 +2081,11 @@ class QwkGuiApp:
 
             # Create a new window for the report
             stats_win = tk.Toplevel(self.root)
-            title_suffix = os.path.basename(self.current_paths[0]) if len(self.current_paths) == 1 else f"{len(self.current_paths)} archives"
+            title_suffix = (
+                os.path.basename(self.current_paths[0])
+                if len(self.current_paths) == 1
+                else f"{len(self.current_paths)} archives"
+            )
             stats_win.title(f"Statistics - {title_suffix}")
             stats_win.geometry("750x700")
             stats_win.bind("<Escape>", lambda e: stats_win.destroy())
@@ -1876,7 +2093,9 @@ class QwkGuiApp:
             main_frame = ttk.Frame(stats_win, padding=10)
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            txt = tk.Text(main_frame, font=("TkFixedFont", 10), wrap=tk.NONE, padx=10, pady=10)
+            txt = tk.Text(
+                main_frame, font=("TkFixedFont", 10), wrap=tk.NONE, padx=10, pady=10
+            )
             sb_y = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=txt.yview)
             sb_x = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=txt.xview)
             txt.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
@@ -1884,43 +2103,70 @@ class QwkGuiApp:
             # Footer for close button
             footer = ttk.Frame(stats_win, padding=(10, 5))
             footer.pack(side=tk.BOTTOM, fill=tk.X)
-            ttk.Button(footer, text="Close", command=stats_win.destroy).pack(side=tk.RIGHT)
+            ttk.Button(footer, text="Close", command=stats_win.destroy).pack(
+                side=tk.RIGHT
+            )
 
             txt.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             sb_y.pack(side=tk.RIGHT, fill=tk.Y, before=txt)
             sb_x.pack(side=tk.BOTTOM, fill=tk.X)
 
             # Define tags for statistics window
-            txt.tag_configure("h1", font=("TkDefaultFont", 14, "bold"), foreground="#0055aa")
-            txt.tag_configure("h2", font=("TkDefaultFont", 11, "bold"), foreground="#444444")
+            txt.tag_configure(
+                "h1", font=("TkDefaultFont", 14, "bold"), foreground="#0055aa"
+            )
+            txt.tag_configure(
+                "h2", font=("TkDefaultFont", 11, "bold"), foreground="#444444"
+            )
             txt.tag_configure("bold", font=("TkFixedFont", 10, "bold"))
             txt.tag_configure("dim", foreground="#888888")
             txt.tag_configure("cyan_bar", background="#00aaaa", foreground="#ffffff")
-            txt.tag_configure("info_label", font=("TkFixedFont", 10, "bold"), foreground="#666666")
+            txt.tag_configure(
+                "info_label", font=("TkFixedFont", 10, "bold"), foreground="#666666"
+            )
             txt.tag_configure("link", foreground="blue", underline=True)
             txt.tag_bind("link", "<Enter>", lambda e: txt.config(cursor="hand2"))
             txt.tag_bind("link", "<Leave>", lambda e: txt.config(cursor=""))
 
             # Rendering logic
-            display_name = os.path.basename(stats['file']) if len(self.current_paths) == 1 else "Multiple Archives"
+            display_name = (
+                os.path.basename(stats["file"])
+                if len(self.current_paths) == 1
+                else "Multiple Archives"
+            )
             txt.insert(tk.END, f"Statistics for: {display_name}\n\n", "h1")
-            txt.insert(tk.END, "Tip: Click on any chart label to filter the main view.\n", "dim")
+            txt.insert(
+                tk.END,
+                "Tip: Click on any chart label to filter the main view.\n",
+                "dim",
+            )
 
             def insert_info(label, value):
                 txt.insert(tk.END, f"  {label:<15}: ", "info_label")
                 txt.insert(tk.END, f"{value}\n")
 
-            insert_info("Messages", f"{stats['matching_messages']} matching / {stats['total_messages']} total")
-            if stats['attachments_count'] > 0:
-                insert_info("Attachments", f"{stats['attachments_count']} files detected")
-            if stats['dates']['earliest']:
-                earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
-                latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+            insert_info(
+                "Messages",
+                f"{stats['matching_messages']} matching / {stats['total_messages']} total",
+            )
+            if stats["attachments_count"] > 0:
+                insert_info(
+                    "Attachments", f"{stats['attachments_count']} files detected"
+                )
+            if stats["dates"]["earliest"]:
+                earliest = datetime.datetime.fromisoformat(
+                    stats["dates"]["earliest"]
+                ).strftime("%Y-%m-%d")
+                latest = datetime.datetime.fromisoformat(
+                    stats["dates"]["latest"]
+                ).strftime("%Y-%m-%d")
                 insert_info("Date Range", f"{earliest} to {latest}")
             insert_info("Private", f"{stats['private_count']} messages")
 
             txt.insert(tk.END, "\nActivity & Content\n", "h2")
-            insert_info("Reply Rate", f"{stats['reply_rate']}% ({stats['reply_count']} replies)")
+            insert_info(
+                "Reply Rate", f"{stats['reply_rate']}% ({stats['reply_count']} replies)"
+            )
             insert_info("Avg Length", f"{int(stats['avg_message_length'])} characters")
 
             def render_gui_bar_chart(title, data, filter_type=None):
@@ -1951,18 +2197,23 @@ class QwkGuiApp:
                         def make_callback(ft, fv):
                             def callback(e):
                                 stats_win.destroy()
-                                if ft == 'author':
+                                if ft == "author":
                                     self._pivot_filter(author=fv)
-                                elif ft == 'conf':
+                                elif ft == "conf":
                                     self._pivot_filter(conf_num=fv)
-                                elif ft == 'bbs':
+                                elif ft == "bbs":
                                     self._pivot_filter(bbs_name=fv)
-                                elif ft == 'search':
+                                elif ft == "search":
                                     self.search_var.set(fv)
                                     self.reload_messages()
+
                             return callback
 
-                        txt.tag_bind(item_tag, "<Button-1>", make_callback(filter_type, filter_val))
+                        txt.tag_bind(
+                            item_tag,
+                            "<Button-1>",
+                            make_callback(filter_type, filter_val),
+                        )
 
                     txt.insert(tk.END, truncated_label, tuple(label_tags))
                     txt.insert(tk.END, " : ", "")
@@ -1972,50 +2223,110 @@ class QwkGuiApp:
                         txt.insert(tk.END, " " * bar_len, "cyan_bar")
                     txt.insert(tk.END, "\n")
 
-            if stats['year_distribution']:
-                items = [(y, c) for y, c in sorted(stats['year_distribution'].items())]
-                render_gui_bar_chart('Yearly Activity', items)
+            if stats["year_distribution"]:
+                items = [(y, c) for y, c in sorted(stats["year_distribution"].items())]
+                render_gui_bar_chart("Yearly Activity", items)
 
-            if stats['month_distribution'] and len(stats['month_distribution']) <= 24:
-                items = [(m, c) for m, c in sorted(stats['month_distribution'].items())]
-                render_gui_bar_chart('Monthly Activity', items)
+            if stats["month_distribution"] and len(stats["month_distribution"]) <= 24:
+                items = [(m, c) for m, c in sorted(stats["month_distribution"].items())]
+                render_gui_bar_chart("Monthly Activity", items)
 
-            render_gui_bar_chart('Top Authors', [(a["name"], a["count"], a["name"]) for a in stats['authors']], filter_type='author')
-            render_gui_bar_chart('Top Recipients', [(r["name"], r["count"], r["name"]) for r in stats['recipients']], filter_type='author')
+            render_gui_bar_chart(
+                "Top Authors",
+                [(a["name"], a["count"], a["name"]) for a in stats["authors"]],
+                filter_type="author",
+            )
+            render_gui_bar_chart(
+                "Top Recipients",
+                [(r["name"], r["count"], r["name"]) for r in stats["recipients"]],
+                filter_type="author",
+            )
 
-            if stats.get('bbses'):
-                render_gui_bar_chart('Top BBSes', [(b["name"], b["count"], b["name"]) for b in stats['bbses']], filter_type='bbs')
+            if stats.get("bbses"):
+                render_gui_bar_chart(
+                    "Top BBSes",
+                    [(b["name"], b["count"], b["name"]) for b in stats["bbses"]],
+                    filter_type="bbs",
+                )
 
-            if stats['conferences']:
-                items = [(f"{c['number']:3} {c['name']}", c["count"], c["number"]) for c in stats['conferences']]
-                render_gui_bar_chart('Top Conferences', items, filter_type='conf')
+            if stats["conferences"]:
+                items = [
+                    (f"{c['number']:3} {c['name']}", c["count"], c["number"])
+                    for c in stats["conferences"]
+                ]
+                render_gui_bar_chart("Top Conferences", items, filter_type="conf")
 
-            render_gui_bar_chart('Top Subjects', [(s["subject"], s["count"]) for s in stats['subjects']], filter_type='search')
-            render_gui_bar_chart('Top Keywords', [(k["word"], k["count"]) for k in stats['keywords']], filter_type='search')
+            render_gui_bar_chart(
+                "Top Subjects",
+                [(s["subject"], s["count"]) for s in stats["subjects"]],
+                filter_type="search",
+            )
+            render_gui_bar_chart(
+                "Top Keywords",
+                [(k["word"], k["count"]) for k in stats["keywords"]],
+                filter_type="search",
+            )
 
-            if stats.get('links'):
-                render_gui_bar_chart('Top Links', [(link["url"], link["count"]) for link in stats['links']], filter_type='search')
+            if stats.get("links"):
+                render_gui_bar_chart(
+                    "Top Links",
+                    [(link["url"], link["count"]) for link in stats["links"]],
+                    filter_type="search",
+                )
 
-            if stats.get('emails'):
-                render_gui_bar_chart('Top Emails', [(e["email"], e["count"]) for e in stats['emails']], filter_type='search')
+            if stats.get("emails"):
+                render_gui_bar_chart(
+                    "Top Emails",
+                    [(e["email"], e["count"]) for e in stats["emails"]],
+                    filter_type="search",
+                )
 
-            if stats.get('phones'):
-                render_gui_bar_chart('Top Phone Numbers', [(p["phone"], p["count"]) for p in stats['phones']], filter_type='search')
+            if stats.get("phones"):
+                render_gui_bar_chart(
+                    "Top Phone Numbers",
+                    [(p["phone"], p["count"]) for p in stats["phones"]],
+                    filter_type="search",
+                )
 
-            if stats.get('top_attachments'):
-                render_gui_bar_chart('Top Attachments', [(a["name"], a["count"], a["name"]) for a in stats['top_attachments']], filter_type='search')
+            if stats.get("top_attachments"):
+                render_gui_bar_chart(
+                    "Top Attachments",
+                    [
+                        (a["name"], a["count"], a["name"])
+                        for a in stats["top_attachments"]
+                    ],
+                    filter_type="search",
+                )
 
-            if stats.get('top_attachment_types'):
-                render_gui_bar_chart('Top Attachment Types', [(t["extension"], t["count"]) for t in stats['top_attachment_types']], filter_type='search')
+            if stats.get("top_attachment_types"):
+                render_gui_bar_chart(
+                    "Top Attachment Types",
+                    [
+                        (t["extension"], t["count"])
+                        for t in stats["top_attachment_types"]
+                    ],
+                    filter_type="search",
+                )
 
-            if stats['day_of_week']:
-                days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                items = [(d, stats['day_of_week'].get(d, 0)) for d in days]
-                render_gui_bar_chart('Day of Week Distribution', items)
+            if stats["day_of_week"]:
+                days = [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                ]
+                items = [(d, stats["day_of_week"].get(d, 0)) for d in days]
+                render_gui_bar_chart("Day of Week Distribution", items)
 
-            if stats['hour_of_day']:
-                items = [(f"{h:02}:00", stats['hour_of_day'].get(str(h), 0)) for h in range(24)]
-                render_gui_bar_chart('Hourly Distribution', items)
+            if stats["hour_of_day"]:
+                items = [
+                    (f"{h:02}:00", stats["hour_of_day"].get(str(h), 0))
+                    for h in range(24)
+                ]
+                render_gui_bar_chart("Hourly Distribution", items)
 
             txt.config(state=tk.DISABLED)
 
@@ -2044,6 +2355,7 @@ class QwkGuiApp:
 
     def _apply_zebra_striping(self) -> None:
         """Re-apply alternating 'even' tags to all items in their current display order."""
+
         def traverse(item_id, count):
             current_tags = list(self.message_list.item(item_id, "tags"))
             # Filter out the 'even' tag to start fresh
@@ -2093,14 +2405,21 @@ class QwkGuiApp:
                     elif col == "BBS":
                         return (msg.bbs_name or msg.bbs_id or "").lower()
                     elif col == "Flags":
-                        return (msg.header.status + (";".join(msg.attachments) if msg.attachments else "")).lower()
+                        return (
+                            msg.header.status
+                            + (";".join(msg.attachments) if msg.attachments else "")
+                        ).lower()
                     elif col == "#0":
                         return msg.header.msgsubject.lower()
                 except (ValueError, IndexError):
                     pass
 
                 # Fallback to displayed text for items not mapping to self.messages (e.g. in tests)
-                val = self.message_list.set(iid, col) if col != "#0" else self.message_list.item(iid, "text")
+                val = (
+                    self.message_list.set(iid, col)
+                    if col != "#0"
+                    else self.message_list.item(iid, "text")
+                )
                 if col == "Num":
                     return int(val) if val and str(val).isdigit() else 0
                 elif col == "Size":
@@ -2157,5 +2476,5 @@ def main() -> None:
     root.mainloop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

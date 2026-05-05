@@ -6,18 +6,32 @@ from pyqwk.core import (
     MessageHeader,
     matches_filters,
     calculate_archive_stats,
-    render_stats_as_text
+    render_stats_as_text,
 )
+
 
 def test_has_emails_filter():
     settings = ProcessingSettings(
-        verbose=False, private=True, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-        redact_pii=False, format='text', separator='none', output_mode='stdout',
-        output_path=None, encoding='cp437', has_emails=True
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        has_emails=True,
     )
 
-    header = MessageHeader(" ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, "")
+    header = MessageHeader(
+        " ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""
+    )
 
     msg_with_email = ParsedMessage("Contact me at test@example.com", 1, None, 1, header)
     msg_without_email = ParsedMessage("Hello world", 2, None, 1, header)
@@ -25,15 +39,29 @@ def test_has_emails_filter():
     assert matches_filters(msg_with_email, settings, set()) is True
     assert matches_filters(msg_without_email, settings, set()) is False
 
+
 def test_has_phones_filter():
     settings = ProcessingSettings(
-        verbose=False, private=True, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-        redact_pii=False, format='text', separator='none', output_mode='stdout',
-        output_path=None, encoding='cp437', has_phones=True
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        has_phones=True,
     )
 
-    header = MessageHeader(" ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, "")
+    header = MessageHeader(
+        " ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""
+    )
 
     msg_with_phone = ParsedMessage("Call 555-1234", 1, None, 1, header)
     msg_without_phone = ParsedMessage("Hello world", 2, None, 1, header)
@@ -41,15 +69,29 @@ def test_has_phones_filter():
     assert matches_filters(msg_with_phone, settings, set()) is True
     assert matches_filters(msg_without_phone, settings, set()) is False
 
+
 def test_has_ansi_filter():
     settings = ProcessingSettings(
-        verbose=False, private=True, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-        redact_pii=False, format='text', separator='none', output_mode='stdout',
-        output_path=None, encoding='cp437', has_ansi=True
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        has_ansi=True,
     )
 
-    header = MessageHeader(" ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, "")
+    header = MessageHeader(
+        " ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""
+    )
 
     msg_with_ansi = ParsedMessage("Color \x1b[31mRed\x1b[0m text", 1, None, 1, header)
     msg_without_ansi = ParsedMessage("Hello world", 2, None, 1, header)
@@ -57,9 +99,12 @@ def test_has_ansi_filter():
     assert matches_filters(msg_with_ansi, settings, set()) is True
     assert matches_filters(msg_without_ansi, settings, set()) is False
 
+
 def test_entity_discovery_stats():
     # Mock data for stats
-    header = MessageHeader(" ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, "")
+    header = MessageHeader(
+        " ", 1, "01-01-23", "12:00", "To", "From", "Subj", "", None, 1, " ", 1, 0, ""
+    )
     messages = [
         ParsedMessage("Email: user1@a.com and user1@a.com", 1, None, 1, header),
         ParsedMessage("Email: user2@b.com", 2, None, 1, header),
@@ -67,27 +112,37 @@ def test_entity_discovery_stats():
         ParsedMessage("Phone: 555-1111", 4, None, 1, header),
     ]
 
-    with patch('pyqwk.core.load_data') as mock_load:
+    with patch("pyqwk.core.load_data") as mock_load:
         mock_load.return_value = (messages, {1: "General"})
 
         settings = ProcessingSettings(
-            verbose=False, private=True, no_header=False, truncate_signatures=False,
-            cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-            redact_pii=False, format='text', separator='none', output_mode='stdout',
-            output_path=None, encoding='cp437'
+            verbose=False,
+            private=True,
+            no_header=False,
+            truncate_signatures=False,
+            cut_quoting=False,
+            individual_files=False,
+            threaded=False,
+            binaries_removal=False,
+            redact_pii=False,
+            format="text",
+            separator="none",
+            output_mode="stdout",
+            output_path=None,
+            encoding="cp437",
         )
 
         stats = calculate_archive_stats(["dummy.qwk"], settings, MagicMock())
 
         # Verify emails were found and counted correctly
-        emails = {e['email']: e['count'] for e in stats['emails']}
+        emails = {e["email"]: e["count"] for e in stats["emails"]}
         assert "user1@a.com" in emails
         assert "user2@b.com" in emails
         assert emails["user1@a.com"] == 2
         assert emails["user2@b.com"] == 1
 
         # Verify phones were found and counted correctly
-        phones = {p['phone']: p['count'] for p in stats['phones']}
+        phones = {p["phone"]: p["count"] for p in stats["phones"]}
         assert "555-1111" in phones
         assert "555-2222" in phones
         assert phones["555-1111"] == 2
@@ -100,17 +155,29 @@ def test_entity_discovery_stats():
         assert "Top Phone Numbers:" in report
         assert "555-1111" in report
 
+
 def test_gui_variable_initialization():
     # Mock tkinter before importing gui
     mock_tk = MagicMock()
+
     def make_var(value=False, **kwargs):
         m = MagicMock()
         m.get.return_value = value
         return m
+
     mock_tk.BooleanVar.side_effect = make_var
     mock_ttk = MagicMock()
-    with patch.dict("sys.modules", {"tkinter": mock_tk, "tkinter.ttk": mock_ttk, "tkinter.filedialog": MagicMock(), "tkinter.messagebox": MagicMock()}):
+    with patch.dict(
+        "sys.modules",
+        {
+            "tkinter": mock_tk,
+            "tkinter.ttk": mock_ttk,
+            "tkinter.filedialog": MagicMock(),
+            "tkinter.messagebox": MagicMock(),
+        },
+    ):
         from pyqwk.gui import QwkGuiApp
+
         root = MagicMock()
         app = QwkGuiApp(root)
 
@@ -118,6 +185,7 @@ def test_gui_variable_initialization():
         assert hasattr(app, "has_emails_var")
         assert hasattr(app, "has_phones_var")
         assert hasattr(app, "has_ansi_var")
+
 
 def test_gui_settings_propagation():
     # Mock tkinter before importing gui
@@ -132,6 +200,7 @@ def test_gui_settings_propagation():
 
     # Track calls to BooleanVar to assign our specific mocks
     vars_created = []
+
     def make_var(value=False, **kwargs):
         m = MagicMock()
         m.get.return_value = value
@@ -141,8 +210,17 @@ def test_gui_settings_propagation():
     mock_tk.BooleanVar.side_effect = make_var
     mock_ttk = MagicMock()
 
-    with patch.dict("sys.modules", {"tkinter": mock_tk, "tkinter.ttk": mock_ttk, "tkinter.filedialog": MagicMock(), "tkinter.messagebox": MagicMock()}):
+    with patch.dict(
+        "sys.modules",
+        {
+            "tkinter": mock_tk,
+            "tkinter.ttk": mock_ttk,
+            "tkinter.filedialog": MagicMock(),
+            "tkinter.messagebox": MagicMock(),
+        },
+    ):
         from pyqwk.gui import QwkGuiApp
+
         root = MagicMock()
         app = QwkGuiApp(root)
 

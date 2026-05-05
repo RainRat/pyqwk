@@ -11,14 +11,16 @@ from pyqwk.core import (
     load_data,
     process_merged_files,
     ProcessingSettings,
-    MESSAGES_FILENAME
+    MESSAGES_FILENAME,
 )
+
 
 @pytest.fixture
 def logger() -> logging.Logger:
     logger = logging.getLogger("pyqwk.tests.validation")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def _make_settings(**overrides) -> ProcessingSettings:
     defaults = dict(
@@ -40,6 +42,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_load_data_raises_if_messages_dat_missing_in_zip(
     tmp_path: Path, logger: logging.Logger
 ) -> None:
@@ -54,26 +57,27 @@ def test_load_data_raises_if_messages_dat_missing_in_zip(
     assert "Neither" in str(exc_info.value)
     assert "found in the zip archive" in str(exc_info.value)
 
+
 def test_process_merged_files_raises_if_stdout_with_output_path(
     tmp_path: Path, logger: logging.Logger
 ) -> None:
     settings = _make_settings(
-        output_mode="stdout",
-        output_path=str(tmp_path / "out.txt")
+        output_mode="stdout", output_path=str(tmp_path / "out.txt")
     )
 
     with pytest.raises(ValueError) as exc_info:
         process_merged_files(["dummy.qwk"], settings, logger)
 
-    assert "Output path cannot be provided when output mode is stdout" in str(exc_info.value)
+    assert "Output path cannot be provided when output mode is stdout" in str(
+        exc_info.value
+    )
+
 
 def test_process_merged_files_raises_if_file_mode_without_output_path(
-    logger: logging.Logger
+    logger: logging.Logger,
 ) -> None:
     settings = _make_settings(
-        output_mode="file",
-        output_path=None,
-        individual_files=False
+        output_mode="file", output_path=None, individual_files=False
     )
 
     with pytest.raises(ValueError) as exc_info:
@@ -81,13 +85,11 @@ def test_process_merged_files_raises_if_file_mode_without_output_path(
 
     assert "output path is required when output mode is file" in str(exc_info.value)
 
+
 def test_process_merged_files_raises_if_individual_files_without_output_path(
-    logger: logging.Logger
+    logger: logging.Logger,
 ) -> None:
-    settings = _make_settings(
-        individual_files=True,
-        output_path=None
-    )
+    settings = _make_settings(individual_files=True, output_path=None)
 
     with pytest.raises(ValueError) as exc_info:
         process_merged_files(["dummy.qwk"], settings, logger)

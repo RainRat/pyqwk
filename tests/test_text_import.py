@@ -1,6 +1,7 @@
 import logging
 from pyqwk.core import load_data
 
+
 def test_text_import_standard(tmp_path):
     text_content = """Conference: General (1)
 From: Alice
@@ -28,6 +29,7 @@ This is a test message.
     assert msg.text.strip() == "This is a test message."
     assert board_dict[1] == "General"
 
+
 def test_text_import_verbose(tmp_path):
     text_content = """--------------------------------------------------------------------------------
 Conference:  General (1)
@@ -51,6 +53,7 @@ Body here.
     assert msg.header.msgnum == 123
     assert msg.header.is_private is True
     assert msg.text.strip() == "Body here."
+
 
 def test_text_import_multiple(tmp_path):
     text_content = """Conference: General (1)
@@ -83,6 +86,7 @@ Msg 2
     assert board_dict[1] == "General"
     assert board_dict[2] == "Tech"
 
+
 def test_text_import_double_newline_separator(tmp_path):
     # Test fallback to double newline splitting if no dashes present
     text_content = """Conference: General (1)
@@ -111,6 +115,7 @@ Body Two
     assert messages[0].header.msgsubject == "One"
     assert messages[1].header.msgsubject == "Two"
 
+
 def test_text_import_with_bbs_name(tmp_path):
     text_content = """Conference: General (1)
 BBS: My Cool BBS
@@ -130,6 +135,7 @@ Body
     assert len(messages) == 1
     assert messages[0].bbs_name == "My Cool BBS"
     assert board_dict.bbs_info.name == "My Cool BBS"
+
 
 def test_text_import_attachments(tmp_path):
     text_content = """Conference: General (1)

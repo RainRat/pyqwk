@@ -160,15 +160,17 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
     return argparse.Namespace(**base)
 
 
-def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
-    file_data, board_dict = load_data(str(baseline_path), logger, encoding='latin1')
+def test_parse_messages_matches_baseline(
+    baseline_path: Path, expected_output_path: Path, logger: logging.Logger
+) -> None:
+    file_data, board_dict = load_data(str(baseline_path), logger, encoding="latin1")
 
     assert isinstance(file_data, bytearray)
     assert board_dict == {}
 
-    messages = list(parse_messages(file_data, progress_bar=None, encoding='latin1'))
+    messages = list(parse_messages(file_data, progress_bar=None, encoding="latin1"))
     expected_message = _read_expected(expected_output_path)
-    expected_body = expected_message.split('\r\n\r\n', 1)[1]
+    expected_body = expected_message.split("\r\n\r\n", 1)[1]
 
     assert len(messages) == 1
     message = messages[0]
@@ -181,8 +183,6 @@ def test_parse_messages_matches_baseline(baseline_path: Path, expected_output_pa
     assert message.msgnum == 28
     assert message.refnum is None
     assert message.confnum == 3
-
-
 
 
 def test_invalid_messages_dat_reports_clear_error(
@@ -202,15 +202,13 @@ def test_invalid_messages_dat_reports_clear_error(
     assert "Input too short" in caplog.text
 
 
-
-
-
-
 def test_process_merged_files_writes_individual_files(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_dir = tmp_path / "messages"
-    process_merged_files([str(baseline_path)], _make_settings(
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
             individual_files=True,
             output_mode="file",
             output_path=str(output_dir),
@@ -229,10 +227,12 @@ def test_process_merged_files_writes_individual_files(
     assert content == expected_message.replace(separator, "", 1)
 
 
-
-
-def test_process_merged_files_prints_to_stdout(capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger) -> None:
-    process_merged_files([str(baseline_path)], _make_settings(quiet=True),
+def test_process_merged_files_prints_to_stdout(
+    capsys, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
+) -> None:
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(quiet=True),
         logger=logger,
     )
 
@@ -260,13 +260,25 @@ def test_order_messages_by_thread_groups_children() -> None:
         nettag="",
     )
     messages = [
-        ProcessedMessage("child-before-parent\r\n", msgnum=2, refnum=1, confnum=1, header=header),
-        ProcessedMessage("root-one\r\n", msgnum=1, refnum=None, confnum=1, header=header),
-        ProcessedMessage("nested-child\r\n", msgnum=3, refnum=2, confnum=1, header=header),
+        ProcessedMessage(
+            "child-before-parent\r\n", msgnum=2, refnum=1, confnum=1, header=header
+        ),
+        ProcessedMessage(
+            "root-one\r\n", msgnum=1, refnum=None, confnum=1, header=header
+        ),
+        ProcessedMessage(
+            "nested-child\r\n", msgnum=3, refnum=2, confnum=1, header=header
+        ),
         ProcessedMessage("orphan\r\n", msgnum=4, refnum=99, confnum=1, header=header),
-        ProcessedMessage("root-two\r\n", msgnum=5, refnum=None, confnum=1, header=header),
-        ProcessedMessage("conf-two-root\r\n", msgnum=6, refnum=None, confnum=2, header=header),
-        ProcessedMessage("conf-two-child\r\n", msgnum=7, refnum=6, confnum=2, header=header),
+        ProcessedMessage(
+            "root-two\r\n", msgnum=5, refnum=None, confnum=1, header=header
+        ),
+        ProcessedMessage(
+            "conf-two-root\r\n", msgnum=6, refnum=None, confnum=2, header=header
+        ),
+        ProcessedMessage(
+            "conf-two-child\r\n", msgnum=7, refnum=6, confnum=2, header=header
+        ),
     ]
 
     ordered = _order_messages_by_thread(messages)
@@ -302,8 +314,12 @@ def test_order_messages_by_thread_handles_missing_parent() -> None:
 
     messages = [
         ProcessedMessage("root\r\n", msgnum=1, refnum=None, confnum=1, header=header),
-        ProcessedMessage("orphan-missing-parent\r\n", msgnum=3, refnum=99, confnum=1, header=header),
-        ProcessedMessage("child-of-root\r\n", msgnum=2, refnum=1, confnum=1, header=header),
+        ProcessedMessage(
+            "orphan-missing-parent\r\n", msgnum=3, refnum=99, confnum=1, header=header
+        ),
+        ProcessedMessage(
+            "child-of-root\r\n", msgnum=2, refnum=1, confnum=1, header=header
+        ),
     ]
 
     ordered = _order_messages_by_thread(messages)
@@ -313,8 +329,6 @@ def test_order_messages_by_thread_handles_missing_parent() -> None:
         "child-of-root",
         "orphan-missing-parent",
     ]
-
-
 
 
 @pytest.mark.parametrize(
@@ -343,9 +357,14 @@ def test_order_messages_by_thread_handles_missing_parent() -> None:
     ],
 )
 def test_load_data_reads_all_conferences_from_control_dat(
-    archive_name: str, expected_boarddict: dict[int, str], testdata_dir: Path, logger: logging.Logger
+    archive_name: str,
+    expected_boarddict: dict[int, str],
+    testdata_dir: Path,
+    logger: logging.Logger,
 ) -> None:
-    file_data, boarddict = load_data(str(testdata_dir / archive_name), logger, encoding='latin1')
+    file_data, boarddict = load_data(
+        str(testdata_dir / archive_name), logger, encoding="latin1"
+    )
 
     assert isinstance(file_data, bytearray)
     assert boarddict == expected_boarddict
@@ -379,8 +398,8 @@ def test_load_data_skips_invalid_conference_number(
         zf.writestr("CONTROL.DAT", control_content)
 
     with caplog.at_level(logging.WARNING):
-        _, board_dict = load_data(str(zip_path), logger, encoding='latin1')
-        _, board_dict = load_data(str(zip_path), logger, encoding='latin1')
+        _, board_dict = load_data(str(zip_path), logger, encoding="latin1")
+        _, board_dict = load_data(str(zip_path), logger, encoding="latin1")
 
     assert "Invalid conference number" in caplog.text
     # The entry should be skipped, so board_dict should be empty (since there was only 1 entry and it was invalid)
@@ -465,10 +484,14 @@ def test_load_data_warns_truncated_control_dat(
     assert board_dict[1] == "Test Conference"
 
 
-def test_parse_messages_from_qwk_packet(testdata_dir: Path, logger: logging.Logger) -> None:
-    file_data, board_dict = load_data(str(testdata_dir / "test2_qwk.zip"), logger, encoding='latin1')
+def test_parse_messages_from_qwk_packet(
+    testdata_dir: Path, logger: logging.Logger
+) -> None:
+    file_data, board_dict = load_data(
+        str(testdata_dir / "test2_qwk.zip"), logger, encoding="latin1"
+    )
 
-    messages = list(parse_messages(file_data, progress_bar=None, encoding='latin1'))
+    messages = list(parse_messages(file_data, progress_bar=None, encoding="latin1"))
 
     assert len(messages) == 2
     assert {message.header.is_private for message in messages} == {False}
@@ -485,7 +508,9 @@ def test_process_merged_files_writes_json(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.json"
-    process_merged_files([str(baseline_path)], _make_settings(format="json", output_mode="file", output_path=str(output_path)),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(format="json", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -502,7 +527,10 @@ def test_process_merged_files_writes_json(
     separator = ("-" * 80) + "\r\n"
     assert separator not in message["text"]
     assert "From:" not in message["text"]
-    assert message["text"] == "Hello this is my first day in the wonderful world of BBSing and I need some\r\nhelp.\r\n"
+    assert (
+        message["text"]
+        == "Hello this is my first day in the wonderful world of BBSing and I need some\r\nhelp.\r\n"
+    )
     assert message["header"]["msgnum"] == 28
 
 
@@ -543,10 +571,17 @@ def test_process_merged_files_preserves_thread_order_in_json(
         ),
     ]
 
-    def fake_load_data(path: str, logger_param: logging.Logger, encoding: str = 'cp437') -> tuple[bytearray, dict[int, str]]:
+    def fake_load_data(
+        path: str, logger_param: logging.Logger, encoding: str = "cp437"
+    ) -> tuple[bytearray, dict[int, str]]:
         return bytearray(), {}
 
-    def fake_parse_messages(file_data: bytearray, progress_bar: object, encoding: str = 'cp437', headers_only: bool = False):
+    def fake_parse_messages(
+        file_data: bytearray,
+        progress_bar: object,
+        encoding: str = "cp437",
+        headers_only: bool = False,
+    ):
         yield from parsed_messages
 
     monkeypatch.setattr(qwk, "load_data", fake_load_data)
@@ -554,7 +589,9 @@ def test_process_merged_files_preserves_thread_order_in_json(
 
     output_path = tmp_path / "threaded.json"
 
-    process_merged_files(["ignored.dat"], _make_settings(
+    process_merged_files(
+        ["ignored.dat"],
+        _make_settings(
             threaded=True,
             format="json",
             no_header=True,
@@ -574,23 +611,28 @@ def test_process_merged_files_writes_xml(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.xml"
-    process_merged_files([str(baseline_path)], _make_settings(format="xml", output_mode="file", output_path=str(output_path)),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(format="xml", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
     with output_path.open("r", encoding="utf-8") as f:
         content = f.read()
 
-    assert '<messages>' in content
-    assert '<message>' in content
-    assert '<header>' in content
-    assert '<msgnum>28' in content
+    assert "<messages>" in content
+    assert "<message>" in content
+    assert "<header>" in content
+    assert "<msgnum>28" in content
     _read_expected(expected_output_path)
     # Structured output should NOT contain the separator line or text headers
     separator = ("-" * 80) + "\r\n"
     assert separator not in content
     assert "<text>Date:" not in content
-    assert "<text>Hello this is my first day in the wonderful world of BBSing and I need some\nhelp.\n</text>" in content
+    assert (
+        "<text>Hello this is my first day in the wonderful world of BBSing and I need some\nhelp.\n</text>"
+        in content
+    )
     assert ("-" * 80) not in content
 
 
@@ -598,7 +640,9 @@ def test_process_merged_files_writes_html(
     tmp_path, baseline_path: Path, expected_output_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.html"
-    process_merged_files([str(baseline_path)], _make_settings(format="html", output_mode="file", output_path=str(output_path)),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(format="html", output_mode="file", output_path=str(output_path)),
         logger=logger,
     )
 
@@ -626,28 +670,29 @@ def test_process_merged_files_writes_xml_with_special_characters(
     tmp_path, logger: logging.Logger
 ) -> None:
     from pyqwk.core import _write_xml
+
     header = MessageHeader(
-        status=' ',
+        status=" ",
         msgnum=1,
-        msgdate='01-01-90',
-        msgtime='12:00',
-        msgto='All',
-        msgfrom='Test User',
-        msgsubject='<test>&subject',
-        msgpassword='',
+        msgdate="01-01-90",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="Test User",
+        msgsubject="<test>&subject",
+        msgpassword="",
         refnum=None,
         numblocks=1,
-        msgflag=' ',
+        msgflag=" ",
         confnum=1,
         lognum=1,
-        nettag='',
+        nettag="",
     )
     message = ProcessedMessage(
         text="This is a test message with < & > special characters.",
         msgnum=1,
         refnum=0,
         confnum=1,
-        header=header
+        header=header,
     )
 
     output_path = tmp_path / "test.xml"
@@ -662,20 +707,20 @@ def test_process_merged_files_writes_xml_with_special_characters(
 
 def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
     header = MessageHeader(
-        status=' ',
+        status=" ",
         msgnum=1,
-        msgdate='01-01-90',
-        msgtime='12:00',
-        msgto='All',
-        msgfrom='Test User',
-        msgsubject='Test Subject',
-        msgpassword='',
+        msgdate="01-01-90",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="Test User",
+        msgsubject="Test Subject",
+        msgpassword="",
         refnum=None,
         numblocks=1,
-        msgflag=' ',
+        msgflag=" ",
         confnum=1,
         lognum=1,
-        nettag='',
+        nettag="",
     )
     message = ProcessedMessage(
         text="<b>Hello & welcome></b>",
@@ -699,9 +744,20 @@ def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
 
 def test_xml_output_sanitizes_invalid_chars(tmp_path: Path) -> None:
     header = MessageHeader(
-        status=' ', msgnum=1, msgdate='', msgtime='', msgto='', msgfrom='',
-        msgsubject='Subject\x00Invalid', msgpassword='', refnum=None, numblocks=1,
-        msgflag=' ', confnum=1, lognum=1, nettag=''
+        status=" ",
+        msgnum=1,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="Subject\x00Invalid",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
     )
     # \x1b is ESC, invalid in XML 1.0
     text = "Valid text\x1bInvalid"
@@ -715,7 +771,7 @@ def test_xml_output_sanitizes_invalid_chars(tmp_path: Path) -> None:
     content = output_path.read_text(encoding="utf-8")
 
     assert "Valid text" in content
-    assert "Invalid" in content # The word "Invalid"
+    assert "Invalid" in content  # The word "Invalid"
     assert "\x1b" not in content
     assert "\x00" not in content
 
@@ -756,13 +812,16 @@ def test_load_data_logs_warning_if_control_dat_is_missing(
     logger.addHandler(logging.StreamHandler())  # Make sure logs are captured
 
     with caplog.at_level(logging.WARNING):
-        load_data(str(zip_path), logger, encoding='latin1')
+        load_data(str(zip_path), logger, encoding="latin1")
 
     assert "CONTROL.DAT not found" in caplog.text
 
 
 def test_cli_treats_multiple_positional_args_as_inputs(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, baseline_path: Path, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    baseline_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     output_path = tmp_path / "output.txt"
@@ -775,13 +834,17 @@ def test_cli_treats_multiple_positional_args_as_inputs(
     )
 
     import pyqwk.cli as cli
+
     with monkeypatch.context() as m:
         m.setattr(cli, "process_merged_files", MagicMock())
         main()
 
 
 def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, testdata_dir: Path, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    testdata_dir: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     output_dir = tmp_path / "output"
@@ -799,13 +862,16 @@ def test_cli_treats_extra_positional_args_as_inputs_requiring_output_dir(
     )
 
     import pyqwk.cli as cli
+
     with monkeypatch.context() as m:
         m.setattr(cli, "process_merged_files", MagicMock())
         main()
 
 
 def test_cli_rejects_invalid_log_level(
-    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    baseline_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setattr(
         sys,
@@ -887,10 +953,13 @@ def test_cli_batch_success(
     assert files[0].name == "test1_qwk.txt"
     assert files[1].name == "test2_qwk.txt"
 
+
 def test_process_merged_files_noheader_combined_has_separator(
     capsys: pytest.CaptureFixture[str], baseline_path: Path, logger: logging.Logger
 ) -> None:
-    process_merged_files([str(baseline_path)], _make_settings(no_header=True),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(no_header=True),
         logger=logger,
     )
 
@@ -904,28 +973,42 @@ def test_process_merged_files_noheader_combined_has_separator(
 def test_process_merged_files_separator_blank(
     capsys: pytest.CaptureFixture[str], baseline_path: Path, logger: logging.Logger
 ) -> None:
-    process_merged_files([str(baseline_path)], _make_settings(separator="blank"),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(separator="blank"),
         logger=logger,
     )
 
     captured = capsys.readouterr()
     assert ("-" * 80) not in captured.out
 
+
 def test_cli_rejects_threaded_with_individual_files(
-    monkeypatch: pytest.MonkeyPatch, baseline_path: Path, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    baseline_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     logging.basicConfig(level=logging.ERROR, force=True)
     monkeypatch.setattr(
         sys,
         "argv",
-        ["prog", str(baseline_path), "--threaded", "--individual-files", "-o", "outdir"],
+        [
+            "prog",
+            str(baseline_path),
+            "--threaded",
+            "--individual-files",
+            "-o",
+            "outdir",
+        ],
     )
 
     with pytest.raises(SystemExit):
         main()
 
     stderr = capsys.readouterr().err
-    assert "You cannot use --threaded and --individual-files at the same time." in stderr
+    assert (
+        "You cannot use --threaded and --individual-files at the same time." in stderr
+    )
 
 
 def test_cli_allows_noheader_with_structured_formats(
@@ -937,17 +1020,33 @@ def test_cli_allows_noheader_with_structured_formats(
         monkeypatch.setattr(
             sys,
             "argv",
-            ["prog", str(baseline_path), "--noheader", "--format", fmt, "-o", str(output_path)],
+            [
+                "prog",
+                str(baseline_path),
+                "--noheader",
+                "--format",
+                fmt,
+                "-o",
+                str(output_path),
+            ],
         )
         # Should not raise SystemExit
         main()
         assert output_path.exists()
 
+
 def test_json_noheader_removes_header_text(
     tmp_path: Path, baseline_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.json"
-    process_merged_files([str(baseline_path)], _make_settings(format="json", no_header=True, output_mode="file", output_path=str(output_path)),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
+            format="json",
+            no_header=True,
+            output_mode="file",
+            output_path=str(output_path),
+        ),
         logger=logger,
     )
 
@@ -959,11 +1058,19 @@ def test_json_noheader_removes_header_text(
     assert "Subject:" not in message["text"]
     assert ("-" * 80) not in message["text"]
 
+
 def test_xml_noheader_removes_header_text(
     tmp_path: Path, baseline_path: Path, logger: logging.Logger
 ) -> None:
     output_path = tmp_path / "messages.xml"
-    process_merged_files([str(baseline_path)], _make_settings(format="xml", no_header=True, output_mode="file", output_path=str(output_path)),
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
+            format="xml",
+            no_header=True,
+            output_mode="file",
+            output_path=str(output_path),
+        ),
         logger=logger,
     )
 
@@ -974,16 +1081,31 @@ def test_xml_noheader_removes_header_text(
     # But note: <Subject> tag is in the header structure, but we check the text field specifically?
     # The text field is inside <text>...</text>
     import xml.etree.ElementTree as ET
+
     root = ET.fromstring(content)
-    text_content = root.find('message/text').text
+    text_content = root.find("message/text").text
     assert "Subject:" not in text_content
     assert ("-" * 80) not in text_content
 
-def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, logger: logging.Logger) -> None:
+
+def test_text_output_respects_encoding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, logger: logging.Logger
+) -> None:
     header = MessageHeader(
-        status=" ", msgnum=1, msgdate="", msgtime="", msgto="", msgfrom="",
-        msgsubject="", msgpassword="", refnum=None, numblocks=None, msgflag="",
-        confnum=1, lognum=1, nettag="",
+        status=" ",
+        msgnum=1,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=None,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag="",
     )
 
     # 'é' is 0x82 in CP437, 0xC3 0xA9 in UTF-8
@@ -994,11 +1116,7 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
 
     def fake_parse_messages(*args, **kwargs):
         yield ParsedMessage(
-            text=text_content,
-            msgnum=1,
-            refnum=None,
-            confnum=1,
-            header=header
+            text=text_content, msgnum=1, refnum=None, confnum=1, header=header
         )
 
     monkeypatch.setattr(qwk, "load_data", fake_load_data)
@@ -1007,10 +1125,20 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
     output_path = tmp_path / "output.txt"
 
     settings = ProcessingSettings(
-        verbose=False, private=False, no_header=True, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-        redact_pii=False, format="text", separator="none", output_mode="file",
-        output_path=str(output_path), encoding="cp437"
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
     )
 
     process_merged_files(["dummy.qwk"], settings, logger)
@@ -1026,12 +1154,15 @@ def test_text_output_respects_encoding(tmp_path: Path, monkeypatch: pytest.Monke
 def test_process_multiple_files_handles_controldat_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, logger: logging.Logger
 ) -> None:
-    def mock_process_merged_files(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+    def mock_process_merged_files(
+        input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+    ) -> None:
         for path in input_paths:
             if "bad" in path:
                 raise ControlDatFormatError("Bad control.dat")
 
     import pyqwk.cli as cli
+
     monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     input_paths = ["bad.zip", "good.zip"]
@@ -1039,9 +1170,12 @@ def test_process_multiple_files_handles_controldat_error(
     settings = _make_settings()
 
     # Should not raise exception
-    had_errors = qwk.process_multiple_files(input_paths, str(output_dir), settings, logger)
+    had_errors = qwk.process_multiple_files(
+        input_paths, str(output_dir), settings, logger
+    )
 
     assert had_errors is True
+
 
 def test_clean_flag_activates_cleaning_options(
     monkeypatch: pytest.MonkeyPatch, baseline_path: Path
@@ -1054,10 +1188,13 @@ def test_clean_flag_activates_cleaning_options(
 
     captured_settings = []
 
-    def mock_process_merged_files(input_paths: str, settings: ProcessingSettings, logger: logging.Logger) -> None:
+    def mock_process_merged_files(
+        input_paths: str, settings: ProcessingSettings, logger: logging.Logger
+    ) -> None:
         captured_settings.append(settings)
 
     import pyqwk.cli as cli
+
     monkeypatch.setattr(cli, "process_merged_files", mock_process_merged_files)
 
     main()

@@ -6,11 +6,13 @@ import logging
 from unittest.mock import MagicMock, patch
 from pyqwk.core import load_data
 
+
 @pytest.fixture
 def test_dir():
     d = tempfile.mkdtemp()
     yield d
     shutil.rmtree(d)
+
 
 def test_markdown_parser_metadata_and_merging_gaps(test_dir):
     content = (
@@ -65,13 +67,17 @@ def test_markdown_parser_metadata_and_merging_gaps(test_dir):
     assert "Line 2" in messages[2].text
     assert messages[3].header.msgsubject == "Message 4 (Subsequent)"
 
+
 def test_markdown_load_data_error_handling_gap(test_dir):
     path = os.path.join(test_dir, "corrupt.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write("dummy")
-    with patch("pyqwk.core._parse_markdown_messages", side_effect=Exception("Parsing error")):
+    with patch(
+        "pyqwk.core._parse_markdown_messages", side_effect=Exception("Parsing error")
+    ):
         with pytest.raises(ValueError, match="Failed to load Markdown archive"):
             load_data(path, logging.getLogger())
+
 
 def test_markdown_blockquote_empty_line_parsing_gap(test_dir):
     content = "> ## Message\n\n> Content"
@@ -82,6 +88,7 @@ def test_markdown_blockquote_empty_line_parsing_gap(test_dir):
     assert len(messages) == 1
     assert "Content" in messages[0].text
 
+
 def test_markdown_invalid_section_after_blockquote_stripping_gap(test_dir):
     content = "> ## \n"
     path = os.path.join(test_dir, "invalid_sec.md")
@@ -90,6 +97,7 @@ def test_markdown_invalid_section_after_blockquote_stripping_gap(test_dir):
 
     messages, _ = load_data(path, logging.getLogger())
     assert len(messages) == 0
+
 
 def test_markdown_subject_regex_failure_gap(test_dir):
     # Targeted line 1154: re_subject.search(working_section) fails.
@@ -101,13 +109,14 @@ def test_markdown_subject_regex_failure_gap(test_dir):
         f.write(content)
 
     import re
+
     original_compile = re.compile
 
     mock_regex = MagicMock()
     mock_regex.search.return_value = None
 
     def side_effect(pattern, flags=0):
-        if pattern == r'^## (.*)':
+        if pattern == r"^## (.*)":
             return mock_regex
         return original_compile(pattern, flags)
 

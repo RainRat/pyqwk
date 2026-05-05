@@ -5,6 +5,7 @@ import logging
 import pytest
 from pyqwk.core import load_data
 
+
 def test_tar_batch_loading():
     logger = logging.getLogger("test")
 
@@ -18,7 +19,7 @@ def test_tar_batch_loading():
 
         # 2. Create a TAR file containing the JSON
         tar_path = os.path.join(tmpdir, "batch.tar")
-        with tarfile.open(tar_path, 'w') as tf:
+        with tarfile.open(tar_path, "w") as tf:
             tf.add(json_path, arcname=json_filename)
 
         # Load the TAR - this should currently fail to find messages or not recognize it
@@ -29,6 +30,7 @@ def test_tar_batch_loading():
             assert any(m.header.msgfrom.strip() == "TarAuthor" for m in messages)
         except Exception as e:
             pytest.fail(f"TAR loading failed: {e}")
+
 
 if __name__ == "__main__":
     # Manually run if needed

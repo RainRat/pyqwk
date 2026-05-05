@@ -2,13 +2,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
-         patch("pyqwk.gui.filedialog") as mock_fd, \
-         patch("pyqwk.gui.messagebox") as mock_mb:
-
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -41,6 +43,7 @@ def mock_gui_deps():
         # Mock classes/types
         class TclError(Exception):
             pass
+
         mock_tk.TclError = TclError
 
         # Mock Combobox
@@ -57,6 +60,7 @@ def mock_gui_deps():
             "conf_combo": MagicMock(),
         }
 
+
 def test_clear_search_progressive(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -67,8 +71,10 @@ def test_clear_search_progressive(mock_gui_deps):
 
     # Case 1: Search bar has text
     app.search_var.get.return_value = "some search"
-    with patch.object(app, 'reload_messages') as mock_reload, \
-         patch.object(app, 'clear_filters') as mock_clear_filters:
+    with (
+        patch.object(app, "reload_messages") as mock_reload,
+        patch.object(app, "clear_filters") as mock_clear_filters,
+    ):
         app.clear_search()
         app.search_var.set.assert_called_with("")
         mock_reload.assert_called_once()
@@ -77,10 +83,13 @@ def test_clear_search_progressive(mock_gui_deps):
     # Case 2: Search bar is already empty
     app.search_var.set.reset_mock()
     app.search_var.get.return_value = ""
-    with patch.object(app, 'reload_messages') as mock_reload, \
-         patch.object(app, 'clear_filters') as mock_clear_filters:
+    with (
+        patch.object(app, "reload_messages") as mock_reload,
+        patch.object(app, "clear_filters") as mock_clear_filters,
+    ):
         app.clear_search()
         mock_clear_filters.assert_called_once()
+
 
 def test_clear_filters_resets_search(mock_gui_deps):
     root = MagicMock()
@@ -89,7 +98,7 @@ def test_clear_filters_resets_search(mock_gui_deps):
     app.bbs_combo = mock_gui_deps["bbs_combo"]
     app.conf_combo = mock_gui_deps["conf_combo"]
 
-    with patch.object(app, 'reload_messages') as mock_reload:
+    with patch.object(app, "reload_messages") as mock_reload:
         app.clear_filters()
         app.search_var.set.assert_called_with("")
         mock_reload.assert_called_once()

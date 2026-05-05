@@ -2,32 +2,33 @@ import csv
 import io
 from pyqwk.core import _write_csv, MessageHeader, ProcessedMessage
 
+
 def test_write_csv_output():
     header = MessageHeader(
-        status=' ',
+        status=" ",
         msgnum=1,
-        msgdate='01-01-90',
-        msgtime='12:00',
-        msgto='User',
-        msgfrom='Sysop',
-        msgsubject='Welcome',
-        msgpassword='',
+        msgdate="01-01-90",
+        msgtime="12:00",
+        msgto="User",
+        msgfrom="Sysop",
+        msgsubject="Welcome",
+        msgpassword="",
         refnum=None,
         numblocks=1,
-        msgflag='',
+        msgflag="",
         confnum=1,
         lognum=1,
-        nettag=''
+        nettag="",
     )
     message = ProcessedMessage(
-        text='Hello World',
+        text="Hello World",
         msgnum=1,
         refnum=None,
         confnum=1,
         header=header,
         depth=0,
-        thread_id='1',
-        parent_msgnum=None
+        thread_id="1",
+        parent_msgnum=None,
     )
 
     # We mock _write_text_output to capture the output instead of writing to a file
@@ -38,7 +39,7 @@ def test_write_csv_output():
 
     from unittest.mock import patch
 
-    with patch('pyqwk.core._write_text_output') as mock_write:
+    with patch("pyqwk.core._write_text_output") as mock_write:
         _write_csv([message], None)
 
         mock_write.assert_called_once()
@@ -50,17 +51,19 @@ def test_write_csv_output():
         rows = list(reader)
 
         assert len(rows) == 1
-        assert rows[0]['msgsubject'] == 'Welcome'
-        assert rows[0]['msgfrom'] == 'Sysop'
-        assert rows[0]['text'] == 'Hello World'
-        assert rows[0]['thread_id'] == '1'
-        assert 'conference_name' in rows[0]
-        assert 'bbs_name' in rows[0]
-        assert 'source_file' in rows[0]
+        assert rows[0]["msgsubject"] == "Welcome"
+        assert rows[0]["msgfrom"] == "Sysop"
+        assert rows[0]["text"] == "Hello World"
+        assert rows[0]["thread_id"] == "1"
+        assert "conference_name" in rows[0]
+        assert "bbs_name" in rows[0]
+        assert "source_file" in rows[0]
+
 
 def test_write_csv_empty():
     from unittest.mock import patch
-    with patch('pyqwk.core._write_text_output') as mock_write:
+
+    with patch("pyqwk.core._write_text_output") as mock_write:
         _write_csv([], None)
 
         mock_write.assert_called_once()
@@ -70,5 +73,5 @@ def test_write_csv_empty():
         f = io.StringIO(content)
         reader = csv.DictReader(f)
         assert reader.fieldnames is not None
-        assert 'msgsubject' in reader.fieldnames
+        assert "msgsubject" in reader.fieldnames
         assert list(reader) == []

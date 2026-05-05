@@ -6,18 +6,21 @@ from pyqwk.core import (
     load_data,
     process_merged_files,
     ProcessingSettings,
-    ParsedMessage
+    ParsedMessage,
 )
+
 
 @pytest.fixture
 def baseline_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
+
 
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def _make_settings(**overrides):
     defaults = dict(
@@ -40,14 +43,13 @@ def _make_settings(**overrides):
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_xml_export_reimport_symmetry(tmp_path, baseline_path, logger):
     """Test that messages exported to XML can be re-imported and processed."""
     # 1. Export baseline to XML
     xml_path = tmp_path / "archive.xml"
     settings_export = _make_settings(
-        format="xml",
-        output_mode="file",
-        output_path=str(xml_path)
+        format="xml", output_mode="file", output_path=str(xml_path)
     )
     process_merged_files([str(baseline_path)], settings_export, logger)
 
@@ -69,9 +71,7 @@ def test_xml_export_reimport_symmetry(tmp_path, baseline_path, logger):
     # 3. Process re-imported data (e.g., convert to HTML)
     html_path = tmp_path / "archive.html"
     settings_html = _make_settings(
-        format="html",
-        output_mode="file",
-        output_path=str(html_path)
+        format="html", output_mode="file", output_path=str(html_path)
     )
 
     # We can use process_merged_files on the xml path directly now
@@ -80,7 +80,8 @@ def test_xml_export_reimport_symmetry(tmp_path, baseline_path, logger):
     assert html_path.exists()
     html_content = html_path.read_text(encoding="utf-8")
     assert "GammaO #571 @0*1" in html_content
-    assert "New User" in html_content # Subject
+    assert "New User" in html_content  # Subject
+
 
 def test_xml_import_with_missing_fields(tmp_path, logger):
     """Test XML import handles missing or malformed fields gracefully."""
@@ -106,6 +107,7 @@ def test_xml_import_with_missing_fields(tmp_path, logger):
     assert 100 in board_dict
     assert board_dict[100] == "Test Conf"
 
+
 def test_xml_import_with_threading_metadata(tmp_path, logger):
     """Test XML import preserves threading metadata."""
     root = ET.Element("messages")
@@ -130,6 +132,7 @@ def test_xml_import_with_threading_metadata(tmp_path, logger):
     assert messages[0].thread_id == "42"
     assert messages[0].parent_msgnum == 10
     assert messages[0].text == "Reply content"
+
 
 def test_xml_import_invalid_xml(tmp_path, logger):
     """Test that load_data raises ValueError for malformed XML."""

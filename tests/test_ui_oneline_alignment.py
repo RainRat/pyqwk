@@ -1,5 +1,6 @@
 from pyqwk.core import MessageHeader
 
+
 def test_oneline_alignment_long_names():
     header = MessageHeader(
         status=" ",
@@ -48,6 +49,7 @@ def test_oneline_alignment_long_names():
     assert len(prefix) == 60
     assert prefix.endswith("Recipient       ")
 
+
 def test_oneline_alignment_with_highlighting():
     header = MessageHeader(
         status=" ",
@@ -68,14 +70,10 @@ def test_oneline_alignment_with_highlighting():
     board_dict = {1: "Conference"}
 
     # Highlight "Auth"
-    oneline = header.format_oneline(
-        board_dict,
-        use_colors=True,
-        highlight_term="Auth"
-    )
+    oneline = header.format_oneline(board_dict, use_colors=True, highlight_term="Auth")
 
     # ANSI escape for reverse video is \x1b[7m and reset is \x1b[0m
-    assert "\x1b[7mAuthor\x1b[0m Name" not in oneline # Wait, "Author" contains "Auth"
+    assert "\x1b[7mAuthor\x1b[0m Name" not in oneline  # Wait, "Author" contains "Auth"
     # Actually _highlight_text highlights exact matches or regex
     # If highlight_term is "Auth", it highlights "Auth"
     assert "\x1b[7mAuth\x1b[0m" in oneline
@@ -101,8 +99,11 @@ def test_oneline_alignment_with_highlighting():
     # " " (1)
     # "Subject"
 
-    expected_start = "Conference   01-01-24 12:00 Author Name     Recipient       Subject"
+    expected_start = (
+        "Conference   01-01-24 12:00 Author Name     Recipient       Subject"
+    )
     assert plain_line.startswith(expected_start)
+
 
 def test_threaded_oneline_indentation():
     header = MessageHeader(

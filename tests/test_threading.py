@@ -17,6 +17,7 @@ from pyqwk.core import (
 )
 from unittest.mock import patch
 
+
 def test_threading_depth_and_structure(message_factory):
     msgs = [
         message_factory(1, 0, "Root"),
@@ -35,13 +36,18 @@ def test_threading_depth_and_structure(message_factory):
     # Check parents
     assert ordered[2].parent_msgnum == 2
 
+
 def test_fallback_subject_threading(message_factory):
     msgs = [
         message_factory(10, 0, "Important Topic"),
-        message_factory(11, 0, "Re: Important Topic"), # Missing refnum, should match by subject
-        message_factory(12, 11, "Re: Important Topic"), # Explicit refnum to 11
+        message_factory(
+            11, 0, "Re: Important Topic"
+        ),  # Missing refnum, should match by subject
+        message_factory(12, 11, "Re: Important Topic"),  # Explicit refnum to 11
         message_factory(13, 0, "Other Topic"),
-        message_factory(14, 0, "Re: Important Topic"), # Another one matching root or last one?
+        message_factory(
+            14, 0, "Re: Important Topic"
+        ),  # Another one matching root or last one?
     ]
 
     # 14 should probably attach to 10 or 11 or 12 depending on logic.
@@ -67,18 +73,20 @@ def test_fallback_subject_threading(message_factory):
     assert m14.parent_msgnum == 12
     assert m14.depth == 3
 
+
 def test_text_output_indentation(message_factory):
     msgs = [
         message_factory(1, 0, "Root", text="RootBody\n"),
         message_factory(2, 1, "Child", text="ChildBody\n"),
     ]
-    msgs[1].depth = 1 # Manually set depth as _write_text expects it
+    msgs[1].depth = 1  # Manually set depth as _write_text expects it
 
     with patch("pyqwk.core._write_text_output") as mock_write:
         _write_text(msgs, None)
         content = mock_write.call_args[0][0]
         assert "RootBody" in content
         assert "  ChildBody" in content
+
 
 def test_html_output_nesting(message_factory):
     msgs = [
@@ -96,6 +104,7 @@ def test_html_output_nesting(message_factory):
         assert '<div class="reply">' in content
         assert content.count('<div class="reply">') == 1
 
+
 def test_json_metadata(message_factory):
     msgs = [message_factory(1, 0, "Root")]
     msgs[0].depth = 0
@@ -105,8 +114,9 @@ def test_json_metadata(message_factory):
         _write_json(msgs, None)
         content = mock_write.call_args[0][0]
         data = json.loads(content)
-        assert data[0]['depth'] == 0
-        assert data[0]['thread_id'] == "1"
+        assert data[0]["depth"] == 0
+        assert data[0]["thread_id"] == "1"
+
 
 def test_xml_metadata(message_factory):
     msgs = [message_factory(1, 0, "Root")]
@@ -119,7 +129,10 @@ def test_xml_metadata(message_factory):
         assert "<depth>1</depth>" in content
         assert "<thread_id>thread1</thread_id>" in content
 
-def test_threading_warning_is_suppressed(caplog: pytest.LogCaptureFixture, message_factory):
+
+def test_threading_warning_is_suppressed(
+    caplog: pytest.LogCaptureFixture, message_factory
+):
     msgs = [
         message_factory(2, 1, "Orphan Child"),
     ]

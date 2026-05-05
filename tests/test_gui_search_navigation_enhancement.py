@@ -12,13 +12,15 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
-         patch("pyqwk.gui.filedialog") as mock_fd, \
-         patch("pyqwk.gui.messagebox") as mock_mb:
-
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -55,12 +57,14 @@ def mock_gui_deps():
             "messagebox": mock_mb,
         }
 
+
 def test_search_entry_bindings(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
     # Check if Shift-Return is bound
     app.search_entry.bind.assert_any_call("<Shift-Return>", app._on_search_shift_enter)
+
 
 def test_on_search_enter_navigation(mock_gui_deps):
     root = MagicMock()
@@ -90,6 +94,7 @@ def test_on_search_enter_navigation(mock_gui_deps):
         mock_reload.assert_called_once()
         app.message_list.focus_set.assert_called_once()
 
+
 def test_on_search_shift_enter_navigation(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -99,6 +104,7 @@ def test_on_search_shift_enter_navigation(mock_gui_deps):
     with patch.object(app, "_navigate_search_matches") as mock_nav:
         app._on_search_shift_enter(MagicMock())
         mock_nav.assert_called_with(-1)
+
 
 def test_welcome_screen_updated_shortcuts(mock_gui_deps):
     root = MagicMock()

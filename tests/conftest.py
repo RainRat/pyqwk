@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from pyqwk.core import ProcessedMessage, MessageHeader
 
+
 @pytest.fixture
 def message_factory():
     def _make_msg(msgnum, refnum, subject, confnum=1, text="Body\n", status=" "):
@@ -29,10 +30,7 @@ def message_factory():
             nettag="",
         )
         return ProcessedMessage(
-            text=text,
-            msgnum=msgnum,
-            refnum=refnum,
-            confnum=confnum,
-            header=header
+            text=text, msgnum=msgnum, refnum=refnum, confnum=confnum, header=header
         )
+
     return _make_msg

@@ -7,6 +7,7 @@ from pyqwk.core import (
     load_data,
 )
 
+
 def test_csv_export_import_symmetry(tmp_path, message_factory):
     """Test that messages exported to CSV can be read back with metadata intact."""
     csv_path = tmp_path / "test_messages.csv"
@@ -50,11 +51,11 @@ def test_csv_export_import_symmetry(tmp_path, message_factory):
         threaded=False,
         binaries_removal=False,
         redact_pii=False,
-        format='csv',
-        separator='none',
-        output_mode='file',
+        format="csv",
+        separator="none",
+        output_mode="file",
         output_path=str(csv_path),
-        encoding='utf-8'
+        encoding="utf-8",
     )
 
     write_messages(messages, str(csv_path), settings)
@@ -85,14 +86,15 @@ def test_csv_export_import_symmetry(tmp_path, message_factory):
     assert m2.attachments == ["image.png", "data.zip"]
     assert board_dict[2] == "Support"
 
+
 def test_csv_import_malformed(tmp_path):
     """Test handling of empty or missing CSV fields."""
     csv_path = tmp_path / "malformed.csv"
 
-    with open(csv_path, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['confnum', 'msgfrom', 'text'])
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["confnum", "msgfrom", "text"])
         writer.writeheader()
-        writer.writerow({'confnum': '10', 'msgfrom': 'System', 'text': 'Body'})
+        writer.writerow({"confnum": "10", "msgfrom": "System", "text": "Body"})
 
     logger = logging.getLogger("test")
     imported, board = load_data(str(csv_path), logger)

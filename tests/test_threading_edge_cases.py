@@ -8,6 +8,7 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import _order_messages_by_thread
 
+
 class TestThreadingEdgeCases:
     """Test suite for edge cases in message threading."""
 
@@ -20,8 +21,8 @@ class TestThreadingEdgeCases:
         # 1. Child (Refnum -> 2)
         # 2. Parent (Msgnum -> 2)
         msgs = [
-            message_factory(1, 2, "Re: Topic"), # Child
-            message_factory(2, 0, "Topic"),     # Parent
+            message_factory(1, 2, "Re: Topic"),  # Child
+            message_factory(2, 0, "Topic"),  # Parent
         ]
 
         ordered = _order_messages_by_thread(msgs)
@@ -93,7 +94,7 @@ class TestThreadingEdgeCases:
         assert len(ordered) == 1
         msg = ordered[0]
         assert msg.msgnum == 30
-        assert msg.depth == 0 # Should be a root
+        assert msg.depth == 0  # Should be a root
         assert msg.parent_msgnum is None
 
     def test_orphan_adoption_via_subject(self, message_factory):
@@ -130,7 +131,7 @@ class TestThreadingEdgeCases:
         # Msg 4: Thread A Child (refs 1)
         msgs = [
             message_factory(1, 0, "Thread A"),
-            message_factory(2, 3, "Re: Thread B"), # Forward ref to 3
+            message_factory(2, 3, "Re: Thread B"),  # Forward ref to 3
             message_factory(3, 0, "Thread B"),
             message_factory(4, 1, "Re: Thread A"),
         ]
@@ -149,7 +150,7 @@ class TestThreadingEdgeCases:
         assert actual_ids == expected_ids
 
         # Verify depths
-        assert ordered[0].depth == 0 # 1
-        assert ordered[1].depth == 1 # 4
-        assert ordered[2].depth == 0 # 3
-        assert ordered[3].depth == 1 # 2
+        assert ordered[0].depth == 0  # 1
+        assert ordered[1].depth == 1  # 4
+        assert ordered[2].depth == 0  # 3
+        assert ordered[3].depth == 1  # 2

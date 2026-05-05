@@ -8,6 +8,7 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import expand_paths as _expand_directories
 
+
 class TestDirectoryExpansion:
     """Tests for the expand_paths function."""
 

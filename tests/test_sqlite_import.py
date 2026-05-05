@@ -6,18 +6,21 @@ from pyqwk.core import (
     load_data,
     process_merged_files,
     ProcessingSettings,
-    ParsedMessage
+    ParsedMessage,
 )
+
 
 @pytest.fixture
 def baseline_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
+
 
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def _make_settings(**overrides):
     defaults = dict(
@@ -40,14 +43,13 @@ def _make_settings(**overrides):
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_sqlite_export_reimport_symmetry(tmp_path, baseline_path, logger):
     """Test that messages exported to SQLite can be re-imported and processed."""
     # 1. Export baseline to SQLite
     db_path = tmp_path / "archive.db"
     settings_export = _make_settings(
-        format="sqlite",
-        output_mode="file",
-        output_path=str(db_path)
+        format="sqlite", output_mode="file", output_path=str(db_path)
     )
     process_merged_files([str(baseline_path)], settings_export, logger)
 
@@ -77,9 +79,7 @@ def test_sqlite_export_reimport_symmetry(tmp_path, baseline_path, logger):
     # 3. Process re-imported data (e.g., convert to HTML)
     html_path = tmp_path / "archive.html"
     settings_html = _make_settings(
-        format="html",
-        output_mode="file",
-        output_path=str(html_path)
+        format="html", output_mode="file", output_path=str(html_path)
     )
 
     # We can use process_merged_files on the db path directly now
@@ -88,7 +88,8 @@ def test_sqlite_export_reimport_symmetry(tmp_path, baseline_path, logger):
     assert html_path.exists()
     html_content = html_path.read_text(encoding="utf-8")
     assert "GammaO #571 @0*1" in html_content
-    assert "New User" in html_content # Subject
+    assert "New User" in html_content  # Subject
+
 
 def test_sqlite_import_handles_missing_table(tmp_path, logger):
     """Test SQLite import fails gracefully if the messages table is missing."""

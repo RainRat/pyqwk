@@ -15,14 +15,16 @@ from pyqwk.core import (
     _message_to_xml_element,
     parse_messages,
     _order_messages_by_thread,
-    _write_text_output
+    _write_text_output,
 )
+
 
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 @pytest.fixture
 def default_settings():
@@ -37,24 +39,25 @@ def default_settings():
         binaries_removal=False,
         redact_pii=False,
         strip_ansi=False,
-        format='text',
-        separator='auto',
-        output_mode='stdout',
+        format="text",
+        separator="auto",
+        output_mode="stdout",
         output_path=None,
-        encoding='cp437',
-        quiet=True
+        encoding="cp437",
+        quiet=True,
     )
 
+
 def test_process_multiple_files_formats(tmp_path, logger, default_settings):
-    input_paths = ['testdata/test1_qwk.zip', 'testdata/test2_qwk.zip']
+    input_paths = ["testdata/test1_qwk.zip", "testdata/test2_qwk.zip"]
     formats = [
-        ('json', '.json'),
-        ('xml', '.xml'),
-        ('html', '.html'),
-        ('markdown', '.md'),
-        ('csv', '.csv'),
-        ('mbox', '.mbox'),
-        ('text', '.txt')
+        ("json", ".json"),
+        ("xml", ".xml"),
+        ("html", ".html"),
+        ("markdown", ".md"),
+        ("csv", ".csv"),
+        ("mbox", ".mbox"),
+        ("text", ".txt"),
     ]
 
     for fmt, ext in formats:
@@ -64,7 +67,9 @@ def test_process_multiple_files_formats(tmp_path, logger, default_settings):
         # We need to make sure the output_dir exists as process_multiple_files calls os.makedirs
         # but for multiple files it's expected to be a folder.
 
-        had_errors = process_multiple_files(input_paths, str(output_dir), settings, logger)
+        had_errors = process_multiple_files(
+            input_paths, str(output_dir), settings, logger
+        )
 
         assert not had_errors
         assert output_dir.exists()
@@ -74,50 +79,56 @@ def test_process_multiple_files_formats(tmp_path, logger, default_settings):
         for f in files:
             assert f.suffix == ext
 
+
 def test_process_multiple_files_error_handling(tmp_path, logger, default_settings):
-    input_paths = ['testdata/test1_qwk.zip']
+    input_paths = ["testdata/test1_qwk.zip"]
     output_dir = tmp_path / "out_error"
 
-    with patch('pyqwk.core.process_merged_files') as mock_process:
+    with patch("pyqwk.core.process_merged_files") as mock_process:
         mock_process.side_effect = OSError("Mocked OS Error")
 
-        with patch.object(logger, 'error') as mock_log_error:
-            had_errors = process_multiple_files(input_paths, str(output_dir), default_settings, logger)
+        with patch.object(logger, "error") as mock_log_error:
+            had_errors = process_multiple_files(
+                input_paths, str(output_dir), default_settings, logger
+            )
 
             assert had_errors
             mock_log_error.assert_called()
             assert "Error processing file" in mock_log_error.call_args[0][0]
 
+
 def test_show_info_error_handling(logger, default_settings):
-    with patch('pyqwk.core.load_data') as mock_load:
+    with patch("pyqwk.core.load_data") as mock_load:
         mock_load.side_effect = IOError("Mocked Error")
 
-        with patch.object(logger, 'error') as mock_log_error:
-            show_info(['fake.zip'], default_settings, logger)
+        with patch.object(logger, "error") as mock_log_error:
+            show_info(["fake.zip"], default_settings, logger)
 
             mock_log_error.assert_called()
             assert "Error reading info" in mock_log_error.call_args[0][0]
 
+
 def test_show_stats_error_handling(logger, default_settings):
-    with patch('pyqwk.core.load_data') as mock_load:
+    with patch("pyqwk.core.load_data") as mock_load:
         mock_load.side_effect = IOError("Mocked Error")
 
-        with patch.object(logger, 'error') as mock_log_error:
-            show_stats(['fake.zip'], default_settings, logger)
+        with patch.object(logger, "error") as mock_log_error:
+            show_stats(["fake.zip"], default_settings, logger)
 
             mock_log_error.assert_called()
             assert "Error calculating stats" in mock_log_error.call_args[0][0]
 
+
 def test_individual_files_csv(tmp_path, logger, default_settings):
-    input_path = 'testdata/test1_qwk.zip'
+    input_path = "testdata/test1_qwk.zip"
     output_dir = tmp_path / "csv_individual"
 
     settings = replace(
         default_settings,
         individual_files=True,
-        format='csv',
-        output_mode='file',
-        output_path=str(output_dir)
+        format="csv",
+        output_mode="file",
+        output_path=str(output_dir),
     )
 
     process_merged_files([input_path], settings, logger)
@@ -128,15 +139,16 @@ def test_individual_files_csv(tmp_path, logger, default_settings):
     # Current behavior: individual files have no extension and are named by hash
     assert files[0].name != ""
 
+
 def test_individual_files_unique_text(tmp_path, logger, default_settings):
     output_path = tmp_path / "individual_unique"
     settings = replace(
         default_settings,
         individual_files=True,
         unique=True,
-        format='text',
-        output_mode='file',
-        output_path=str(output_path)
+        format="text",
+        output_mode="file",
+        output_path=str(output_path),
     )
 
     # Create mock messages
@@ -154,12 +166,12 @@ def test_individual_files_unique_text(tmp_path, logger, default_settings):
 
     msg1 = ParsedMessage(text="Body1", msgnum=1, refnum=None, confnum=100, header=h1)
 
-    with patch('pyqwk.core.load_data') as mock_load:
-        mock_load.return_value = (bytearray(b'Produced '), {})
-        with patch('pyqwk.core.parse_messages') as mock_parse:
+    with patch("pyqwk.core.load_data") as mock_load:
+        mock_load.return_value = (bytearray(b"Produced "), {})
+        with patch("pyqwk.core.parse_messages") as mock_parse:
             mock_parse.return_value = [msg1]
 
-            process_merged_files(['archive.qwk'], settings, logger)
+            process_merged_files(["archive.qwk"], settings, logger)
 
     assert output_path.exists()
     assert output_path.is_dir()
@@ -168,13 +180,16 @@ def test_individual_files_unique_text(tmp_path, logger, default_settings):
     # The filename should be a sha1 hash of the encoded buffer because it's in the unique block
     # and it uses hashlib.sha1(encoded_buffer).hexdigest()
     # Let's verify it contains the content
-    with files[0].open('rb') as f:
+    with files[0].open("rb") as f:
         content = f.read()
         assert b"Body1" in content
 
+
 def test_log_formatter():
     formatter = LogFormatter(use_colors=True)
-    record = logging.LogRecord("test", logging.INFO, "path", 10, "Info message", None, None)
+    record = logging.LogRecord(
+        "test", logging.INFO, "path", 10, "Info message", None, None
+    )
     assert formatter.format(record) == "Info message"
 
     record.levelno = logging.DEBUG
@@ -188,6 +203,7 @@ def test_log_formatter():
 
     record.levelno = logging.CRITICAL
     assert "\033[" in formatter.format(record)
+
 
 def test_xml_serialization_with_parent():
     h = MagicMock(spec=MessageHeader)
@@ -205,6 +221,7 @@ def test_xml_serialization_with_parent():
 
     element = _message_to_xml_element(msg)
     import xml.etree.ElementTree as ET
+
     xml_str = ET.tostring(element).decode()
     assert "<depth>1</depth>" in xml_str
     assert "<thread_id>123</thread_id>" in xml_str
@@ -214,17 +231,28 @@ def test_xml_serialization_with_parent():
     assert "<bbs_id>BBSID</bbs_id>" in xml_str
     assert "<source_file>file.qwk</source_file>" in xml_str
 
+
 def test_parse_messages_progress_bar():
-    data = bytearray(b'Produced '.ljust(128, b' '))
+    data = bytearray(b"Produced ".ljust(128, b" "))
     # Add a valid header
     import struct
+
     header = struct.pack(
-        '<c7s8s5s25s25s25s12s8s6scHHc',
-        b' ', b"1".ljust(7, b' '), b"01-01-90", b"12:00",
-        b"To".ljust(25, b' '), b"From".ljust(25, b' '), b"Subj".ljust(25, b' '),
-        b"".ljust(12, b' '), b"0".ljust(8, b' '),
-        b"0".ljust(6, b' '), # 0 body blocks
-        b' ', 1, 1, b' '
+        "<c7s8s5s25s25s25s12s8s6scHHc",
+        b" ",
+        b"1".ljust(7, b" "),
+        b"01-01-90",
+        b"12:00",
+        b"To".ljust(25, b" "),
+        b"From".ljust(25, b" "),
+        b"Subj".ljust(25, b" "),
+        b"".ljust(12, b" "),
+        b"0".ljust(8, b" "),
+        b"0".ljust(6, b" "),  # 0 body blocks
+        b" ",
+        1,
+        1,
+        b" ",
     )
     data += header
 
@@ -233,8 +261,10 @@ def test_parse_messages_progress_bar():
 
     assert mock_pb.update.called
 
+
 def test_order_messages_by_thread_empty():
     assert _order_messages_by_thread([]) == []
+
 
 def test_write_text_output_stdout_no_newline(capsys):
     # Test that _write_text_output adds a newline if it's missing on stdout
@@ -242,11 +272,13 @@ def test_write_text_output_stdout_no_newline(capsys):
     captured = capsys.readouterr()
     assert captured.out == "No newline\n"
 
+
 def test_write_text_output_stdout_with_newline(capsys):
     # Test that _write_text_output does NOT add an extra newline if it's already there
     _write_text_output("Has newline\n", None)
     captured = capsys.readouterr()
     assert captured.out == "Has newline\n"
+
 
 def test_individual_files_triple_collision(tmp_path, logger, default_settings):
     """Test collision handling when three messages would have the same filename."""
@@ -267,10 +299,19 @@ def test_individual_files_triple_collision(tmp_path, logger, default_settings):
         h.format_text.return_value = ""
         # Mock as_dict which is used in handle_output for some formats
         h.as_dict = {
-            'confnum': 1, 'msgnum': 1, 'msgdate': '01-01-23', 'msgtime': '12:00',
-            'msgto': 'All', 'msgfrom': 'User', 'msgsubject': 'Collision',
-            'msgpassword': '', 'refnum': None, 'numblocks': 1, 'msgflag': '',
-            'lognum': 1, 'nettag': ''
+            "confnum": 1,
+            "msgnum": 1,
+            "msgdate": "01-01-23",
+            "msgtime": "12:00",
+            "msgto": "All",
+            "msgfrom": "User",
+            "msgsubject": "Collision",
+            "msgpassword": "",
+            "refnum": None,
+            "numblocks": 1,
+            "msgflag": "",
+            "lognum": 1,
+            "nettag": "",
         }
         return ParsedMessage(text=text, msgnum=1, refnum=None, confnum=1, header=h)
 
@@ -282,19 +323,21 @@ def test_individual_files_triple_collision(tmp_path, logger, default_settings):
     settings = replace(
         default_settings,
         individual_files=True,
-        format='text',
-        output_mode='file',
+        format="text",
+        output_mode="file",
         output_path=str(output_dir),
-        no_header=True
+        no_header=True,
     )
 
-    with patch('pyqwk.core.load_data') as mock_load:
-        mock_load.return_value = (bytearray(b'Produced '), {1: "General"})
-        with patch('pyqwk.core.parse_messages') as mock_parse:
+    with patch("pyqwk.core.load_data") as mock_load:
+        mock_load.return_value = (bytearray(b"Produced "), {1: "General"})
+        with patch("pyqwk.core.parse_messages") as mock_parse:
             mock_parse.return_value = [msg1, msg2, msg3]
-            process_merged_files(['archive.qwk'], settings, logger)
+            process_merged_files(["archive.qwk"], settings, logger)
 
     files = list(output_dir.iterdir())
     # If the logic is buggy (no loop), it will only have 2 files because the 3rd overwrote the 2nd
     # or failed to be unique.
-    assert len(files) == 3, f"Expected 3 files, found {len(files)}: {[f.name for f in files]}"
+    assert len(files) == 3, (
+        f"Expected 3 files, found {len(files)}: {[f.name for f in files]}"
+    )

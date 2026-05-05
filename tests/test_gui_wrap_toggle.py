@@ -12,13 +12,15 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
-         patch("pyqwk.gui.filedialog") as mock_fd, \
-         patch("pyqwk.gui.messagebox") as mock_mb:
-
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -56,6 +58,7 @@ def mock_gui_deps():
             "messagebox": mock_mb,
         }
 
+
 def test_wrap_toggle(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -72,6 +75,7 @@ def test_wrap_toggle(mock_gui_deps):
     app.detail_text.config.assert_any_call(wrap=mock_gui_deps["tk"].NONE)
     app.detail_h_scrollbar.grid.assert_called_with(row=1, column=0, sticky="ew")
 
+
 def test_reset_all_resets_wrap(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -79,6 +83,7 @@ def test_reset_all_resets_wrap(mock_gui_deps):
     # Mock wrap_var.get to return True after it's set to True
     def mock_set(val):
         app.wrap_var.get.return_value = val
+
     app.wrap_var.set.side_effect = mock_set
 
     # Initially False

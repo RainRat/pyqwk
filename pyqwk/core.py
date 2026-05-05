@@ -30,10 +30,11 @@ import base64
 __version__ = "0.1.0"
 
 BLOCK_SIZE = 128
-QWK_HEADER_FORMAT = '<c7s8s5s25s25s25s12s8s6scHHc'
-MESSAGES_FILENAME = 'messages.dat'
-REPLY_FILENAME = 'reply.dat'
-CONTROL_FILENAME = 'control.dat'
+QWK_HEADER_FORMAT = "<c7s8s5s25s25s25s12s8s6scHHc"
+MESSAGES_FILENAME = "messages.dat"
+REPLY_FILENAME = "reply.dat"
+CONTROL_FILENAME = "control.dat"
+
 
 def expand_paths(paths: list[str]) -> list[str]:
     """Recursively find supported QWK files in directories."""
@@ -43,26 +44,51 @@ def expand_paths(paths: list[str]) -> list[str]:
             for root, _, files in os.walk(path):
                 for file in files:
                     lower_file = file.lower()
-                    if lower_file.endswith(('.qwk', '.zip', '.tar', '.tar.gz', '.tar.bz2', '.tgz', '.rep', '.json', '.jsonl', '.csv', '.db', '.sqlite', '.xml', '.rss', '.mbox', '.eml', '.md', '.markdown', '.html', '.htm', '.txt')) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
+                    if lower_file.endswith(
+                        (
+                            ".qwk",
+                            ".zip",
+                            ".tar",
+                            ".tar.gz",
+                            ".tar.bz2",
+                            ".tgz",
+                            ".rep",
+                            ".json",
+                            ".jsonl",
+                            ".csv",
+                            ".db",
+                            ".sqlite",
+                            ".xml",
+                            ".rss",
+                            ".mbox",
+                            ".eml",
+                            ".md",
+                            ".markdown",
+                            ".html",
+                            ".htm",
+                            ".txt",
+                        )
+                    ) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
                         expanded_paths.append(os.path.join(root, file))
         else:
             expanded_paths.append(path)
     return sorted(expanded_paths)
 
+
 FORMAT_EXTENSIONS = {
-    'text': '.txt',
-    'json': '.json',
-    'jsonl': '.jsonl',
-    'xml': '.xml',
-    'html': '.html',
-    'markdown': '.md',
-    'mbox': '.mbox',
-    'csv': '.csv',
-    'rss': '.rss',
-    'sqlite': '.db',
-    'eml': '.eml',
-    'qwk': '.qwk',
-    'rep': '.rep',
+    "text": ".txt",
+    "json": ".json",
+    "jsonl": ".jsonl",
+    "xml": ".xml",
+    "html": ".html",
+    "markdown": ".md",
+    "mbox": ".mbox",
+    "csv": ".csv",
+    "rss": ".rss",
+    "sqlite": ".db",
+    "eml": ".eml",
+    "qwk": ".qwk",
+    "rep": ".rep",
 }
 
 
@@ -84,75 +110,139 @@ def resolve_output_format(
     if output_format is not None:
         return output_format
 
-    if output_path and output_mode == 'file':
+    if output_path and output_mode == "file":
         ext = os.path.splitext(output_path)[1].lower()
         mapping = {
-            '.json': 'json',
-            '.jsonl': 'jsonl',
-            '.xml': 'xml',
-            '.html': 'html',
-            '.csv': 'csv',
-            '.mbox': 'mbox',
-            '.eml': 'eml',
-            '.rss': 'rss',
-            '.md': 'markdown',
-            '.markdown': 'markdown',
-            '.sqlite': 'sqlite',
-            '.db': 'sqlite',
-            '.qwk': 'qwk',
-            '.rep': 'rep',
+            ".json": "json",
+            ".jsonl": "jsonl",
+            ".xml": "xml",
+            ".html": "html",
+            ".csv": "csv",
+            ".mbox": "mbox",
+            ".eml": "eml",
+            ".rss": "rss",
+            ".md": "markdown",
+            ".markdown": "markdown",
+            ".sqlite": "sqlite",
+            ".db": "sqlite",
+            ".qwk": "qwk",
+            ".rep": "rep",
         }
         if ext in mapping:
             return mapping[ext]
 
-    return 'text'
+    return "text"
 
-RE_QUOTE_PATTERN = re.compile(r'^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)')
-RE_UUE_PATTERN = re.compile(r'^begin\s+\d{3}\s+')
+
+RE_QUOTE_PATTERN = re.compile(r"^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)")
+RE_UUE_PATTERN = re.compile(r"^begin\s+\d{3}\s+")
 # Match UUE data lines, which traditionally start with 'M' and contain 60 characters of encoded data.
-RE_UUE_DATA_PATTERN = re.compile(r'^M[\x21-\x60]{60}$')
-RE_UUE_LOOSE_PATTERN = re.compile(r'^[\x21-\x4d][\x21-\x60]{1,60}$')
+RE_UUE_DATA_PATTERN = re.compile(r"^M[\x21-\x60]{60}$")
+RE_UUE_LOOSE_PATTERN = re.compile(r"^[\x21-\x4d][\x21-\x60]{1,60}$")
 # Identify Base64 blocks by looking for long strings of characters commonly used in Base64 encoding.
-RE_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{60,}$')
-RE_YENC_PATTERN = re.compile(r'^=y(begin|part|end)')
-RE_BASE64_LOOSE_PATTERN = re.compile(r'^[A-Za-z0-9+/=]{4,}$')
-RE_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
+RE_BASE64_PATTERN = re.compile(r"^[A-Za-z0-9+/=]{60,}$")
+RE_YENC_PATTERN = re.compile(r"^=y(begin|part|end)")
+RE_BASE64_LOOSE_PATTERN = re.compile(r"^[A-Za-z0-9+/=]{4,}$")
+RE_EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 RE_URL_PATTERN = re.compile(
-    r'\b(?:https?|ftp|telnet|gopher)://[^\s<>"]+|www\.[^\s<>"]+',
-    re.IGNORECASE
+    r'\b(?:https?|ftp|telnet|gopher)://[^\s<>"]+|www\.[^\s<>"]+', re.IGNORECASE
 )
 # Match phone numbers while avoiding false positives from dates (like 2023-10-12).
 # It requires at least 7 digits to ensure the match is likely a phone number.
 RE_PHONE_PATTERN = re.compile(
-    r'(?<!\w)'
-    r'(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)'
-    r'(?=(?:\D*\d){7,})'
-    r'(?:'
-    r'(?:\+\d{1,3}[-\.\s]?)?'
-    r'(?:\(\d{1,4}\)|\d{1,4})'
-    r'[-\.\s]?\d{3,4}(?:[-\.\s]?\d{3,4}){1,3}'
-    r'|'
-    r'\d{3}[-\.\s]?\d{4}'
-    r')'
-    r'\b'
+    r"(?<!\w)"
+    r"(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)"
+    r"(?=(?:\D*\d){7,})"
+    r"(?:"
+    r"(?:\+\d{1,3}[-\.\s]?)?"
+    r"(?:\(\d{1,4}\)|\d{1,4})"
+    r"[-\.\s]?\d{3,4}(?:[-\.\s]?\d{3,4}){1,3}"
+    r"|"
+    r"\d{3}[-\.\s]?\d{4}"
+    r")"
+    r"\b"
 )
 
 RE_SUBJECT_PREFIX_PATTERN = re.compile(
-    r'^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*', re.IGNORECASE
+    r"^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*", re.IGNORECASE
 )
 
-RE_ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
+RE_ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 # Exclude common words from keyword statistics to ensure the report highlights unique and meaningful terms.
 DEFAULT_STOP_WORDS = {
-    'the', 'and', 'for', 'that', 'this', 'with', 'from', 'have', 'was', 'were',
-    'but', 'not', 'are', 'you', 'your', 'his', 'her', 'they', 'them', 'their',
-    'will', 'can', 'has', 'had', 'been', 'which', 'who', 'how', 'when', 'where',
-    'all', 'any', 'some', 'there', 'what', 'about', 'just', 'more', 'very',
-    'than', 'then', 'also', 'only', 'even', 'into', 'most', 'well', 'would',
-    'could', 'should', 'these', 'those', 'much', 'many', 'once', 'here', 'back',
-    'still', 'over', 'must', 'does', 'made', 'said', 'went', 'came', 'down',
-    'give', 'take', 'find', 'look', 'work', 'part',
+    "the",
+    "and",
+    "for",
+    "that",
+    "this",
+    "with",
+    "from",
+    "have",
+    "was",
+    "were",
+    "but",
+    "not",
+    "are",
+    "you",
+    "your",
+    "his",
+    "her",
+    "they",
+    "them",
+    "their",
+    "will",
+    "can",
+    "has",
+    "had",
+    "been",
+    "which",
+    "who",
+    "how",
+    "when",
+    "where",
+    "all",
+    "any",
+    "some",
+    "there",
+    "what",
+    "about",
+    "just",
+    "more",
+    "very",
+    "than",
+    "then",
+    "also",
+    "only",
+    "even",
+    "into",
+    "most",
+    "well",
+    "would",
+    "could",
+    "should",
+    "these",
+    "those",
+    "much",
+    "many",
+    "once",
+    "here",
+    "back",
+    "still",
+    "over",
+    "must",
+    "does",
+    "made",
+    "said",
+    "went",
+    "came",
+    "down",
+    "give",
+    "take",
+    "find",
+    "look",
+    "work",
+    "part",
 }
 
 # Identify common markers that separate a message's body from the user's signature.
@@ -208,24 +298,30 @@ def _is_binary_line(
     is_yenc_marker = RE_YENC_PATTERN.match(stripped_line)
 
     if is_yenc_marker:
-        return True, not stripped_line.startswith('=yend'), in_uue_block, in_base64_block
+        return (
+            True,
+            not stripped_line.startswith("=yend"),
+            in_uue_block,
+            in_base64_block,
+        )
 
     if in_yenc_block:
         return True, True, in_uue_block, in_base64_block
 
     if in_uue_block:
-        if stripped_line in ('end', '`'):
+        if stripped_line in ("end", "`"):
             return True, in_yenc_block, False, in_base64_block
-        if (
-            RE_UUE_DATA_PATTERN.match(stripped_line)
-            or RE_UUE_LOOSE_PATTERN.match(stripped_line)
+        if RE_UUE_DATA_PATTERN.match(stripped_line) or RE_UUE_LOOSE_PATTERN.match(
+            stripped_line
         ):
             return True, in_yenc_block, True, in_base64_block
         in_uue_block = False
 
     if RE_BASE64_PATTERN.match(stripped_line):
         return True, in_yenc_block, in_uue_block, True
-    elif RE_UUE_DATA_PATTERN.match(stripped_line) or RE_UUE_PATTERN.match(stripped_line):
+    elif RE_UUE_DATA_PATTERN.match(stripped_line) or RE_UUE_PATTERN.match(
+        stripped_line
+    ):
         return True, in_yenc_block, True, in_base64_block
     elif RE_UUE_LOOSE_PATTERN.match(stripped_line):
         if previous_line and (
@@ -253,8 +349,8 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     current_filename = ""
     current_data: list[str] = []
 
-    uue_begin_re = re.compile(r'^begin\s+\d{3}\s+(.+)$')
-    yenc_begin_re = re.compile(r'^=ybegin.*name=(.+)$')
+    uue_begin_re = re.compile(r"^begin\s+\d{3}\s+(.+)$")
+    yenc_begin_re = re.compile(r"^=ybegin.*name=(.+)$")
 
     def _flush_binary():
         nonlocal in_uue, in_base64, in_yenc
@@ -279,7 +375,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
                 decoded_bytes = bytearray()
                 escaped = False
                 for char in encoded_str:
-                    if char == '=' and not escaped:
+                    if char == "=" and not escaped:
                         escaped = True
                         continue
                     val = ord(char)
@@ -299,7 +395,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
         clean_line = line.strip()
 
         if in_uue:
-            if clean_line == 'end' or clean_line == '`':
+            if clean_line == "end" or clean_line == "`":
                 _flush_binary()
                 continue
             else:
@@ -318,7 +414,7 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
                 continue
 
         if in_yenc:
-            if clean_line.startswith('=yend'):
+            if clean_line.startswith("=yend"):
                 _flush_binary()
                 continue
             else:
@@ -426,6 +522,7 @@ class BBSInfo:
     This is usually found in the 'CONTROL.DAT' file in QWK packets or in
     the header of files like SQLite.
     """
+
     name: str = ""
     location: str = ""
     phone: str = ""
@@ -440,6 +537,7 @@ class BBSInfo:
 
 class ConferenceMap(dict):
     """A dictionary mapping conference numbers to names, with optional BBS information."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bbs_info: BBSInfo | None = None
@@ -452,6 +550,7 @@ class ParsedMessage:
     This class contains the message body text, conference details, and
     threading information used for organizing conversations.
     """
+
     text: str
     msgnum: int | None
     refnum: int | None
@@ -485,6 +584,7 @@ class MessageHeader:
     These fields match the fixed-length structure used in older BBS
     message packets.
     """
+
     status: str
     msgnum: int | None
     msgdate: str
@@ -503,12 +603,12 @@ class MessageHeader:
     @property
     def is_private(self) -> bool:
         """Return True if the message is marked as private."""
-        return self.status not in (' ', '-')
+        return self.status not in (" ", "-")
 
     @property
     def is_password(self) -> bool:
         """Return True if the message is protected by a password."""
-        return self.status in ('%', '^', '!', '#', '$')
+        return self.status in ("%", "^", "!", "#", "$")
 
     @property
     def as_dict(self) -> dict[str, Any]:
@@ -518,16 +618,17 @@ class MessageHeader:
             result[field.name] = "" if value is None else value
         return result
 
-    def to_bytes(self, encoding: str = 'cp437') -> bytes:
+    def to_bytes(self, encoding: str = "cp437") -> bytes:
         """Convert the message header into a 128-byte QWK record."""
-        def encode_pad(text: str, length: int, align: str = 'left') -> bytes:
-            if align == 'right':
+
+        def encode_pad(text: str, length: int, align: str = "left") -> bytes:
+            if align == "right":
                 return text.rjust(length).encode(encoding)[:length]
             return text.ljust(length).encode(encoding)[:length]
 
         def get_char_bytes(text: str) -> bytes:
             b = text.encode(encoding)
-            return b[:1] if b else b' '
+            return b[:1] if b else b" "
 
         # QWK headers use right-aligned, space-padded strings for numeric fields
         msgnum_raw = str(self.msgnum if self.msgnum is not None else 0)
@@ -538,15 +639,15 @@ class MessageHeader:
         return struct.pack(
             QWK_HEADER_FORMAT,
             get_char_bytes(self.status),
-            encode_pad(msgnum_raw, 7, 'right'),
+            encode_pad(msgnum_raw, 7, "right"),
             encode_pad(self.msgdate, 8),
             encode_pad(self.msgtime, 5),
             encode_pad(self.msgto, 25),
             encode_pad(self.msgfrom, 25),
             encode_pad(self.msgsubject, 25),
             encode_pad(self.msgpassword, 12),
-            encode_pad(refnum_raw, 8, 'right'),
-            encode_pad(numblocks_raw, 6, 'right'),
+            encode_pad(refnum_raw, 8, "right"),
+            encode_pad(numblocks_raw, 6, "right"),
             get_char_bytes(self.msgflag),
             self.confnum,
             self.lognum,
@@ -554,7 +655,7 @@ class MessageHeader:
         )
 
     @classmethod
-    def from_bytes(cls, record: bytes, encoding: str = 'cp437') -> "MessageHeader":
+    def from_bytes(cls, record: bytes, encoding: str = "cp437") -> "MessageHeader":
         try:
             header_data = struct.unpack(QWK_HEADER_FORMAT, record)
         except struct.error as error:
@@ -581,7 +682,7 @@ class MessageHeader:
 
         def decode_clean(b: bytes, strip_whitespace: bool = True) -> str:
             try:
-                s = b.decode(encoding).split('\x00')[0]
+                s = b.decode(encoding).split("\x00")[0]
                 return s.strip() if strip_whitespace else s
             except UnicodeDecodeError as e:
                 raise MessagesDatFormatError(
@@ -632,7 +733,7 @@ class MessageHeader:
         header._numblocks_raw = numblocks_text  # type: ignore[attr-defined]
         message_type = header.status
 
-        valid_status_chars = {'+', '*', '~', '`', '%', '^', '!', '#', '$', ' ', '-'}
+        valid_status_chars = {"+", "*", "~", "`", "%", "^", "!", "#", "$", " ", "-"}
         if message_type not in valid_status_chars:
             raise InvalidMessageTypeError(message_type)
 
@@ -645,7 +746,7 @@ class MessageHeader:
         for field_info in fields(cls):
             name = field_info.name
             val = data.get(name)
-            if name in ('msgnum', 'refnum', 'numblocks', 'confnum', 'lognum'):
+            if name in ("msgnum", "refnum", "numblocks", "confnum", "lognum"):
                 kwargs[name] = _safe_to_int(val)
             else:
                 kwargs[name] = val if val is not None else ""
@@ -690,7 +791,9 @@ class MessageHeader:
                 val = _redact_pii(val)
             return _highlight_text(val, highlight_term, is_regex, use_colors)
 
-        def fmt_line(label: str, value: str, newline: bool = True, pad: int = 16) -> str:
+        def fmt_line(
+            label: str, value: str, newline: bool = True, pad: int = 16
+        ) -> str:
             suffix = "\r\n" if newline else ""
             label_fmt = f"{label:<{pad}}"
             if use_colors:
@@ -724,9 +827,13 @@ class MessageHeader:
         if verbose:
             message_number = str(self.msgnum) if self.msgnum is not None else ""
             # Message number and Date share a line in verbose mode for better information density
-            header_parts.append(fmt_line("Message #:", message_number, newline=False, pad=16))
+            header_parts.append(
+                fmt_line("Message #:", message_number, newline=False, pad=16)
+            )
             header_parts.append("    ")  # Spacer between columns
-            header_parts.append(fmt_line("Date:", self.msgdate + " " + self.msgtime, pad=12))
+            header_parts.append(
+                fmt_line("Date:", self.msgdate + " " + self.msgtime, pad=12)
+            )
         else:
             header_parts.append(fmt_line("Date:", self.msgdate + " " + self.msgtime))
 
@@ -873,7 +980,7 @@ class LogFormatter(logging.Formatter):
 def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], ConferenceMap]:
     """Import messages and information from a pyqwk SQLite database."""
     # Ensure the file exists before connecting to avoid creating an empty database
-    if db_path and db_path != ':memory:' and not os.path.exists(db_path):
+    if db_path and db_path != ":memory:" and not os.path.exists(db_path):
         raise sqlite3.OperationalError(f"unable to open database file: {db_path}")
 
     conn = sqlite3.connect(db_path)
@@ -904,7 +1011,7 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
         try:
             cursor.execute("SELECT * FROM conferences")
             for row in cursor.fetchall():
-                board_dict[row['number']] = row['name']
+                board_dict[row["number"]] = row["name"]
         except sqlite3.OperationalError:
             pass
 
@@ -913,34 +1020,35 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
         for row in cursor.fetchall():
             # Reconstruct header dict
             header_dict = {
-                'confnum': row['conference_number'],
-                'msgnum': row['message_number'],
-                'msgdate': row['date'],
-                'msgtime': "", # ISO date in SQLite includes time
-                'msgfrom': row['author'],
-                'msgto': row['recipient'],
-                'msgsubject': row['subject'],
-                'status': row['status'],
-                'refnum': row['reference_number']
+                "confnum": row["conference_number"],
+                "msgnum": row["message_number"],
+                "msgdate": row["date"],
+                "msgtime": "",  # ISO date in SQLite includes time
+                "msgfrom": row["author"],
+                "msgto": row["recipient"],
+                "msgsubject": row["subject"],
+                "status": row["status"],
+                "refnum": row["reference_number"],
             }
 
             header = MessageHeader.from_dict(header_dict)
 
-            attachments = row['attachments'].split(';') if row['attachments'] else None
+            attachments = row["attachments"].split(";") if row["attachments"] else None
 
             msg = ParsedMessage(
-                text=row['text'],
+                text=row["text"],
                 msgnum=header.msgnum,
                 refnum=header.refnum,
                 confnum=header.confnum,
                 header=header,
-                depth=row['depth'],
-                thread_id=row['thread_id'],
-                parent_msgnum=row['parent_message_number'],
-                confname=row['conference_name'],
-                bbs_name=row['bbs_name'] or bbs_info.name,
-                bbs_id=(row['bbs_id'] if 'bbs_id' in row.keys() else None) or bbs_info.bbs_id,
-                source_file=row['source_file'],
+                depth=row["depth"],
+                thread_id=row["thread_id"],
+                parent_msgnum=row["parent_message_number"],
+                confname=row["conference_name"],
+                bbs_name=row["bbs_name"] or bbs_info.name,
+                bbs_id=(row["bbs_id"] if "bbs_id" in row.keys() else None)
+                or bbs_info.bbs_id,
+                source_file=row["source_file"],
                 attachments=attachments,
             )
             messages.append(msg)
@@ -957,36 +1065,41 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
             # Merge: prefer data loaded from SQLite tables, but fill gaps from reconstruction
             for field in fields(BBSInfo):
                 if not getattr(loaded_bbs_info, field.name):
-                    setattr(loaded_bbs_info, field.name, getattr(board_dict.bbs_info, field.name))
+                    setattr(
+                        loaded_bbs_info,
+                        field.name,
+                        getattr(board_dict.bbs_info, field.name),
+                    )
             board_dict.bbs_info = loaded_bbs_info
 
     return messages, board_dict
 
 
-
-def _parse_json_messages(data: list[dict[str, Any]] | dict[str, Any]) -> list[ParsedMessage]:
+def _parse_json_messages(
+    data: list[dict[str, Any]] | dict[str, Any],
+) -> list[ParsedMessage]:
     """Convert a list of dictionaries or a single dictionary into ParsedMessage objects."""
     if isinstance(data, dict):
         data = [data]
     messages = []
     for entry in data:
-        header_dict = entry.get('header', {})
+        header_dict = entry.get("header", {})
         header = MessageHeader.from_dict(header_dict)
 
         msg = ParsedMessage(
-            text=entry.get('text', ""),
+            text=entry.get("text", ""),
             msgnum=header.msgnum,
             refnum=header.refnum,
             confnum=header.confnum,
             header=header,
-            depth=entry.get('depth', 0),
-            thread_id=entry.get('thread_id'),
-            parent_msgnum=entry.get('parent_msgnum'),
-            confname=entry.get('conference'),
-            bbs_name=entry.get('bbs_name'),
-            bbs_id=entry.get('bbs_id'),
-            source_file=entry.get('source_file'),
-            attachments=entry.get('attachments'),
+            depth=entry.get("depth", 0),
+            thread_id=entry.get("thread_id"),
+            parent_msgnum=entry.get("parent_msgnum"),
+            confname=entry.get("conference"),
+            bbs_name=entry.get("bbs_name"),
+            bbs_id=entry.get("bbs_id"),
+            source_file=entry.get("source_file"),
+            attachments=entry.get("attachments"),
         )
         messages.append(msg)
     return messages
@@ -1005,24 +1118,28 @@ def _safe_to_int(v: Any) -> int | None:
 def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
     """Convert an RSS XML tree into ParsedMessage objects."""
     messages = []
-    channel = root.find('channel')
+    channel = root.find("channel")
     if channel is None:
         return messages
 
     # Global BBS info from channel title/description if available
-    channel_title = channel.findtext('title') or ""
-    if channel_title == 'QWK Message Archive':
+    channel_title = channel.findtext("title") or ""
+    if channel_title == "QWK Message Archive":
         bbs_name = ""
     else:
-        bbs_name = channel_title.removesuffix(' Archive') if channel_title.endswith(' Archive') else channel_title
+        bbs_name = (
+            channel_title.removesuffix(" Archive")
+            if channel_title.endswith(" Archive")
+            else channel_title
+        )
 
-    for item in channel.findall('item'):
-        title = item.findtext('title') or ""
-        author = item.findtext('author') or ""
-        pub_date_str = item.findtext('pubDate')
-        guid = item.findtext('guid') or ""
-        description = item.findtext('description') or ""
-        category = item.findtext('category') or ""
+    for item in channel.findall("item"):
+        title = item.findtext("title") or ""
+        author = item.findtext("author") or ""
+        pub_date_str = item.findtext("pubDate")
+        guid = item.findtext("guid") or ""
+        description = item.findtext("description") or ""
+        category = item.findtext("category") or ""
 
         # Parse date
         msg_date = "01-01-70"
@@ -1030,35 +1147,35 @@ def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
         if pub_date_str:
             try:
                 dt = email.utils.parsedate_to_datetime(pub_date_str)
-                msg_date = dt.strftime('%m-%d-%y')
-                msg_time = dt.strftime('%H:%M')
+                msg_date = dt.strftime("%m-%d-%y")
+                msg_time = dt.strftime("%H:%M")
             except (ValueError, TypeError):
                 pass
 
         # Parse GUID: {confnum}.{msgnum}@qwk
         confnum = 0
         msgnum = None
-        if '@qwk' in guid:
-            parts = guid.split('@')[0].split('.')
+        if "@qwk" in guid:
+            parts = guid.split("@")[0].split(".")
             if len(parts) == 2:
                 confnum = _safe_to_int(parts[0]) or 0
                 msgnum = _safe_to_int(parts[1])
 
         header = MessageHeader(
-            status=' ',
+            status=" ",
             msgnum=msgnum,
             msgdate=msg_date,
             msgtime=msg_time,
-            msgto='All',
+            msgto="All",
             msgfrom=author,
             msgsubject=title,
-            msgpassword='',
+            msgpassword="",
             refnum=None,
             numblocks=None,
-            msgflag=' ',
+            msgflag=" ",
             confnum=confnum,
             lognum=0,
-            nettag=' ',
+            nettag=" ",
         )
 
         msg = ParsedMessage(
@@ -1078,37 +1195,41 @@ def _parse_xml_messages(root: ET.Element) -> list[ParsedMessage]:
     """Convert an XML tree into ParsedMessage objects."""
     messages = []
 
-    if root.tag == 'message':
+    if root.tag == "message":
         entries = [root]
     else:
-        entries = root.findall('message')
+        entries = root.findall("message")
 
     for entry in entries:
-        header_el = entry.find('header')
-        header_dict = {el.tag: el.text for el in header_el} if header_el is not None else {}
+        header_el = entry.find("header")
+        header_dict = (
+            {el.tag: el.text for el in header_el} if header_el is not None else {}
+        )
 
         header = MessageHeader.from_dict(header_dict)
 
-        attachments_el = entry.find('attachments')
+        attachments_el = entry.find("attachments")
         attachments = []
         if attachments_el is not None:
-            for attach_el in attachments_el.findall('attachment'):
+            for attach_el in attachments_el.findall("attachment"):
                 if attach_el.text:
                     attachments.append(attach_el.text)
 
         msg = ParsedMessage(
-            text=entry.findtext('text', default=""),
+            text=entry.findtext("text", default=""),
             msgnum=header.msgnum,
             refnum=header.refnum,
             confnum=header.confnum,
             header=header,
-            depth=_safe_to_int(entry.findtext('depth')) or 0,
-            thread_id=entry.findtext('thread_id') or None,
-            parent_msgnum=_safe_to_int(entry.findtext('parent_msgnum')),
-            confname=entry.findtext('conference_name') or entry.findtext('conference') or None,
-            bbs_name=entry.findtext('bbs_name') or None,
-            bbs_id=entry.findtext('bbs_id') or None,
-            source_file=entry.findtext('source_file') or None,
+            depth=_safe_to_int(entry.findtext("depth")) or 0,
+            thread_id=entry.findtext("thread_id") or None,
+            parent_msgnum=_safe_to_int(entry.findtext("parent_msgnum")),
+            confname=entry.findtext("conference_name")
+            or entry.findtext("conference")
+            or None,
+            bbs_name=entry.findtext("bbs_name") or None,
+            bbs_id=entry.findtext("bbs_id") or None,
+            source_file=entry.findtext("source_file") or None,
             attachments=attachments or None,
         )
         messages.append(msg)
@@ -1122,21 +1243,23 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
     for row in data:
         header = MessageHeader.from_dict(row)
 
-        attachments = row.get('attachments', "").split(';') if row.get('attachments') else None
+        attachments = (
+            row.get("attachments", "").split(";") if row.get("attachments") else None
+        )
 
         msg = ParsedMessage(
-            text=row.get('text', ""),
+            text=row.get("text", ""),
             msgnum=header.msgnum,
             refnum=header.refnum,
             confnum=header.confnum,
             header=header,
-            depth=_safe_to_int(row.get('depth', 0)) or 0,
-            thread_id=row.get('thread_id'),
-            parent_msgnum=_safe_to_int(row.get('parent_msgnum')),
-            confname=row.get('conference_name') or row.get('conference'),
-            bbs_name=row.get('bbs_name'),
-            bbs_id=row.get('bbs_id'),
-            source_file=row.get('source_file'),
+            depth=_safe_to_int(row.get("depth", 0)) or 0,
+            thread_id=row.get("thread_id"),
+            parent_msgnum=_safe_to_int(row.get("parent_msgnum")),
+            confname=row.get("conference_name") or row.get("conference"),
+            bbs_name=row.get("bbs_name"),
+            bbs_id=row.get("bbs_id"),
+            source_file=row.get("source_file"),
             attachments=attachments,
         )
         messages.append(msg)
@@ -1165,41 +1288,42 @@ def _reconstruct_archive_information(messages: list[ParsedMessage]) -> Conferenc
 
 def _message_from_email(msg_obj: Any) -> ParsedMessage:
     """Convert an email message object to a ParsedMessage."""
+
     # Extract headers
     def get_hdr(name: str) -> str:
         return str(msg_obj.get(name, ""))
 
     # QWK specific headers (if they exist)
-    conf_num = _safe_to_int(get_hdr('X-QWK-Conference')) or 0
-    msg_num = _safe_to_int(get_hdr('X-QWK-Message-Number'))
-    ref_num = _safe_to_int(get_hdr('X-QWK-Reference'))
-    status = get_hdr('X-QWK-Status') or " "
-    msg_flag = get_hdr('X-QWK-Flags') or " "
-    conf_name = get_hdr('X-QWK-Conference-Name')
-    bbs_name = get_hdr('X-QWK-BBS-Name')
-    bbs_id = get_hdr('X-QWK-BBS-ID')
-    source_file = get_hdr('X-QWK-Source-File')
+    conf_num = _safe_to_int(get_hdr("X-QWK-Conference")) or 0
+    msg_num = _safe_to_int(get_hdr("X-QWK-Message-Number"))
+    ref_num = _safe_to_int(get_hdr("X-QWK-Reference"))
+    status = get_hdr("X-QWK-Status") or " "
+    msg_flag = get_hdr("X-QWK-Flags") or " "
+    conf_name = get_hdr("X-QWK-Conference-Name")
+    bbs_name = get_hdr("X-QWK-BBS-Name")
+    bbs_id = get_hdr("X-QWK-BBS-ID")
+    source_file = get_hdr("X-QWK-Source-File")
 
     # Attachments
     attachments = None
-    attach_hdr = get_hdr('X-QWK-Attachments')
+    attach_hdr = get_hdr("X-QWK-Attachments")
     if attach_hdr:
-        attachments = [a.strip() for a in attach_hdr.split(';') if a.strip()]
+        attachments = [a.strip() for a in attach_hdr.split(";") if a.strip()]
 
     # Standard Email headers
-    msg_to = get_hdr('To')
-    msg_from = get_hdr('From')
-    msg_subject = get_hdr('Subject')
+    msg_to = get_hdr("To")
+    msg_from = get_hdr("From")
+    msg_subject = get_hdr("Subject")
 
     # Date/Time
     msg_date = "01-01-70"
     msg_time = "00:00"
-    date_hdr = get_hdr('Date')
+    date_hdr = get_hdr("Date")
     if date_hdr:
         try:
             dt = email.utils.parsedate_to_datetime(date_hdr)
-            msg_date = dt.strftime('%m-%d-%y')
-            msg_time = dt.strftime('%H:%M')
+            msg_date = dt.strftime("%m-%d-%y")
+            msg_time = dt.strftime("%H:%M")
         except (ValueError, TypeError):
             pass
 
@@ -1210,12 +1334,12 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
             if part.get_content_type() == "text/plain":
                 payload = part.get_payload(decode=True)
                 if payload:
-                    body = payload.decode('utf-8', errors='replace')
+                    body = payload.decode("utf-8", errors="replace")
                 break
     else:
         payload = msg_obj.get_payload(decode=True)
         if payload:
-            body = payload.decode('utf-8', errors='replace')
+            body = payload.decode("utf-8", errors="replace")
 
     # Construct MessageHeader
     header = MessageHeader(
@@ -1241,9 +1365,9 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
         refnum=ref_num,
         confnum=conf_num,
         header=header,
-        depth=_safe_to_int(get_hdr('X-QWK-Depth') or 0) or 0,
-        thread_id=get_hdr('X-QWK-Thread-ID') or None,
-        parent_msgnum=_safe_to_int(get_hdr('X-QWK-Parent-Msgnum')),
+        depth=_safe_to_int(get_hdr("X-QWK-Depth") or 0) or 0,
+        thread_id=get_hdr("X-QWK-Thread-ID") or None,
+        parent_msgnum=_safe_to_int(get_hdr("X-QWK-Parent-Msgnum")),
         confname=conf_name or None,
         bbs_name=bbs_name or None,
         bbs_id=bbs_id or None,
@@ -1263,20 +1387,22 @@ def _parse_mbox_messages(path: str) -> list[ParsedMessage]:
 
 def _parse_eml_messages(path: str) -> list[ParsedMessage]:
     """Import messages from an EML file."""
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         msg_obj = email.message_from_binary_file(f)
     return [_message_from_email(msg_obj)]
 
 
 def _parse_html_messages(path: str) -> list[ParsedMessage]:
     """Import messages from an HTML file."""
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
     messages = []
 
     # Identify message blocks
-    msg_blocks = list(re.finditer(r'<div class="message"(?: id="[^"]*")?>', content, re.IGNORECASE))
+    msg_blocks = list(
+        re.finditer(r'<div class="message"(?: id="[^"]*")?>', content, re.IGNORECASE)
+    )
 
     # Pre-calculate depths for all message starts in a single pass
     div_tags = list(re.finditer(r"<(div|/div)([^>]*)>", content, re.IGNORECASE))
@@ -1305,25 +1431,31 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
             div_idx += 1
         msg_depths[start] = max(0, current_depth)
 
-    re_date = re.compile(r'<strong>Date:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
-    re_from = re.compile(r'<strong>From:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
-    re_to = re.compile(r'<strong>To:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
-    re_subject = re.compile(r'<strong>Subject:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
-    re_conf = re.compile(r'<strong>Conference:</strong>\s*(.*?)\s*\((\d+)\)\s*</div>', re.IGNORECASE)
-    re_bbs = re.compile(r'<strong>BBS:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
-    re_source = re.compile(r'<strong>Source:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
-    re_number = re.compile(r'<strong>Number:</strong>\s*(\d+)\s*</div>', re.IGNORECASE)
-    re_attachments = re.compile(r'<strong>Attachments:</strong>\s*(.*?)\s*</div>', re.IGNORECASE)
+    re_date = re.compile(r"<strong>Date:</strong>\s*(.*?)\s*</div>", re.IGNORECASE)
+    re_from = re.compile(r"<strong>From:</strong>\s*(.*?)\s*</div>", re.IGNORECASE)
+    re_to = re.compile(r"<strong>To:</strong>\s*(.*?)\s*</div>", re.IGNORECASE)
+    re_subject = re.compile(
+        r"<strong>Subject:</strong>\s*(.*?)\s*</div>", re.IGNORECASE
+    )
+    re_conf = re.compile(
+        r"<strong>Conference:</strong>\s*(.*?)\s*\((\d+)\)\s*</div>", re.IGNORECASE
+    )
+    re_bbs = re.compile(r"<strong>BBS:</strong>\s*(.*?)\s*</div>", re.IGNORECASE)
+    re_source = re.compile(r"<strong>Source:</strong>\s*(.*?)\s*</div>", re.IGNORECASE)
+    re_number = re.compile(r"<strong>Number:</strong>\s*(\d+)\s*</div>", re.IGNORECASE)
+    re_attachments = re.compile(
+        r"<strong>Attachments:</strong>\s*(.*?)\s*</div>", re.IGNORECASE
+    )
     re_body = re.compile(r'<pre class="body">(.*?)</pre>', re.DOTALL | re.IGNORECASE)
 
     def clean_html(text: str) -> str:
         # Remove tags like <mark>, </mark>, <span class="quote">, </span>, and <a> tags
-        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r"<[^>]+>", "", text)
         return html.unescape(text).strip()
 
     for i, match in enumerate(msg_blocks):
         start = match.start()
-        end = msg_blocks[i+1].start() if i+1 < len(msg_blocks) else len(content)
+        end = msg_blocks[i + 1].start() if i + 1 < len(msg_blocks) else len(content)
         block = content[start:end]
 
         depth = msg_depths.get(start, 0)
@@ -1358,7 +1490,7 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
         attachments = None
         if attach_match:
             attachments = [
-                clean_html(a) for a in attach_match.group(1).split(',') if clean_html(a)
+                clean_html(a) for a in attach_match.group(1).split(",") if clean_html(a)
             ]
             if not attachments:
                 attachments = None
@@ -1375,7 +1507,9 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
             msgtime=msg_time,
             msgto=clean_html(to_match.group(1)) if to_match else "",
             msgfrom=clean_html(from_match.group(1)) if from_match else "",
-            msgsubject=clean_html(subject_match.group(1)) if subject_match else "(no subject)",
+            msgsubject=clean_html(subject_match.group(1))
+            if subject_match
+            else "(no subject)",
             msgpassword="",
             refnum=None,
             numblocks=None,
@@ -1402,35 +1536,39 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
     return messages
 
 
-def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessage]:
+def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessage]:
     """Import messages from a Plain Text file."""
     try:
-        with open(path, 'r', encoding=encoding) as f:
+        with open(path, "r", encoding=encoding) as f:
             content = f.read()
     except (UnicodeDecodeError, LookupError):
-        with open(path, 'r', encoding='latin1') as f:
+        with open(path, "r", encoding="latin1") as f:
             content = f.read()
 
     # Split by horizontal separators (dashes) or double newlines
-    content_norm = content.replace('\r\n', '\n')
-    sections = re.split(r'\n-{20,}\n', content_norm)
+    content_norm = content.replace("\r\n", "\n")
+    sections = re.split(r"\n-{20,}\n", content_norm)
     if len(sections) <= 1:
         # Try splitting by double newlines if no dashes found, looking ahead for headers
-        sections = re.split(r'\n\n(?=Conference:|Message #:|Date:)', content_norm)
+        sections = re.split(r"\n\n(?=Conference:|Message #:|Date:)", content_norm)
 
     messages = []
 
-    re_conf = re.compile(r'^Conference:\s*(.*?)(?:\s*\((\d+)\))?$', re.MULTILINE)
-    re_bbs = re.compile(r'^BBS:\s*(.*)$', re.MULTILINE)
-    re_status = re.compile(r'^Status:\s*(.*)$', re.MULTILINE)
-    re_msgnum_verbose = re.compile(r'^Message #:\s*(\d+)', re.MULTILINE)
-    re_date_verbose = re.compile(r'Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)', re.MULTILINE)
-    re_date_std = re.compile(r'^Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)', re.MULTILINE)
-    re_from = re.compile(r'^From:\s*(.*)$', re.MULTILINE)
-    re_to = re.compile(r'^To:\s*(.*)$', re.MULTILINE)
-    re_subject = re.compile(r'^Subject:\s*(.*)$', re.MULTILINE)
-    re_refnum = re.compile(r'^Reference #:\s*(\d+)', re.MULTILINE)
-    re_attachments = re.compile(r'^Attachments:\s*(.*)$', re.MULTILINE)
+    re_conf = re.compile(r"^Conference:\s*(.*?)(?:\s*\((\d+)\))?$", re.MULTILINE)
+    re_bbs = re.compile(r"^BBS:\s*(.*)$", re.MULTILINE)
+    re_status = re.compile(r"^Status:\s*(.*)$", re.MULTILINE)
+    re_msgnum_verbose = re.compile(r"^Message #:\s*(\d+)", re.MULTILINE)
+    re_date_verbose = re.compile(
+        r"Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)", re.MULTILINE
+    )
+    re_date_std = re.compile(
+        r"^Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)", re.MULTILINE
+    )
+    re_from = re.compile(r"^From:\s*(.*)$", re.MULTILINE)
+    re_to = re.compile(r"^To:\s*(.*)$", re.MULTILINE)
+    re_subject = re.compile(r"^Subject:\s*(.*)$", re.MULTILINE)
+    re_refnum = re.compile(r"^Reference #:\s*(\d+)", re.MULTILINE)
+    re_attachments = re.compile(r"^Attachments:\s*(.*)$", re.MULTILINE)
 
     for section in sections:
         section = section.strip()
@@ -1477,7 +1615,9 @@ def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessa
 
         attachments = None
         if attach_match:
-            attachments = [a.strip() for a in attach_match.group(1).split(',') if a.strip()]
+            attachments = [
+                a.strip() for a in attach_match.group(1).split(",") if a.strip()
+            ]
 
         conf_num = 0
         conf_name = None
@@ -1488,14 +1628,28 @@ def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessa
 
         # Body starts after headers
         header_end = 0
-        for m in [conf_match, bbs_match, status_match, msgnum_v_match, date_v_match, date_s_match, from_match, to_match, subj_match, ref_match, attach_match]:
+        for m in [
+            conf_match,
+            bbs_match,
+            status_match,
+            msgnum_v_match,
+            date_v_match,
+            date_s_match,
+            from_match,
+            to_match,
+            subj_match,
+            ref_match,
+            attach_match,
+        ]:
             if m:
                 header_end = max(header_end, m.end())
 
         body = section[header_end:].strip()
 
         header = MessageHeader(
-            status='*' if status_match and "[PRIVATE]" in status_match.group(1) else ' ',
+            status="*"
+            if status_match and "[PRIVATE]" in status_match.group(1)
+            else " ",
             msgnum=msgnum,
             msgdate=msg_date,
             msgtime=msg_time,
@@ -1528,16 +1682,16 @@ def _parse_text_messages(path: str, encoding: str = 'utf-8') -> list[ParsedMessa
 
 def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
     """Import messages from a Markdown file."""
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
     # Split into sections by horizontal rules '---'
-    raw_sections = re.split(r'\n---\n', content)
+    raw_sections = re.split(r"\n---\n", content)
     sections = []
     current_chunk = ""
     for s in raw_sections:
         # A new message section contains '## ' or '> ## '
-        if '## ' in s:
+        if "## " in s:
             if current_chunk:
                 sections.append(current_chunk)
             current_chunk = s
@@ -1553,28 +1707,28 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
     messages = []
 
     # Regex patterns for fields
-    re_subject = re.compile(r'^## (.*)', re.MULTILINE)
-    re_date = re.compile(r'^- \*\*Date:\*\* (.*)', re.MULTILINE)
-    re_from = re.compile(r'^- \*\*From:\*\* (.*)', re.MULTILINE)
-    re_to = re.compile(r'^- \*\*To:\*\* (.*)', re.MULTILINE)
-    re_conf = re.compile(r'^- \*\*Conference:\*\* (.*) \((\d+)\)', re.MULTILINE)
-    re_bbs = re.compile(r'^- \*\*BBS:\*\* (.*)', re.MULTILINE)
-    re_source = re.compile(r'^- \*\*Source:\*\* (.*)', re.MULTILINE)
-    re_number = re.compile(r'^- \*\*Number:\*\* (.*)', re.MULTILINE)
-    re_attachments = re.compile(r'^- \*\*Attachments:\*\* (.*)', re.MULTILINE)
+    re_subject = re.compile(r"^## (.*)", re.MULTILINE)
+    re_date = re.compile(r"^- \*\*Date:\*\* (.*)", re.MULTILINE)
+    re_from = re.compile(r"^- \*\*From:\*\* (.*)", re.MULTILINE)
+    re_to = re.compile(r"^- \*\*To:\*\* (.*)", re.MULTILINE)
+    re_conf = re.compile(r"^- \*\*Conference:\*\* (.*) \((\d+)\)", re.MULTILINE)
+    re_bbs = re.compile(r"^- \*\*BBS:\*\* (.*)", re.MULTILINE)
+    re_source = re.compile(r"^- \*\*Source:\*\* (.*)", re.MULTILINE)
+    re_number = re.compile(r"^- \*\*Number:\*\* (.*)", re.MULTILINE)
+    re_attachments = re.compile(r"^- \*\*Attachments:\*\* (.*)", re.MULTILINE)
 
     for section in sections:
         # Detect blockquote depth for threaded Markdown
         depth = 0
-        working_section = section.lstrip('\n')
-        while working_section.startswith('>'):
+        working_section = section.lstrip("\n")
+        while working_section.startswith(">"):
             depth += 1
             lines = working_section.splitlines()
             new_lines = []
             for line in lines:
-                if line.startswith('> '):
+                if line.startswith("> "):
                     new_lines.append(line[2:])
-                elif line.startswith('>'):
+                elif line.startswith(">"):
                     new_lines.append(line[1:])
                 elif not line.strip():
                     new_lines.append("")
@@ -1583,7 +1737,7 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
             working_section = "\n".join(new_lines).strip()
 
         # If it's the first section, it might start with the archive title (# )
-        msg_start = working_section.find('## ')
+        msg_start = working_section.find("## ")
         if msg_start == -1:
             continue
 
@@ -1594,7 +1748,7 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
         if not subject_match:
             continue
 
-        subject = subject_match.group(1).strip().replace('**', '')
+        subject = subject_match.group(1).strip().replace("**", "")
         date_match = re_date.search(working_section)
         from_match = re_from.search(working_section)
         to_match = re_to.search(working_section)
@@ -1618,21 +1772,23 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
         conf_num = 0
         conf_name = None
         if conf_match:
-            conf_name = conf_match.group(1).strip().replace('**', '')
+            conf_name = conf_match.group(1).strip().replace("**", "")
             conf_num = int(conf_match.group(2))
 
         # BBS info
-        bbs_name = bbs_match.group(1).strip().replace('**', '') if bbs_match else None
-        source_file = source_match.group(1).strip().replace('**', '') if source_match else None
+        bbs_name = bbs_match.group(1).strip().replace("**", "") if bbs_match else None
+        source_file = (
+            source_match.group(1).strip().replace("**", "") if source_match else None
+        )
         msg_num = _safe_to_int(num_match.group(1).strip()) if num_match else None
 
         attachments = None
         if attach_match:
             attach_str = attach_match.group(1).strip()
-            if '[' in attach_str:
-                attachments = re.findall(r'\[(.*?)\]', attach_str)
+            if "[" in attach_str:
+                attachments = re.findall(r"\[(.*?)\]", attach_str)
             else:
-                attachments = [a.strip() for a in attach_str.split(',') if a.strip()]
+                attachments = [a.strip() for a in attach_str.split(",") if a.strip()]
             if not attachments:
                 attachments = None
 
@@ -1645,7 +1801,7 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
             if not line_strip:
                 body_start_idx = i + 1
                 break
-            if line_strip.startswith('## ') or line_strip.startswith('- **'):
+            if line_strip.startswith("## ") or line_strip.startswith("- **"):
                 body_start_idx = i + 1
             else:
                 body_start_idx = i
@@ -1659,8 +1815,8 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
             msgnum=msg_num,
             msgdate=msg_date,
             msgtime=msg_time,
-            msgto=to_match.group(1).strip().replace('**', '') if to_match else "",
-            msgfrom=from_match.group(1).strip().replace('**', '') if from_match else "",
+            msgto=to_match.group(1).strip().replace("**", "") if to_match else "",
+            msgfrom=from_match.group(1).strip().replace("**", "") if from_match else "",
             msgsubject=subject,
             msgpassword="",
             refnum=None,
@@ -1725,13 +1881,18 @@ def _process_batch_candidate_paths(
             else:
                 all_messages.extend(data)
         except Exception as e:
-            logger.warning("Skipping file %s in %s due to error: %s", os.path.basename(p), archive_type, e)
+            logger.warning(
+                "Skipping file %s in %s due to error: %s",
+                os.path.basename(p),
+                archive_type,
+                e,
+            )
 
     return all_messages, merged_board_dict
 
 
 def load_data(
-    input_path: str, logger: logging.Logger, encoding: str = 'cp437'
+    input_path: str, logger: logging.Logger, encoding: str = "cp437"
 ) -> tuple[bytearray | list[ParsedMessage], ConferenceMap]:
     """Load message data and conference mappings from an archive file.
 
@@ -1755,7 +1916,7 @@ def load_data(
     """
     board_dict = ConferenceMap()
 
-    if input_path.lower().endswith(('.db', '.sqlite')) or input_path == ':memory:':
+    if input_path.lower().endswith((".db", ".sqlite")) or input_path == ":memory:":
         try:
             messages, board_dict = _parse_sqlite_messages(input_path)
         except (ValueError, sqlite3.Error) as e:
@@ -1763,17 +1924,17 @@ def load_data(
 
         return messages, board_dict
 
-    if input_path.lower().endswith('.json'):
-        with open(input_path, 'r', encoding='utf-8') as f:
+    if input_path.lower().endswith(".json"):
+        with open(input_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             messages = _parse_json_messages(data)
 
             board_dict = _reconstruct_archive_information(messages)
             return messages, board_dict
 
-    if input_path.lower().endswith('.jsonl'):
+    if input_path.lower().endswith(".jsonl"):
         messages = []
-        with open(input_path, 'r', encoding='utf-8') as f:
+        with open(input_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     data = json.loads(line)
@@ -1782,7 +1943,7 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith(('.html', '.htm')):
+    if input_path.lower().endswith((".html", ".htm")):
         try:
             messages = _parse_html_messages(input_path)
         except Exception as e:
@@ -1791,7 +1952,7 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith('.mbox'):
+    if input_path.lower().endswith(".mbox"):
         try:
             messages = _parse_mbox_messages(input_path)
         except Exception as e:
@@ -1800,7 +1961,7 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith(('.md', '.markdown')):
+    if input_path.lower().endswith((".md", ".markdown")):
         try:
             messages = _parse_markdown_messages(input_path)
         except Exception as e:
@@ -1809,7 +1970,7 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith('.eml'):
+    if input_path.lower().endswith(".eml"):
         try:
             messages = _parse_eml_messages(input_path)
         except Exception as e:
@@ -1818,11 +1979,11 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith(('.xml', '.rss')):
+    if input_path.lower().endswith((".xml", ".rss")):
         try:
             tree = ET.parse(input_path)
             root = tree.getroot()
-            if input_path.lower().endswith('.rss') or root.tag == 'rss':
+            if input_path.lower().endswith(".rss") or root.tag == "rss":
                 messages = _parse_rss_messages(root)
             else:
                 messages = _parse_xml_messages(root)
@@ -1832,15 +1993,15 @@ def load_data(
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
-    if input_path.lower().endswith('.csv'):
-        with open(input_path, 'r', encoding='utf-8') as f:
+    if input_path.lower().endswith(".csv"):
+        with open(input_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             messages = _parse_csv_messages(reader)
 
             board_dict = _reconstruct_archive_information(messages)
             return messages, board_dict
 
-    if input_path.lower().endswith('.txt'):
+    if input_path.lower().endswith(".txt"):
         try:
             messages = _parse_text_messages(input_path, encoding)
         except Exception as e:
@@ -1856,68 +2017,102 @@ def load_data(
             try:
                 with zipfile.ZipFile(input_path) as myzip:
                     file_list = myzip.namelist()
-                    
+
                     # Classic QWK check: contains MESSAGES.DAT or REPLY.DAT at the top level
-                    messages_dat = next((n for n in file_list if n.lower() == MESSAGES_FILENAME), None)
-                    reply_dat = next((n for n in file_list if n.lower() == REPLY_FILENAME), None)
-                    
+                    messages_dat = next(
+                        (n for n in file_list if n.lower() == MESSAGES_FILENAME), None
+                    )
+                    reply_dat = next(
+                        (n for n in file_list if n.lower() == REPLY_FILENAME), None
+                    )
+
                     if (messages_dat or reply_dat) and len(file_list) <= 12:
                         # Extract only what we need for classic packets
                         myzip.extractall(temp_dir)
                         target = os.path.join(temp_dir, messages_dat or reply_dat)
 
-                        with open(target, 'rb') as f:
+                        with open(target, "rb") as f:
                             file_data = bytearray(f.read())
 
                         board_dict = ConferenceMap()
-                        control_name = next((n for n in file_list if n.lower() == CONTROL_FILENAME), None)
+                        control_name = next(
+                            (n for n in file_list if n.lower() == CONTROL_FILENAME),
+                            None,
+                        )
                         if control_name:
                             with myzip.open(control_name) as f:
                                 control_data = f.read().splitlines()
-                            board_dict = _parse_control_dat(control_data, logger, encoding)
+                            board_dict = _parse_control_dat(
+                                control_data, logger, encoding
+                            )
                         elif messages_dat:
                             logger.warning("CONTROL.DAT not found in the zip archive.")
                         return file_data, board_dict
-                    
+
                     # If not a simple QWK packet, extract everything for batch processing
                     myzip.extractall(temp_dir)
 
             except (RuntimeError, NotImplementedError, zipfile.BadZipFile) as e:
                 # Fallback to system 'unzip' if built-in zipfile fails (e.g., unsupported compression)
-                logger.info("Built-in zipfile failed (%s); attempting fallback to system 'unzip'.", str(e))
+                logger.info(
+                    "Built-in zipfile failed (%s); attempting fallback to system 'unzip'.",
+                    str(e),
+                )
                 abs_input_path = os.path.abspath(input_path)
                 try:
                     # We try to extract and then check if it's a standard QWK
-                    result = subprocess.run(['unzip', '-o', abs_input_path], cwd=temp_dir, capture_output=True, text=True)
+                    result = subprocess.run(
+                        ["unzip", "-o", abs_input_path],
+                        cwd=temp_dir,
+                        capture_output=True,
+                        text=True,
+                    )
                     if result.returncode not in (0, 1):
                         error_msg = f"unzip failed with return code {result.returncode}: {result.stderr}"
-                        if os.name == 'nt' and result.returncode == 127:
+                        if os.name == "nt" and result.returncode == 127:
                             error_msg += "\nTip: On Windows, run 'winget install GnuWin32.UnZip' or install 'unzip.exe' via Git Bash."
                         raise RuntimeError(error_msg)
-                    
+
                     # Check if standard QWK after unzip
                     extracted_files = os.listdir(temp_dir)
-                    messages_dat = next((f for f in extracted_files if f.lower() == MESSAGES_FILENAME), None)
-                    reply_dat = next((f for f in extracted_files if f.lower() == REPLY_FILENAME), None)
+                    messages_dat = next(
+                        (f for f in extracted_files if f.lower() == MESSAGES_FILENAME),
+                        None,
+                    )
+                    reply_dat = next(
+                        (f for f in extracted_files if f.lower() == REPLY_FILENAME),
+                        None,
+                    )
 
                     if (messages_dat or reply_dat) and len(extracted_files) <= 12:
                         target = os.path.join(temp_dir, messages_dat or reply_dat)
-                        with open(target, 'rb') as f:
+                        with open(target, "rb") as f:
                             file_data = bytearray(f.read())
-                        
+
                         board_dict = ConferenceMap()
-                        control_dat = next((f for f in extracted_files if f.lower() == CONTROL_FILENAME), None)
+                        control_dat = next(
+                            (
+                                f
+                                for f in extracted_files
+                                if f.lower() == CONTROL_FILENAME
+                            ),
+                            None,
+                        )
                         if control_dat:
-                            with open(os.path.join(temp_dir, control_dat), 'rb') as f:
+                            with open(os.path.join(temp_dir, control_dat), "rb") as f:
                                 control_lines = f.read().splitlines()
-                            board_dict = _parse_control_dat(control_lines, logger, encoding)
+                            board_dict = _parse_control_dat(
+                                control_lines, logger, encoding
+                            )
                         elif messages_dat:
                             logger.warning("CONTROL.DAT not found in the zip archive.")
                         return file_data, board_dict
                 except Exception as final_e:
                     error_msg = f"An error occurred while handling older ZIP archive: {str(final_e)}"
-                    if os.name == 'nt' and "[WinError 2]" in str(final_e):
-                        error_msg += "\nTip: On Windows, install 'unzip' via winget or Git Bash."
+                    if os.name == "nt" and "[WinError 2]" in str(final_e):
+                        error_msg += (
+                            "\nTip: On Windows, install 'unzip' via winget or Git Bash."
+                        )
                     raise RuntimeError(error_msg) from final_e
 
             # Perform a recursive search for all supported formats in the extracted content.
@@ -1934,7 +2129,9 @@ def load_data(
             )
 
             if not all_messages:
-                raise ValueError(f"No messages could be loaded from ZIP archive: {input_path}")
+                raise ValueError(
+                    f"No messages could be loaded from ZIP archive: {input_path}"
+                )
 
             return all_messages, merged_board_dict
     elif tarfile.is_tarfile(input_path) if os.path.isfile(input_path) else False:
@@ -1943,28 +2140,34 @@ def load_data(
             try:
                 with tarfile.open(input_path) as mytar:
                     # In Python 3.12+, we should use the 'data' filter for safety
-                    if hasattr(tarfile, 'data_filter'):
-                        mytar.extractall(temp_dir, filter='data')
+                    if hasattr(tarfile, "data_filter"):
+                        mytar.extractall(temp_dir, filter="data")
                     else:
                         mytar.extractall(temp_dir)
             except Exception as e:
-                raise RuntimeError(f"An error occurred while extracting TAR archive: {str(e)}")
+                raise RuntimeError(
+                    f"An error occurred while extracting TAR archive: {str(e)}"
+                )
 
             candidate_paths = expand_paths([temp_dir])
 
             if not candidate_paths:
-                raise ValueError(f"No supported message files found in TAR archive: {input_path}")
+                raise ValueError(
+                    f"No supported message files found in TAR archive: {input_path}"
+                )
 
             all_messages, merged_board_dict = _process_batch_candidate_paths(
                 candidate_paths, logger, encoding, "TAR"
             )
 
             if not all_messages:
-                raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
+                raise ValueError(
+                    f"No messages could be loaded from TAR archive: {input_path}"
+                )
 
             return all_messages, merged_board_dict
     else:
-        with open(input_path, 'rb') as f:
+        with open(input_path, "rb") as f:
             file_data = bytearray(f.read())
 
         # If the file is MESSAGES.DAT, look for an accompanying CONTROL.DAT in the same folder
@@ -1975,20 +2178,26 @@ def load_data(
             # Check for case-insensitive CONTROL.DAT
             if not os.path.exists(control_path):
                 # Try all files in the directory to find a match
-                if os.path.isdir(parent_dir or '.'):
-                    for filename in os.listdir(parent_dir or '.'):
+                if os.path.isdir(parent_dir or "."):
+                    for filename in os.listdir(parent_dir or "."):
                         if filename.lower() == CONTROL_FILENAME:
                             control_path = os.path.join(parent_dir, filename)
                             break
 
             if os.path.exists(control_path) and not os.path.isdir(control_path):
                 try:
-                    with open(control_path, 'rb') as f:
+                    with open(control_path, "rb") as f:
                         control_data = f.read().splitlines()
                     board_dict = _parse_control_dat(control_data, logger, encoding)
-                    logger.info("Found accompanying %s; loaded conference names.", os.path.basename(control_path))
+                    logger.info(
+                        "Found accompanying %s; loaded conference names.",
+                        os.path.basename(control_path),
+                    )
                 except Exception as e:
-                    logger.warning("Found accompanying CONTROL.DAT but failed to parse it: %s", str(e))
+                    logger.warning(
+                        "Found accompanying CONTROL.DAT but failed to parse it: %s",
+                        str(e),
+                    )
 
     return file_data, board_dict
 
@@ -1996,7 +2205,7 @@ def load_data(
 def _parse_control_dat(
     control_data: list[bytes],
     logger: logging.Logger | None = None,
-    encoding: str = 'cp437',
+    encoding: str = "cp437",
 ) -> ConferenceMap:
     if logger is None:
         logger = logging.getLogger(__name__)
@@ -2007,18 +2216,19 @@ def _parse_control_dat(
         )
 
     bbs_info = BBSInfo()
+
     def dec(b):
         try:
             return b.decode(encoding).strip()
         except UnicodeDecodeError:
-            return b.decode('latin1').strip()
+            return b.decode("latin1").strip()
 
     bbs_info.name = dec(control_data[0])
     bbs_info.location = dec(control_data[1])
     bbs_info.phone = dec(control_data[2])
     bbs_info.sysop = dec(control_data[3])
 
-    line5 = dec(control_data[4]).split(',', 1)
+    line5 = dec(control_data[4]).split(",", 1)
     bbs_info.serial_number = line5[0].strip()
     if len(line5) > 1:
         bbs_info.bbs_id = line5[1].strip()
@@ -2069,7 +2279,7 @@ def _parse_control_dat(
 def parse_messages(
     file_data: bytearray,
     progress_bar: ProgressBar | None,
-    encoding: str = 'cp437',
+    encoding: str = "cp437",
     headers_only: bool = False,
 ) -> Iterator[ParsedMessage]:
     """Convert the original bytes from a QWK message file into a list of messages.
@@ -2088,7 +2298,7 @@ def parse_messages(
         InvalidMessageTypeError: If a message header encodes an unknown message type.
     """
     blocks_remaining = 0
-    message_buffer = ''
+    message_buffer = ""
     header: MessageHeader | None = None
 
     if len(file_data) < BLOCK_SIZE:
@@ -2109,7 +2319,7 @@ def parse_messages(
     # Most REPLY.DAT files just start with the BBS ID in the first 128-byte block.
 
     for i in range(BLOCK_SIZE, len(file_data), BLOCK_SIZE):
-        record = file_data[i:i + BLOCK_SIZE]
+        record = file_data[i : i + BLOCK_SIZE]
         if progress_bar is not None:
             progress_bar.update(len(record))
         if blocks_remaining == 0:
@@ -2123,11 +2333,11 @@ def parse_messages(
                 )
                 continue
 
-            message_buffer = ''
+            message_buffer = ""
             if header.numblocks is None or header.numblocks < 1:
                 logging.warning(
                     "Invalid block count '%s' in message header at offset %s; skipping message.",
-                    getattr(header, '_numblocks_raw', header.numblocks),
+                    getattr(header, "_numblocks_raw", header.numblocks),
                     i,
                 )
                 continue
@@ -2143,9 +2353,9 @@ def parse_messages(
                 )
         else:
             if not headers_only:
-                temp_record = record.replace(b'\xe3', b'\r\n').decode(encoding)
+                temp_record = record.replace(b"\xe3", b"\r\n").decode(encoding)
                 if blocks_remaining == 1:
-                    temp_record = temp_record.rstrip() + '\r\n'
+                    temp_record = temp_record.rstrip() + "\r\n"
                 message_buffer += temp_record
 
             blocks_remaining = blocks_remaining - 1
@@ -2168,8 +2378,8 @@ def _redact_pii(text: str) -> str:
     """Hide email addresses and phone numbers in text."""
     if not text:
         return text
-    text = RE_EMAIL_PATTERN.sub('[EMAIL]', text)
-    text = RE_PHONE_PATTERN.sub('[PHONE]', text)
+    text = RE_EMAIL_PATTERN.sub("[EMAIL]", text)
+    text = RE_PHONE_PATTERN.sub("[PHONE]", text)
     return text
 
 
@@ -2194,7 +2404,7 @@ def process_message(
     Returns:
         The cleaned message text.
     """
-    message_buffer = message_buffer.lstrip('\r\n').rstrip()
+    message_buffer = message_buffer.lstrip("\r\n").rstrip()
     lines = message_buffer.splitlines()
 
     new_lines = []
@@ -2213,9 +2423,12 @@ def process_message(
                 continue
             # Remove lines between two quoted lines to handle quotes that were broken
             # across lines by the original BBS software.
-            elif j > 0 and j < (len(lines) - 1) \
-                and RE_QUOTE_PATTERN.match(lines[j - 1]) \
-                and RE_QUOTE_PATTERN.match(lines[j + 1]):
+            elif (
+                j > 0
+                and j < (len(lines) - 1)
+                and RE_QUOTE_PATTERN.match(lines[j - 1])
+                and RE_QUOTE_PATTERN.match(lines[j + 1])
+            ):
                 continue
         if binaries_removal:
             should_skip, in_yenc_block, in_uue_block, in_base64_block = _is_binary_line(
@@ -2228,14 +2441,16 @@ def process_message(
         if redact_pii:
             line = _redact_pii(line)
         if strip_ansi:
-            line = RE_ANSI_ESCAPE_PATTERN.sub('', line)
+            line = RE_ANSI_ESCAPE_PATTERN.sub("", line)
         new_lines.append(line)
         previous_line = line
 
-    return '\r\n'.join(new_lines) + '\r\n'
+    return "\r\n".join(new_lines) + "\r\n"
 
 
-def _create_progress_bar(total: int, quiet: bool, desc: str = 'Processing messages') -> Any:
+def _create_progress_bar(
+    total: int, quiet: bool, desc: str = "Processing messages"
+) -> Any:
     """Create a progress bar instance or a null context.
 
     Args:
@@ -2251,15 +2466,18 @@ def _create_progress_bar(total: int, quiet: bool, desc: str = 'Processing messag
 
     try:
         from tqdm import tqdm  # type: ignore
+
         return tqdm(
             total=total,
-            unit='B',
+            unit="B",
             unit_scale=True,
             desc=desc,
         )
     except ImportError:  # pragma: no cover - tqdm is optional
         if not getattr(_create_progress_bar, "_logged_missing_tqdm", False):
-            logging.getLogger(__name__).info('Install tqdm to enable progress reporting.')
+            logging.getLogger(__name__).info(
+                "Install tqdm to enable progress reporting."
+            )
             setattr(_create_progress_bar, "_logged_missing_tqdm", True)
         return nullcontext()
 
@@ -2309,6 +2527,7 @@ def matches_filters(
     Returns:
         True if the message matches all filters, False otherwise.
     """
+
     def check_str_match(pattern: str, text: str) -> bool:
         if settings.regex:
             try:
@@ -2329,7 +2548,9 @@ def matches_filters(
         return any(check_str_match(p, text) for p in pattern_list)
 
     # 1. Private/Password Check
-    if (not settings.private and message.header.is_private) or message.header.is_password:
+    if (
+        not settings.private and message.header.is_private
+    ) or message.header.is_password:
         return False
 
     # 2. Conference Filter
@@ -2375,11 +2596,28 @@ def matches_filters(
             or check_str_match(settings.search_term, message.header.msgto)
             or check_str_match(settings.search_term, message.header.msgsubject)
             or check_str_match(settings.search_term, message.text)
-            or (message.confname and check_str_match(settings.search_term, message.confname))
-            or (message.bbs_name and check_str_match(settings.search_term, message.bbs_name))
-            or (message.bbs_id and check_str_match(settings.search_term, message.bbs_id))
-            or (message.source_file and check_str_match(settings.search_term, message.source_file))
-            or (message.attachments and any(check_str_match(settings.search_term, a) for a in message.attachments))
+            or (
+                message.confname
+                and check_str_match(settings.search_term, message.confname)
+            )
+            or (
+                message.bbs_name
+                and check_str_match(settings.search_term, message.bbs_name)
+            )
+            or (
+                message.bbs_id and check_str_match(settings.search_term, message.bbs_id)
+            )
+            or (
+                message.source_file
+                and check_str_match(settings.search_term, message.source_file)
+            )
+            or (
+                message.attachments
+                and any(
+                    check_str_match(settings.search_term, a)
+                    for a in message.attachments
+                )
+            )
         )
         if not found:
             return False
@@ -2435,7 +2673,7 @@ def matches_filters(
 
 def _slugify(text: str, default: str) -> str:
     """Create a safe name for a file or folder by removing special characters."""
-    slug = re.sub(r'[^a-zA-Z0-9]+', '_', text).strip('_').lower()[:30]
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_").lower()[:30]
     return slug if slug else default
 
 
@@ -2449,7 +2687,9 @@ def format_size(size: int) -> str:
         return f"{size / (1024 * 1024):.1f} MB"
 
 
-def _get_message_mapping(message: ParsedMessage, count: int, redact_pii: bool = False) -> dict[str, Any]:
+def _get_message_mapping(
+    message: ParsedMessage, count: int, redact_pii: bool = False
+) -> dict[str, Any]:
     """Generate a dictionary of variables representing a message's archive information."""
     header = message.header
     dt = _parse_qwk_date(header.msgdate, header.msgtime)
@@ -2483,33 +2723,35 @@ def _get_message_mapping(message: ParsedMessage, count: int, redact_pii: bool = 
         indent = "  " * (message.depth - 1) + "└ "
 
     return {
-        'confnum': header.confnum,
-        'confname': message.confname or "",
-        'msgnum': header.msgnum if header.msgnum is not None else count,
-        'author': author,
-        'to': to,
-        'subject': subject,
-        'date': header.msgdate,
-        'time': header.msgtime,
-        'year': dt.year,
-        'month': f"{dt.month:02d}",
-        'day': f"{dt.day:02d}",
-        'hour': f"{dt.hour:02d}",
-        'minute': f"{dt.minute:02d}",
-        'second': f"{dt.second:02d}",
-        'iso_date': dt.date().isoformat(),
-        'iso_time': dt.time().isoformat(),
-        'bbs_name': message.bbs_name or "",
-        'bbs_id': message.bbs_id or "",
-        'length': len(message.text) if message.text else 0,
-        'size': format_size(len(message.text)) if message.text else "0 B",
-        'flags': flags,
-        'snippet': snippet,
-        'indent': indent,
+        "confnum": header.confnum,
+        "confname": message.confname or "",
+        "msgnum": header.msgnum if header.msgnum is not None else count,
+        "author": author,
+        "to": to,
+        "subject": subject,
+        "date": header.msgdate,
+        "time": header.msgtime,
+        "year": dt.year,
+        "month": f"{dt.month:02d}",
+        "day": f"{dt.day:02d}",
+        "hour": f"{dt.hour:02d}",
+        "minute": f"{dt.minute:02d}",
+        "second": f"{dt.second:02d}",
+        "iso_date": dt.date().isoformat(),
+        "iso_time": dt.time().isoformat(),
+        "bbs_name": message.bbs_name or "",
+        "bbs_id": message.bbs_id or "",
+        "length": len(message.text) if message.text else 0,
+        "size": format_size(len(message.text)) if message.text else "0 B",
+        "flags": flags,
+        "snippet": snippet,
+        "indent": indent,
     }
 
 
-def _generate_safe_filename(message: ParsedMessage, settings_or_format: ProcessingSettings | str, count: int) -> str:
+def _generate_safe_filename(
+    message: ParsedMessage, settings_or_format: ProcessingSettings | str, count: int
+) -> str:
     """Generate a human-readable filename for an individual message."""
     if isinstance(settings_or_format, ProcessingSettings):
         settings = settings_or_format
@@ -2518,17 +2760,19 @@ def _generate_safe_filename(message: ParsedMessage, settings_or_format: Processi
         settings = None
         output_format = settings_or_format
 
-    ext = FORMAT_EXTENSIONS.get(output_format, '.txt')
+    ext = FORMAT_EXTENSIONS.get(output_format, ".txt")
 
     if settings and settings.filename_pattern:
         try:
-            raw_mapping = _get_message_mapping(message, count, redact_pii=settings.redact_pii if settings else False)
+            raw_mapping = _get_message_mapping(
+                message, count, redact_pii=settings.redact_pii if settings else False
+            )
 
             # Map of variable names to their slugify defaults for filename compatibility
             defaults = {
-                'confname': 'conf',
-                'bbs_name': 'bbs',
-                'bbs_id': 'id',
+                "confname": "conf",
+                "bbs_name": "bbs",
+                "bbs_id": "id",
             }
 
             # Slugify all string values for use in a filename
@@ -2536,7 +2780,7 @@ def _generate_safe_filename(message: ParsedMessage, settings_or_format: Processi
             for k, v in raw_mapping.items():
                 if isinstance(v, str):
                     df = defaults.get(k, k)
-                    if k == 'confname' and not v:
+                    if k == "confname" and not v:
                         mapping[k] = _slugify(f"conf_{message.confnum}", "conf")
                     else:
                         mapping[k] = _slugify(v, df)
@@ -2546,7 +2790,7 @@ def _generate_safe_filename(message: ParsedMessage, settings_or_format: Processi
             # Use formatting while preserving the pattern's intent
             filename = settings.filename_pattern.format(**mapping)
             # Basic sanitization of the resulting filename (replace any remaining odd chars)
-            filename = re.sub(r'[^\w\-.]', '_', filename)
+            filename = re.sub(r"[^\w\-.]", "_", filename)
             if not filename.endswith(ext):
                 filename += ext
             return filename
@@ -2573,22 +2817,24 @@ def process_merged_files(
     output_mode = settings.output_mode
     resolved_output_path = settings.output_path
 
-    if output_mode == 'stdout' and resolved_output_path is not None:
-        raise ValueError('Output path cannot be provided when output mode is stdout.')
+    if output_mode == "stdout" and resolved_output_path is not None:
+        raise ValueError("Output path cannot be provided when output mode is stdout.")
     if (
         not settings.individual_files
-        and output_mode == 'file'
+        and output_mode == "file"
         and resolved_output_path is None
     ):
-        raise ValueError('An output path is required when output mode is file.')
+        raise ValueError("An output path is required when output mode is file.")
 
     output_dir: str | None = None
     if settings.individual_files:
         if resolved_output_path is None:
-            raise ValueError('An output path is required when using individual files.')
+            raise ValueError("An output path is required when using individual files.")
         output_dir = resolved_output_path
         if os.path.exists(output_dir) and not os.path.isdir(output_dir):
-            raise ValueError('The output path must be a folder when using individual files.')
+            raise ValueError(
+                "The output path must be a folder when using individual files."
+            )
         if not settings.dry_run:
             os.makedirs(output_dir, exist_ok=True)
 
@@ -2596,27 +2842,36 @@ def process_merged_files(
     seen_ids: set[tuple[str, int, int | str]] = set()
 
     use_colors = (
-        output_mode == 'stdout'
-        and settings.format == 'text'
-        and hasattr(sys.stdout, 'isatty')
+        output_mode == "stdout"
+        and settings.format == "text"
+        and hasattr(sys.stdout, "isatty")
         and sys.stdout.isatty()
     )
 
     separator_mode = settings.separator
-    if separator_mode == 'auto':
+    if separator_mode == "auto":
         if settings.individual_files or settings.format in (
-            'json', 'xml', 'html', 'csv', 'markdown', 'sqlite', 'mbox', 'eml', 'qwk', 'rep'
+            "json",
+            "xml",
+            "html",
+            "csv",
+            "markdown",
+            "sqlite",
+            "mbox",
+            "eml",
+            "qwk",
+            "rep",
         ):
-            separator_mode = 'none'
+            separator_mode = "none"
         else:
-            separator_mode = 'dashes'
+            separator_mode = "dashes"
     separator_str = ""
-    if separator_mode == 'dashes':
+    if separator_mode == "dashes":
         separator_str = ("-" * 80) + "\r\n"
         if use_colors:
             # ANSI Dim (90)
             separator_str = f"\x1b[90m{separator_str}\x1b[0m"
-    elif separator_mode == 'blank':
+    elif separator_mode == "blank":
         separator_str = "\r\n"
 
     total_matching = 0
@@ -2630,14 +2885,21 @@ def process_merged_files(
     board_dict_to_use = None
     total_attachments = 0
 
-    include_header = not settings.no_header and settings.format == 'text'
-    target_encoding = 'utf-8'
-    if settings.individual_files and settings.format == 'text':
+    include_header = not settings.no_header and settings.format == "text"
+    target_encoding = "utf-8"
+    if settings.individual_files and settings.format == "text":
         target_encoding = settings.encoding
 
-    def handle_output(parsed_message: ParsedMessage, board_dict: dict[int, str]) -> bool:
+    def handle_output(
+        parsed_message: ParsedMessage, board_dict: dict[int, str]
+    ) -> bool:
         """Process and output a single message. Returns True if processing should stop."""
-        nonlocal total_matching, processed_count, estimated_bytes, potential_files, collected_for_index
+        nonlocal \
+            total_matching, \
+            processed_count, \
+            estimated_bytes, \
+            potential_files, \
+            collected_for_index
 
         total_matching += 1
         if settings.skip is not None and total_matching <= settings.skip:
@@ -2679,9 +2941,11 @@ def process_merged_files(
                         target_path = os.path.join(attach_dir, filename)
                         counter = 1
                         while os.path.exists(target_path):
-                            target_path = os.path.join(attach_dir, f"{base}_{counter}{ext}")
+                            target_path = os.path.join(
+                                attach_dir, f"{base}_{counter}{ext}"
+                            )
                             counter += 1
-                        with open(target_path, 'wb') as f:
+                        with open(target_path, "wb") as f:
                             f.write(data)
                 else:
                     total_attachments += len(found_attachments)
@@ -2706,24 +2970,28 @@ def process_merged_files(
                 cleaned_body,
                 settings.search_term,
                 settings.regex,
-                use_colors=use_colors
+                use_colors=use_colors,
             )
 
         if settings.oneline:
             if settings.oneline_pattern:
                 try:
-                    mapping = _get_message_mapping(parsed_message, processed_count, redact_pii=settings.redact_pii)
+                    mapping = _get_message_mapping(
+                        parsed_message, processed_count, redact_pii=settings.redact_pii
+                    )
                     # Apply fallbacks for oneline display
-                    if not mapping['confname']:
-                        mapping['confname'] = f"Conference {parsed_message.confnum}"
+                    if not mapping["confname"]:
+                        mapping["confname"] = f"Conference {parsed_message.confnum}"
 
-                    processed_buffer = settings.oneline_pattern.format(**mapping) + "\r\n"
+                    processed_buffer = (
+                        settings.oneline_pattern.format(**mapping) + "\r\n"
+                    )
                     # Apply search highlighting to the resulting line
                     processed_buffer = _highlight_text(
                         processed_buffer,
                         settings.search_term,
                         settings.regex,
-                        use_colors=use_colors
+                        use_colors=use_colors,
                     )
                 except (KeyError, ValueError):
                     # Fallback if pattern is invalid
@@ -2758,11 +3026,11 @@ def process_merged_files(
             if include_header:
                 leading_newlines = 0
                 text_prefix = parsed_message.text
-                while text_prefix.startswith('\r\n'):
+                while text_prefix.startswith("\r\n"):
                     leading_newlines += 1
                     text_prefix = text_prefix[2:]
-                if leading_newlines and not processed_buffer.startswith('\r\n'):
-                    processed_buffer = ('\r\n' * leading_newlines) + processed_buffer
+                if leading_newlines and not processed_buffer.startswith("\r\n"):
+                    processed_buffer = ("\r\n" * leading_newlines) + processed_buffer
 
                 header_text = parsed_message.header.format_text(
                     board_dict,
@@ -2778,15 +3046,24 @@ def process_merged_files(
                 processed_buffer = header_text + processed_buffer
 
             # Add separator for text format
-            if settings.format == 'text':
+            if settings.format == "text":
                 processed_buffer = separator_str + processed_buffer
 
         # Determine appropriate text content for modern formats
-        if settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml') and settings.headers_only:
+        if (
+            settings.format in ("json", "xml", "csv", "sqlite", "mbox", "eml")
+            and settings.headers_only
+        ):
             text_content = ""
-        elif (
-            settings.oneline
-            and settings.format in ('json', 'xml', 'csv', 'sqlite', 'mbox', 'eml', 'html', 'markdown')
+        elif settings.oneline and settings.format in (
+            "json",
+            "xml",
+            "csv",
+            "sqlite",
+            "mbox",
+            "eml",
+            "html",
+            "markdown",
         ):
             text_content = cleaned_body
         else:
@@ -2799,13 +3076,15 @@ def process_merged_files(
 
             target_dir = output_dir
             relative_sub_path = ""
-            if any([
-                settings.organize,
-                settings.organize_by_date,
-                settings.organize_by_bbs,
-                settings.organize_by_author,
-                settings.organize_by_to
-            ]):
+            if any(
+                [
+                    settings.organize,
+                    settings.organize_by_date,
+                    settings.organize_by_bbs,
+                    settings.organize_by_author,
+                    settings.organize_by_to,
+                ]
+            ):
                 sub_parts = []
                 if settings.organize_by_bbs:
                     bbs_name = parsed_message.bbs_name or "unknown_bbs"
@@ -2825,9 +3104,11 @@ def process_merged_files(
                     sub_parts.append(f"{parsed_message.confnum:03d}-{conf_slug}")
 
                 if settings.organize_by_date:
-                    msg_dt = _parse_qwk_date(parsed_message.header.msgdate, parsed_message.header.msgtime)
-                    sub_parts.append(msg_dt.strftime('%Y'))
-                    sub_parts.append(msg_dt.strftime('%m'))
+                    msg_dt = _parse_qwk_date(
+                        parsed_message.header.msgdate, parsed_message.header.msgtime
+                    )
+                    sub_parts.append(msg_dt.strftime("%Y"))
+                    sub_parts.append(msg_dt.strftime("%m"))
 
                 relative_sub_path = os.path.join(*sub_parts)
                 target_dir = os.path.join(output_dir, relative_sub_path)
@@ -2838,41 +3119,49 @@ def process_merged_files(
             if settings.extract_attachments:
                 if relative_sub_path:
                     # Each level of directory nesting requires an extra '../'
-                    depth = len(relative_sub_path.replace(os.sep, '/').split('/'))
+                    depth = len(relative_sub_path.replace(os.sep, "/").split("/"))
                     attachment_prefix = ("../" * depth) + "attachments/"
                 else:
                     attachment_prefix = "attachments/"
 
-            if settings.format == 'text':
+            if settings.format == "text":
                 encoded_buffer = processed_buffer.encode(target_encoding)
-            elif settings.format == 'json':
+            elif settings.format == "json":
                 encoded_buffer = json.dumps(
                     _message_to_dict(temp_msg), indent=4, ensure_ascii=False
                 ).encode(target_encoding)
-            elif settings.format == 'xml':
-                encoded_buffer = _xml_element_to_str(_message_to_xml_element(temp_msg)).encode(target_encoding)
-            elif settings.format == 'html':
+            elif settings.format == "xml":
+                encoded_buffer = _xml_element_to_str(
+                    _message_to_xml_element(temp_msg)
+                ).encode(target_encoding)
+            elif settings.format == "html":
                 encoded_buffer = _serialize_message_html(
                     temp_msg,
                     attachment_prefix=attachment_prefix,
                     search_term=settings.search_term,
                     is_regex=settings.regex,
                 ).encode(target_encoding)
-            elif settings.format == 'markdown':
+            elif settings.format == "markdown":
                 encoded_buffer = _serialize_message_markdown(
                     temp_msg,
                     attachment_prefix=attachment_prefix,
                     search_term=settings.search_term,
                     is_regex=settings.regex,
                 ).encode(target_encoding)
-            elif settings.format == 'mbox':
-                encoded_buffer = _serialize_rfc822(temp_msg, include_mbox_header=True).encode(target_encoding)
-            elif settings.format == 'eml':
-                encoded_buffer = _serialize_rfc822(temp_msg, include_mbox_header=False).encode(target_encoding)
+            elif settings.format == "mbox":
+                encoded_buffer = _serialize_rfc822(
+                    temp_msg, include_mbox_header=True
+                ).encode(target_encoding)
+            elif settings.format == "eml":
+                encoded_buffer = _serialize_rfc822(
+                    temp_msg, include_mbox_header=False
+                ).encode(target_encoding)
             else:
                 encoded_buffer = processed_buffer.encode(target_encoding)
 
-            filename = _generate_safe_filename(parsed_message, settings, processed_count)
+            filename = _generate_safe_filename(
+                parsed_message, settings, processed_count
+            )
             full_path = os.path.join(target_dir, filename)
 
             # Avoid duplicate filenames
@@ -2892,32 +3181,35 @@ def process_merged_files(
             estimated_bytes += len(encoded_buffer)
             potential_files += 1
 
-            if settings.format in ('html', 'markdown'):
+            if settings.format in ("html", "markdown"):
                 rel_path = os.path.join(relative_sub_path, filename)
-                collected_for_index.append({
-                    'path': rel_path,
-                    'subject': parsed_message.header.msgsubject.strip(),
-                    'from': parsed_message.header.msgfrom.strip(),
-                    'to': parsed_message.header.msgto.strip(),
-                    'date': f"{parsed_message.header.msgdate} {parsed_message.header.msgtime}",
-                    'conf_num': parsed_message.confnum,
-                    'conf_name': parsed_message.confname or f"Conference {parsed_message.confnum}",
-                    'msgnum': parsed_message.header.msgnum,
-                    'attachments': parsed_message.attachments,
-                })
+                collected_for_index.append(
+                    {
+                        "path": rel_path,
+                        "subject": parsed_message.header.msgsubject.strip(),
+                        "from": parsed_message.header.msgfrom.strip(),
+                        "to": parsed_message.header.msgto.strip(),
+                        "date": f"{parsed_message.header.msgdate} {parsed_message.header.msgtime}",
+                        "conf_num": parsed_message.confnum,
+                        "conf_name": parsed_message.confname
+                        or f"Conference {parsed_message.confnum}",
+                        "msgnum": parsed_message.header.msgnum,
+                        "attachments": parsed_message.attachments,
+                    }
+                )
 
             if not settings.dry_run:
-                with open(full_path, 'wb') as f:
+                with open(full_path, "wb") as f:
                     f.write(encoded_buffer)
         else:
-            estimated_bytes += len(processed_buffer.encode('utf-8'))
+            estimated_bytes += len(processed_buffer.encode("utf-8"))
             if not settings.dry_run:
                 collected_messages.append(temp_msg)
         return False
 
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
-        bbs_info = getattr(board_dict, 'bbs_info', None)
+        bbs_info = getattr(board_dict, "bbs_info", None)
         user_name = bbs_info.user_name if bbs_info else None
         if bbs_info and not bbs_info_to_use:
             bbs_info_to_use = bbs_info
@@ -2932,11 +3224,13 @@ def process_merged_files(
         is_structured = isinstance(file_data, list)
         total_progress = len(file_data)
 
-        with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+        with _create_progress_bar(
+            total_progress, settings.quiet, desc=desc
+        ) as progress_bar:
             if is_structured:
                 messages_to_process = file_data
                 if progress_bar is not None:
-                    progress_bar.unit = 'msg'
+                    progress_bar.unit = "msg"
                     progress_bar.unit_scale = False
             else:
                 messages_to_process = parse_messages(
@@ -2952,24 +3246,40 @@ def process_merged_files(
 
                 parsed_message = replace(
                     parsed_message,
-                    confname=parsed_message.confname or board_dict.get(parsed_message.confnum),
-                    bbs_name=parsed_message.bbs_name or (bbs_info.name if bbs_info else None),
-                    bbs_id=parsed_message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
-                    source_file=parsed_message.source_file or os.path.basename(input_path),
+                    confname=parsed_message.confname
+                    or board_dict.get(parsed_message.confnum),
+                    bbs_name=parsed_message.bbs_name
+                    or (bbs_info.name if bbs_info else None),
+                    bbs_id=parsed_message.bbs_id
+                    or (bbs_info.bbs_id if bbs_info else None),
+                    source_file=parsed_message.source_file
+                    or os.path.basename(input_path),
                 )
-                if not matches_filters(parsed_message, settings, allowed_conferences, user_name):
+                if not matches_filters(
+                    parsed_message, settings, allowed_conferences, user_name
+                ):
                     continue
 
                 if settings.unique:
                     msg_id: tuple[str, int, int | str]
                     # Use the message's own BBS information for the ID to ensure
                     # correct deduplication across mixed sources (e.g. JSONL)
-                    current_bbs_key = f"{parsed_message.bbs_name}|{parsed_message.bbs_id}" if parsed_message.bbs_name or parsed_message.bbs_id else bbs_key
+                    current_bbs_key = (
+                        f"{parsed_message.bbs_name}|{parsed_message.bbs_id}"
+                        if parsed_message.bbs_name or parsed_message.bbs_id
+                        else bbs_key
+                    )
                     if parsed_message.msgnum is not None:
-                        msg_id = (current_bbs_key, parsed_message.confnum, parsed_message.msgnum)
+                        msg_id = (
+                            current_bbs_key,
+                            parsed_message.confnum,
+                            parsed_message.msgnum,
+                        )
                     else:
                         content_hash = hashlib.sha1(
-                            parsed_message.text.encode(settings.encoding, errors='replace')
+                            parsed_message.text.encode(
+                                settings.encoding, errors="replace"
+                            )
                         ).hexdigest()
                         msg_id = (current_bbs_key, parsed_message.confnum, content_hash)
 
@@ -2990,16 +3300,27 @@ def process_merged_files(
     if not use_streaming:
         reversal_needed = settings.reverse
         if settings.sort:
-            sort_keys: dict[str, Callable[[tuple[ParsedMessage, dict[int, str]]], Any]] = {
-                'date': lambda x: _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime),
-                'author': lambda x: x[0].header.msgfrom.lower(),
-                'to': lambda x: x[0].header.msgto.lower(),
-                'subject': lambda x: x[0].header.msgsubject.lower(),
-                'num': lambda x: (x[0].confnum, x[0].msgnum or 0),
-                'conference': lambda x: (x[0].confnum, _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)),
-                'bbs': lambda x: (x[0].bbs_name or "", x[0].bbs_id or "", _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime)),
-                'length': lambda x: len(x[0].text) if x[0].text else 0,
-                'size': lambda x: len(x[0].text) if x[0].text else 0,
+            sort_keys: dict[
+                str, Callable[[tuple[ParsedMessage, dict[int, str]]], Any]
+            ] = {
+                "date": lambda x: _parse_qwk_date(
+                    x[0].header.msgdate, x[0].header.msgtime
+                ),
+                "author": lambda x: x[0].header.msgfrom.lower(),
+                "to": lambda x: x[0].header.msgto.lower(),
+                "subject": lambda x: x[0].header.msgsubject.lower(),
+                "num": lambda x: (x[0].confnum, x[0].msgnum or 0),
+                "conference": lambda x: (
+                    x[0].confnum,
+                    _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime),
+                ),
+                "bbs": lambda x: (
+                    x[0].bbs_name or "",
+                    x[0].bbs_id or "",
+                    _parse_qwk_date(x[0].header.msgdate, x[0].header.msgtime),
+                ),
+                "length": lambda x: len(x[0].text) if x[0].text else 0,
+                "size": lambda x: len(x[0].text) if x[0].text else 0,
             }
             if settings.sort in sort_keys:
                 sort_buffer.sort(key=sort_keys[settings.sort], reverse=settings.reverse)
@@ -3018,23 +3339,44 @@ def process_merged_files(
             def gen_dummy_messages():
                 for info in collected_for_index:
                     # Date is stored as "msgdate msgtime", split carefully to avoid IndexError
-                    date_parts = info['date'].split(' ', 1)
+                    date_parts = info["date"].split(" ", 1)
                     msgdate = date_parts[0]
                     msgtime = date_parts[1] if len(date_parts) > 1 else ""
 
                     h = MessageHeader(
-                        status=" ", msgnum=info['msgnum'], msgdate=msgdate,
-                        msgtime=msgtime, msgto=info['to'], msgfrom=info['from'],
-                        msgsubject=info['subject'], msgpassword="", refnum=None, numblocks=None,
-                        msgflag=" ", confnum=info['conf_num'], lognum=0, nettag=""
+                        status=" ",
+                        msgnum=info["msgnum"],
+                        msgdate=msgdate,
+                        msgtime=msgtime,
+                        msgto=info["to"],
+                        msgfrom=info["from"],
+                        msgsubject=info["subject"],
+                        msgpassword="",
+                        refnum=None,
+                        numblocks=None,
+                        msgflag=" ",
+                        confnum=info["conf_num"],
+                        lognum=0,
+                        nettag="",
                     )
                     yield ParsedMessage(
-                        text="", msgnum=info['msgnum'], refnum=None, confnum=info['conf_num'],
-                        header=h, confname=info['conf_name'], attachments=info['attachments']
+                        text="",
+                        msgnum=info["msgnum"],
+                        refnum=None,
+                        confnum=info["conf_num"],
+                        header=h,
+                        confname=info["conf_name"],
+                        attachments=info["attachments"],
                     )
 
             export_stats = _compute_stats_from_messages(gen_dummy_messages())
-            _write_index(collected_for_index, resolved_output_path, settings, bbs_info_to_use, stats=export_stats)
+            _write_index(
+                collected_for_index,
+                resolved_output_path,
+                settings,
+                bbs_info_to_use,
+                stats=export_stats,
+            )
     else:
         if not settings.dry_run:
             ordered_messages = (
@@ -3043,7 +3385,11 @@ def process_merged_files(
                 else collected_messages
             )
             write_messages(
-                ordered_messages, resolved_output_path, settings, bbs_info_to_use, board_dict_to_use
+                ordered_messages,
+                resolved_output_path,
+                settings,
+                bbs_info_to_use,
+                board_dict_to_use,
             )
         else:
             potential_files = 1
@@ -3092,36 +3438,36 @@ def process_merged_files(
 
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
     return {
-        'header': message.header.as_dict,
-        'conference': message.confname,
-        'bbs_name': message.bbs_name,
-        'bbs_id': message.bbs_id,
-        'source_file': message.source_file,
-        'text': message.text,
-        'depth': message.depth,
-        'thread_id': message.thread_id,
-        'parent_msgnum': message.parent_msgnum,
-        'attachments': message.attachments or [],
+        "header": message.header.as_dict,
+        "conference": message.confname,
+        "bbs_name": message.bbs_name,
+        "bbs_id": message.bbs_id,
+        "source_file": message.source_file,
+        "text": message.text,
+        "depth": message.depth,
+        "thread_id": message.thread_id,
+        "parent_msgnum": message.parent_msgnum,
+        "attachments": message.attachments or [],
     }
 
 
 def _write_json(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
     output_data = [_message_to_dict(msg) for msg in messages]
     output_json = json.dumps(output_data, indent=4, ensure_ascii=False)
-    _write_text_output(output_json, output_path, encoding='utf-8')
+    _write_text_output(output_json, output_path, encoding="utf-8")
 
 
 def _write_jsonl(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -3130,150 +3476,157 @@ def _write_jsonl(
     for msg in messages:
         lines.append(json.dumps(_message_to_dict(msg), ensure_ascii=False))
     output_jsonl = "\n".join(lines)
-    _write_text_output(output_jsonl, output_path, encoding='utf-8')
+    _write_text_output(output_jsonl, output_path, encoding="utf-8")
 
 
-XML_INVALID_CHAR_PATTERN = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
+XML_INVALID_CHAR_PATTERN = re.compile(
+    r"[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]"
+)
 
 
 def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
     """Convert a message to an XML Element."""
-    msg_element = ET.Element('message')
+    msg_element = ET.Element("message")
 
     if message.depth > 0:
-        ET.SubElement(msg_element, 'depth').text = str(message.depth)
+        ET.SubElement(msg_element, "depth").text = str(message.depth)
     if message.thread_id:
-        ET.SubElement(msg_element, 'thread_id').text = str(message.thread_id)
+        ET.SubElement(msg_element, "thread_id").text = str(message.thread_id)
     if message.parent_msgnum is not None:
-        ET.SubElement(msg_element, 'parent_msgnum').text = str(message.parent_msgnum)
+        ET.SubElement(msg_element, "parent_msgnum").text = str(message.parent_msgnum)
 
     if message.confname:
-        ET.SubElement(msg_element, 'conference_name').text = message.confname
+        ET.SubElement(msg_element, "conference_name").text = message.confname
     if message.bbs_name:
-        ET.SubElement(msg_element, 'bbs_name').text = message.bbs_name
+        ET.SubElement(msg_element, "bbs_name").text = message.bbs_name
     if message.bbs_id:
-        ET.SubElement(msg_element, 'bbs_id').text = message.bbs_id
+        ET.SubElement(msg_element, "bbs_id").text = message.bbs_id
     if message.source_file:
-        ET.SubElement(msg_element, 'source_file').text = message.source_file
+        ET.SubElement(msg_element, "source_file").text = message.source_file
 
-    header_element = ET.SubElement(msg_element, 'header')
+    header_element = ET.SubElement(msg_element, "header")
     header_data = message.header.as_dict
     for key, value in header_data.items():
         child = ET.SubElement(header_element, key)
-        child.text = XML_INVALID_CHAR_PATTERN.sub('', str(value))
+        child.text = XML_INVALID_CHAR_PATTERN.sub("", str(value))
 
-    text_element = ET.SubElement(msg_element, 'text')
-    text_element.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
+    text_element = ET.SubElement(msg_element, "text")
+    text_element.text = XML_INVALID_CHAR_PATTERN.sub("", message.text)
 
     if message.attachments:
-        attachments_element = ET.SubElement(msg_element, 'attachments')
+        attachments_element = ET.SubElement(msg_element, "attachments")
         for filename in message.attachments:
-            ET.SubElement(attachments_element, 'attachment').text = filename
+            ET.SubElement(attachments_element, "attachment").text = filename
 
     return msg_element
 
 
 def _xml_element_to_str(element: ET.Element) -> str:
     """Helper to indent and convert an XML element to a string."""
-    ET.indent(element, space='  ')
-    return ET.tostring(element, encoding='unicode')
-
+    ET.indent(element, space="  ")
+    return ET.tostring(element, encoding="unicode")
 
 
 def _write_xml(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
-    root = ET.Element('messages')
+    root = ET.Element("messages")
     for message in messages:
         msg_element = _message_to_xml_element(message)
         root.append(msg_element)
 
     xml_text = _xml_element_to_str(root)
-    _write_text_output(xml_text, output_path, encoding='utf-8')
+    _write_text_output(xml_text, output_path, encoding="utf-8")
 
 
 def _write_rss(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
     """Export messages to an RSS 2.0 feed."""
-    title = 'QWK Message Archive'
+    title = "QWK Message Archive"
     if bbs_info and bbs_info.name:
         title = f"{bbs_info.name} Archive"
 
-    rss = ET.Element('rss', version='2.0')
-    channel = ET.SubElement(rss, 'channel')
-    ET.SubElement(channel, 'title').text = title
-    ET.SubElement(channel, 'link').text = "https://github.com/RainRat/pyqwk"
-    ET.SubElement(channel, 'description').text = f"Syndicated messages from {title}"
-    ET.SubElement(channel, 'generator').text = f"pyqwk {__version__}"
+    rss = ET.Element("rss", version="2.0")
+    channel = ET.SubElement(rss, "channel")
+    ET.SubElement(channel, "title").text = title
+    ET.SubElement(channel, "link").text = "https://github.com/RainRat/pyqwk"
+    ET.SubElement(channel, "description").text = f"Syndicated messages from {title}"
+    ET.SubElement(channel, "generator").text = f"pyqwk {__version__}"
 
     for message in messages:
-        item = ET.SubElement(channel, 'item')
-        ET.SubElement(item, 'title').text = XML_INVALID_CHAR_PATTERN.sub('', message.header.msgsubject)
+        item = ET.SubElement(channel, "item")
+        ET.SubElement(item, "title").text = XML_INVALID_CHAR_PATTERN.sub(
+            "", message.header.msgsubject
+        )
 
         # pubDate
         dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
-        ET.SubElement(item, 'pubDate').text = email.utils.format_datetime(dt)
+        ET.SubElement(item, "pubDate").text = email.utils.format_datetime(dt)
 
-        ET.SubElement(item, 'author').text = XML_INVALID_CHAR_PATTERN.sub('', message.header.msgfrom)
+        ET.SubElement(item, "author").text = XML_INVALID_CHAR_PATTERN.sub(
+            "", message.header.msgfrom
+        )
 
         # GUID
         msg_id = f"{message.header.confnum}.{message.header.msgnum if message.header.msgnum is not None else 'x'}@qwk"
-        guid = ET.SubElement(item, 'guid', isPermaLink='false')
+        guid = ET.SubElement(item, "guid", isPermaLink="false")
         guid.text = msg_id
 
         # Description (body)
-        desc = ET.SubElement(item, 'description')
-        desc.text = XML_INVALID_CHAR_PATTERN.sub('', message.text)
+        desc = ET.SubElement(item, "description")
+        desc.text = XML_INVALID_CHAR_PATTERN.sub("", message.text)
 
         if message.confname:
-            ET.SubElement(item, 'category').text = XML_INVALID_CHAR_PATTERN.sub('', message.confname)
+            ET.SubElement(item, "category").text = XML_INVALID_CHAR_PATTERN.sub(
+                "", message.confname
+            )
 
     xml_text = '<?xml version="1.0" encoding="utf-8"?>\n' + _xml_element_to_str(rss)
-    _write_text_output(xml_text, output_path, encoding='utf-8')
+    _write_text_output(xml_text, output_path, encoding="utf-8")
 
 
 def _get_html_header(title: str) -> list[str]:
     return [
-        '<!DOCTYPE html>',
+        "<!DOCTYPE html>",
         '<html lang="en">',
-        '<head>',
+        "<head>",
         '<meta charset="utf-8" />',
-        f'<title>{html.escape(title)}</title>',
-        '<style>',
-        '.reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }',
-        '.message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }',
-        '.header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }',
-        '.body { white-space: pre-wrap; font-family: monospace; }',
-        '.quote { color: #4e9a06; }',
-        '.stats-container { margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; background-color: #fcfcfc; }',
-        '.stats-grid { display: flex; flex-wrap: wrap; gap: 2em; }',
-        '.stats-box { flex: 1; min-width: 300px; }',
-        '.stats-bar-container { display: flex; align-items: center; margin-bottom: 0.5em; }',
-        '.stats-bar-label { width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }',
-        '.stats-bar-count { width: 40px; text-align: right; margin-right: 10px; font-weight: bold; font-size: 0.9em; }',
-        '.stats-bar { height: 1.2em; background-color: #00aaaa; min-width: 1px; }',
-        '.stats-summary-info { margin-bottom: 1em; font-size: 0.95em; color: #555; }',
-        '</style>',
-        '</head>',
-        '<body>',
+        f"<title>{html.escape(title)}</title>",
+        "<style>",
+        ".reply { margin-left: 2em; border-left: 2px solid #ccc; padding-left: 1em; }",
+        ".message { margin-bottom: 1em; border: 1px solid #eee; padding: 1em; }",
+        ".header { background-color: #f9f9f9; padding: 0.5em; margin-bottom: 0.5em; }",
+        ".body { white-space: pre-wrap; font-family: monospace; }",
+        ".quote { color: #4e9a06; }",
+        ".stats-container { margin-bottom: 2em; padding: 1em; border: 1px solid #ddd; background-color: #fcfcfc; }",
+        ".stats-grid { display: flex; flex-wrap: wrap; gap: 2em; }",
+        ".stats-box { flex: 1; min-width: 300px; }",
+        ".stats-bar-container { display: flex; align-items: center; margin-bottom: 0.5em; }",
+        ".stats-bar-label { width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }",
+        ".stats-bar-count { width: 40px; text-align: right; margin-right: 10px; font-weight: bold; font-size: 0.9em; }",
+        ".stats-bar { height: 1.2em; background-color: #00aaaa; min-width: 1px; }",
+        ".stats-summary-info { margin-bottom: 1em; font-size: 0.95em; color: #555; }",
+        "</style>",
+        "</head>",
+        "<body>",
     ]
 
 
 def _get_html_footer() -> list[str]:
     return [
-        '</body>',
-        '</html>',
+        "</body>",
+        "</html>",
     ]
 
 
@@ -3281,71 +3634,107 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
     """Render a statistics summary as an HTML fragment."""
     parts = []
     parts.append('<div class="stats-container">')
-    parts.append('<h2>Archive Summary</h2>')
+    parts.append("<h2>Archive Summary</h2>")
 
     parts.append('<div class="stats-summary-info">')
-    parts.append(f'<div><strong>Messages:</strong> {stats["matching_messages"]} matching / {stats["total_messages"]} total</div>')
-    if stats['dates']['earliest']:
-        earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
-        latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
-        parts.append(f'<div><strong>Date Range:</strong> {earliest} to {latest}</div>')
-    parts.append(f'<div><strong>Reply Rate:</strong> {stats["reply_rate"]}%</div>')
-    parts.append(f'<div><strong>Avg Length:</strong> {int(stats.get("avg_message_length", 0))} characters</div>')
-    parts.append('</div>')
+    parts.append(
+        f"<div><strong>Messages:</strong> {stats['matching_messages']} matching / {stats['total_messages']} total</div>"
+    )
+    if stats["dates"]["earliest"]:
+        earliest = datetime.datetime.fromisoformat(stats["dates"]["earliest"]).strftime(
+            "%Y-%m-%d"
+        )
+        latest = datetime.datetime.fromisoformat(stats["dates"]["latest"]).strftime(
+            "%Y-%m-%d"
+        )
+        parts.append(f"<div><strong>Date Range:</strong> {earliest} to {latest}</div>")
+    parts.append(f"<div><strong>Reply Rate:</strong> {stats['reply_rate']}%</div>")
+    parts.append(
+        f"<div><strong>Avg Length:</strong> {int(stats.get('avg_message_length', 0))} characters</div>"
+    )
+    parts.append("</div>")
 
     def render_html_bar_chart(title, items, label_key, count_key):
         if not items:
             return
         parts.append('<div class="stats-box">')
-        parts.append(f'<h3>{title}</h3>')
+        parts.append(f"<h3>{title}</h3>")
         max_count = max(item[count_key] for item in items) if items else 1
         for item in items[:5]:
             width = int(item[count_key] * 100 / max_count)
             label = str(item[label_key])
             parts.append('<div class="stats-bar-container">')
-            parts.append(f'<div class="stats-bar-label" title="{html.escape(label)}">{html.escape(label)}</div>')
+            parts.append(
+                f'<div class="stats-bar-label" title="{html.escape(label)}">{html.escape(label)}</div>'
+            )
             parts.append(f'<div class="stats-bar-count">{item[count_key]}</div>')
             parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
-            parts.append('</div>')
-        parts.append('</div>')
+            parts.append("</div>")
+        parts.append("</div>")
 
     parts.append('<div class="stats-grid">')
 
-    render_html_bar_chart('Top Authors', stats.get('authors'), 'name', 'count')
-    render_html_bar_chart('Top Recipients', stats.get('recipients'), 'name', 'count')
-    render_html_bar_chart('Top BBSes', stats.get('bbses'), 'name', 'count')
+    render_html_bar_chart("Top Authors", stats.get("authors"), "name", "count")
+    render_html_bar_chart("Top Recipients", stats.get("recipients"), "name", "count")
+    render_html_bar_chart("Top BBSes", stats.get("bbses"), "name", "count")
 
-    confs = [{"name": f"{c['number']}: {c['name']}", "count": c['count']} for c in stats.get('conferences', [])]
-    render_html_bar_chart('Top Conferences', confs, 'name', 'count')
+    confs = [
+        {"name": f"{c['number']}: {c['name']}", "count": c["count"]}
+        for c in stats.get("conferences", [])
+    ]
+    render_html_bar_chart("Top Conferences", confs, "name", "count")
 
-    render_html_bar_chart('Top Subjects', stats.get('subjects'), 'subject', 'count')
-    render_html_bar_chart('Top Keywords', stats.get('keywords'), 'word', 'count')
-    render_html_bar_chart('Top Links', stats.get('links'), 'url', 'count')
-    render_html_bar_chart('Top Emails', stats.get('emails'), 'email', 'count')
-    render_html_bar_chart('Top Phones', stats.get('phones'), 'phone', 'count')
-    render_html_bar_chart('Top Attachments', stats.get('top_attachments'), 'name', 'count')
-    render_html_bar_chart('Top Attachment Types', stats.get('top_attachment_types'), 'extension', 'count')
+    render_html_bar_chart("Top Subjects", stats.get("subjects"), "subject", "count")
+    render_html_bar_chart("Top Keywords", stats.get("keywords"), "word", "count")
+    render_html_bar_chart("Top Links", stats.get("links"), "url", "count")
+    render_html_bar_chart("Top Emails", stats.get("emails"), "email", "count")
+    render_html_bar_chart("Top Phones", stats.get("phones"), "phone", "count")
+    render_html_bar_chart(
+        "Top Attachments", stats.get("top_attachments"), "name", "count"
+    )
+    render_html_bar_chart(
+        "Top Attachment Types", stats.get("top_attachment_types"), "extension", "count"
+    )
 
     # Activity Distributions
-    if stats.get('year_distribution'):
-        years = [{"label": y, "count": c} for y, c in sorted(stats['year_distribution'].items())]
-        render_html_bar_chart('Yearly Activity', years, 'label', 'count')
+    if stats.get("year_distribution"):
+        years = [
+            {"label": y, "count": c}
+            for y, c in sorted(stats["year_distribution"].items())
+        ]
+        render_html_bar_chart("Yearly Activity", years, "label", "count")
 
-    if stats.get('month_distribution'):
-        months = [{"label": m, "count": c} for m, c in sorted(stats['month_distribution'].items())]
-        render_html_bar_chart('Monthly Activity', months, 'label', 'count')
+    if stats.get("month_distribution"):
+        months = [
+            {"label": m, "count": c}
+            for m, c in sorted(stats["month_distribution"].items())
+        ]
+        render_html_bar_chart("Monthly Activity", months, "label", "count")
 
-    if stats.get('day_of_week'):
-        days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        days = [{"label": d, "count": stats['day_of_week'].get(d, 0)} for d in days_order]
-        render_html_bar_chart('Day of Week Distribution', days, 'label', 'count')
+    if stats.get("day_of_week"):
+        days_order = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        days = [
+            {"label": d, "count": stats["day_of_week"].get(d, 0)} for d in days_order
+        ]
+        render_html_bar_chart("Day of Week Distribution", days, "label", "count")
 
-    if stats.get('hour_of_day'):
-        hours = [{"label": f"{int(h):02}:00", "count": c} for h, c in sorted(stats['hour_of_day'].items(), key=lambda x: int(x[0]))]
-        render_html_bar_chart('Hourly Distribution', hours, 'label', 'count')
+    if stats.get("hour_of_day"):
+        hours = [
+            {"label": f"{int(h):02}:00", "count": c}
+            for h, c in sorted(stats["hour_of_day"].items(), key=lambda x: int(x[0]))
+        ]
+        render_html_bar_chart("Hourly Distribution", hours, "label", "count")
 
-    parts.append('</div>')  # stats-grid
-    parts.append('</div>')  # stats-container
+    parts.append("</div>")  # stats-grid
+    parts.append("</div>")  # stats-container
     return parts
 
 
@@ -3369,38 +3758,46 @@ def _render_single_message_html(
     # Header
     header = message.header
     parts.append('<div class="header">')
-    parts.append(f'<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>')
-    parts.append(f'<div><strong>From:</strong> {h_esc(header.msgfrom)}</div>')
-    parts.append(f'<div><strong>To:</strong> {h_esc(header.msgto)}</div>')
-    parts.append(f'<div><strong>Subject:</strong> {h_esc(header.msgsubject)}</div>')
+    parts.append(
+        f"<div><strong>Date:</strong> {html.escape(header.msgdate)} {html.escape(header.msgtime)}</div>"
+    )
+    parts.append(f"<div><strong>From:</strong> {h_esc(header.msgfrom)}</div>")
+    parts.append(f"<div><strong>To:</strong> {h_esc(header.msgto)}</div>")
+    parts.append(f"<div><strong>Subject:</strong> {h_esc(header.msgsubject)}</div>")
 
     conf_name = message.confname or f"Conference {header.confnum}"
-    parts.append(f'<div><strong>Conference:</strong> {h_esc(conf_name)} ({header.confnum})</div>')
+    parts.append(
+        f"<div><strong>Conference:</strong> {h_esc(conf_name)} ({header.confnum})</div>"
+    )
 
     if message.bbs_name:
-        parts.append(f'<div><strong>BBS:</strong> {h_esc(message.bbs_name)}</div>')
+        parts.append(f"<div><strong>BBS:</strong> {h_esc(message.bbs_name)}</div>")
     if message.source_file:
-        parts.append(f'<div><strong>Source:</strong> {h_esc(message.source_file)}</div>')
+        parts.append(
+            f"<div><strong>Source:</strong> {h_esc(message.source_file)}</div>"
+        )
 
     if header.msgnum is not None:
-        parts.append(f'<div><strong>Number:</strong> {header.msgnum}</div>')
+        parts.append(f"<div><strong>Number:</strong> {header.msgnum}</div>")
 
     if message.attachments:
         links = []
         for filename in message.attachments:
             if attachment_prefix:
-                links.append(f'<a href="{attachment_prefix}{html.escape(filename)}">{html.escape(filename)}</a>')
+                links.append(
+                    f'<a href="{attachment_prefix}{html.escape(filename)}">{html.escape(filename)}</a>'
+                )
             else:
                 links.append(html.escape(filename))
-        parts.append(f'<div><strong>Attachments:</strong> {", ".join(links)}</div>')
+        parts.append(f"<div><strong>Attachments:</strong> {', '.join(links)}</div>")
 
-    parts.append('</div>')
+    parts.append("</div>")
 
     # Body
     parts.append('<pre class="body">')
 
-    body_text = message.text.replace('\r\n', '\n')
-    body_lines = body_text.split('\n')
+    body_text = message.text.replace("\r\n", "\n")
+    body_lines = body_text.split("\n")
     processed_lines = []
 
     for line in body_lines:
@@ -3411,9 +3808,9 @@ def _render_single_message_html(
         else:
             processed_lines.append(highlighted_line)
 
-    parts.append('\n'.join(processed_lines))
-    parts.append('</pre>')
-    parts.append('</div>')
+    parts.append("\n".join(processed_lines))
+    parts.append("</pre>")
+    parts.append("</div>")
 
     return parts
 
@@ -3425,7 +3822,7 @@ def _serialize_message_html(
     is_regex: bool = False,
 ) -> str:
     """Convert a single message to an HTML string."""
-    title = f"Search Results for '{search_term}'" if search_term else 'QWK Message'
+    title = f"Search Results for '{search_term}'" if search_term else "QWK Message"
     html_parts = _get_html_header(title)
     html_parts.extend(
         _render_single_message_html(
@@ -3437,7 +3834,7 @@ def _serialize_message_html(
     )
     html_parts.extend(_get_html_footer())
 
-    return '\n'.join(html_parts)
+    return "\n".join(html_parts)
 
 
 def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
@@ -3445,13 +3842,21 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
     parts = []
     parts.append("### Archive Summary\n")
 
-    parts.append(f"- **Messages:** {stats['matching_messages']} matching / {stats['total_messages']} total")
-    if stats['dates']['earliest']:
-        earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
-        latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+    parts.append(
+        f"- **Messages:** {stats['matching_messages']} matching / {stats['total_messages']} total"
+    )
+    if stats["dates"]["earliest"]:
+        earliest = datetime.datetime.fromisoformat(stats["dates"]["earliest"]).strftime(
+            "%Y-%m-%d"
+        )
+        latest = datetime.datetime.fromisoformat(stats["dates"]["latest"]).strftime(
+            "%Y-%m-%d"
+        )
         parts.append(f"- **Date Range:** {earliest} to {latest}")
     parts.append(f"- **Reply Rate:** {stats['reply_rate']}%")
-    parts.append(f"- **Avg Length:** {int(stats.get('avg_message_length', 0))} characters")
+    parts.append(
+        f"- **Avg Length:** {int(stats.get('avg_message_length', 0))} characters"
+    )
     parts.append("")
 
     def render_md_bar_chart(title, items, label_key, count_key):
@@ -3464,42 +3869,68 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
         for item in items[:5]:
             bar_len = int(item[count_key] * 20 / max_count) if max_count > 0 else 0
             bar = "#" * bar_len
-            label = str(item[label_key]).replace('|', '\\|')
+            label = str(item[label_key]).replace("|", "\\|")
             parts.append(f"| {label} | {item[count_key]} | `{bar}` |")
         parts.append("")
 
-    render_md_bar_chart('Top Authors', stats.get('authors'), 'name', 'count')
-    render_md_bar_chart('Top Recipients', stats.get('recipients'), 'name', 'count')
-    render_md_bar_chart('Top BBSes', stats.get('bbses'), 'name', 'count')
+    render_md_bar_chart("Top Authors", stats.get("authors"), "name", "count")
+    render_md_bar_chart("Top Recipients", stats.get("recipients"), "name", "count")
+    render_md_bar_chart("Top BBSes", stats.get("bbses"), "name", "count")
 
-    confs = [{"name": f"{c['number']}: {c['name']}", "count": c['count']} for c in stats.get('conferences', [])]
-    render_md_bar_chart('Top Conferences', confs, 'name', 'count')
+    confs = [
+        {"name": f"{c['number']}: {c['name']}", "count": c["count"]}
+        for c in stats.get("conferences", [])
+    ]
+    render_md_bar_chart("Top Conferences", confs, "name", "count")
 
-    render_md_bar_chart('Top Subjects', stats.get('subjects'), 'subject', 'count')
-    render_md_bar_chart('Top Keywords', stats.get('keywords'), 'word', 'count')
-    render_md_bar_chart('Top Links', stats.get('links'), 'url', 'count')
-    render_md_bar_chart('Top Emails', stats.get('emails'), 'email', 'count')
-    render_md_bar_chart('Top Phones', stats.get('phones'), 'phone', 'count')
-    render_md_bar_chart('Top Attachments', stats.get('top_attachments'), 'name', 'count')
-    render_md_bar_chart('Top Attachment Types', stats.get('top_attachment_types'), 'extension', 'count')
+    render_md_bar_chart("Top Subjects", stats.get("subjects"), "subject", "count")
+    render_md_bar_chart("Top Keywords", stats.get("keywords"), "word", "count")
+    render_md_bar_chart("Top Links", stats.get("links"), "url", "count")
+    render_md_bar_chart("Top Emails", stats.get("emails"), "email", "count")
+    render_md_bar_chart("Top Phones", stats.get("phones"), "phone", "count")
+    render_md_bar_chart(
+        "Top Attachments", stats.get("top_attachments"), "name", "count"
+    )
+    render_md_bar_chart(
+        "Top Attachment Types", stats.get("top_attachment_types"), "extension", "count"
+    )
 
     # Activity Distributions
-    if stats.get('year_distribution'):
-        years = [{"label": y, "count": c} for y, c in sorted(stats['year_distribution'].items())]
-        render_md_bar_chart('Yearly Activity', years, 'label', 'count')
+    if stats.get("year_distribution"):
+        years = [
+            {"label": y, "count": c}
+            for y, c in sorted(stats["year_distribution"].items())
+        ]
+        render_md_bar_chart("Yearly Activity", years, "label", "count")
 
-    if stats.get('month_distribution'):
-        months = [{"label": m, "count": c} for m, c in sorted(stats['month_distribution'].items())]
-        render_md_bar_chart('Monthly Activity', months, 'label', 'count')
+    if stats.get("month_distribution"):
+        months = [
+            {"label": m, "count": c}
+            for m, c in sorted(stats["month_distribution"].items())
+        ]
+        render_md_bar_chart("Monthly Activity", months, "label", "count")
 
-    if stats.get('day_of_week'):
-        days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        days = [{"label": d, "count": stats['day_of_week'].get(d, 0)} for d in days_order]
-        render_md_bar_chart('Day of Week Distribution', days, 'label', 'count')
+    if stats.get("day_of_week"):
+        days_order = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        days = [
+            {"label": d, "count": stats["day_of_week"].get(d, 0)} for d in days_order
+        ]
+        render_md_bar_chart("Day of Week Distribution", days, "label", "count")
 
-    if stats.get('hour_of_day'):
-        hours = [{"label": f"{int(h):02}:00", "count": c} for h, c in sorted(stats['hour_of_day'].items(), key=lambda x: int(x[0]))]
-        render_md_bar_chart('Hourly Distribution', hours, 'label', 'count')
+    if stats.get("hour_of_day"):
+        hours = [
+            {"label": f"{int(h):02}:00", "count": c}
+            for h, c in sorted(stats["hour_of_day"].items(), key=lambda x: int(x[0]))
+        ]
+        render_md_bar_chart("Hourly Distribution", hours, "label", "count")
 
     parts.append("---\n")
     return parts
@@ -3516,9 +3947,7 @@ def _render_single_message_markdown(
     parts = []
 
     def md_high(text: str) -> str:
-        return _apply_highlighting(
-            text, search_term, is_regex, "**", "**"
-        )
+        return _apply_highlighting(text, search_term, is_regex, "**", "**")
 
     parts.append(f"## {md_high(header.msgsubject)}")
     parts.append(f"- **Date:** {header.msgdate} {header.msgtime}")
@@ -3548,8 +3977,8 @@ def _render_single_message_markdown(
 
     parts.append("")
 
-    body_text = message.text.replace('\r\n', '\n')
-    body_lines = body_text.split('\n')
+    body_text = message.text.replace("\r\n", "\n")
+    body_lines = body_text.split("\n")
     processed_lines = []
 
     for line in body_lines:
@@ -3557,14 +3986,14 @@ def _render_single_message_markdown(
         highlighted_line = md_high(line)
         if is_quote:
             # Standardize to use '> ' for blockquotes if it's not already starting with it
-            if not highlighted_line.startswith('>'):
+            if not highlighted_line.startswith(">"):
                 processed_lines.append(f"> {highlighted_line}")
             else:
                 processed_lines.append(highlighted_line)
         else:
             processed_lines.append(highlighted_line)
 
-    parts.append('\n'.join(processed_lines))
+    parts.append("\n".join(processed_lines))
     parts.append("")
     parts.append("---")
     return parts
@@ -3577,7 +4006,7 @@ def _serialize_message_markdown(
     is_regex: bool = False,
 ) -> str:
     """Convert a single message to a Markdown string."""
-    title = f"Search Results for '{search_term}'" if search_term else 'QWK Message'
+    title = f"Search Results for '{search_term}'" if search_term else "QWK Message"
     md_parts = [f"# {title}\n"]
     md_parts.extend(
         _render_single_message_markdown(
@@ -3587,18 +4016,18 @@ def _serialize_message_markdown(
             is_regex=is_regex,
         )
     )
-    return '\n'.join(md_parts)
+    return "\n".join(md_parts)
 
 
 def _write_html(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
-    title = 'QWK Messages'
+    title = "QWK Messages"
     if bbs_info and bbs_info.name:
         title = f"{bbs_info.name} Archive"
 
@@ -3609,7 +4038,9 @@ def _write_html(
     is_regex = settings.regex if settings else False
 
     html_parts = _get_html_header(title)
-    attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
+    attachment_prefix = (
+        "attachments/" if settings and settings.extract_attachments else None
+    )
 
     if settings and settings.include_toc:
         html_parts.append(f"<h1>{html.escape(title)}</h1>")
@@ -3621,13 +4052,21 @@ def _write_html(
         if bbs_info:
             html_parts.append('<div class="bbs-info">')
             if bbs_info.sysop:
-                html_parts.append(f'<div><strong>SysOp:</strong> {html.escape(bbs_info.sysop)}</div>')
+                html_parts.append(
+                    f"<div><strong>SysOp:</strong> {html.escape(bbs_info.sysop)}</div>"
+                )
             if bbs_info.location:
-                html_parts.append(f'<div><strong>Location:</strong> {html.escape(bbs_info.location)}</div>')
+                html_parts.append(
+                    f"<div><strong>Location:</strong> {html.escape(bbs_info.location)}</div>"
+                )
             if bbs_info.packet_at:
-                html_parts.append(f'<div><strong>Packet Date:</strong> {html.escape(bbs_info.packet_at)}</div>')
-            html_parts.append(f'<div><strong>Total Messages:</strong> {len(messages)}</div>')
-            html_parts.append('</div>')
+                html_parts.append(
+                    f"<div><strong>Packet Date:</strong> {html.escape(bbs_info.packet_at)}</div>"
+                )
+            html_parts.append(
+                f"<div><strong>Total Messages:</strong> {len(messages)}</div>"
+            )
+            html_parts.append("</div>")
 
         html_parts.append("<h2>Conferences</h2>")
         html_parts.append("<ul>")
@@ -3635,7 +4074,9 @@ def _write_html(
         for i, msg in enumerate(messages):
             if msg.confnum not in seen_confs:
                 conf_name = msg.confname or f"Conference {msg.confnum}"
-                html_parts.append(f'<li><a href="#conf-{msg.confnum}">{html.escape(conf_name)} (Conf {msg.confnum})</a></li>')
+                html_parts.append(
+                    f'<li><a href="#conf-{msg.confnum}">{html.escape(conf_name)} (Conf {msg.confnum})</a></li>'
+                )
                 seen_confs.add(msg.confnum)
         html_parts.append("</ul>")
         html_parts.append("<hr>")
@@ -3646,14 +4087,16 @@ def _write_html(
     for i, message in enumerate(messages):
         if settings and settings.include_toc and message.confnum != last_confnum:
             conf_name = message.confname or f"Conference {message.confnum}"
-            html_parts.append(f'<h2 id="conf-{message.confnum}">{html.escape(conf_name)}</h2>')
+            html_parts.append(
+                f'<h2 id="conf-{message.confnum}">{html.escape(conf_name)}</h2>'
+            )
             last_confnum = message.confnum
 
         while current_depth < message.depth:
             html_parts.append('<div class="reply">')
             current_depth += 1
         while current_depth > message.depth:
-            html_parts.append('</div>')
+            html_parts.append("</div>")
             current_depth -= 1
 
         msg_id = f"msg-{i}" if settings and settings.include_toc else None
@@ -3668,23 +4111,23 @@ def _write_html(
         )
 
     while current_depth > 0:
-        html_parts.append('</div>')
+        html_parts.append("</div>")
         current_depth -= 1
 
     html_parts.extend(_get_html_footer())
 
-    _write_text_output('\n'.join(html_parts), output_path, encoding='utf-8')
+    _write_text_output("\n".join(html_parts), output_path, encoding="utf-8")
 
 
 def _write_markdown(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
-    title = 'QWK Messages'
+    title = "QWK Messages"
     if bbs_info and bbs_info.name:
         title = f"{bbs_info.name} Archive"
 
@@ -3695,7 +4138,9 @@ def _write_markdown(
     is_regex = settings.regex if settings else False
 
     md_parts = [f"# {title}\n"]
-    attachment_prefix = "attachments/" if settings and settings.extract_attachments else None
+    attachment_prefix = (
+        "attachments/" if settings and settings.extract_attachments else None
+    )
 
     if settings and settings.include_toc:
         # Add Statistics Summary
@@ -3727,7 +4172,7 @@ def _write_markdown(
     for message in messages:
         if settings and settings.include_toc and message.confnum != last_confnum:
             conf_name = message.confname or f"Conference {message.confnum}"
-            md_parts.append(f"## {conf_name} <a name=\"conf-{message.confnum}\"></a>\n")
+            md_parts.append(f'## {conf_name} <a name="conf-{message.confnum}"></a>\n')
             last_confnum = message.confnum
 
         single_md = _render_single_message_markdown(
@@ -3746,7 +4191,7 @@ def _write_markdown(
             md_parts.extend(single_md)
         md_parts.append("")
 
-    _write_text_output('\n'.join(md_parts), output_path, encoding='utf-8')
+    _write_text_output("\n".join(md_parts), output_path, encoding="utf-8")
 
 
 def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
@@ -3756,12 +4201,12 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
     """
     try:
         # Handle ISO 8601 format (used in SQLite exports)
-        if 'T' in msgdate:
+        if "T" in msgdate:
             return datetime.datetime.fromisoformat(msgdate)
 
         # Normalize date separators
-        msgdate = msgdate.replace('/', '-')
-        date_parts = msgdate.split('-')
+        msgdate = msgdate.replace("/", "-")
+        date_parts = msgdate.split("-")
 
         if len(date_parts[0]) == 4:
             # ISO format: YYYY-MM-DD
@@ -3779,7 +4224,7 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
                 else:
                     year += 1900
 
-        time_parts = list(map(int, msgtime.split(':')))
+        time_parts = list(map(int, msgtime.split(":")))
         hour = time_parts[0]
         minute = time_parts[1]
         second = time_parts[2] if len(time_parts) > 2 else 0
@@ -3790,7 +4235,9 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
         return datetime.datetime(1970, 1, 1, 0, 0)
 
 
-def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = True) -> str:
+def _serialize_rfc822(
+    message: ProcessedMessage, include_mbox_header: bool = True
+) -> str:
     """Convert a message to RFC 822 (Email) format with optional MBOX header.
 
     Includes standard email headers for threading (Message-ID, In-Reply-To, References)
@@ -3823,7 +4270,7 @@ def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = Tru
             sender_addr = header.msgfrom
         else:
             # Create a safe address from the name
-            safe_name = re.sub(r'[^A-Za-z0-9]', '.', header.msgfrom).strip('.')
+            safe_name = re.sub(r"[^A-Za-z0-9]", ".", header.msgfrom).strip(".")
             sender_addr = f"{safe_name}@example.com"
         # Construct mbox entry
         # From <sender> <date>
@@ -3836,7 +4283,9 @@ def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = Tru
 
     # Generate a unique Message-ID
     # <confnum.msgnum@qwk>
-    msg_id = f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
+    msg_id = (
+        f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
+    )
     parts.append(f"Message-ID: {msg_id}")
 
     # Threading headers
@@ -3885,7 +4334,7 @@ def _serialize_rfc822(message: ProcessedMessage, include_mbox_header: bool = Tru
 def _write_mbox(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -3901,7 +4350,7 @@ def _write_mbox(
 def _write_eml(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -3921,7 +4370,7 @@ def _write_eml(
 def _serialize_control_dat(
     bbs_info: BBSInfo | None,
     board_dict: Mapping[int, str] | None,
-    encoding: str = 'cp437'
+    encoding: str = "cp437",
 ) -> list[bytes]:
     """Convert BBS information and conference list into CONTROL.DAT format."""
     lines = [b""] * 11
@@ -3949,21 +4398,21 @@ def _serialize_control_dat(
     return lines
 
 
-def _text_to_qwk_blocks(text: str, encoding: str = 'cp437') -> bytes:
+def _text_to_qwk_blocks(text: str, encoding: str = "cp437") -> bytes:
     """Convert message text into 128-byte QWK blocks with \xe3 newlines."""
     # QWK uses \xe3 (227) as a newline character
-    qwk_text = text.replace('\r\n', '\xe3').replace('\n', '\xe3')
-    encoded = qwk_text.encode(encoding, errors='replace')
+    qwk_text = text.replace("\r\n", "\xe3").replace("\n", "\xe3")
+    encoded = qwk_text.encode(encoding, errors="replace")
 
     # Pad to 128-byte boundary
     padding_len = (BLOCK_SIZE - (len(encoded) % BLOCK_SIZE)) % BLOCK_SIZE
-    return encoded + (b' ' * padding_len)
+    return encoded + (b" " * padding_len)
 
 
 def _write_text(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -3972,9 +4421,7 @@ def _write_text(
     parts = []
 
     use_colors = (
-        not output_path
-        and hasattr(sys.stdout, 'isatty')
-        and sys.stdout.isatty()
+        not output_path and hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     )
 
     if settings and settings.oneline and not settings.oneline_pattern:
@@ -3987,14 +4434,21 @@ def _write_text(
 
         if use_colors:
             BOLD = "1"
-            def b(t): return f"\033[{BOLD}m{t}\033[0m"
+
+            def b(t):
+                return f"\033[{BOLD}m{t}\033[0m"
+
             header_line = f"{b(msgnum_hdr)}{b(conf_hdr)} {b(date_hdr)} {b(from_hdr)} {b(to_hdr)} {b(subj_hdr)}\r\n"
         else:
-            header_line = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}\r\n"
+            header_line = (
+                f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}\r\n"
+            )
 
         parts.append(header_line)
         # Calculate separator length from the plain text header
-        plain_header = f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}"
+        plain_header = (
+            f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}"
+        )
         separator_line = "-" * len(plain_header) + "\r\n"
         if use_colors:
             # ANSI Dim (90)
@@ -4002,7 +4456,7 @@ def _write_text(
         parts.append(separator_line)
 
     if settings and settings.include_toc:
-        title = 'QWK Message Archive'
+        title = "QWK Message Archive"
         if bbs_info and bbs_info.name:
             title = f"{bbs_info.name} Archive"
 
@@ -4037,10 +4491,14 @@ def _write_text(
         if settings and settings.oneline:
             if settings.oneline_pattern:
                 try:
-                    mapping = _get_message_mapping(message, i + 1, redact_pii=settings.redact_pii if settings else False)
+                    mapping = _get_message_mapping(
+                        message,
+                        i + 1,
+                        redact_pii=settings.redact_pii if settings else False,
+                    )
                     # Apply fallbacks for oneline display
-                    if not mapping['confname']:
-                        mapping['confname'] = f"Conference {message.confnum}"
+                    if not mapping["confname"]:
+                        mapping["confname"] = f"Conference {message.confnum}"
 
                     text = settings.oneline_pattern.format(**mapping) + "\r\n"
                     # Apply search highlighting to the resulting line
@@ -4048,7 +4506,7 @@ def _write_text(
                         text,
                         settings.search_term,
                         settings.regex,
-                        use_colors=use_colors
+                        use_colors=use_colors,
                     )
                 except (KeyError, ValueError):
                     # Fallback if pattern is invalid
@@ -4098,7 +4556,7 @@ def _write_text(
 def _write_csv(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -4107,25 +4565,33 @@ def _write_csv(
 
     header_fields = [f.name for f in fields(MessageHeader)]
     fieldnames = header_fields + [
-        'conference_name', 'bbs_name', 'bbs_id', 'source_file',
-        'text', 'depth', 'thread_id', 'parent_msgnum',
-        'attachments'
+        "conference_name",
+        "bbs_name",
+        "bbs_id",
+        "source_file",
+        "text",
+        "depth",
+        "thread_id",
+        "parent_msgnum",
+        "attachments",
     ]
 
-    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar='\\')
+    writer = csv.DictWriter(
+        output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\"
+    )
     writer.writeheader()
 
     for message in messages:
         row = message.header.as_dict
-        row['conference_name'] = message.confname
-        row['bbs_name'] = message.bbs_name
-        row['bbs_id'] = message.bbs_id
-        row['source_file'] = message.source_file
-        row['text'] = message.text
-        row['depth'] = message.depth
-        row['thread_id'] = message.thread_id
-        row['parent_msgnum'] = message.parent_msgnum
-        row['attachments'] = ";".join(message.attachments or [])
+        row["conference_name"] = message.confname
+        row["bbs_name"] = message.bbs_name
+        row["bbs_id"] = message.bbs_id
+        row["source_file"] = message.source_file
+        row["text"] = message.text
+        row["depth"] = message.depth
+        row["thread_id"] = message.thread_id
+        row["parent_msgnum"] = message.parent_msgnum
+        row["attachments"] = ";".join(message.attachments or [])
         writer.writerow(row)
 
     _write_text_output(output.getvalue(), output_path, encoding=encoding)
@@ -4134,7 +4600,7 @@ def _write_csv(
 def _write_qwk(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'cp437',
+    encoding: str = "cp437",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -4143,9 +4609,9 @@ def _write_qwk(
     if output_path is None:
         raise ValueError("Output path is required for QWK/REP export.")
 
-    is_rep = output_path.lower().endswith('.rep')
+    is_rep = output_path.lower().endswith(".rep")
 
-    with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         if is_rep:
             # REPLY.DAT
             content = bytearray()
@@ -4185,7 +4651,7 @@ def _write_qwk(
 def _write_sqlite(
     messages: list[ProcessedMessage],
     output_path: str | None,
-    encoding: str = 'utf-8',
+    encoding: str = "utf-8",
     settings: ProcessingSettings | None = None,
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
@@ -4196,7 +4662,7 @@ def _write_sqlite(
     conn = sqlite3.connect(output_path)
     c = conn.cursor()
 
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             conference_number INTEGER,
@@ -4217,9 +4683,9 @@ def _write_sqlite(
             source_file TEXT,
             attachments TEXT
         )
-    ''')
+    """)
 
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS bbs_info (
             name TEXT,
             location TEXT,
@@ -4232,72 +4698,81 @@ def _write_sqlite(
             total_messages INTEGER,
             num_conferences INTEGER
         )
-    ''')
+    """)
 
     if bbs_info:
-        c.execute('''
+        c.execute(
+            """
             INSERT INTO bbs_info (
                 name, location, phone, sysop, serial_number, bbs_id,
                 user_name, packet_at, total_messages, num_conferences
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            bbs_info.name,
-            bbs_info.location,
-            bbs_info.phone,
-            bbs_info.sysop,
-            bbs_info.serial_number,
-            bbs_info.bbs_id,
-            bbs_info.user_name,
-            bbs_info.packet_at,
-            bbs_info.total_messages,
-            bbs_info.num_conferences,
-        ))
+        """,
+            (
+                bbs_info.name,
+                bbs_info.location,
+                bbs_info.phone,
+                bbs_info.sysop,
+                bbs_info.serial_number,
+                bbs_info.bbs_id,
+                bbs_info.user_name,
+                bbs_info.packet_at,
+                bbs_info.total_messages,
+                bbs_info.num_conferences,
+            ),
+        )
 
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS conferences (
             number INTEGER PRIMARY KEY,
             name TEXT
         )
-    ''')
+    """)
 
     if board_dict:
         for conf_num, conf_name in board_dict.items():
-            c.execute('''
+            c.execute(
+                """
                 INSERT OR REPLACE INTO conferences (number, name)
                 VALUES (?, ?)
-            ''', (conf_num, conf_name))
+            """,
+                (conf_num, conf_name),
+            )
 
     for msg in messages:
         header = msg.header
         dt = _parse_qwk_date(header.msgdate, header.msgtime)
         iso_date = dt.isoformat()
 
-        c.execute('''
+        c.execute(
+            """
             INSERT INTO messages (
                 conference_number, message_number, date, author, recipient,
                 subject, status, text, reference_number, thread_id, depth,
                 parent_message_number, conference_name, bbs_name, bbs_id, source_file,
                 attachments
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            header.confnum,
-            header.msgnum,
-            iso_date,
-            header.msgfrom,
-            header.msgto,
-            header.msgsubject,
-            header.status,
-            msg.text,
-            header.refnum,
-            msg.thread_id,
-            msg.depth,
-            msg.parent_msgnum,
-            msg.confname,
-            msg.bbs_name,
-            msg.bbs_id,
-            msg.source_file,
-            ";".join(msg.attachments or [])
-        ))
+        """,
+            (
+                header.confnum,
+                header.msgnum,
+                iso_date,
+                header.msgfrom,
+                header.msgto,
+                header.msgsubject,
+                header.status,
+                msg.text,
+                header.refnum,
+                msg.thread_id,
+                msg.depth,
+                msg.parent_msgnum,
+                msg.confname,
+                msg.bbs_name,
+                msg.bbs_id,
+                msg.source_file,
+                ";".join(msg.attachments or []),
+            ),
+        )
 
     conn.commit()
     conn.close()
@@ -4318,28 +4793,35 @@ def write_messages(
     writers: dict[
         str,
         Callable[
-            [list[ProcessedMessage], str | None, str, ProcessingSettings, BBSInfo | None, Mapping[int, str] | None],
+            [
+                list[ProcessedMessage],
+                str | None,
+                str,
+                ProcessingSettings,
+                BBSInfo | None,
+                Mapping[int, str] | None,
+            ],
             None,
         ],
     ] = {
-        'json': _write_json,
-        'jsonl': _write_jsonl,
-        'xml': _write_xml,
-        'rss': _write_rss,
-        'html': _write_html,
-        'markdown': _write_markdown,
-        'text': _write_text,
-        'csv': _write_csv,
-        'mbox': _write_mbox,
-        'eml': _write_eml,
-        'sqlite': _write_sqlite,
-        'qwk': _write_qwk,
-        'rep': _write_qwk,
+        "json": _write_json,
+        "jsonl": _write_jsonl,
+        "xml": _write_xml,
+        "rss": _write_rss,
+        "html": _write_html,
+        "markdown": _write_markdown,
+        "text": _write_text,
+        "csv": _write_csv,
+        "mbox": _write_mbox,
+        "eml": _write_eml,
+        "sqlite": _write_sqlite,
+        "qwk": _write_qwk,
+        "rep": _write_qwk,
     }
 
     writer = writers.get(settings.format, _write_text)
-    output_encoding = 'utf-8'
-    if settings.format == 'text':
+    output_encoding = "utf-8"
+    if settings.format == "text":
         output_encoding = settings.encoding
 
     writer(messages, output_path, output_encoding, settings, bbs_info, board_dict)
@@ -4359,15 +4841,15 @@ def _write_index(
     # Group by conference
     by_conf = defaultdict(list)
     for info in collected_info:
-        by_conf[(info['conf_num'], info['conf_name'])].append(info)
+        by_conf[(info["conf_num"], info["conf_name"])].append(info)
 
     title = "Message Archive"
     if bbs_info and bbs_info.name:
         title = f"{bbs_info.name} Message Archive"
 
-    if settings.format == 'html':
+    if settings.format == "html":
         _write_html_index(by_conf, title, output_dir, stats=stats)
-    elif settings.format == 'markdown':
+    elif settings.format == "markdown":
         _write_markdown_index(by_conf, title, output_dir, stats=stats)
 
 
@@ -4386,7 +4868,9 @@ def _write_html_index(
     for (conf_num, conf_name), messages in sorted(by_conf.items()):
         html_parts.append(f"<h2>{html.escape(conf_name)} (Conference {conf_num})</h2>")
         html_parts.append("<table>")
-        html_parts.append("<thead><tr><th>#</th><th>Date</th><th>From</th><th>To</th><th>Subject</th><th>Attach</th></tr></thead>")
+        html_parts.append(
+            "<thead><tr><th>#</th><th>Date</th><th>From</th><th>To</th><th>Subject</th><th>Attach</th></tr></thead>"
+        )
         html_parts.append("<tbody>")
         for msg in messages:
             html_parts.append("<tr>")
@@ -4394,15 +4878,17 @@ def _write_html_index(
             html_parts.append(f"<td>{html.escape(msg['date'])}</td>")
             html_parts.append(f"<td>{html.escape(msg['from'])}</td>")
             html_parts.append(f"<td>{html.escape(msg['to'])}</td>")
-            html_parts.append(f'<td><a href="{html.escape(msg["path"])}">{html.escape(msg["subject"] or "(no subject)")}</a></td>')
-            attach_count = len(msg['attachments']) if msg.get('attachments') else 0
+            html_parts.append(
+                f'<td><a href="{html.escape(msg["path"])}">{html.escape(msg["subject"] or "(no subject)")}</a></td>'
+            )
+            attach_count = len(msg["attachments"]) if msg.get("attachments") else 0
             html_parts.append(f"<td>{attach_count if attach_count > 0 else ''}</td>")
             html_parts.append("</tr>")
         html_parts.append("</tbody></table>")
 
     html_parts.extend(_get_html_footer())
     index_path = os.path.join(output_dir, "index.html")
-    with open(index_path, 'w', encoding='utf-8') as f:
+    with open(index_path, "w", encoding="utf-8") as f:
         f.write("\n".join(html_parts))
 
 
@@ -4422,29 +4908,39 @@ def _write_markdown_index(
         md_parts.append("| # | Date | From | To | Subject | Attach |")
         md_parts.append("|---|---|---|---|---|---|")
         for msg in messages:
-            def esc_md(text: Any) -> str:
-                return str(text or "").replace("|", "\\|").replace("[", "\\[").replace("]", "\\]")
 
-            subj = esc_md(msg['subject'] or "(no subject)")
-            from_name = esc_md(msg['from'])
-            to_name = esc_md(msg['to'])
-            attach_count = len(msg['attachments']) if msg.get('attachments') else 0
+            def esc_md(text: Any) -> str:
+                return (
+                    str(text or "")
+                    .replace("|", "\\|")
+                    .replace("[", "\\[")
+                    .replace("]", "\\]")
+                )
+
+            subj = esc_md(msg["subject"] or "(no subject)")
+            from_name = esc_md(msg["from"])
+            to_name = esc_md(msg["to"])
+            attach_count = len(msg["attachments"]) if msg.get("attachments") else 0
             attach_str = str(attach_count) if attach_count > 0 else ""
-            md_parts.append(f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | [{subj}]({msg['path']}) | {attach_str} |")
+            md_parts.append(
+                f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | [{subj}]({msg['path']}) | {attach_str} |"
+            )
         md_parts.append("")
 
     index_path = os.path.join(output_dir, "README.md")
-    with open(index_path, 'w', encoding='utf-8') as f:
+    with open(index_path, "w", encoding="utf-8") as f:
         f.write("\n".join(md_parts))
 
 
-def _write_text_output(content: str, output_path: str | None, *, encoding: str = 'latin1') -> None:
+def _write_text_output(
+    content: str, output_path: str | None, *, encoding: str = "latin1"
+) -> None:
     if output_path is None:
-        if not content.endswith('\n'):
-            content += '\n'
+        if not content.endswith("\n"):
+            content += "\n"
         sys.stdout.write(content)
     else:
-        with open(output_path, 'w', encoding=encoding) as f:
+        with open(output_path, "w", encoding=encoding) as f:
             f.write(content)
 
 
@@ -4465,8 +4961,8 @@ def _highlight_quotes(text: str, use_colors: bool) -> str:
     for line in lines:
         if RE_QUOTE_PATTERN.match(line):
             # Strip trailing newlines to place the reset code before them.
-            content = line.rstrip('\r\n')
-            ending = line[len(content):]
+            content = line.rstrip("\r\n")
+            ending = line[len(content) :]
             # ANSI Green (32)
             highlighted_lines.append(f"\x1b[32m{content}\x1b[0m{ending}")
         else:
@@ -4528,13 +5024,13 @@ def _apply_highlighting(
         non_match = text[last_end:start]
         if non_match:
             result.append(escape_func(non_match) if escape_func else non_match)
-        
+
         # Matching part
         match_text = match.group(0)
         processed_match = escape_func(match_text) if escape_func else match_text
         result.append(f"{start_tag}{processed_match}{end_tag}")
         last_end = end
-    
+
     # Remaining non-matching part
     remaining = text[last_end:]
     if remaining:
@@ -4586,12 +5082,16 @@ def _render_stats_bar_chart(
         bar = "#" * bar_len
 
         # Consistent coloring: Dim labels, Bold counts, Cyan bars
-        parts.append(f"    {c(truncated_label, dim)} : {c(count_str, bold)} {c(bar, cyan)}")
+        parts.append(
+            f"    {c(truncated_label, dim)} : {c(count_str, bold)} {c(bar, cyan)}"
+        )
 
     return parts
 
 
-def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+def show_info(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
     """Show a summary of the QWK packet contents."""
     # ANSI Attribute codes
     BOLD = "1"
@@ -4604,12 +5104,12 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
             "file": input_path,
             "bbs_info": None,
             "total_messages": 0,
-            "conferences": []
+            "conferences": [],
         }
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
 
-            bbs_info = getattr(board_dict, 'bbs_info', None)
+            bbs_info = getattr(board_dict, "bbs_info", None)
             if bbs_info:
                 info_entry["bbs_info"] = asdict(bbs_info)
 
@@ -4617,7 +5117,7 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
                 messages_to_process = file_data
             else:
                 if len(file_data) < BLOCK_SIZE:
-                    if settings.format != 'json':
+                    if settings.format != "json":
                         print(f"File: {_colorize(input_path, CYAN)}")
                         print("  Invalid or empty file.")
                     all_info.append(info_entry)
@@ -4644,13 +5144,11 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
             sorted_confs = sorted(conference_counts.items())
             for conf_num, count in sorted_confs:
                 conf_name = board_dict.get(conf_num, f"Conference {conf_num}")
-                info_entry["conferences"].append({
-                    "number": conf_num,
-                    "name": conf_name,
-                    "message_count": count
-                })
+                info_entry["conferences"].append(
+                    {"number": conf_num, "name": conf_name, "message_count": count}
+                )
 
-            if settings.format != 'json':
+            if settings.format != "json":
                 print(f"File: {_colorize(input_path, CYAN)}")
                 if bbs_info:
                     if bbs_info.name:
@@ -4669,7 +5167,9 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
 
                 for conf in info_entry["conferences"]:
                     count_str = _colorize(str(conf["message_count"]), BOLD)
-                    print(f"    {conf['number']}: {conf['name']} ({count_str} messages)")
+                    print(
+                        f"    {conf['number']}: {conf['name']} ({count_str} messages)"
+                    )
                 print("")
 
             all_info.append(info_entry)
@@ -4677,7 +5177,7 @@ def show_info(input_paths: list[str], settings: ProcessingSettings, logger: logg
         except PROCESSING_EXCEPTIONS as e:
             logger.error(f"Error reading info for {input_path}: {e}")
 
-    if settings.format == 'json':
+    if settings.format == "json":
         print(json.dumps(all_info, indent=4, ensure_ascii=False))
 
 
@@ -4759,19 +5259,18 @@ def _compute_stats_from_messages(
 
         subject_counter[_normalize_subject(message.header.msgsubject)] += 1
 
-        dow_counter[dt.strftime('%A')] += 1
+        dow_counter[dt.strftime("%A")] += 1
         hour_counter[dt.hour] += 1
         year_counter[dt.year] += 1
-        month_counter[dt.strftime('%Y-%m')] += 1
+        month_counter[dt.strftime("%Y-%m")] += 1
 
         if message.header.is_private:
             private_count += 1
 
         # Detect if it's a reply
         is_reply = (
-            (message.header.refnum is not None and message.header.refnum != 0)
-            or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
-        )
+            message.header.refnum is not None and message.header.refnum != 0
+        ) or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
         if is_reply:
             reply_count += 1
 
@@ -4793,7 +5292,7 @@ def _compute_stats_from_messages(
                         attachment_type_counter["(no extension)"] += 1
 
             # Keyword analysis
-            words = re.findall(r'\b\w{3,}\b', message.text.lower())
+            words = re.findall(r"\b\w{3,}\b", message.text.lower())
             for word in words:
                 if word not in DEFAULT_STOP_WORDS and not word.isdigit():
                     keyword_counter[word] += 1
@@ -4818,37 +5317,64 @@ def _compute_stats_from_messages(
     stats_entry["private_count"] = private_count
     stats_entry["attachments_count"] = attachments_count
     stats_entry["reply_count"] = reply_count
-    stats_entry["reply_rate"] = round(reply_count / processed_count * 100, 1) if processed_count > 0 else 0.0
-    stats_entry["avg_message_length"] = round(total_chars / processed_count, 1) if processed_count > 0 else 0.0
+    stats_entry["reply_rate"] = (
+        round(reply_count / processed_count * 100, 1) if processed_count > 0 else 0.0
+    )
+    stats_entry["avg_message_length"] = (
+        round(total_chars / processed_count, 1) if processed_count > 0 else 0.0
+    )
 
     if earliest_dt:
         stats_entry["dates"]["earliest"] = earliest_dt.isoformat()
         stats_entry["dates"]["latest"] = latest_dt.isoformat()
 
     # Top 10
-    stats_entry["authors"] = [{"name": n, "count": c} for n, c in author_counter.most_common(10)]
-    stats_entry["recipients"] = [{"name": n, "count": c} for n, c in recipient_counter.most_common(10)]
-    stats_entry["conferences"] = [{"number": n, "name": conf_names.get(n, str(n)), "count": c} for n, c in conf_counter.most_common(10)]
-    stats_entry["bbses"] = [{"name": n, "count": c} for n, c in bbs_counter.most_common(10)]
-    stats_entry["subjects"] = [{"subject": s, "count": c} for s, c in subject_counter.most_common(10)]
-    stats_entry["keywords"] = [{"word": w, "count": c} for w, c in keyword_counter.most_common(10)]
-    stats_entry["links"] = [{"url": u, "count": c} for u, c in link_counter.most_common(10)]
-    stats_entry["emails"] = [{"email": e, "count": c} for e, c in email_counter.most_common(10)]
-    stats_entry["phones"] = [{"phone": p, "count": c} for p, c in phone_counter.most_common(10)]
-    stats_entry["top_attachments"] = [{"name": n, "count": c} for n, c in attachment_counter.most_common(10)]
-    stats_entry["top_attachment_types"] = [{"extension": e, "count": c} for e, c in attachment_type_counter.most_common(10)]
+    stats_entry["authors"] = [
+        {"name": n, "count": c} for n, c in author_counter.most_common(10)
+    ]
+    stats_entry["recipients"] = [
+        {"name": n, "count": c} for n, c in recipient_counter.most_common(10)
+    ]
+    stats_entry["conferences"] = [
+        {"number": n, "name": conf_names.get(n, str(n)), "count": c}
+        for n, c in conf_counter.most_common(10)
+    ]
+    stats_entry["bbses"] = [
+        {"name": n, "count": c} for n, c in bbs_counter.most_common(10)
+    ]
+    stats_entry["subjects"] = [
+        {"subject": s, "count": c} for s, c in subject_counter.most_common(10)
+    ]
+    stats_entry["keywords"] = [
+        {"word": w, "count": c} for w, c in keyword_counter.most_common(10)
+    ]
+    stats_entry["links"] = [
+        {"url": u, "count": c} for u, c in link_counter.most_common(10)
+    ]
+    stats_entry["emails"] = [
+        {"email": e, "count": c} for e, c in email_counter.most_common(10)
+    ]
+    stats_entry["phones"] = [
+        {"phone": p, "count": c} for p, c in phone_counter.most_common(10)
+    ]
+    stats_entry["top_attachments"] = [
+        {"name": n, "count": c} for n, c in attachment_counter.most_common(10)
+    ]
+    stats_entry["top_attachment_types"] = [
+        {"extension": e, "count": c} for e, c in attachment_type_counter.most_common(10)
+    ]
     stats_entry["day_of_week"] = dict(dow_counter)
     stats_entry["hour_of_day"] = {str(k): v for k, v in hour_counter.items()}
-    stats_entry["year_distribution"] = {str(k): v for k, v in sorted(year_counter.items())}
+    stats_entry["year_distribution"] = {
+        str(k): v for k, v in sorted(year_counter.items())
+    }
     stats_entry["month_distribution"] = dict(sorted(month_counter.items()))
 
     return stats_entry
 
 
 def calculate_archive_stats(
-    input_paths: list[str],
-    settings: ProcessingSettings,
-    logger: logging.Logger
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> dict[str, Any]:
     """Calculate detailed statistics for one or more archives."""
     total_count = 0
@@ -4861,19 +5387,23 @@ def calculate_archive_stats(
             if settings.limit is not None and processed_count >= settings.limit:
                 break
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
-            bbs_info = getattr(board_dict, 'bbs_info', None)
+            bbs_info = getattr(board_dict, "bbs_info", None)
             user_name = bbs_info.user_name if bbs_info else None
-            allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+            allowed_conferences = get_allowed_conferences(
+                settings.conferences, board_dict
+            )
 
             desc = f"Analyzing {os.path.basename(input_path)}"
             is_structured = isinstance(file_data, list)
             total_progress = len(file_data)
 
-            with _create_progress_bar(total_progress, settings.quiet, desc=desc) as progress_bar:
+            with _create_progress_bar(
+                total_progress, settings.quiet, desc=desc
+            ) as progress_bar:
                 if is_structured:
                     messages_to_process = file_data
                     if progress_bar is not None:
-                        progress_bar.unit = 'msg'
+                        progress_bar.unit = "msg"
                         progress_bar.unit_scale = False
                 else:
                     messages_to_process = parse_messages(
@@ -4888,12 +5418,16 @@ def calculate_archive_stats(
                     message = replace(
                         message,
                         confname=message.confname or board_dict.get(message.confnum),
-                        bbs_name=message.bbs_name or (bbs_info.name if bbs_info else None),
-                        bbs_id=message.bbs_id or (bbs_info.bbs_id if bbs_info else None),
+                        bbs_name=message.bbs_name
+                        or (bbs_info.name if bbs_info else None),
+                        bbs_id=message.bbs_id
+                        or (bbs_info.bbs_id if bbs_info else None),
                         source_file=message.source_file or os.path.basename(input_path),
                     )
 
-                    if not matches_filters(message, settings, allowed_conferences, user_name):
+                    if not matches_filters(
+                        message, settings, allowed_conferences, user_name
+                    ):
                         continue
 
                     matching_count += 1
@@ -4906,7 +5440,9 @@ def calculate_archive_stats(
                     yield message
 
     file_label = input_paths[0] if len(input_paths) == 1 else "Multiple Archives"
-    stats_entry = _compute_stats_from_messages(filtered_messages_gen(), file_label=file_label)
+    stats_entry = _compute_stats_from_messages(
+        filtered_messages_gen(), file_label=file_label
+    )
 
     # Override counts with actual values tracked during filtering
     stats_entry["total_messages"] = total_count
@@ -4928,84 +5464,180 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
 
     parts = []
     parts.append(f"Statistics for: {c(stats['file'], CYAN)}")
-    parts.append(f"  {c('Messages:', BOLD)} {stats['matching_messages']} matching / {stats['total_messages']} total")
+    parts.append(
+        f"  {c('Messages:', BOLD)} {stats['matching_messages']} matching / {stats['total_messages']} total"
+    )
 
-    if stats['attachments_count'] > 0:
-        parts.append(f"  {c('Attachments:', BOLD)} {stats['attachments_count']} files detected")
+    if stats["attachments_count"] > 0:
+        parts.append(
+            f"  {c('Attachments:', BOLD)} {stats['attachments_count']} files detected"
+        )
 
-    if stats['dates']['earliest']:
-        earliest = datetime.datetime.fromisoformat(stats['dates']['earliest']).strftime('%Y-%m-%d')
-        latest = datetime.datetime.fromisoformat(stats['dates']['latest']).strftime('%Y-%m-%d')
+    if stats["dates"]["earliest"]:
+        earliest = datetime.datetime.fromisoformat(stats["dates"]["earliest"]).strftime(
+            "%Y-%m-%d"
+        )
+        latest = datetime.datetime.fromisoformat(stats["dates"]["latest"]).strftime(
+            "%Y-%m-%d"
+        )
         parts.append(f"  {c('Date Range:', BOLD)} {earliest} to {latest}")
 
     parts.append(f"  {c('Private:', BOLD)}    {stats['private_count']} messages")
 
     parts.append(f"\n  {c('Activity & Content:', BOLD)}")
-    parts.append(f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)")
+    parts.append(
+        f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)"
+    )
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
 
-    if stats['year_distribution']:
-        items = [(y, c) for y, c in sorted(stats['year_distribution'].items())]
-        parts.extend(_render_stats_bar_chart('Yearly Activity:', items, use_colors=use_colors))
+    if stats["year_distribution"]:
+        items = [(y, c) for y, c in sorted(stats["year_distribution"].items())]
+        parts.extend(
+            _render_stats_bar_chart("Yearly Activity:", items, use_colors=use_colors)
+        )
 
-    if stats['month_distribution'] and len(stats['month_distribution']) <= 24:
-        items = [(m, c) for m, c in sorted(stats['month_distribution'].items())]
-        parts.extend(_render_stats_bar_chart('Monthly Activity:', items, use_colors=use_colors))
+    if stats["month_distribution"] and len(stats["month_distribution"]) <= 24:
+        items = [(m, c) for m, c in sorted(stats["month_distribution"].items())]
+        parts.extend(
+            _render_stats_bar_chart("Monthly Activity:", items, use_colors=use_colors)
+        )
 
-    parts.extend(_render_stats_bar_chart('Top Authors:', [(a["name"], a["count"]) for a in stats['authors']], use_colors=use_colors))
-    parts.extend(_render_stats_bar_chart('Top Recipients:', [(r["name"], r["count"]) for r in stats['recipients']], use_colors=use_colors))
+    parts.extend(
+        _render_stats_bar_chart(
+            "Top Authors:",
+            [(a["name"], a["count"]) for a in stats["authors"]],
+            use_colors=use_colors,
+        )
+    )
+    parts.extend(
+        _render_stats_bar_chart(
+            "Top Recipients:",
+            [(r["name"], r["count"]) for r in stats["recipients"]],
+            use_colors=use_colors,
+        )
+    )
 
-    if stats.get('bbses'):
-        parts.extend(_render_stats_bar_chart('Top BBSes:', [(b["name"], b["count"]) for b in stats['bbses']], use_colors=use_colors))
+    if stats.get("bbses"):
+        parts.extend(
+            _render_stats_bar_chart(
+                "Top BBSes:",
+                [(b["name"], b["count"]) for b in stats["bbses"]],
+                use_colors=use_colors,
+            )
+        )
 
-    if stats['conferences']:
-        items = [(f"{c['number']:3} {c['name']}", c["count"]) for c in stats['conferences']]
-        parts.extend(_render_stats_bar_chart('Top Conferences:', items, use_colors=use_colors))
+    if stats["conferences"]:
+        items = [
+            (f"{c['number']:3} {c['name']}", c["count"]) for c in stats["conferences"]
+        ]
+        parts.extend(
+            _render_stats_bar_chart("Top Conferences:", items, use_colors=use_colors)
+        )
 
-    parts.extend(_render_stats_bar_chart('Top Subjects:', [(s["subject"], s["count"]) for s in stats['subjects']], use_colors=use_colors))
-    parts.extend(_render_stats_bar_chart('Top Keywords:', [(k["word"], k["count"]) for k in stats['keywords']], use_colors=use_colors))
+    parts.extend(
+        _render_stats_bar_chart(
+            "Top Subjects:",
+            [(s["subject"], s["count"]) for s in stats["subjects"]],
+            use_colors=use_colors,
+        )
+    )
+    parts.extend(
+        _render_stats_bar_chart(
+            "Top Keywords:",
+            [(k["word"], k["count"]) for k in stats["keywords"]],
+            use_colors=use_colors,
+        )
+    )
 
-    if stats.get('links'):
-        parts.extend(_render_stats_bar_chart('Top Links:', [(link["url"], link["count"]) for link in stats['links']], use_colors=use_colors))
+    if stats.get("links"):
+        parts.extend(
+            _render_stats_bar_chart(
+                "Top Links:",
+                [(link["url"], link["count"]) for link in stats["links"]],
+                use_colors=use_colors,
+            )
+        )
 
-    if stats.get('emails'):
-        parts.extend(_render_stats_bar_chart('Top Emails:', [(e["email"], e["count"]) for e in stats['emails']], use_colors=use_colors))
+    if stats.get("emails"):
+        parts.extend(
+            _render_stats_bar_chart(
+                "Top Emails:",
+                [(e["email"], e["count"]) for e in stats["emails"]],
+                use_colors=use_colors,
+            )
+        )
 
-    if stats.get('phones'):
-        parts.extend(_render_stats_bar_chart('Top Phone Numbers:', [(p["phone"], p["count"]) for p in stats['phones']], use_colors=use_colors))
+    if stats.get("phones"):
+        parts.extend(
+            _render_stats_bar_chart(
+                "Top Phone Numbers:",
+                [(p["phone"], p["count"]) for p in stats["phones"]],
+                use_colors=use_colors,
+            )
+        )
 
-    if stats.get('top_attachments'):
-        parts.extend(_render_stats_bar_chart('Top Attachments:', [(a["name"], a["count"]) for a in stats['top_attachments']], use_colors=use_colors))
+    if stats.get("top_attachments"):
+        parts.extend(
+            _render_stats_bar_chart(
+                "Top Attachments:",
+                [(a["name"], a["count"]) for a in stats["top_attachments"]],
+                use_colors=use_colors,
+            )
+        )
 
-    if stats.get('top_attachment_types'):
-        parts.extend(_render_stats_bar_chart('Top Attachment Types:', [(t["extension"], t["count"]) for t in stats['top_attachment_types']], use_colors=use_colors))
+    if stats.get("top_attachment_types"):
+        parts.extend(
+            _render_stats_bar_chart(
+                "Top Attachment Types:",
+                [(t["extension"], t["count"]) for t in stats["top_attachment_types"]],
+                use_colors=use_colors,
+            )
+        )
 
-    if stats['day_of_week']:
-        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        items = [(d, stats['day_of_week'].get(d, 0)) for d in days]
-        parts.extend(_render_stats_bar_chart('Day of Week Distribution:', items, use_colors=use_colors))
+    if stats["day_of_week"]:
+        days = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        items = [(d, stats["day_of_week"].get(d, 0)) for d in days]
+        parts.extend(
+            _render_stats_bar_chart(
+                "Day of Week Distribution:", items, use_colors=use_colors
+            )
+        )
 
-    if stats['hour_of_day']:
-        items = [(f"{h:02}:00", stats['hour_of_day'].get(str(h), 0)) for h in range(24)]
-        parts.extend(_render_stats_bar_chart('Hourly Distribution:', items, use_colors=use_colors))
+    if stats["hour_of_day"]:
+        items = [(f"{h:02}:00", stats["hour_of_day"].get(str(h), 0)) for h in range(24)]
+        parts.extend(
+            _render_stats_bar_chart(
+                "Hourly Distribution:", items, use_colors=use_colors
+            )
+        )
 
     return "\n".join(parts) + "\n"
 
 
-def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+def show_stats(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
     """Show detailed statistics about the messages in the QWK archives."""
     all_stats = []
 
     use_colors = (
-        settings.format == 'text'
-        and hasattr(sys.stdout, 'isatty')
+        settings.format == "text"
+        and hasattr(sys.stdout, "isatty")
         and sys.stdout.isatty()
     )
 
     if settings.merge_stats:
         try:
             stats_entry = calculate_archive_stats(input_paths, settings, logger)
-            if settings.format != 'json':
+            if settings.format != "json":
                 print(render_stats_as_text(stats_entry, use_colors=use_colors))
             all_stats.append(stats_entry)
         except PROCESSING_EXCEPTIONS as e:
@@ -5014,13 +5646,13 @@ def show_stats(input_paths: list[str], settings: ProcessingSettings, logger: log
         for input_path in input_paths:
             try:
                 stats_entry = calculate_archive_stats([input_path], settings, logger)
-                if settings.format != 'json':
+                if settings.format != "json":
                     print(render_stats_as_text(stats_entry, use_colors=use_colors))
                 all_stats.append(stats_entry)
             except PROCESSING_EXCEPTIONS as e:
                 logger.error(f"Error calculating stats for {input_path}: {e}")
 
-    if settings.format == 'json':
+    if settings.format == "json":
         print(json.dumps(all_stats, indent=4, ensure_ascii=False))
 
 
@@ -5036,12 +5668,12 @@ def process_multiple_files(
     for input_path in input_paths:
         try:
             output_filename = os.path.splitext(os.path.basename(input_path))[0]
-            ext = FORMAT_EXTENSIONS.get(settings.format, '.txt')
+            ext = FORMAT_EXTENSIONS.get(settings.format, ".txt")
             output_filename += ext
             output_path = os.path.join(output_dir, output_filename)
             per_file_settings = replace(
                 settings,
-                output_mode='file',
+                output_mode="file",
                 output_path=output_path,
             )
             process_merged_files([input_path], per_file_settings, logger)
@@ -5055,14 +5687,16 @@ def _normalize_subject(subject: str) -> str:
     """Normalize subject line for threading by removing prefixes."""
     s = subject.strip()
     while True:
-        new_s = RE_SUBJECT_PREFIX_PATTERN.sub('', s)
+        new_s = RE_SUBJECT_PREFIX_PATTERN.sub("", s)
         if new_s == s:
             break
         s = new_s
     return s.strip().lower()
 
 
-def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[ProcessedMessage]:
+def _order_messages_by_thread(
+    messages: list[ProcessedMessage],
+) -> list[ProcessedMessage]:
     """Order processed messages so that threads are grouped together.
 
     Messages are rearranged so that parent messages appear before children and
@@ -5151,7 +5785,11 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
 
         # Determine thread_id for this tree
         start_msg = messages[start_idx]
-        thread_root_id = str(start_msg.msgnum) if start_msg.msgnum is not None else f"idx_{start_idx}"
+        thread_root_id = (
+            str(start_msg.msgnum)
+            if start_msg.msgnum is not None
+            else f"idx_{start_idx}"
+        )
 
         # Stack: (idx, depth, thread_id, children_iterator)
         stack: list[tuple[int, int, str, Iterator[int]]] = []
@@ -5171,7 +5809,7 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
                 original_msg,
                 depth=depth,
                 thread_id=thread_id,
-                parent_msgnum=parent_msgnum
+                parent_msgnum=parent_msgnum,
             )
             ordered_messages.append(new_msg)
             stack.append((idx, depth, thread_id, iter(children.get(idx, []))))
@@ -5217,39 +5855,70 @@ def _order_messages_by_thread(messages: list[ProcessedMessage]) -> list[Processe
     return ordered_messages
 
 
-def organize_by_bbs(input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger) -> None:
+def organize_by_bbs(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
     """Organize archive files into directories based on their BBS name and ID."""
-    supported_extensions = ('.qwk', '.rep', '.json', '.csv', '.xml', '.db', '.sqlite', '.mbox', '.eml', '.tar', '.tar.gz', '.tar.bz2', '.tgz', '.zip')
+    supported_extensions = (
+        ".qwk",
+        ".rep",
+        ".json",
+        ".csv",
+        ".xml",
+        ".db",
+        ".sqlite",
+        ".mbox",
+        ".eml",
+        ".tar",
+        ".tar.gz",
+        ".tar.bz2",
+        ".tgz",
+        ".zip",
+    )
 
     for input_path in input_paths:
         if not os.path.isfile(input_path):
             continue
 
-        if not input_path.lower().endswith(supported_extensions) and os.path.basename(input_path).lower() != 'messages.dat':
+        if (
+            not input_path.lower().endswith(supported_extensions)
+            and os.path.basename(input_path).lower() != "messages.dat"
+        ):
             continue
 
         try:
             _, board_dict = load_data(input_path, logger, settings.encoding)
-            bbs_info = getattr(board_dict, 'bbs_info', None)
+            bbs_info = getattr(board_dict, "bbs_info", None)
 
             if bbs_info and (bbs_info.name or bbs_info.bbs_id):
                 name_part = bbs_info.name.strip() if bbs_info.name else "Unknown BBS"
                 id_part = f" ({bbs_info.bbs_id.strip()})" if bbs_info.bbs_id else ""
 
                 folder_name = f"{name_part}{id_part}"
-                safe_folder_name = "".join([c for c in folder_name if c.isalnum() or c in (' ', '.', '_', '-', '(', ')')]).strip()
-                
+                safe_folder_name = "".join(
+                    [
+                        c
+                        for c in folder_name
+                        if c.isalnum() or c in (" ", ".", "_", "-", "(", ")")
+                    ]
+                ).strip()
+
                 if not safe_folder_name:
                     safe_folder_name = "Unknown_BBS"
-                
+
                 if settings.dry_run:
-                    logger.info("Dry run: Would move %s to %s/", input_path, safe_folder_name)
+                    logger.info(
+                        "Dry run: Would move %s to %s/", input_path, safe_folder_name
+                    )
                     continue
 
                 if not os.path.exists(safe_folder_name):
                     os.makedirs(safe_folder_name)
-                
-                shutil.move(input_path, os.path.join(safe_folder_name, os.path.basename(input_path)))
+
+                shutil.move(
+                    input_path,
+                    os.path.join(safe_folder_name, os.path.basename(input_path)),
+                )
                 logger.info("Moved %s to %s/", input_path, safe_folder_name)
             else:
                 logger.warning("Could not find BBS information in %s", input_path)

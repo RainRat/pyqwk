@@ -1,10 +1,11 @@
 import datetime
 from pyqwk.core import ProcessingSettings, ParsedMessage, MessageHeader, matches_filters
 
+
 def _make_msg(date_str, month, day):
     # date_str is MM-DD-YY
     header = MessageHeader(
-        status=' ',
+        status=" ",
         msgnum=1,
         msgdate=date_str,
         msgtime="12:00",
@@ -17,15 +18,12 @@ def _make_msg(date_str, month, day):
         msgflag="",
         confnum=1,
         lognum=1,
-        nettag=""
+        nettag="",
     )
     return ParsedMessage(
-        text="Hello world",
-        msgnum=1,
-        refnum=0,
-        confnum=1,
-        header=header
+        text="Hello world", msgnum=1, refnum=0, confnum=1, header=header
     )
+
 
 def _make_settings(on_this_day=True, reference_date=None):
     return ProcessingSettings(
@@ -38,14 +36,15 @@ def _make_settings(on_this_day=True, reference_date=None):
         threaded=False,
         binaries_removal=False,
         redact_pii=False,
-        format='text',
-        separator='none',
-        output_mode='stdout',
+        format="text",
+        separator="none",
+        output_mode="stdout",
         output_path=None,
-        encoding='cp437',
+        encoding="cp437",
         on_this_day=on_this_day,
-        reference_date=reference_date
+        reference_date=reference_date,
     )
+
 
 def test_on_this_day_matches():
     # Feb 14, 1995
@@ -55,6 +54,7 @@ def test_on_this_day_matches():
 
     assert matches_filters(msg, settings, set())
 
+
 def test_on_this_day_mismatch_day():
     # Feb 14, 1995
     msg = _make_msg("02-14-95", 2, 14)
@@ -62,6 +62,7 @@ def test_on_this_day_mismatch_day():
     settings = _make_settings(reference_date=datetime.datetime(2024, 2, 15))
 
     assert not matches_filters(msg, settings, set())
+
 
 def test_on_this_day_mismatch_month():
     # Feb 14, 1995
@@ -71,6 +72,7 @@ def test_on_this_day_mismatch_month():
 
     assert not matches_filters(msg, settings, set())
 
+
 def test_on_this_day_leap_year():
     # Feb 29, 1996
     msg = _make_msg("02-29-96", 2, 29)
@@ -78,6 +80,7 @@ def test_on_this_day_leap_year():
     settings = _make_settings(reference_date=datetime.datetime(2024, 2, 29))
 
     assert matches_filters(msg, settings, set())
+
 
 def test_on_this_day_defaults_to_now(monkeypatch):
     # Feb 14, 1995
@@ -93,10 +96,13 @@ def test_on_this_day_defaults_to_now(monkeypatch):
     settings = _make_settings(reference_date=None)
     assert matches_filters(msg, settings, set())
 
+
 def test_on_this_day_disabled():
     # Feb 14, 1995
     msg = _make_msg("02-14-95", 2, 14)
     # Reference Feb 15, 2024, but feature disabled
-    settings = _make_settings(on_this_day=False, reference_date=datetime.datetime(2024, 2, 15))
+    settings = _make_settings(
+        on_this_day=False, reference_date=datetime.datetime(2024, 2, 15)
+    )
 
     assert matches_filters(msg, settings, set())

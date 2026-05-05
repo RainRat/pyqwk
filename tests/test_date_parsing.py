@@ -8,6 +8,7 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import _parse_qwk_date
 
+
 class TestDateParsing:
     """Test suite for _parse_qwk_date function."""
 

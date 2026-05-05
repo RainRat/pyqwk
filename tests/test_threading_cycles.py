@@ -1,6 +1,7 @@
 import logging
 from pyqwk.core import _order_messages_by_thread
 
+
 def test_threading_circular_reference(message_factory, caplog):
     """Test that circular references are detected and do not cause infinite recursion."""
     # A -> B -> A
@@ -53,6 +54,7 @@ def test_threading_self_reference(message_factory, caplog):
     assert ordered[0].depth == 0
     # It ends up as a root
     assert ordered[0].parent_msgnum is None
+
 
 def test_threading_long_cycle(message_factory, caplog):
     """Test a longer cycle: A -> B -> C -> A."""

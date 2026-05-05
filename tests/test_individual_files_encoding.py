@@ -6,11 +6,18 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import process_merged_files, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import (
+    process_merged_files,
+    ProcessingSettings,
+    ParsedMessage,
+    MessageHeader,
+)
+
 
 @pytest.fixture
 def logger():
     return logging.getLogger("test_individual_files_encoding")
+
 
 def _make_settings(**overrides) -> ProcessingSettings:
     defaults = dict(
@@ -29,10 +36,11 @@ def _make_settings(**overrides) -> ProcessingSettings:
         output_path=None,
         encoding="cp437",
         conferences=None,
-        quiet=True
+        quiet=True,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
+
 
 def test_individual_files_text_format_respects_encoding(tmp_path, logger, monkeypatch):
     """
@@ -44,14 +52,24 @@ def test_individual_files_text_format_respects_encoding(tmp_path, logger, monkey
     text_content = "Resumé\r\n"
 
     header = MessageHeader(
-        status=' ', msgnum=1, msgdate='', msgtime='', msgto='', msgfrom='',
-        msgsubject='', msgpassword='', refnum=None, numblocks=1,
-        msgflag=' ', confnum=1, lognum=1, nettag=''
+        status=" ",
+        msgnum=1,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
     )
 
     msg = ParsedMessage(
-        text=text_content,
-        msgnum=1, refnum=None, confnum=1, header=header
+        text=text_content, msgnum=1, refnum=None, confnum=1, header=header
     )
 
     def fake_load_data(*args, **kwargs):
@@ -66,9 +84,7 @@ def test_individual_files_text_format_respects_encoding(tmp_path, logger, monkey
     output_dir = tmp_path / "output_cp437"
 
     settings = _make_settings(
-        format="text",
-        encoding="cp437",
-        output_path=str(output_dir)
+        format="text", encoding="cp437", output_path=str(output_dir)
     )
 
     process_merged_files(["dummy.qwk"], settings, logger)
@@ -80,8 +96,9 @@ def test_individual_files_text_format_respects_encoding(tmp_path, logger, monkey
         content = f.read()
 
     # Expect "Resum" + b'\x82' + ...
-    assert b'\x82' in content
-    assert b'\xc3\xa9' not in content
+    assert b"\x82" in content
+    assert b"\xc3\xa9" not in content
+
 
 def test_individual_files_json_format_forces_utf8(tmp_path, logger, monkeypatch):
     """
@@ -91,14 +108,24 @@ def test_individual_files_json_format_forces_utf8(tmp_path, logger, monkeypatch)
     text_content = "Resumé\r\n"
 
     header = MessageHeader(
-        status=' ', msgnum=1, msgdate='', msgtime='', msgto='', msgfrom='',
-        msgsubject='', msgpassword='', refnum=None, numblocks=1,
-        msgflag=' ', confnum=1, lognum=1, nettag=''
+        status=" ",
+        msgnum=1,
+        msgdate="",
+        msgtime="",
+        msgto="",
+        msgfrom="",
+        msgsubject="",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
     )
 
     msg = ParsedMessage(
-        text=text_content,
-        msgnum=1, refnum=None, confnum=1, header=header
+        text=text_content, msgnum=1, refnum=None, confnum=1, header=header
     )
 
     def fake_load_data(*args, **kwargs):
@@ -113,9 +140,7 @@ def test_individual_files_json_format_forces_utf8(tmp_path, logger, monkeypatch)
     output_dir = tmp_path / "output_json"
 
     settings = _make_settings(
-        format="json",
-        encoding="cp437",
-        output_path=str(output_dir)
+        format="json", encoding="cp437", output_path=str(output_dir)
     )
 
     process_merged_files(["dummy.qwk"], settings, logger)
@@ -127,5 +152,5 @@ def test_individual_files_json_format_forces_utf8(tmp_path, logger, monkeypatch)
         content = f.read()
 
     # Should be UTF-8 encoded
-    assert b'\xc3\xa9' in content
-    assert b'\x82' not in content
+    assert b"\xc3\xa9" in content
+    assert b"\x82" not in content

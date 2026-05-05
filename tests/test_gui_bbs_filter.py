@@ -12,13 +12,15 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.core import ParsedMessage, MessageHeader, BBSInfo, ConferenceMap
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
-         patch("pyqwk.gui.filedialog") as mock_fd, \
-         patch("pyqwk.gui.messagebox") as mock_mb:
-
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -51,6 +53,7 @@ def mock_gui_deps():
         # Mock classes/types
         class TclError(Exception):
             pass
+
         mock_tk.TclError = TclError
 
         # Mock Combobox
@@ -70,16 +73,21 @@ def mock_gui_deps():
             "conf_combo": conf_combo,
         }
 
+
 def get_app(initial_paths=None):
     from pyqwk.gui import QwkGuiApp
+
     root = MagicMock()
     return QwkGuiApp(root, initial_paths=initial_paths)
+
 
 def test_bbs_filter_population(mock_gui_deps):
     app = get_app()
 
     # Mock archives from two different BBSes
-    header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+    header = MessageHeader(
+        " ", 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, ""
+    )
 
     bbs1_info = BBSInfo(name="BBS One", bbs_id="BBS1")
     bbs2_info = BBSInfo(name="BBS Two", bbs_id="BBS2")
@@ -87,10 +95,11 @@ def test_bbs_filter_population(mock_gui_deps):
     msg1 = ParsedMessage("Msg 1", 1, None, 1, header)
     msg2 = ParsedMessage("Msg 2", 2, None, 1, header)
 
-    with patch("pyqwk.gui.load_data") as mock_load_data, \
-         patch("pyqwk.gui.parse_messages") as mock_parse_messages, \
-         patch("pyqwk.gui.matches_filters", return_value=True):
-
+    with (
+        patch("pyqwk.gui.load_data") as mock_load_data,
+        patch("pyqwk.gui.parse_messages") as mock_parse_messages,
+        patch("pyqwk.gui.matches_filters", return_value=True),
+    ):
         board_dict1 = ConferenceMap({1: "General"})
         board_dict1.bbs_info = bbs1_info
 
@@ -99,14 +108,16 @@ def test_bbs_filter_population(mock_gui_deps):
 
         mock_load_data.side_effect = [
             (bytearray(), board_dict1),
-            (bytearray(), board_dict2)
+            (bytearray(), board_dict2),
         ]
 
         mock_parse_messages.side_effect = [
-            [msg1], # Discovery phase (though it's not strictly necessary for this test, current implementation calls it)
-            [msg1], # Loading phase
-            [msg2], # Discovery phase
-            [msg2]  # Loading phase
+            [
+                msg1
+            ],  # Discovery phase (though it's not strictly necessary for this test, current implementation calls it)
+            [msg1],  # Loading phase
+            [msg2],  # Discovery phase
+            [msg2],  # Loading phase
         ]
 
         app.load_messages(["file1.qwk", "file2.qwk"])
@@ -115,9 +126,10 @@ def test_bbs_filter_population(mock_gui_deps):
         # Values should be ["All BBSes (2)", "BBS One (1)", "BBS Two (1)"]
         # In our case it was the first Combobox created
         expected_values = ["All BBSes (2)", "BBS One (1)", "BBS Two (1)"]
-        app.bbs_combo.__setitem__.assert_any_call('values', expected_values)
+        app.bbs_combo.__setitem__.assert_any_call("values", expected_values)
         assert app.bbs_mapping["BBS One (1)"] == "BBS1"
         assert app.bbs_mapping["BBS Two (1)"] == "BBS2"
+
 
 def test_bbs_filter_selection(mock_gui_deps):
     app = get_app()
@@ -129,11 +141,16 @@ def test_bbs_filter_selection(mock_gui_deps):
     settings = app._current_settings()
     assert settings.bbs_names == ["BBS1"]
 
+
 def test_pivot_filter_bbs(mock_gui_deps):
     app = get_app()
     # Resetting mocks since get_app creates them via side_effect
     app.bbs_combo = MagicMock()
-    app.bbs_combo.__getitem__.return_value = ["All BBSes (2)", "BBS One (1)", "BBS Two (1)"]
+    app.bbs_combo.__getitem__.return_value = [
+        "All BBSes (2)",
+        "BBS One (1)",
+        "BBS Two (1)",
+    ]
 
     with patch.object(app, "reload_messages"):
         app._pivot_filter(bbs_name="BBS Two")

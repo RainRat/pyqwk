@@ -12,11 +12,10 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk:
-
+    with patch("pyqwk.gui.tk") as mock_tk, patch("pyqwk.gui.ttk") as mock_ttk:
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -31,6 +30,7 @@ def mock_gui_deps():
             "tk": mock_tk,
             "ttk": mock_ttk,
         }
+
 
 def test_get_all_tree_items_traversal(mock_gui_deps):
     root = MagicMock()
@@ -56,6 +56,7 @@ def test_get_all_tree_items_traversal(mock_gui_deps):
     # Expected flattened list in depth-first order
     assert items == ["iid1", "iid1.1", "iid2"]
 
+
 def test_apply_zebra_striping_traversal(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -79,6 +80,7 @@ def test_apply_zebra_striping_traversal(mock_gui_deps):
     app.message_list.item.assert_any_call("iid1", tags=())
     app.message_list.item.assert_any_call("iid1.1", tags=("even",))
     app.message_list.item.assert_any_call("iid2", tags=())
+
 
 def test_sort_column_empty(mock_gui_deps):
     root = MagicMock()

@@ -2,9 +2,11 @@ import sys
 from unittest.mock import MagicMock, patch
 import pytest
 
+
 # Mock tkinter before any pyqwk.gui imports
 class MockTclError(Exception):
     pass
+
 
 if "tkinter" in sys.modules:
     existing_tk = sys.modules["tkinter"]
@@ -25,18 +27,20 @@ if "tkinter.simpledialog" not in sys.modules:
 
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def app():
     root = MagicMock()
     root.after = MagicMock()
 
-    with patch("tkinter.BooleanVar", return_value=MagicMock()), \
-         patch("tkinter.StringVar", return_value=MagicMock()), \
-         patch("tkinter.ttk.Treeview", return_value=MagicMock()) as mock_tree, \
-         patch("tkinter.Text", return_value=MagicMock()) as mock_text, \
-         patch("tkinter.ttk.Combobox"), \
-         patch("tkinter.ttk.Label") as mock_label:
-
+    with (
+        patch("tkinter.BooleanVar", return_value=MagicMock()),
+        patch("tkinter.StringVar", return_value=MagicMock()),
+        patch("tkinter.ttk.Treeview", return_value=MagicMock()) as mock_tree,
+        patch("tkinter.Text", return_value=MagicMock()) as mock_text,
+        patch("tkinter.ttk.Combobox"),
+        patch("tkinter.ttk.Label") as mock_label,
+    ):
         a = QwkGuiApp(root)
         a.message_list = mock_tree.return_value
         a.detail_text = mock_text.return_value
@@ -51,6 +55,7 @@ def app():
 
         return a
 
+
 def test_render_empty_state_listing_filters(app):
     # Set up some active filters
     app.search_var.get.return_value = "vintage"
@@ -63,17 +68,27 @@ def test_render_empty_state_listing_filters(app):
     app._render_empty_state()
 
     # Verify basic structure
-    inserted_texts = [call.args[1] for call in app.detail_text.insert.call_args_list if len(call.args) > 1]
+    inserted_texts = [
+        call.args[1]
+        for call in app.detail_text.insert.call_args_list
+        if len(call.args) > 1
+    ]
 
     assert any("No Messages Found" in text for text in inserted_texts)
-    assert any("Your current filters returned no results" in text for text in inserted_texts)
+    assert any(
+        "Your current filters returned no results" in text for text in inserted_texts
+    )
 
     # Verify specific filter reporting
     assert any("'vintage'" in text for text in inserted_texts)
     assert any("Regex Search" in text for text in inserted_texts)
     assert any("The Cave BBS" in text for text in inserted_texts)
     assert any("General" in text for text in inserted_texts)
-    assert any("My Messages, Attachments" in text or ("My Messages" in text and "Attachments" in text) for text in inserted_texts)
+    assert any(
+        "My Messages, Attachments" in text
+        or ("My Messages" in text and "Attachments" in text)
+        for text in inserted_texts
+    )
 
     # Verify reset link and tip
     assert any("Reset all filters and search" in text for text in inserted_texts)
@@ -82,11 +97,14 @@ def test_render_empty_state_listing_filters(app):
     # Verify match counter was cleared
     app.search_count_label.config.assert_called_with(text="")
 
+
 def test_empty_state_reset_link_binding(app):
     # Dictionary to store tag callbacks
     tag_callbacks = {}
+
     def mock_tag_bind(tag, event, callback):
         tag_callbacks[tag] = callback
+
     app.detail_text.tag_bind.side_effect = mock_tag_bind
 
     with patch.object(app, "clear_filters") as mock_clear:
@@ -99,14 +117,17 @@ def test_empty_state_reset_link_binding(app):
         tag_callbacks["reset_all"](None)
         mock_clear.assert_called_once()
 
+
 def test_load_messages_triggers_empty_state(app):
     # Mock load_data to return empty results
     from pyqwk.core import ConferenceMap
+
     empty_board = ConferenceMap()
 
-    with patch("pyqwk.gui.load_data", return_value=([], empty_board)), \
-         patch.object(app, "_render_empty_state") as mock_render_empty:
-
+    with (
+        patch("pyqwk.gui.load_data", return_value=([], empty_board)),
+        patch.object(app, "_render_empty_state") as mock_render_empty,
+    ):
         app.load_messages(["empty.qwk"])
 
         mock_render_empty.assert_called_once()

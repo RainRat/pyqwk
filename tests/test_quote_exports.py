@@ -6,8 +6,9 @@ from pyqwk.core import (
     _serialize_message_markdown,
     _write_html,
     _write_markdown,
-    ProcessingSettings
+    ProcessingSettings,
 )
+
 
 @pytest.fixture
 def sample_message():
@@ -45,6 +46,7 @@ def sample_message():
         bbs_name="TestBBS",
     )
 
+
 def test_html_quote_highlighting(sample_message):
     html_output = _serialize_message_html(sample_message, search_term="highlight")
 
@@ -53,15 +55,22 @@ def test_html_quote_highlighting(sample_message):
 
     # Check for quote spans
     assert '<span class="quote">&gt; This is a standard quote.</span>' in html_output
-    assert '<span class="quote">| This is an alternative quote style.</span>' in html_output
+    assert (
+        '<span class="quote">| This is an alternative quote style.</span>'
+        in html_output
+    )
     assert '<span class="quote">│ And another one.</span>' in html_output
 
     # Check for highlighting within quote
-    assert '<span class="quote">&gt; Quote with search term: <mark>highlight</mark> me!</span>' in html_output
+    assert (
+        '<span class="quote">&gt; Quote with search term: <mark>highlight</mark> me!</span>'
+        in html_output
+    )
 
     # Normal line should not be wrapped
     assert "Normal line here." in html_output
     assert '<span class="quote">Normal line here.</span>' not in html_output
+
 
 def test_markdown_quote_standardization(sample_message):
     md_output = _serialize_message_markdown(sample_message, search_term="highlight")
@@ -79,6 +88,7 @@ def test_markdown_quote_standardization(sample_message):
     # Normal line should not have >
     assert "\nNormal line here.\n" in md_output
     assert "\n> Normal line here.\n" not in md_output
+
 
 def test_write_html_with_quotes(sample_message, tmp_path):
     output_file = tmp_path / "test.html"
@@ -104,6 +114,7 @@ def test_write_html_with_quotes(sample_message, tmp_path):
     content = output_file.read_text(encoding="utf-8")
     assert ".quote { color: #4e9a06; }" in content
     assert '<span class="quote">&gt; This is a standard quote.</span>' in content
+
 
 def test_write_markdown_with_quotes(sample_message, tmp_path):
     output_file = tmp_path / "test.md"

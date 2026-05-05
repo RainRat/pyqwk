@@ -1,36 +1,47 @@
 from pyqwk.core import ProcessingSettings, ParsedMessage, MessageHeader, matches_filters
 
+
 def test_matches_filters_regex():
     header = MessageHeader(
-        status=' ',
+        status=" ",
         msgnum=1,
-        msgdate='01-01-23',
-        msgtime='12:00',
-        msgto='Alice',
-        msgfrom='Bob Smith',
-        msgsubject='Hello World',
-        msgpassword='',
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="Alice",
+        msgfrom="Bob Smith",
+        msgsubject="Hello World",
+        msgpassword="",
         refnum=0,
         numblocks=1,
-        msgflag='',
+        msgflag="",
         confnum=1,
         lognum=0,
-        nettag=''
+        nettag="",
     )
     message = ParsedMessage(
         text="This is a test message about BBS systems.",
         msgnum=1,
         refnum=0,
         confnum=1,
-        header=header
+        header=header,
     )
 
     # Base settings
     base_settings = ProcessingSettings(
-        verbose=False, private=False, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-        redact_pii=False, format='text', separator='auto', output_mode='stdout',
-        output_path=None, encoding='cp437'
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="auto",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
     )
 
     # 1. Regex match on Author
@@ -57,36 +68,48 @@ def test_matches_filters_regex():
     settings.search_term = "["
     assert matches_filters(message, settings, set()) is False
 
+
 def test_normal_substring_still_works():
     header = MessageHeader(
-        status=' ',
+        status=" ",
         msgnum=1,
-        msgdate='01-01-23',
-        msgtime='12:00',
-        msgto='Alice',
-        msgfrom='Bob Smith',
-        msgsubject='Hello World',
-        msgpassword='',
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="Alice",
+        msgfrom="Bob Smith",
+        msgsubject="Hello World",
+        msgpassword="",
         refnum=0,
         numblocks=1,
-        msgflag='',
+        msgflag="",
         confnum=1,
         lognum=0,
-        nettag=''
+        nettag="",
     )
     message = ParsedMessage(
         text="This is a test message about BBS systems.",
         msgnum=1,
         refnum=0,
         confnum=1,
-        header=header
+        header=header,
     )
 
     base_settings = ProcessingSettings(
-        verbose=False, private=False, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
-        redact_pii=False, format='text', separator='auto', output_mode='stdout',
-        output_path=None, encoding='cp437', regex=False
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="auto",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        regex=False,
     )
 
     settings = base_settings

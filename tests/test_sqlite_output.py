@@ -2,6 +2,7 @@ import sqlite3
 import pytest
 from pyqwk.core import _write_sqlite
 
+
 def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     db_path = tmp_path / "test.sqlite"
 
@@ -12,7 +13,7 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
         subject="Thread Start",
         confnum=1,
         text="Content 1\r\nLine 2",
-        status=" "
+        status=" ",
     )
     # Update header with date/time for realistic testing
     msg1.header.msgdate = "01-01-90"
@@ -26,7 +27,7 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
         subject="Re: Thread Start",
         confnum=1,
         text="Reply content",
-        status="-"
+        status="-",
     )
     msg2.header.msgdate = "01-02-90"
     msg2.header.msgtime = "13:30"
@@ -60,7 +61,9 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     cursor = conn.cursor()
 
     # Check table schema
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'")
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='messages'"
+    )
     assert cursor.fetchone() is not None
 
     # Check data
@@ -78,15 +81,15 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert r1[2] == 1  # message_number
     # Date validation: 01-01-90 -> 1990-01-01 12:00:00
     assert "1990-01-01T12:00:00" in r1[3]
-    assert r1[4] == "Alice" # author
-    assert r1[5] == "All"   # recipient
-    assert r1[6] == "Thread Start" # subject
-    assert r1[7] == " "     # status
-    assert r1[8] == "Content 1\r\nLine 2" # text
-    assert r1[9] is None    # reference_number
-    assert r1[10] == "1"    # thread_id
-    assert r1[11] == 0      # depth
-    assert r1[12] is None   # parent_message_number
+    assert r1[4] == "Alice"  # author
+    assert r1[5] == "All"  # recipient
+    assert r1[6] == "Thread Start"  # subject
+    assert r1[7] == " "  # status
+    assert r1[8] == "Content 1\r\nLine 2"  # text
+    assert r1[9] is None  # reference_number
+    assert r1[10] == "1"  # thread_id
+    assert r1[11] == 0  # depth
+    assert r1[12] is None  # parent_message_number
     assert r1[13] == "Main Board"
     assert r1[14] == "MyBBS"
     assert r1[15] is None  # bbs_id
@@ -103,10 +106,10 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
     assert r2[6] == "Re: Thread Start"
     assert r2[7] == "-"
     assert r2[8] == "Reply content"
-    assert r2[9] == 1       # reference_number
-    assert r2[10] == "1"    # thread_id
-    assert r2[11] == 1      # depth
-    assert r2[12] == 1      # parent_message_number
+    assert r2[9] == 1  # reference_number
+    assert r2[10] == "1"  # thread_id
+    assert r2[11] == 1  # depth
+    assert r2[12] == 1  # parent_message_number
     assert r2[13] == "Main Board"
     assert r2[14] == "MyBBS"
     assert r2[15] is None  # bbs_id
@@ -115,10 +118,12 @@ def test_write_sqlite_creates_valid_db(tmp_path, message_factory):
 
     conn.close()
 
+
 def test_write_sqlite_raises_error_no_output_path(message_factory):
     msg = message_factory(1, None, "Test")
     with pytest.raises(ValueError, match="Output path is required"):
         _write_sqlite([msg], None)
+
 
 def test_write_sqlite_handles_invalid_date(tmp_path, message_factory):
     db_path = tmp_path / "bad_date.sqlite"

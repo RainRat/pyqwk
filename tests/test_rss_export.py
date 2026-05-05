@@ -1,6 +1,13 @@
 import xml.etree.ElementTree as ET
 import pytest
-from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, write_messages, BBSInfo
+from pyqwk.core import (
+    ParsedMessage,
+    MessageHeader,
+    ProcessingSettings,
+    write_messages,
+    BBSInfo,
+)
+
 
 def test_rss_export(tmp_path):
     # Setup sample data with all required MessageHeader fields
@@ -42,11 +49,11 @@ def test_rss_export(tmp_path):
         threaded=False,
         binaries_removal=False,
         redact_pii=False,
-        format='rss',
-        separator='none',
-        output_mode='file',
+        format="rss",
+        separator="none",
+        output_mode="file",
         output_path=str(tmp_path / "test.rss"),
-        encoding='cp437'
+        encoding="cp437",
     )
     bbs_info = BBSInfo(name="The BBS", bbs_id="THEBBS")
 
@@ -61,26 +68,27 @@ def test_rss_export(tmp_path):
     tree = ET.parse(rss_file)
     root = tree.getroot()
 
-    assert root.tag == 'rss'
-    assert root.attrib['version'] == '2.0'
+    assert root.tag == "rss"
+    assert root.attrib["version"] == "2.0"
 
-    channel = root.find('channel')
+    channel = root.find("channel")
     assert channel is not None
-    assert channel.find('title').text == "The BBS Archive"
+    assert channel.find("title").text == "The BBS Archive"
 
-    item = channel.find('item')
+    item = channel.find("item")
     assert item is not None
-    assert item.find('title').text == "Hello RSS"
-    assert item.find('author').text == "Alice"
-    assert item.find('description').text == "This is a test message for RSS export."
-    assert item.find('category').text == "General"
-    assert item.find('guid').text == "1.101@qwk"
+    assert item.find("title").text == "Hello RSS"
+    assert item.find("author").text == "Alice"
+    assert item.find("description").text == "This is a test message for RSS export."
+    assert item.find("category").text == "General"
+    assert item.find("guid").text == "1.101@qwk"
 
     # Check pubDate format (RFC 822)
-    pub_date = item.find('pubDate').text
+    pub_date = item.find("pubDate").text
     # Should look like: Mon, 01 Jan 2024 12:00:00 -0000 (or similar)
     assert "2024" in pub_date
     assert "Jan" in pub_date
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

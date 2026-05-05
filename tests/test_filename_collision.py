@@ -5,14 +5,16 @@ from pyqwk.core import (
     process_merged_files,
     ProcessingSettings,
     ParsedMessage,
-    MessageHeader
+    MessageHeader,
 )
+
 
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def test_filename_collision_resolution(tmp_path, logger):
     """Test that filename collisions are resolved by appending a short hash."""
@@ -30,12 +32,12 @@ def test_filename_collision_resolution(tmp_path, logger):
         binaries_removal=False,
         redact_pii=False,
         strip_ansi=False,
-        format='text',
-        separator='auto',
-        output_mode='file',
+        format="text",
+        separator="auto",
+        output_mode="file",
         output_path=str(output_dir),
-        encoding='cp437',
-        quiet=True
+        encoding="cp437",
+        quiet=True,
     )
 
     # Mock headers
@@ -49,7 +51,12 @@ def test_filename_collision_resolution(tmp_path, logger):
     h1.msgtime = "12:00"
     h1.is_private = False
     h1.is_password = False
-    h1.as_dict = {"from": "User1", "to": "All", "subject": "Collision Test", "date": "01-01-23 12:00"}
+    h1.as_dict = {
+        "from": "User1",
+        "to": "All",
+        "subject": "Collision Test",
+        "date": "01-01-23 12:00",
+    }
     h1.format_text.return_value = "Header1\n"
 
     h2 = MagicMock(spec=MessageHeader)
@@ -62,23 +69,29 @@ def test_filename_collision_resolution(tmp_path, logger):
     h2.msgtime = "12:00"
     h2.is_private = False
     h2.is_password = False
-    h2.as_dict = {"from": "User2", "to": "All", "subject": "Collision Test", "date": "01-01-23 12:00"}
+    h2.as_dict = {
+        "from": "User2",
+        "to": "All",
+        "subject": "Collision Test",
+        "date": "01-01-23 12:00",
+    }
     h2.format_text.return_value = "Header2\n"
 
     # Both messages will have the same initial filename: 001-00100-collision_test.txt
-    msg1 = ParsedMessage(text="Body Content 1", msgnum=100, refnum=None, confnum=1, header=h1)
-    msg2 = ParsedMessage(text="Body Content 2", msgnum=100, refnum=None, confnum=1, header=h2)
+    msg1 = ParsedMessage(
+        text="Body Content 1", msgnum=100, refnum=None, confnum=1, header=h1
+    )
+    msg2 = ParsedMessage(
+        text="Body Content 2", msgnum=100, refnum=None, confnum=1, header=h2
+    )
 
-    with patch('pyqwk.core.load_data') as mock_load:
-        mock_load.return_value = (bytearray(b'Produced '), {})
-        with patch('pyqwk.core.parse_messages') as mock_parse:
+    with patch("pyqwk.core.load_data") as mock_load:
+        mock_load.return_value = (bytearray(b"Produced "), {})
+        with patch("pyqwk.core.parse_messages") as mock_parse:
             # We simulate two archives by returning them sequentially
-            mock_parse.side_effect = [
-                [msg1],
-                [msg2]
-            ]
+            mock_parse.side_effect = [[msg1], [msg2]]
 
-            process_merged_files(['arch1.qwk', 'arch2.qwk'], settings, logger)
+            process_merged_files(["arch1.qwk", "arch2.qwk"], settings, logger)
 
     # Check that both files exist
     files = list(output_dir.iterdir())
@@ -95,6 +108,7 @@ def test_filename_collision_resolution(tmp_path, logger):
     # Hash is 8 chars before .txt
     name_part = hashed_files[0].name.replace(".txt", "")
     assert len(name_part.split("-")[-1]) == 8
+
 
 def test_conference_slug_fallback(tmp_path, logger):
     """Test that conference names with only special characters fall back to 'conference' slug."""
@@ -113,12 +127,12 @@ def test_conference_slug_fallback(tmp_path, logger):
         binaries_removal=False,
         redact_pii=False,
         strip_ansi=False,
-        format='text',
-        separator='auto',
-        output_mode='file',
+        format="text",
+        separator="auto",
+        output_mode="file",
         output_path=str(output_dir),
-        encoding='cp437',
-        quiet=True
+        encoding="cp437",
+        quiet=True,
     )
 
     # Mock header with a subject and a conference name that results in empty slug
@@ -132,18 +146,25 @@ def test_conference_slug_fallback(tmp_path, logger):
     h1.msgtime = "12:00"
     h1.is_private = False
     h1.is_password = False
-    h1.as_dict = {"from": "User", "to": "All", "subject": "Test", "date": "01-01-23 12:00"}
+    h1.as_dict = {
+        "from": "User",
+        "to": "All",
+        "subject": "Test",
+        "date": "01-01-23 12:00",
+    }
     h1.format_text.return_value = "Header\n"
 
     # confname "!!!" will result in an empty slug
-    msg1 = ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=99, header=h1, confname="!!!")
+    msg1 = ParsedMessage(
+        text="Body", msgnum=1, refnum=None, confnum=99, header=h1, confname="!!!"
+    )
 
-    with patch('pyqwk.core.load_data') as mock_load:
-        mock_load.return_value = (bytearray(b'Produced '), {99: "!!!"})
-        with patch('pyqwk.core.parse_messages') as mock_parse:
+    with patch("pyqwk.core.load_data") as mock_load:
+        mock_load.return_value = (bytearray(b"Produced "), {99: "!!!"})
+        with patch("pyqwk.core.parse_messages") as mock_parse:
             mock_parse.return_value = [msg1]
 
-            process_merged_files(['archive.qwk'], settings, logger)
+            process_merged_files(["archive.qwk"], settings, logger)
 
     # Check for the directory name: 099-conference
     conf_dir = output_dir / "099-conference"

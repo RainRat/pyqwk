@@ -14,8 +14,9 @@ from pyqwk.core import (
     MessageHeader,
     BBSInfo,
     ConferenceMap,
-    process_merged_files
+    process_merged_files,
 )
+
 
 def test_parse_html_messages_case_insensitive(tmp_path):
     """Test that HTML parser handles uppercase DIV tags."""
@@ -48,35 +49,93 @@ def test_parse_html_messages_case_insensitive(tmp_path):
     assert msgs[1].depth == 1
 
     # Now test uppercase
-    upper_html = html_content.replace('<div', '<DIV').replace('</div', '</DIV>').replace('<pre', '<PRE').replace('</pre', '</PRE')
+    upper_html = (
+        html_content.replace("<div", "<DIV")
+        .replace("</div", "</DIV>")
+        .replace("<pre", "<PRE")
+        .replace("</pre", "</PRE")
+    )
     html_file.write_text(upper_html)
     msgs = _parse_html_messages(str(html_file))
     assert len(msgs) == 2
     assert msgs[1].depth == 1
 
+
 def test_threading_cycle_already_reported(caplog):
     """
     Try to trigger the 'cycle already reported' branch in _order_messages_by_thread.
     """
-    h1 = MessageHeader(status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
-                       msgto='All', msgfrom='U1', msgsubject='S1', msgpassword='',
-                       refnum=2, numblocks=1, msgflag='', confnum=1, lognum=1, nettag='')
+    h1 = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="U1",
+        msgsubject="S1",
+        msgpassword="",
+        refnum=2,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
     msg1 = ParsedMessage(text="M1", msgnum=1, refnum=2, confnum=1, header=h1)
 
-    h2 = MessageHeader(status=' ', msgnum=2, msgdate='01-01-23', msgtime='12:01',
-                       msgto='All', msgfrom='U2', msgsubject='S1', msgpassword='',
-                       refnum=3, numblocks=1, msgflag='', confnum=1, lognum=1, nettag='')
+    h2 = MessageHeader(
+        status=" ",
+        msgnum=2,
+        msgdate="01-01-23",
+        msgtime="12:01",
+        msgto="All",
+        msgfrom="U2",
+        msgsubject="S1",
+        msgpassword="",
+        refnum=3,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
     msg2 = ParsedMessage(text="M2", msgnum=2, refnum=3, confnum=1, header=h2)
 
-    h3 = MessageHeader(status=' ', msgnum=3, msgdate='01-01-23', msgtime='12:02',
-                       msgto='All', msgfrom='U3', msgsubject='S1', msgpassword='',
-                       refnum=1, numblocks=1, msgflag='', confnum=1, lognum=1, nettag='')
+    h3 = MessageHeader(
+        status=" ",
+        msgnum=3,
+        msgdate="01-01-23",
+        msgtime="12:02",
+        msgto="All",
+        msgfrom="U3",
+        msgsubject="S1",
+        msgpassword="",
+        refnum=1,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
     msg3 = ParsedMessage(text="M3", msgnum=3, refnum=1, confnum=1, header=h3)
 
     # Adding an extra path to the same cycle to trigger "already reported"
-    h4 = MessageHeader(status=' ', msgnum=4, msgdate='01-01-23', msgtime='12:03',
-                       msgto='All', msgfrom='U4', msgsubject='S1', msgpassword='',
-                       refnum=2, numblocks=1, msgflag='', confnum=1, lognum=1, nettag='')
+    h4 = MessageHeader(
+        status=" ",
+        msgnum=4,
+        msgdate="01-01-23",
+        msgtime="12:03",
+        msgto="All",
+        msgfrom="U4",
+        msgsubject="S1",
+        msgpassword="",
+        refnum=2,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
     msg4 = ParsedMessage(text="M4", msgnum=4, refnum=2, confnum=1, header=h4)
 
     msgs = [msg1, msg2, msg3, msg4]
@@ -87,6 +146,7 @@ def test_threading_cycle_already_reported(caplog):
 
     assert "Circular reference detected" in caplog.text
     assert len(ordered) == 4
+
 
 def test_load_data_merging_branches(tmp_path, caplog):
     """Test missing branches in load_data merging logic (BBS info and board dict)."""
@@ -100,7 +160,7 @@ def test_load_data_merging_branches(tmp_path, caplog):
 
     # Also need a ZIP file to trigger the code that does the merging
     zip_path = tmp_path / "test.zip"
-    with zipfile.ZipFile(zip_path, 'w') as z:
+    with zipfile.ZipFile(zip_path, "w") as z:
         z.writestr("file1.json", "[]")
         z.writestr("file2.json", "[]")
         z.writestr("file3.json", "[]")
@@ -114,22 +174,35 @@ def test_load_data_merging_branches(tmp_path, caplog):
     # but since it's second it triggers nothing new unless we reorder.
 
     bd2 = ConferenceMap({1: "Conf1_Duplicate", 2: "Conf2"})
-    bd2.bbs_info = BBSInfo(name="") # Empty name to trigger the name check
+    bd2.bbs_info = BBSInfo(name="")  # Empty name to trigger the name check
 
     bd3 = ConferenceMap({3: "Conf3"})
-    bd3.bbs_info = None # No BBS info
+    bd3.bbs_info = None  # No BBS info
 
     # Mock load_data to return specific board_dicts and bbs_info
     # We need to mock it so that when it's called RECURSIVELY it returns our test data.
     orig_load_data = load_data
     with patch("pyqwk.core.load_data") as mock_load:
-        def side_effect(path, logger, encoding='cp437'):
+
+        def side_effect(path, logger, encoding="cp437"):
             if "file1.json" in path:
-                return [ParsedMessage(text="M1", msgnum=1, refnum=None, confnum=1, header=MagicMock())], bd1
+                return [
+                    ParsedMessage(
+                        text="M1", msgnum=1, refnum=None, confnum=1, header=MagicMock()
+                    )
+                ], bd1
             if "file2.json" in path:
-                return [ParsedMessage(text="M2", msgnum=2, refnum=None, confnum=2, header=MagicMock())], bd2
+                return [
+                    ParsedMessage(
+                        text="M2", msgnum=2, refnum=None, confnum=2, header=MagicMock()
+                    )
+                ], bd2
             if "file3.json" in path:
-                return [ParsedMessage(text="M3", msgnum=3, refnum=None, confnum=3, header=MagicMock())], bd3
+                return [
+                    ParsedMessage(
+                        text="M3", msgnum=3, refnum=None, confnum=3, header=MagicMock()
+                    )
+                ], bd3
             return orig_load_data(path, logger, encoding)
 
         mock_load.side_effect = side_effect
@@ -141,6 +214,7 @@ def test_load_data_merging_branches(tmp_path, caplog):
         assert combined_bd[1] == "Conf1"
         assert combined_bd[2] == "Conf2"
         assert combined_bd[3] == "Conf3"
+
 
 def test_expand_paths_branches(tmp_path):
     """Test branches in expand_paths for tar/zip detection."""
@@ -156,6 +230,7 @@ def test_expand_paths_branches(tmp_path):
     # Should include both (one existing, one not)
     assert len(expanded) == 2
     assert str(regular_file) in expanded
+
 
 def test_parse_text_messages_empty_date_parts(tmp_path):
     """Test _parse_text_messages when date string is present but has no parts."""
@@ -182,31 +257,59 @@ Body
     assert len(msgs) == 1
     assert msgs[0].header.msgdate == "01-01-70"
 
+
 def test_rss_export_attachment_branches(tmp_path):
     """Test _write_rss and related branches in process_merged_files."""
     from pyqwk.core import process_merged_files
 
     output_file = tmp_path / "test.rss"
     settings = ProcessingSettings(
-        verbose=False, private=True, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False, merge=False,
-        binaries_removal=False, redact_pii=False, format='rss', separator='none',
-        output_mode='file', output_path=str(output_file), encoding='utf-8',
-        unique=False, strip_ansi=False, quiet=True, headers_only=False
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        merge=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="rss",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_file),
+        encoding="utf-8",
+        unique=False,
+        strip_ansi=False,
+        quiet=True,
+        headers_only=False,
     )
 
     h1 = MessageHeader(
-        status=' ', msgnum=1, msgdate='01-01-23', msgtime='12:00',
-        msgto='All', msgfrom='User1', msgsubject='Subj1', msgpassword='',
-        refnum=None, numblocks=1, msgflag='', confnum=100, lognum=1, nettag=''
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="User1",
+        msgsubject="Subj1",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag="",
+        confnum=100,
+        lognum=1,
+        nettag="",
     )
-    msg1 = ParsedMessage(text="Body with attachment", msgnum=1, refnum=None, confnum=100, header=h1)
+    msg1 = ParsedMessage(
+        text="Body with attachment", msgnum=1, refnum=None, confnum=100, header=h1
+    )
     # Simulate an attachment by having UUEncoded text that might be detected if extract_attachments was true
 
     mock_logger = MagicMock()
-    with patch('pyqwk.core.load_data') as mock_load:
+    with patch("pyqwk.core.load_data") as mock_load:
         mock_load.return_value = ([msg1], ConferenceMap())
-        process_merged_files(['fake.qwk'], settings, mock_logger)
+        process_merged_files(["fake.qwk"], settings, mock_logger)
 
     assert output_file.exists()
     content = output_file.read_text()

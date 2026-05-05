@@ -12,13 +12,15 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.core import ParsedMessage, MessageHeader
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
-         patch("pyqwk.gui.filedialog") as mock_fd, \
-         patch("pyqwk.gui.messagebox") as mock_mb:
-
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -39,21 +41,29 @@ def mock_gui_deps():
             "messagebox": mock_mb,
         }
 
+
 def get_app():
     from pyqwk.gui import QwkGuiApp
+
     root = MagicMock()
     return QwkGuiApp(root)
+
 
 def test_export_messages_no_messages(mock_gui_deps):
     app = get_app()
     app.messages = []
     app.export_messages()
-    mock_gui_deps["messagebox"].showwarning.assert_called_with("Export", "No messages to export.")
+    mock_gui_deps["messagebox"].showwarning.assert_called_with(
+        "Export", "No messages to export."
+    )
+
 
 def test_export_messages_error_handling(mock_gui_deps):
     app = get_app()
 
-    header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+    header = MessageHeader(
+        " ", 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, ""
+    )
     msg = ParsedMessage("Body", 1, None, 1, header)
     app.messages = [msg]
     app.board_dict = {1: "General"}
@@ -65,11 +75,16 @@ def test_export_messages_error_handling(mock_gui_deps):
 
         with patch("pyqwk.gui.write_messages", side_effect=Exception("Export failed")):
             app.export_messages()
-            mock_gui_deps["messagebox"].showerror.assert_called_with("Export Failed", "Export failed")
+            mock_gui_deps["messagebox"].showerror.assert_called_with(
+                "Export Failed", "Export failed"
+            )
+
 
 def test_export_messages_skips_invalid_iid(mock_gui_deps):
     app = get_app()
-    header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+    header = MessageHeader(
+        " ", 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, ""
+    )
     msg = ParsedMessage("Body", 1, None, 1, header)
     app.messages = [msg]
     app.board_dict = {1: "General"}

@@ -14,6 +14,7 @@ from pyqwk.core import (
     process_merged_files,
 )
 
+
 def _make_header(msgnum, msgdate, msgtime, msgfrom, msgto, msgsubject, confnum):
     return MessageHeader(
         status=" ",
@@ -32,6 +33,7 @@ def _make_header(msgnum, msgdate, msgtime, msgfrom, msgto, msgsubject, confnum):
         nettag="",
     )
 
+
 @pytest.fixture
 def mock_messages():
     # Dates are MM-DD-YY
@@ -44,6 +46,7 @@ def mock_messages():
         ParsedMessage(text="Message 2", msgnum=2, refnum=None, confnum=1, header=h2),
         ParsedMessage(text="Message 3", msgnum=3, refnum=None, confnum=2, header=h3),
     ]
+
 
 def _make_settings(**overrides):
     defaults = dict(
@@ -81,9 +84,19 @@ def _make_settings(**overrides):
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_sort_by_date(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(sort="date")
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -96,9 +109,19 @@ def test_sort_by_date(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 3", "Message 1", "Message 2"]
 
+
 def test_sort_by_author(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(sort="author")
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -108,9 +131,19 @@ def test_sort_by_author(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 1", "Message 3", "Message 2"]
 
+
 def test_sort_by_to(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(sort="to")
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -120,9 +153,19 @@ def test_sort_by_to(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 2", "Message 1", "Message 3"]
 
+
 def test_sort_by_subject(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(sort="subject")
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -132,9 +175,19 @@ def test_sort_by_subject(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 3", "Message 2", "Message 1"]
 
+
 def test_reverse(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(reverse=True)
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -144,9 +197,19 @@ def test_reverse(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 3", "Message 2", "Message 1"]
 
+
 def test_sort_by_conference(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(sort="conference")
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -156,14 +219,26 @@ def test_sort_by_conference(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 1", "Message 2", "Message 3"]
 
+
 def test_sort_by_num(mock_messages, monkeypatch, capsys):
     # Add a message with None msgnum to test fallback
     h_none = _make_header(None, "01-01-23", "08:00", "Dave", "Alice", "None Num", 1)
-    msg_none = ParsedMessage(text="Message None", msgnum=None, refnum=None, confnum=1, header=h_none)
+    msg_none = ParsedMessage(
+        text="Message None", msgnum=None, refnum=None, confnum=1, header=h_none
+    )
     extended_messages = mock_messages + [msg_none]
 
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(extended_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(extended_messages)
+    )
 
     settings = _make_settings(sort="num")
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -177,9 +252,19 @@ def test_sort_by_num(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message None", "Message 1", "Message 2", "Message 3"]
 
+
 def test_sort_with_limit(mock_messages, monkeypatch, capsys):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     settings = _make_settings(sort="author", limit=2)
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
@@ -189,12 +274,27 @@ def test_sort_with_limit(mock_messages, monkeypatch, capsys):
     lines = [line.strip() for line in captured.splitlines() if line.strip()]
     assert lines == ["Message 1", "Message 3"]
 
+
 def test_sort_with_individual_files(mock_messages, monkeypatch, tmp_path):
-    monkeypatch.setattr(qwk, "load_data", lambda *args, **kwargs: (bytearray(b'Produced \0' + b'\0'*119), {1: "Conf 1", 2: "Conf 2"}))
-    monkeypatch.setattr(qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages))
+    monkeypatch.setattr(
+        qwk,
+        "load_data",
+        lambda *args, **kwargs: (
+            bytearray(b"Produced \0" + b"\0" * 119),
+            {1: "Conf 1", 2: "Conf 2"},
+        ),
+    )
+    monkeypatch.setattr(
+        qwk, "parse_messages", lambda *args, **kwargs: iter(mock_messages)
+    )
 
     output_dir = tmp_path / "out"
-    settings = _make_settings(sort="subject", individual_files=True, output_mode="file", output_path=str(output_dir))
+    settings = _make_settings(
+        sort="subject",
+        individual_files=True,
+        output_mode="file",
+        output_path=str(output_dir),
+    )
 
     process_merged_files(["dummy.qwk"], settings, logging.getLogger("test"))
 
@@ -205,6 +305,7 @@ def test_sort_with_individual_files(mock_messages, monkeypatch, tmp_path):
     assert any("subject_a" in f.name for f in files)
     assert any("subject_b" in f.name for f in files)
     assert any("subject_c" in f.name for f in files)
+
 
 def test_sort_by_bbs(mock_messages, monkeypatch, capsys):
     from pyqwk.core import BBSInfo, ConferenceMap
@@ -227,7 +328,9 @@ def test_sort_by_bbs(mock_messages, monkeypatch, capsys):
     monkeypatch.setattr(qwk, "load_data", mock_load)
 
     settings = _make_settings(sort="bbs")
-    process_merged_files(["b2.qwk", "a1.qwk", "b1.qwk"], settings, logging.getLogger("test"))
+    process_merged_files(
+        ["b2.qwk", "a1.qwk", "b1.qwk"], settings, logging.getLogger("test")
+    )
 
     captured = capsys.readouterr().out
     # Expected order:

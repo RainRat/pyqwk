@@ -12,13 +12,15 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.core import ParsedMessage, MessageHeader
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk, \
-         patch("pyqwk.gui.filedialog") as mock_fd, \
-         patch("pyqwk.gui.messagebox") as mock_mb:
-
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -55,10 +57,13 @@ def mock_gui_deps():
             "messagebox": mock_mb,
         }
 
+
 def get_app():
     from pyqwk.gui import QwkGuiApp
+
     root = MagicMock()
     return QwkGuiApp(root)
+
 
 class TestSearchNavigation:
     def test_search_match_population(self, mock_gui_deps):
@@ -73,7 +78,9 @@ class TestSearchNavigation:
         # side_effect takes precedence, so we need to override it
         mock_gui_deps["tk"].IntVar.side_effect = lambda *args, **kwargs: mock_iv
 
-        header = MessageHeader(' ', 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, "")
+        header = MessageHeader(
+            " ", 1, "01-01-90", "12:00", "To", "From", "Sub", "", None, 1, " ", 1, 1, ""
+        )
         msg = ParsedMessage("Body with match and another match", 1, None, 1, header)
         app.messages = [msg]
         app.board_dict = {1: "General"}
@@ -85,20 +92,30 @@ class TestSearchNavigation:
         assert app._current_match_idx == 0
 
         # Verify initial highlight
-        app.detail_text.tag_add.assert_any_call("current_search_highlight", "1.5", "1.5+5c")
+        app.detail_text.tag_add.assert_any_call(
+            "current_search_highlight", "1.5", "1.5+5c"
+        )
         app.detail_text.see.assert_called_with("1.5")
 
     def test_navigate_search_matches(self, mock_gui_deps):
         app = get_app()
-        app._search_matches = [("1.5", "1.5+5c"), ("2.10", "2.10+5c"), ("3.0", "3.0+5c")]
+        app._search_matches = [
+            ("1.5", "1.5+5c"),
+            ("2.10", "2.10+5c"),
+            ("3.0", "3.0+5c"),
+        ]
         app._current_match_idx = 0
         app.root.title.return_value = "Test BBS (test.qwk) - PyQWK Reader"
 
         # Navigate forward
         app._navigate_search_matches(1)
         assert app._current_match_idx == 1
-        app.detail_text.tag_remove.assert_called_with("current_search_highlight", "1.0", "end")
-        app.detail_text.tag_add.assert_called_with("current_search_highlight", "2.10", "2.10+5c")
+        app.detail_text.tag_remove.assert_called_with(
+            "current_search_highlight", "1.0", "end"
+        )
+        app.detail_text.tag_add.assert_called_with(
+            "current_search_highlight", "2.10", "2.10+5c"
+        )
         app.detail_text.see.assert_called_with("2.10")
 
         # Navigate backward (wrap around)
@@ -127,12 +144,12 @@ class TestSearchNavigation:
         found_next = False
         found_prev = False
         for call in mock_gui_deps["tk"].Menu().add_command.call_args_list:
-            if call.kwargs.get('label') == "Find Next":
+            if call.kwargs.get("label") == "Find Next":
                 found_next = True
-                assert call.kwargs.get('accelerator') == "F3"
-            if call.kwargs.get('label') == "Find Previous":
+                assert call.kwargs.get("accelerator") == "F3"
+            if call.kwargs.get("label") == "Find Previous":
                 found_prev = True
-                assert call.kwargs.get('accelerator') == "Shift+F3"
+                assert call.kwargs.get("accelerator") == "Shift+F3"
 
         assert found_next, "Find Next menu item not found"
         assert found_prev, "Find Previous menu item not found"

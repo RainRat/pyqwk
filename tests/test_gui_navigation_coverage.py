@@ -12,11 +12,10 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk:
-
+    with patch("pyqwk.gui.tk") as mock_tk, patch("pyqwk.gui.ttk") as mock_ttk:
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -31,6 +30,7 @@ def mock_gui_deps():
             "tk": mock_tk,
             "ttk": mock_ttk,
         }
+
 
 def test_select_relative_message_edge_cases(mock_gui_deps):
     root = MagicMock()

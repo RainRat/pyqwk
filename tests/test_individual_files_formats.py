@@ -10,15 +10,18 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import process_merged_files, ProcessingSettings
 
+
 @pytest.fixture
 def baseline_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
+
 
 @pytest.fixture
 def logger() -> logging.Logger:
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def _make_settings(**overrides) -> ProcessingSettings:
     defaults = dict(
@@ -43,11 +46,16 @@ def _make_settings(**overrides) -> ProcessingSettings:
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
-def test_individual_files_json_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+
+def test_individual_files_json_format(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+):
     output_dir = tmp_path / "json_out"
 
     # Run process_merged_files with individual_files=True and format='json'
-    process_merged_files([str(baseline_path)], _make_settings(
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
             individual_files=True,
             format="json",
             output_mode="file",
@@ -71,10 +79,15 @@ def test_individual_files_json_format(tmp_path: Path, baseline_path: Path, logge
         except json.JSONDecodeError:
             pytest.fail(f"File content is not valid JSON: {content[:100]}...")
 
-def test_individual_files_xml_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+
+def test_individual_files_xml_format(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+):
     output_dir = tmp_path / "xml_out"
 
-    process_merged_files([str(baseline_path)], _make_settings(
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
             individual_files=True,
             format="xml",
             output_mode="file",
@@ -95,12 +108,17 @@ def test_individual_files_xml_format(tmp_path: Path, baseline_path: Path, logger
             assert root.find("header") is not None
             assert root.find("text") is not None
         except ET.ParseError:
-             pytest.fail(f"File content is not valid XML: {content[:100]}...")
+            pytest.fail(f"File content is not valid XML: {content[:100]}...")
 
-def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+
+def test_individual_files_html_format(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+):
     output_dir = tmp_path / "html_out"
 
-    process_merged_files([str(baseline_path)], _make_settings(
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
             individual_files=True,
             format="html",
             output_mode="file",
@@ -109,7 +127,9 @@ def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logge
         logger=logger,
     )
 
-    files = [f for f in output_dir.iterdir() if f.name not in ("index.html", "README.md")]
+    files = [
+        f for f in output_dir.iterdir() if f.name not in ("index.html", "README.md")
+    ]
     assert len(files) > 0
 
     # Check that the content is valid HTML (contains doctype or html tag)
@@ -118,10 +138,15 @@ def test_individual_files_html_format(tmp_path: Path, baseline_path: Path, logge
         assert "<!DOCTYPE html>" in content or "<html>" in content
         assert '<div class="message">' in content
 
-def test_individual_files_markdown_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+
+def test_individual_files_markdown_format(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+):
     output_dir = tmp_path / "md_out"
 
-    process_merged_files([str(baseline_path)], _make_settings(
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
             individual_files=True,
             format="markdown",
             output_mode="file",
@@ -130,17 +155,24 @@ def test_individual_files_markdown_format(tmp_path: Path, baseline_path: Path, l
         logger=logger,
     )
 
-    files = [f for f in output_dir.iterdir() if f.name not in ("index.html", "README.md")]
+    files = [
+        f for f in output_dir.iterdir() if f.name not in ("index.html", "README.md")
+    ]
     assert len(files) > 0
     with files[0].open("r", encoding="utf-8") as f:
         content = f.read()
         assert "# QWK Message" in content
         assert "## " in content
 
-def test_individual_files_mbox_format(tmp_path: Path, baseline_path: Path, logger: logging.Logger):
+
+def test_individual_files_mbox_format(
+    tmp_path: Path, baseline_path: Path, logger: logging.Logger
+):
     output_dir = tmp_path / "mbox_out"
 
-    process_merged_files([str(baseline_path)], _make_settings(
+    process_merged_files(
+        [str(baseline_path)],
+        _make_settings(
             individual_files=True,
             format="mbox",
             output_mode="file",

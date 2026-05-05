@@ -13,12 +13,14 @@ sys.modules["tkinter.ttk"] = mock_ttk
 import pytest
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def app():
     root = MagicMock()
     # Mock some methods that might be called during init
     root.after = MagicMock()
     return QwkGuiApp(root)
+
 
 def test_stats_window_trigger(app):
     """Test that the statistics window can be triggered and calls calculate_archive_stats."""
@@ -44,13 +46,16 @@ def test_stats_window_trigger(app):
         "private_count": 0,
         "reply_count": 0,
         "reply_rate": 0.0,
-        "avg_message_length": 100.0
+        "avg_message_length": 100.0,
     }
 
-    with patch("pyqwk.gui.calculate_archive_stats", return_value=mock_stats) as mock_calc, \
-         patch("pyqwk.gui.render_stats_as_text") as mock_render_cli, \
-         patch("pyqwk.gui.tk.Toplevel") as mock_toplevel:
-
+    with (
+        patch(
+            "pyqwk.gui.calculate_archive_stats", return_value=mock_stats
+        ) as mock_calc,
+        patch("pyqwk.gui.render_stats_as_text") as mock_render_cli,
+        patch("pyqwk.gui.tk.Toplevel") as mock_toplevel,
+    ):
         # We need to mock the Text widget inside show_stats_window
         mock_win = MagicMock()
         mock_toplevel.return_value = mock_win
@@ -68,6 +73,7 @@ def test_stats_window_trigger(app):
         mock_txt.insert.assert_any_call(ANY, "Statistics for: test.qwk\n\n", "h1")
         mock_txt.insert.assert_any_call(ANY, "\nYearly Activity\n", "h2")
         mock_txt.insert.assert_any_call(ANY, "\nTop Authors\n", "h2")
+
 
 def test_stats_window_no_path(app):
     """Test that show_stats_window shows a warning if no archive is open."""

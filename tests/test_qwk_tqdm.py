@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import _create_progress_bar
 
+
 @pytest.fixture
 def clean_tqdm():
     """Ensure tqdm is clean in sys.modules before and after test."""
@@ -19,10 +20,13 @@ def clean_tqdm():
     else:
         sys.modules["tqdm"] = original
 
-def test_create_progress_bar_logs_missing_tqdm_only_once(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, clean_tqdm) -> None:
+
+def test_create_progress_bar_logs_missing_tqdm_only_once(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, clean_tqdm
+) -> None:
     # Simulate tqdm missing by mocking the import
-    if 'tqdm' in sys.modules:
-        del sys.modules['tqdm']
+    if "tqdm" in sys.modules:
+        del sys.modules["tqdm"]
 
     monkeypatch.setitem(sys.modules, "tqdm", None)
 
@@ -39,16 +43,18 @@ def test_create_progress_bar_logs_missing_tqdm_only_once(monkeypatch: pytest.Mon
     # Should appear exactly once
     assert caplog.text.count("Install tqdm") == 1
 
+
 def test_progress_bar_quiet_mode() -> None:
     """Verify that quiet mode returns a null context."""
     bar = _create_progress_bar(total=100, quiet=True)
     assert isinstance(bar, nullcontext)
 
+
 @pytest.fixture
 def ensure_tqdm():
     """Ensure tqdm is available for the test."""
-    if 'tqdm' in sys.modules and sys.modules['tqdm'] is None:
-        del sys.modules['tqdm']
+    if "tqdm" in sys.modules and sys.modules["tqdm"] is None:
+        del sys.modules["tqdm"]
 
     # Try importing it to verify availability
     try:
@@ -59,6 +65,7 @@ def ensure_tqdm():
     yield
 
     # No teardown needed usually, unless we want to be super clean
+
 
 def test_progress_bar_active(ensure_tqdm) -> None:
     """Verify that a real progress bar is returned when not quiet and tqdm is installed."""

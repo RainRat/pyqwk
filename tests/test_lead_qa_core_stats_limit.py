@@ -1,6 +1,13 @@
 import logging
 from unittest.mock import patch
-from pyqwk.core import calculate_archive_stats, ProcessingSettings, ParsedMessage, MessageHeader, ConferenceMap
+from pyqwk.core import (
+    calculate_archive_stats,
+    ProcessingSettings,
+    ParsedMessage,
+    MessageHeader,
+    ConferenceMap,
+)
+
 
 def test_calculate_archive_stats_limit_break():
     logger = logging.getLogger("test")
@@ -15,13 +22,13 @@ def test_calculate_archive_stats_limit_break():
         threaded=False,
         binaries_removal=False,
         redact_pii=False,
-        format='text',
-        separator='none',
-        output_mode='stdout',
+        format="text",
+        separator="none",
+        output_mode="stdout",
         output_path=None,
-        encoding='cp437',
+        encoding="cp437",
         limit=1,
-        quiet=True
+        quiet=True,
     )
 
     header = MessageHeader(
@@ -38,14 +45,10 @@ def test_calculate_archive_stats_limit_break():
         msgflag=" ",
         confnum=1,
         lognum=1,
-        nettag=""
+        nettag="",
     )
     msg = ParsedMessage(
-        text="Hello world",
-        msgnum=1,
-        refnum=None,
-        confnum=1,
-        header=header
+        text="Hello world", msgnum=1, refnum=None, confnum=1, header=header
     )
 
     with patch("pyqwk.core.load_data") as mock_load:

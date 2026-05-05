@@ -1,6 +1,13 @@
 import logging
 import os
-from pyqwk.core import load_data, write_messages, ProcessingSettings, ParsedMessage, MessageHeader
+from pyqwk.core import (
+    load_data,
+    write_messages,
+    ProcessingSettings,
+    ParsedMessage,
+    MessageHeader,
+)
+
 
 def test_jsonl_symmetry():
     logging.basicConfig(level=logging.INFO)
@@ -21,7 +28,7 @@ def test_jsonl_symmetry():
         msgflag=" ",
         confnum=1,
         lognum=0,
-        nettag=""
+        nettag="",
     )
     msg = ParsedMessage(
         text="Hello world\nThis is a test.",
@@ -30,16 +37,25 @@ def test_jsonl_symmetry():
         confnum=1,
         header=header,
         confname="General",
-        bbs_name="TestBBS"
+        bbs_name="TestBBS",
     )
 
     messages = [msg]
     settings = ProcessingSettings(
-        verbose=False, private=True, no_header=False, truncate_signatures=False,
-        cut_quoting=False, individual_files=False, threaded=False,
-        binaries_removal=False, redact_pii=False, format="jsonl",
-        separator="none", output_mode="file", output_path="test.jsonl",
-        encoding="utf-8"
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="jsonl",
+        separator="none",
+        output_mode="file",
+        output_path="test.jsonl",
+        encoding="utf-8",
     )
 
     print("Writing messages to test.jsonl...")
@@ -57,6 +73,7 @@ def test_jsonl_symmetry():
     assert board_dict[1] == "General"
 
     print("JSONL Symmetry test passed!")
+
 
 if __name__ == "__main__":
     try:

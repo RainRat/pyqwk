@@ -1,6 +1,7 @@
 from pyqwk.core import ProcessingSettings, process_merged_files
 import logging
 
+
 def test_merge_archives(tmp_path):
     # Setup paths
     archive1 = "testdata/test1_qwk.zip"
@@ -25,7 +26,7 @@ def test_merge_archives(tmp_path):
         separator="auto",
         output_mode="file",
         output_path=str(output_file),
-        encoding="cp437"
+        encoding="cp437",
     )
 
     # Run merge
@@ -36,6 +37,7 @@ def test_merge_archives(tmp_path):
 
     # Read output and verify message count
     import json
+
     with open(output_file, "r") as f:
         data = json.load(f)
 
@@ -46,6 +48,7 @@ def test_merge_archives(tmp_path):
     conf_nums = {msg["header"]["confnum"] for msg in data}
     assert 4 in conf_nums  # from archive1
     assert 3 in conf_nums  # from archive2
+
 
 def test_merge_archives_threading(tmp_path):
     # This is a bit harder to test without specific data,
@@ -71,7 +74,7 @@ def test_merge_archives_threading(tmp_path):
         separator="dashes",
         output_mode="file",
         output_path=str(output_file),
-        encoding="cp437"
+        encoding="cp437",
     )
 
     process_merged_files([archive1, archive2], settings, logger)

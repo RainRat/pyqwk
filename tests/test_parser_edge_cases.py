@@ -1,4 +1,3 @@
-
 import sys
 import struct
 import pytest
@@ -10,41 +9,43 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import parse_messages, MessagesDatFormatError
 
+
 def build_header_bytes(**kwargs) -> bytes:
     defaults = {
-        'status': b' ',
-        'msgnum': b"1".ljust(7, b' '),
-        'msgdate': b"01-01-90",
-        'msgtime': b"12:00",
-        'msgto': b"To".ljust(25, b' '),
-        'msgfrom': b"From".ljust(25, b' '),
-        'msgsubject': b"Subj".ljust(25, b' '),
-        'msgpassword': b"".ljust(12, b' '),
-        'refnum': b"0".ljust(8, b' '),
-        'numblocks': b"2".ljust(6, b' '), # 1 header + 1 body
-        'msgflag': b' ',
-        'confnum': 1,
-        'lognum': 1,
-        'nettag': b' ',
+        "status": b" ",
+        "msgnum": b"1".ljust(7, b" "),
+        "msgdate": b"01-01-90",
+        "msgtime": b"12:00",
+        "msgto": b"To".ljust(25, b" "),
+        "msgfrom": b"From".ljust(25, b" "),
+        "msgsubject": b"Subj".ljust(25, b" "),
+        "msgpassword": b"".ljust(12, b" "),
+        "refnum": b"0".ljust(8, b" "),
+        "numblocks": b"2".ljust(6, b" "),  # 1 header + 1 body
+        "msgflag": b" ",
+        "confnum": 1,
+        "lognum": 1,
+        "nettag": b" ",
     }
     defaults.update(kwargs)
     return struct.pack(
-        '<c7s8s5s25s25s25s12s8s6scHHc',
-        defaults['status'],
-        defaults['msgnum'],
-        defaults['msgdate'],
-        defaults['msgtime'],
-        defaults['msgto'],
-        defaults['msgfrom'],
-        defaults['msgsubject'],
-        defaults['msgpassword'],
-        defaults['refnum'],
-        defaults['numblocks'],
-        defaults['msgflag'],
-        defaults['confnum'],
-        defaults['lognum'],
-        defaults['nettag'],
+        "<c7s8s5s25s25s25s12s8s6scHHc",
+        defaults["status"],
+        defaults["msgnum"],
+        defaults["msgdate"],
+        defaults["msgtime"],
+        defaults["msgto"],
+        defaults["msgfrom"],
+        defaults["msgsubject"],
+        defaults["msgpassword"],
+        defaults["refnum"],
+        defaults["numblocks"],
+        defaults["msgflag"],
+        defaults["confnum"],
+        defaults["lognum"],
+        defaults["nettag"],
     )
+
 
 class TestParserEdgeCases:
     """Tests for additional parser edge cases."""
@@ -53,9 +54,9 @@ class TestParserEdgeCases:
         """
         Verify that numblocks=1 yields a message with an empty body.
         """
-        qwk_header = b'Produced ' + b'\x00' * (128 - 9)
+        qwk_header = b"Produced " + b"\x00" * (128 - 9)
         # numblocks=1 means only the header block exists
-        header = build_header_bytes(numblocks=b"1".ljust(6, b' '))
+        header = build_header_bytes(numblocks=b"1".ljust(6, b" "))
 
         data = bytearray(qwk_header + header)
         messages = list(parse_messages(data, progress_bar=None))
@@ -67,14 +68,18 @@ class TestParserEdgeCases:
         """
         Verify that numblocks < 1 causes the message to be skipped.
         """
-        qwk_header = b'Produced ' + b'\x00' * (128 - 9)
+        qwk_header = b"Produced " + b"\x00" * (128 - 9)
 
         # Message 1: numblocks=0 (invalid)
-        header1 = build_header_bytes(msgnum=b"1".ljust(7, b' '), numblocks=b"0".ljust(6, b' '))
+        header1 = build_header_bytes(
+            msgnum=b"1".ljust(7, b" "), numblocks=b"0".ljust(6, b" ")
+        )
 
         # Message 2: Valid
-        header2 = build_header_bytes(msgnum=b"2".ljust(7, b' '), numblocks=b"2".ljust(6, b' '))
-        body2 = b"Body 2".ljust(128, b' ')
+        header2 = build_header_bytes(
+            msgnum=b"2".ljust(7, b" "), numblocks=b"2".ljust(6, b" ")
+        )
+        body2 = b"Body 2".ljust(128, b" ")
 
         data = bytearray(qwk_header + header1 + header2 + body2)
         messages = list(parse_messages(data, progress_bar=None))
@@ -87,12 +92,12 @@ class TestParserEdgeCases:
         """
         Verify that a truncated file raises MessagesDatFormatError.
         """
-        qwk_header = b'Produced ' + b'\x00' * (128 - 9)
+        qwk_header = b"Produced " + b"\x00" * (128 - 9)
 
         # Header claims 3 blocks (1 header + 2 body)
-        header = build_header_bytes(numblocks=b"3".ljust(6, b' '))
+        header = build_header_bytes(numblocks=b"3".ljust(6, b" "))
         # But we only provide 1 body block
-        body1 = b"Body 1".ljust(128, b' ')
+        body1 = b"Body 1".ljust(128, b" ")
 
         data = bytearray(qwk_header + header + body1)
 
@@ -105,7 +110,7 @@ class TestParserEdgeCases:
         """
         Verify that zero-length data raises MessagesDatFormatError.
         """
-        data = bytearray(b'')
+        data = bytearray(b"")
 
         with pytest.raises(MessagesDatFormatError) as exc:
             list(parse_messages(data, progress_bar=None))
@@ -116,7 +121,7 @@ class TestParserEdgeCases:
         """
         Verify that data shorter than BLOCK_SIZE raises MessagesDatFormatError.
         """
-        data = bytearray(b'Produced ') # 9 bytes
+        data = bytearray(b"Produced ")  # 9 bytes
 
         with pytest.raises(MessagesDatFormatError) as exc:
             list(parse_messages(data, progress_bar=None))

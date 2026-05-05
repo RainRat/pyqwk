@@ -2,16 +2,19 @@ import unittest
 from unittest.mock import patch, MagicMock
 import pyqwk.core as core
 
+
 class TestUnzipWindowsTips(unittest.TestCase):
-    @patch('zipfile.is_zipfile', return_value=True)
-    @patch('zipfile.ZipFile')
-    @patch('subprocess.run')
-    @patch('os.name', 'nt')
-    def test_unzip_fail_rc127_windows_tip(self, mock_run, mock_zipfile, mock_is_zipfile):
+    @patch("zipfile.is_zipfile", return_value=True)
+    @patch("zipfile.ZipFile")
+    @patch("subprocess.run")
+    @patch("os.name", "nt")
+    def test_unzip_fail_rc127_windows_tip(
+        self, mock_run, mock_zipfile, mock_is_zipfile
+    ):
         """Test that return code 127 on Windows includes the unzip.exe tip."""
         # Setup: Python's zipfile fails
         mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
-        mock_zip_instance.namelist.return_value = ['MESSAGES.DAT']
+        mock_zip_instance.namelist.return_value = ["MESSAGES.DAT"]
         # Fail the first try (extractall for classic)
         mock_zip_instance.extractall.side_effect = NotImplementedError()
 
@@ -25,19 +28,21 @@ class TestUnzipWindowsTips(unittest.TestCase):
         self.assertIn("unzip.exe", str(cm.exception))
         self.assertIn("return code 127", str(cm.exception))
 
-    @patch('zipfile.is_zipfile', return_value=True)
-    @patch('zipfile.ZipFile')
-    @patch('subprocess.run')
-    @patch('os.name', 'nt')
+    @patch("zipfile.is_zipfile", return_value=True)
+    @patch("zipfile.ZipFile")
+    @patch("subprocess.run")
+    @patch("os.name", "nt")
     def test_unzip_missing_windows_tip(self, mock_run, mock_zipfile, mock_is_zipfile):
         """Test that [WinError 2] on Windows includes the unzip.exe tip."""
         # Setup: Python's zipfile fails
         mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
-        mock_zip_instance.namelist.return_value = ['MESSAGES.DAT']
+        mock_zip_instance.namelist.return_value = ["MESSAGES.DAT"]
         mock_zip_instance.extractall.side_effect = NotImplementedError()
 
         # Mock subprocess.run raising FileNotFoundError (simulating missing command)
-        mock_run.side_effect = FileNotFoundError("[WinError 2] The system cannot find the file specified")
+        mock_run.side_effect = FileNotFoundError(
+            "[WinError 2] The system cannot find the file specified"
+        )
 
         logger = MagicMock()
         with self.assertRaises(RuntimeError) as cm:
@@ -46,5 +51,6 @@ class TestUnzipWindowsTips(unittest.TestCase):
         self.assertIn("winget", str(cm.exception))
         self.assertIn("Git Bash", str(cm.exception))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -2,6 +2,7 @@ import pytest
 from pyqwk.core import ProcessingSettings, matches_filters, ParsedMessage, MessageHeader
 from pyqwk.cli import _parse_msgnum_ranges
 
+
 def test_parse_msgnum_ranges():
     assert _parse_msgnum_ranges("100") == {100}
     assert _parse_msgnum_ranges("100,200,300") == {100, 200, 300}
@@ -14,6 +15,7 @@ def test_parse_msgnum_ranges():
 
     with pytest.raises(ValueError, match="Invalid message number range"):
         _parse_msgnum_ranges("100-xyz")
+
 
 def message_with_num(msgnum):
     header = MessageHeader(
@@ -33,12 +35,9 @@ def message_with_num(msgnum):
         nettag="",
     )
     return ParsedMessage(
-        text="Body",
-        msgnum=msgnum,
-        refnum=None,
-        confnum=1,
-        header=header
+        text="Body", msgnum=msgnum, refnum=None, confnum=1, header=header
     )
+
 
 def test_msgnum_filtering():
     settings = ProcessingSettings(
@@ -56,7 +55,7 @@ def test_msgnum_filtering():
         output_mode="stdout",
         output_path=None,
         encoding="cp437",
-        msgnum_filters={10, 20, 30, 31, 32}
+        msgnum_filters={10, 20, 30, 31, 32},
     )
 
     allowed_confs = {1}
@@ -66,6 +65,7 @@ def test_msgnum_filtering():
     assert matches_filters(message_with_num(31), settings, allowed_confs) is True
     assert matches_filters(message_with_num(15), settings, allowed_confs) is False
     assert matches_filters(message_with_num(100), settings, allowed_confs) is False
+
 
 def test_msgnum_filtering_none():
     settings = ProcessingSettings(
@@ -83,7 +83,7 @@ def test_msgnum_filtering_none():
         output_mode="stdout",
         output_path=None,
         encoding="cp437",
-        msgnum_filters=None
+        msgnum_filters=None,
     )
 
     allowed_confs = {1}

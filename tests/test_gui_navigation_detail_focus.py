@@ -12,11 +12,10 @@ sys.modules["tkinter.ttk"] = mock_ttk
 
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
 def mock_gui_deps():
-    with patch("pyqwk.gui.tk") as mock_tk, \
-         patch("pyqwk.gui.ttk") as mock_ttk:
-
+    with patch("pyqwk.gui.tk") as mock_tk, patch("pyqwk.gui.ttk") as mock_ttk:
         # Configure Variable mocks
         def make_var(value=None):
             m = MagicMock()
@@ -32,6 +31,7 @@ def mock_gui_deps():
             "ttk": mock_ttk,
         }
 
+
 def test_block_text_input_navigation(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -41,7 +41,7 @@ def test_block_text_input_navigation(mock_gui_deps):
 
     # Simulate 'j' key press
     event_j = MagicMock()
-    event_j.keysym = 'j'
+    event_j.keysym = "j"
     event_j.state = 0
 
     result = app._block_text_input(event_j)
@@ -51,7 +51,7 @@ def test_block_text_input_navigation(mock_gui_deps):
 
     # Simulate 'K' key press (capital)
     event_k = MagicMock()
-    event_k.keysym = 'K'
+    event_k.keysym = "K"
     event_k.state = 0
 
     result = app._block_text_input(event_k)
@@ -61,7 +61,7 @@ def test_block_text_input_navigation(mock_gui_deps):
 
     # Simulate 'Up' key press
     event_up = MagicMock()
-    event_up.keysym = 'Up'
+    event_up.keysym = "Up"
     event_up.state = 0
 
     result = app._block_text_input(event_up)
@@ -69,7 +69,7 @@ def test_block_text_input_navigation(mock_gui_deps):
 
     # Simulate random key 'x'
     event_x = MagicMock()
-    event_x.keysym = 'x'
+    event_x.keysym = "x"
     event_x.state = 0
 
     result = app._block_text_input(event_x)
@@ -77,7 +77,7 @@ def test_block_text_input_navigation(mock_gui_deps):
 
     # Simulate Control+C
     event_ctrl_c = MagicMock()
-    event_ctrl_c.keysym = 'c'
+    event_ctrl_c.keysym = "c"
     event_ctrl_c.state = 0x4
 
     result = app._block_text_input(event_ctrl_c)

@@ -2,6 +2,7 @@ import sys
 from unittest.mock import patch
 from pyqwk.cli import main
 
+
 def test_cli_multi_input_no_output_defaults_to_merge_stdout(capsys):
     """Test that providing multiple input files without -o defaults to merging to stdout."""
     # Use real test files from testdata
@@ -13,7 +14,7 @@ def test_cli_multi_input_no_output_defaults_to_merge_stdout(capsys):
 
     # Mock process_merged_files to avoid actually processing and printing large amounts of data
     with patch("pyqwk.cli.process_merged_files") as mock_process_merged:
-        with patch.object(sys, 'argv', test_args):
+        with patch.object(sys, "argv", test_args):
             # We expect it NOT to call sys.exit or parser.error
             main()
 
@@ -25,5 +26,5 @@ def test_cli_multi_input_no_output_defaults_to_merge_stdout(capsys):
         settings = args[1]
 
         assert settings.merge is True
-        assert settings.output_mode == 'stdout'
+        assert settings.output_mode == "stdout"
         assert settings.output_path is None

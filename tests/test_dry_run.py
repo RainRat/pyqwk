@@ -8,15 +8,18 @@ import logging
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+
 @pytest.fixture
 def baseline_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
+
 
 @pytest.fixture
 def logger() -> logging.Logger:
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def test_process_merged_files_dry_run_no_files_created(tmp_path, baseline_path, logger):
     output_dir = tmp_path / "output"
@@ -37,13 +40,14 @@ def test_process_merged_files_dry_run_no_files_created(tmp_path, baseline_path, 
         output_mode="file",
         output_path=str(output_dir),
         encoding="latin1",
-        dry_run=True
+        dry_run=True,
     )
 
     process_merged_files([str(baseline_path)], settings, logger)
 
     # Check that no files were created in the output directory
     assert len(list(output_dir.iterdir())) == 0
+
 
 def test_process_merged_files_dry_run_summary_printed(capsys, baseline_path, logger):
     settings = ProcessingSettings(
@@ -62,7 +66,7 @@ def test_process_merged_files_dry_run_summary_printed(capsys, baseline_path, log
         output_path=None,
         encoding="latin1",
         dry_run=True,
-        quiet=True
+        quiet=True,
     )
 
     process_merged_files([str(baseline_path)], settings, logger)
@@ -74,6 +78,7 @@ def test_process_merged_files_dry_run_summary_printed(capsys, baseline_path, log
     assert "No changes were made to the disk." in captured.out
     # Should not print the actual message
     assert "Subject:" not in captured.out
+
 
 def test_cli_dry_run_flag_works(monkeypatch, baseline_path, capsys):
     monkeypatch.setattr(sys, "argv", ["qwk", str(baseline_path), "--dry-run"])

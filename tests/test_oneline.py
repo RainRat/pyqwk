@@ -2,6 +2,7 @@ from pyqwk.core import MessageHeader, ProcessingSettings, _write_text, ParsedMes
 from io import StringIO
 import sys
 
+
 def test_format_oneline():
     header = MessageHeader(
         status=" ",
@@ -27,11 +28,12 @@ def test_format_oneline():
     assert "01-01-24" in oneline
     assert "Bob" in oneline
     assert "Hello World" in oneline
-    assert "123" not in oneline # MsgNum not in oneline by default
+    assert "123" not in oneline  # MsgNum not in oneline by default
 
     # Test verbose
     oneline_v = header.format_oneline(board_dict, verbose=True)
     assert "123" in oneline_v
+
 
 def test_write_text_oneline():
     header = MessageHeader(
@@ -51,11 +53,7 @@ def test_write_text_oneline():
         nettag="",
     )
     msg = ParsedMessage(
-        text="Oneline summary\r\n",
-        msgnum=1,
-        refnum=None,
-        confnum=1,
-        header=header
+        text="Oneline summary\r\n", msgnum=1, refnum=None, confnum=1, header=header
     )
 
     settings = ProcessingSettings(
@@ -73,7 +71,7 @@ def test_write_text_oneline():
         output_mode="stdout",
         output_path=None,
         encoding="cp437",
-        oneline=True
+        oneline=True,
     )
 
     # Capture stdout
@@ -91,6 +89,7 @@ def test_write_text_oneline():
     assert "Subject" in output
     assert "----------------" in output
     assert "Test Subject" in output
+
 
 def test_cli_oneline(tmp_path):
     # This is a bit harder to test without running the actual CLI,
@@ -153,7 +152,7 @@ def test_write_text_threaded_oneline():
         confnum=1,
         header=header1,
         confname="General",
-        depth=0
+        depth=0,
     )
     msg2 = ParsedMessage(
         text="Child text",
@@ -162,7 +161,7 @@ def test_write_text_threaded_oneline():
         confnum=1,
         header=header2,
         confname="General",
-        depth=1
+        depth=1,
     )
 
     settings = ProcessingSettings(
@@ -180,7 +179,7 @@ def test_write_text_threaded_oneline():
         output_mode="stdout",
         output_path=None,
         encoding="cp437",
-        oneline=True
+        oneline=True,
     )
 
     old_stdout = sys.stdout

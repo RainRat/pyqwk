@@ -4,6 +4,7 @@ import tempfile
 import logging
 from pyqwk.core import load_data
 
+
 def test_zip_multi_format_loading():
     logger = logging.getLogger("test")
 
@@ -11,16 +12,20 @@ def test_zip_multi_format_loading():
         # 1. Create a JSON file with one message
         json_path = os.path.join(tmpdir, "test.json")
         with open(json_path, "w") as f:
-            f.write('[{"header": {"msgfrom": "Author1", "msgsubject": "Subj1", "confnum": 1}, "text": "Body1"}]')
+            f.write(
+                '[{"header": {"msgfrom": "Author1", "msgsubject": "Subj1", "confnum": 1}, "text": "Body1"}]'
+            )
 
         # 2. Create a CSV file with one message
         csv_path = os.path.join(tmpdir, "test.csv")
         with open(csv_path, "w") as f:
-            f.write('"msgfrom","msgsubject","confnum","text"\n"Author2","Subj2","2","Body2"\n')
+            f.write(
+                '"msgfrom","msgsubject","confnum","text"\n"Author2","Subj2","2","Body2"\n'
+            )
 
         # 3. Create a ZIP file containing both
         zip_path = os.path.join(tmpdir, "batch.zip")
-        with zipfile.ZipFile(zip_path, 'w') as zf:
+        with zipfile.ZipFile(zip_path, "w") as zf:
             zf.write(json_path, arcname="messages.json")
             zf.write(csv_path, arcname="folder/messages.csv")
 
@@ -39,6 +44,7 @@ def test_zip_multi_format_loading():
         assert "Subj1" in subjects
         assert "Subj2" in subjects
 
+
 def test_zip_single_qwk_dat_compatibility():
     # Verify that a ZIP containing only messages.dat still returns original bytes for compatibility
     logger = logging.getLogger("test")
@@ -50,13 +56,14 @@ def test_zip_single_qwk_dat_compatibility():
             f.write(dat_content)
 
         zip_path = os.path.join(tmpdir, "packet.zip")
-        with zipfile.ZipFile(zip_path, 'w') as zf:
+        with zipfile.ZipFile(zip_path, "w") as zf:
             zf.write(dat_path, arcname="MESSAGES.DAT")
 
         data, board_dict = load_data(zip_path, logger)
 
         assert isinstance(data, bytearray)
         assert data == bytearray(dat_content)
+
 
 def test_zip_merges_bbs_info():
     logger = logging.getLogger("test")
@@ -65,15 +72,19 @@ def test_zip_merges_bbs_info():
         # 1. Create a JSON file with BBS name
         json_path = os.path.join(tmpdir, "test.json")
         with open(json_path, "w") as f:
-            f.write('[{"header": {"msgfrom": "A", "msgsubject": "S", "confnum": 1}, "text": "B", "bbs_name": "MyBBS"}]')
+            f.write(
+                '[{"header": {"msgfrom": "A", "msgsubject": "S", "confnum": 1}, "text": "B", "bbs_name": "MyBBS"}]'
+            )
 
         # 2. Create another JSON file
         json2_path = os.path.join(tmpdir, "test2.json")
         with open(json2_path, "w") as f:
-            f.write('[{"header": {"msgfrom": "A2", "msgsubject": "S2", "confnum": 2}, "text": "B2"}]')
+            f.write(
+                '[{"header": {"msgfrom": "A2", "msgsubject": "S2", "confnum": 2}, "text": "B2"}]'
+            )
 
         zip_path = os.path.join(tmpdir, "mergebbs.zip")
-        with zipfile.ZipFile(zip_path, 'w') as zf:
+        with zipfile.ZipFile(zip_path, "w") as zf:
             zf.write(json_path, arcname="1.json")
             zf.write(json2_path, arcname="2.json")
 

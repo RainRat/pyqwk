@@ -2,22 +2,20 @@ import sqlite3
 import logging
 from pathlib import Path
 import pytest
-from pyqwk.core import (
-    load_data,
-    ProcessingSettings,
-    BBSInfo,
-    ConferenceMap
-)
+from pyqwk.core import load_data, ProcessingSettings, BBSInfo, ConferenceMap
+
 
 @pytest.fixture
 def baseline_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
+
 
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def _make_settings(**overrides):
     defaults = dict(
@@ -40,28 +38,22 @@ def _make_settings(**overrides):
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_sqlite_metadata_preservation(tmp_path, baseline_path, logger):
     """Test that BBS info and conference names are preserved in SQLite round-trip."""
     # 1. Create a mock BBSInfo and ConferenceMap
     bbs = BBSInfo(
-        name="Test BBS",
-        sysop="John Doe",
-        bbs_id="TESTBBS",
-        packet_at="2023-10-27"
+        name="Test BBS", sysop="John Doe", bbs_id="TESTBBS", packet_at="2023-10-27"
     )
-    boards = ConferenceMap({
-        1: "General Chat",
-        2: "Tech Support",
-        3: "Antique Computers"
-    })
+    boards = ConferenceMap(
+        {1: "General Chat", 2: "Tech Support", 3: "Antique Computers"}
+    )
     boards.bbs_info = bbs
 
     # 2. Export to SQLite
     db_path = tmp_path / "metadata_test.db"
     settings_export = _make_settings(
-        format="sqlite",
-        output_mode="file",
-        output_path=str(db_path)
+        format="sqlite", output_mode="file", output_path=str(db_path)
     )
 
     # We need to manually call load_data then write_messages to use our custom metadata
@@ -71,7 +63,7 @@ def test_sqlite_metadata_preservation(tmp_path, baseline_path, logger):
 
     from pyqwk.core import parse_messages, write_messages
 
-    with open(baseline_path, 'rb') as f:
+    with open(baseline_path, "rb") as f:
         file_data = bytearray(f.read())
 
     messages = list(parse_messages(file_data, None))
@@ -87,10 +79,14 @@ def test_sqlite_metadata_preservation(tmp_path, baseline_path, logger):
     conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
 
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bbs_info'")
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='bbs_info'"
+    )
     assert cursor.fetchone() is not None
 
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='conferences'")
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='conferences'"
+    )
     assert cursor.fetchone() is not None
 
     cursor.execute("SELECT name, sysop, bbs_id FROM bbs_info")
@@ -115,7 +111,10 @@ def test_sqlite_metadata_preservation(tmp_path, baseline_path, logger):
 
     # Ensure messages also have the metadata
     assert imported_messages[0].bbs_name == "Test BBS"
-    assert imported_messages[0].confname == "Antique Computers" # baseline msg 28 is conf 3
+    assert (
+        imported_messages[0].confname == "Antique Computers"
+    )  # baseline msg 28 is conf 3
+
 
 def test_sqlite_backward_compatibility(tmp_path, baseline_path, logger):
     """Test that SQLite files without metadata tables are still readable."""
@@ -123,7 +122,7 @@ def test_sqlite_backward_compatibility(tmp_path, baseline_path, logger):
 
     # Create a minimal SQLite file with only messages table
     conn = sqlite3.connect(str(db_path))
-    conn.execute('''
+    conn.execute("""
         CREATE TABLE messages (
             conference_number INTEGER,
             message_number INTEGER,
@@ -143,11 +142,11 @@ def test_sqlite_backward_compatibility(tmp_path, baseline_path, logger):
             source_file TEXT,
             attachments TEXT
         )
-    ''')
-    conn.execute('''
+    """)
+    conn.execute("""
         INSERT INTO messages (conference_number, message_number, author, subject, text)
         VALUES (10, 100, 'Old User', 'Hello', 'Old message body')
-    ''')
+    """)
     conn.commit()
     conn.close()
 
@@ -155,8 +154,9 @@ def test_sqlite_backward_compatibility(tmp_path, baseline_path, logger):
     messages, board_dict = load_data(str(db_path), logger)
 
     assert len(messages) == 1
-    assert messages[0].header.msgfrom == 'Old User'
-    assert board_dict[10] == 'Conference 10' # Default reconstruction
+    assert messages[0].header.msgfrom == "Old User"
+    assert board_dict[10] == "Conference 10"  # Default reconstruction
+
 
 def test_sqlite_metadata_preservation_empty_conferences(tmp_path, logger):
     """Test that BBS info is preserved even if the conferences table is empty."""
@@ -164,14 +164,24 @@ def test_sqlite_metadata_preservation_empty_conferences(tmp_path, logger):
 
     conn = sqlite3.connect(str(db_path))
     # Create tables
-    conn.execute("CREATE TABLE messages (conference_number INTEGER, message_number INTEGER, date TEXT, author TEXT, recipient TEXT, subject TEXT, status TEXT, text TEXT, reference_number INTEGER, thread_id TEXT, depth INTEGER, parent_message_number INTEGER, conference_name TEXT, bbs_name TEXT, bbs_id TEXT, source_file TEXT, attachments TEXT)")
-    conn.execute("CREATE TABLE bbs_info (name TEXT, location TEXT, phone TEXT, sysop TEXT, serial_number TEXT, bbs_id TEXT, user_name TEXT, packet_at TEXT, total_messages INTEGER, num_conferences INTEGER)")
+    conn.execute(
+        "CREATE TABLE messages (conference_number INTEGER, message_number INTEGER, date TEXT, author TEXT, recipient TEXT, subject TEXT, status TEXT, text TEXT, reference_number INTEGER, thread_id TEXT, depth INTEGER, parent_message_number INTEGER, conference_name TEXT, bbs_name TEXT, bbs_id TEXT, source_file TEXT, attachments TEXT)"
+    )
+    conn.execute(
+        "CREATE TABLE bbs_info (name TEXT, location TEXT, phone TEXT, sysop TEXT, serial_number TEXT, bbs_id TEXT, user_name TEXT, packet_at TEXT, total_messages INTEGER, num_conferences INTEGER)"
+    )
     conn.execute("CREATE TABLE conferences (number INTEGER PRIMARY KEY, name TEXT)")
 
     # Insert BBS info with detailed fields
-    conn.execute("INSERT INTO bbs_info (name, location, sysop) VALUES (?, ?, ?)", ("My BBS", "Somewhere", "The SysOp"))
+    conn.execute(
+        "INSERT INTO bbs_info (name, location, sysop) VALUES (?, ?, ?)",
+        ("My BBS", "Somewhere", "The SysOp"),
+    )
     # Insert a message
-    conn.execute("INSERT INTO messages (conference_number, author, subject, text, date, status) VALUES (?, ?, ?, ?, ?, ?)", (1, "Author", "Subject", "Body", "2023-01-01", " "))
+    conn.execute(
+        "INSERT INTO messages (conference_number, author, subject, text, date, status) VALUES (?, ?, ?, ?, ?, ?)",
+        (1, "Author", "Subject", "Body", "2023-01-01", " "),
+    )
 
     conn.commit()
     conn.close()

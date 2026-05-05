@@ -6,18 +6,21 @@ from pyqwk.core import (
     load_data,
     process_merged_files,
     ProcessingSettings,
-    ParsedMessage
+    ParsedMessage,
 )
+
 
 @pytest.fixture
 def baseline_path() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata" / "messages.dat"
+
 
 @pytest.fixture
 def logger():
     logger = logging.getLogger("pyqwk.tests")
     logger.addHandler(logging.NullHandler())
     return logger
+
 
 def _make_settings(**overrides):
     defaults = dict(
@@ -40,14 +43,13 @@ def _make_settings(**overrides):
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_json_export_reimport_symmetry(tmp_path, baseline_path, logger):
     """Test that messages exported to JSON can be re-imported and processed."""
     # 1. Export baseline to JSON
     json_path = tmp_path / "archive.json"
     settings_export = _make_settings(
-        format="json",
-        output_mode="file",
-        output_path=str(json_path)
+        format="json", output_mode="file", output_path=str(json_path)
     )
     process_merged_files([str(baseline_path)], settings_export, logger)
 
@@ -69,9 +71,7 @@ def test_json_export_reimport_symmetry(tmp_path, baseline_path, logger):
     # 3. Process re-imported data (e.g., convert to HTML)
     html_path = tmp_path / "archive.html"
     settings_html = _make_settings(
-        format="html",
-        output_mode="file",
-        output_path=str(html_path)
+        format="html", output_mode="file", output_path=str(html_path)
     )
 
     # We can use process_merged_files on the json path directly now
@@ -80,7 +80,8 @@ def test_json_export_reimport_symmetry(tmp_path, baseline_path, logger):
     assert html_path.exists()
     html_content = html_path.read_text(encoding="utf-8")
     assert "GammaO #571 @0*1" in html_content
-    assert "New User" in html_content # Subject
+    assert "New User" in html_content  # Subject
+
 
 def test_json_import_with_missing_fields(tmp_path, logger):
     """Test JSON import handles missing or malformed fields gracefully."""
@@ -88,10 +89,10 @@ def test_json_import_with_missing_fields(tmp_path, logger):
         {
             "header": {
                 "msgfrom": "Test User",
-                "confnum": "100" # String instead of int
+                "confnum": "100",  # String instead of int
             },
             "text": "Hello world",
-            "conference": "Test Conf"
+            "conference": "Test Conf",
         }
     ]
     json_path = tmp_path / "partial.json"

@@ -8,9 +8,11 @@ sys.path.insert(0, str(ROOT))
 
 from pyqwk.core import ProcessingSettings, process_merged_files
 
+
 @pytest.fixture
 def testdata_dir() -> Path:
     return Path(__file__).resolve().parents[1] / "testdata"
+
 
 def _make_settings(**overrides) -> ProcessingSettings:
     defaults = dict(
@@ -40,6 +42,7 @@ def _make_settings(**overrides) -> ProcessingSettings:
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
 
+
 def test_eml_export_individual_files(tmp_path: Path, testdata_dir: Path) -> None:
     logger = logging.getLogger("pyqwk.tests")
     output_dir = tmp_path / "eml_out"
@@ -49,7 +52,7 @@ def test_eml_export_individual_files(tmp_path: Path, testdata_dir: Path) -> None
         format="eml",
         individual_files=True,
         output_mode="file",
-        output_path=str(output_dir)
+        output_path=str(output_dir),
     )
 
     process_merged_files([str(input_file)], settings, logger)
@@ -70,19 +73,35 @@ def test_eml_export_individual_files(tmp_path: Path, testdata_dir: Path) -> None
     # EML should NOT have the mbox "From " separator
     assert not content.startswith("From ")
 
+
 def test_eml_filename_slugification() -> None:
     from pyqwk.core import ParsedMessage, MessageHeader, _generate_safe_filename
+
     header = MessageHeader(
-        status=" ", msgnum=123, msgdate="01-01-90", msgtime="12:00", msgto="All", msgfrom="From",
-        msgsubject="Hello! World / Test #1", msgpassword="", refnum=None,
-        numblocks=None, msgflag=" ", confnum=1, lognum=1, nettag=" ",
+        status=" ",
+        msgnum=123,
+        msgdate="01-01-90",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="From",
+        msgsubject="Hello! World / Test #1",
+        msgpassword="",
+        refnum=None,
+        numblocks=None,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag=" ",
     )
     msg = ParsedMessage(text="...", msgnum=123, refnum=None, confnum=1, header=header)
 
     filename = _generate_safe_filename(msg, "eml", 1)
     assert filename == "001-00123-hello_world_test_1.eml"
 
-def test_eml_default_individual_files(tmp_path: Path, testdata_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+
+def test_eml_default_individual_files(
+    tmp_path: Path, testdata_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from pyqwk.cli import main
     import os
 
@@ -92,7 +111,9 @@ def test_eml_default_individual_files(tmp_path: Path, testdata_dir: Path, monkey
     # Test that --format eml with -o directory defaults to individual files
     os.makedirs(output_dir)
 
-    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--format", "eml", "-o", str(output_dir)])
+    monkeypatch.setattr(
+        sys, "argv", ["qwk", str(input_file), "--format", "eml", "-o", str(output_dir)]
+    )
 
     # main() may or may not call sys.exit(0) on success
     try:
@@ -104,15 +125,14 @@ def test_eml_default_individual_files(tmp_path: Path, testdata_dir: Path, monkey
     assert len(files) == 1
     assert files[0].suffix == ".eml"
 
+
 def test_eml_aggregated_output(tmp_path: Path, testdata_dir: Path, capsys) -> None:
     # Test that EML can be aggregated when individual_files=False
     logger = logging.getLogger("pyqwk.tests")
     input_file = testdata_dir / "messages.dat"
 
     settings = _make_settings(
-        format="eml",
-        individual_files=False,
-        output_mode="stdout"
+        format="eml", individual_files=False, output_mode="stdout"
     )
 
     process_merged_files([str(input_file)], settings, logger)

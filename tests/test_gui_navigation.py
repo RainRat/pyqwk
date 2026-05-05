@@ -1,14 +1,12 @@
-import pytest
 from unittest.mock import MagicMock, patch
-import tkinter as tk
+
 
 def test_on_space_pressed_scrolling():
     """Verify that _on_space_pressed scrolls the text widget when not at the bottom."""
     mock_root = MagicMock()
-    with patch("pyqwk.gui.tk"), \
-         patch("pyqwk.gui.ttk"), \
-         patch("pyqwk.gui.font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         from pyqwk.gui import QwkGuiApp
+
         app = QwkGuiApp(mock_root)
 
         # Mock detail_text
@@ -26,13 +24,13 @@ def test_on_space_pressed_scrolling():
         assert result == "break"
         app.detail_text.yview_scroll.assert_called_with(1, "pages")
 
+
 def test_on_space_pressed_advance():
     """Verify that _on_space_pressed advances to the next message when at the bottom."""
     mock_root = MagicMock()
-    with patch("pyqwk.gui.tk"), \
-         patch("pyqwk.gui.ttk"), \
-         patch("pyqwk.gui.font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         from pyqwk.gui import QwkGuiApp
+
         app = QwkGuiApp(mock_root)
 
         # Mock detail_text at bottom
@@ -52,13 +50,13 @@ def test_on_space_pressed_advance():
         assert result == "break"
         app._select_relative_message.assert_called_with(1)
 
+
 def test_on_shift_space_scrolling():
     """Verify that Shift+Space scrolls the text widget up when not at the top."""
     mock_root = MagicMock()
-    with patch("pyqwk.gui.tk"), \
-         patch("pyqwk.gui.ttk"), \
-         patch("pyqwk.gui.font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         from pyqwk.gui import QwkGuiApp
+
         app = QwkGuiApp(mock_root)
 
         # Mock detail_text not at top
@@ -75,13 +73,13 @@ def test_on_shift_space_scrolling():
         assert result == "break"
         app.detail_text.yview_scroll.assert_called_with(-1, "pages")
 
+
 def test_on_backspace_advance_back():
     """Verify that BackSpace advances to the previous message when at the top."""
     mock_root = MagicMock()
-    with patch("pyqwk.gui.tk"), \
-         patch("pyqwk.gui.ttk"), \
-         patch("pyqwk.gui.font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         from pyqwk.gui import QwkGuiApp
+
         app = QwkGuiApp(mock_root)
 
         # Mock detail_text at top
@@ -101,13 +99,13 @@ def test_on_backspace_advance_back():
         assert result == "break"
         app._select_relative_message.assert_called_with(-1)
 
+
 def test_space_ignored_when_search_focused():
     """Verify that Space is ignored when the search entry has focus."""
     mock_root = MagicMock()
-    with patch("pyqwk.gui.tk"), \
-         patch("pyqwk.gui.ttk"), \
-         patch("pyqwk.gui.font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         from pyqwk.gui import QwkGuiApp
+
         app = QwkGuiApp(mock_root)
 
         app.search_entry = MagicMock()

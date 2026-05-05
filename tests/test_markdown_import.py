@@ -9,6 +9,7 @@ from pyqwk.core import (
     process_merged_files,
 )
 
+
 class TestMarkdownImport(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp()
@@ -38,12 +39,12 @@ class TestMarkdownImport(unittest.TestCase):
             threaded=False,
             binaries_removal=False,
             redact_pii=False,
-            format='markdown',
-            separator='auto',
-            output_mode='file',
+            format="markdown",
+            separator="auto",
+            output_mode="file",
             output_path=markdown_path,
-            encoding='cp437',
-            quiet=True
+            encoding="cp437",
+            quiet=True,
         )
         process_merged_files([input_path], settings_export, self.logger)
 
@@ -90,12 +91,12 @@ class TestMarkdownImport(unittest.TestCase):
             threaded=False,
             binaries_removal=False,
             redact_pii=False,
-            format='markdown',
-            separator='auto',
-            output_mode='file',
+            format="markdown",
+            separator="auto",
+            output_mode="file",
             output_path=markdown_path,
-            encoding='cp437',
-            quiet=True
+            encoding="cp437",
+            quiet=True,
         )
         process_merged_files([input_path], settings_export, self.logger)
 
@@ -131,7 +132,7 @@ class TestMarkdownImport(unittest.TestCase):
 Hello with files.
 """
         markdown_path = os.path.join(self.test_dir, "test_attach.md")
-        with open(markdown_path, 'w', encoding='utf-8') as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
 
         messages, _ = load_data(markdown_path, self.logger)
@@ -152,7 +153,7 @@ Hello with files.
 Hello with plain attachments.
 """
         markdown_path = os.path.join(self.test_dir, "test_attach_plain.md")
-        with open(markdown_path, 'w', encoding='utf-8') as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
 
         messages, _ = load_data(markdown_path, self.logger)
@@ -182,7 +183,7 @@ Root content.
 > Reply content.
 """
         markdown_path = os.path.join(self.test_dir, "test_threaded.md")
-        with open(markdown_path, 'w', encoding='utf-8') as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
 
         messages, _ = load_data(markdown_path, self.logger)
@@ -215,7 +216,7 @@ Root content.
 >Reply content.
 """
         markdown_path = os.path.join(self.test_dir, "test_threaded_no_space.md")
-        with open(markdown_path, 'w', encoding='utf-8') as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
 
         messages, _ = load_data(markdown_path, self.logger)
@@ -242,7 +243,7 @@ This is the first part.
 This is the second part (after a horizontal rule).
 """
         markdown_path = os.path.join(self.test_dir, "test_hr.md")
-        with open(markdown_path, 'w', encoding='utf-8') as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
 
         messages, _ = load_data(markdown_path, self.logger)
@@ -269,7 +270,7 @@ Body text here.
 More text.
 """
         markdown_path = os.path.join(self.test_dir, "test_body_headers.md")
-        with open(markdown_path, 'w', encoding='utf-8') as f:
+        with open(markdown_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
 
         messages, _ = load_data(markdown_path, self.logger)
@@ -277,5 +278,6 @@ More text.
         self.assertIn("## Body Header", messages[0].text)
         self.assertIn("- **Bullet in body**", messages[0].text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
