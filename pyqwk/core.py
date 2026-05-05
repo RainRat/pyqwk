@@ -102,7 +102,7 @@ def resolve_output_format(
     Args:
         output_format: The format explicitly requested by the user (e.g., 'json', 'html').
         output_path: The path where the output will be saved.
-        output_mode: Whether the output is going to a 'file' or 'stdout'.
+        output_mode: Whether the output is going to a 'file' or 'the screen'.
 
     Returns:
         The resolved format name (e.g., 'text', 'json', 'html').
@@ -978,7 +978,7 @@ class LogFormatter(logging.Formatter):
 
 
 def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], ConferenceMap]:
-    """Import messages and information from a pyqwk SQLite database."""
+    """Import messages and archive information from a pyqwk SQLite database."""
     # Ensure the file exists before connecting to avoid creating an empty database
     if db_path and db_path != ":memory:" and not os.path.exists(db_path):
         raise sqlite3.OperationalError(f"unable to open database file: {db_path}")
@@ -1902,11 +1902,11 @@ def load_data(
     Args:
         input_path: Path to the archive file or an original 'MESSAGES.DAT' file.
         logger: Logger for reporting warnings and informational messages.
-        encoding: The character set used to decode text (default is 'cp437').
+        encoding: The text encoding used to decode text (default is 'cp437').
 
     Returns:
         A pair of values (file_data, board_dict):
-        - file_data: A 'bytearray' of original bytes for QWK/REP files, or
+        - file_data: The original bytes for QWK/REP files, or
           a list of 'ParsedMessage' objects for modern formats.
         - board_dict: A 'ConferenceMap' linking conference numbers to names,
           which may also include BBS information.
@@ -2818,7 +2818,7 @@ def process_merged_files(
     resolved_output_path = settings.output_path
 
     if output_mode == "stdout" and resolved_output_path is not None:
-        raise ValueError("Output path cannot be provided when output mode is stdout.")
+        raise ValueError("You cannot provide an output path when printing to the screen.")
     if (
         not settings.individual_files
         and output_mode == "file"
@@ -4788,7 +4788,7 @@ def write_messages(
     """Save a list of messages to a file or print them to the screen.
 
     This function selects the appropriate writer based on the settings and
-    handles the encoding for the output.
+    handles the text encoding for the output.
     """
     writers: dict[
         str,

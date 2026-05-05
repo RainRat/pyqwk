@@ -68,7 +68,7 @@ def test_process_merged_files_raises_if_stdout_with_output_path(
     with pytest.raises(ValueError) as exc_info:
         process_merged_files(["dummy.qwk"], settings, logger)
 
-    assert "Output path cannot be provided when output mode is stdout" in str(
+    assert "You cannot provide an output path when printing to the screen" in str(
         exc_info.value
     )
 
