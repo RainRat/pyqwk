@@ -2712,23 +2712,41 @@ def _get_message_mapping(
     author = header.msgfrom.strip()
     to = header.msgto.strip()
     subject = header.msgsubject.strip()
+
+    subject_clean = subject
+    while True:
+        new_subject_clean = RE_SUBJECT_PREFIX_PATTERN.sub("", subject_clean)
+        if new_subject_clean == subject_clean:
+            break
+        subject_clean = new_subject_clean
+
     if redact_pii:
         author = _redact_pii(author)
         to = _redact_pii(to)
         subject = _redact_pii(subject)
+        subject_clean = _redact_pii(subject_clean)
         snippet = _redact_pii(snippet)
 
     indent = ""
     if message.depth > 0:
         indent = "  " * (message.depth - 1) + "└ "
 
+    is_reply = (
+        header.refnum is not None and header.refnum != 0
+    ) or RE_SUBJECT_PREFIX_PATTERN.match(header.msgsubject)
+
+    attachments_list = message.attachments or []
+    attachments_str = ", ".join(attachments_list)
+
     return {
         "confnum": header.confnum,
         "confname": message.confname or "",
+        "confname_or_num": message.confname or str(header.confnum),
         "msgnum": header.msgnum if header.msgnum is not None else count,
         "author": author,
         "to": to,
         "subject": subject,
+        "subject_clean": subject_clean,
         "date": header.msgdate,
         "time": header.msgtime,
         "year": dt.year,
@@ -2741,6 +2759,14 @@ def _get_message_mapping(
         "iso_time": dt.time().isoformat(),
         "bbs_name": message.bbs_name or "",
         "bbs_id": message.bbs_id or "",
+        "source_file": message.source_file or "",
+        "refnum": header.refnum if header.refnum is not None else 0,
+        "status": header.status,
+        "msgflag": header.msgflag,
+        "is_private": "true" if header.is_private else "false",
+        "is_reply": "true" if is_reply else "false",
+        "attachments": attachments_str,
+        "attachment_count": len(attachments_list),
         "length": len(message.text) if message.text else 0,
         "size": format_size(len(message.text)) if message.text else "0 B",
         "flags": flags,
