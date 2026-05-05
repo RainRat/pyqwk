@@ -139,7 +139,7 @@ examples:
     )
     io_group.add_argument(
         "--filename-pattern",
-        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, msgnum, confnum, confname, bbs_name, bbs_id, length.",
+        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, subject_clean, msgnum, confnum, confname, confname_or_num, bbs_name, bbs_id, length, source_file, refnum, status, msgflag, is_private, is_reply, attachments, attachment_count.",
     )
     io_group.add_argument(
         "-E",
@@ -274,7 +274,7 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: confnum, confname, msgnum, author, to, subject, date, time, year, month, day, hour, minute, second, iso_date, iso_time, bbs_name, bbs_id, length, size, flags, snippet, indent.",
+        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: confnum, confname, confname_or_num, msgnum, author, to, subject, subject_clean, date, time, year, month, day, hour, minute, second, iso_date, iso_time, bbs_name, bbs_id, source_file, refnum, status, msgflag, is_private, is_reply, attachments, attachment_count, length, size, flags, snippet, indent.",
     )
     format_group.add_argument(
         "--toc",
