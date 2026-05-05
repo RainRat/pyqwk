@@ -1688,6 +1688,48 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
     return messages
 
 
+def _process_batch_candidate_paths(
+    candidate_paths: list[str],
+    logger: logging.Logger,
+    encoding: str,
+    archive_type: str,
+) -> tuple[list[ParsedMessage], ConferenceMap]:
+    """Process and merge messages from a list of candidate file paths."""
+    all_messages = []
+    merged_board_dict = ConferenceMap()
+
+    for p in candidate_paths:
+        try:
+            # Recursive load_data for each file found
+            data, b_dict = load_data(p, logger, encoding)
+
+            # Merge conference map and BBS information
+            if b_dict.bbs_info:
+                if not merged_board_dict.bbs_info:
+                    merged_board_dict.bbs_info = b_dict.bbs_info
+                elif b_dict.bbs_info.name and not merged_board_dict.bbs_info.name:
+                    merged_board_dict.bbs_info = b_dict.bbs_info
+
+            for cid, name in b_dict.items():
+                if cid not in merged_board_dict:
+                    merged_board_dict[cid] = name
+
+            # Consolidate messages
+            if isinstance(data, bytearray):
+                # For QWK/REP, we must parse the bytes using the conference map from its own source
+                msgs = list(parse_messages(data, None, encoding))
+                # Attach conference names since we are merging into a shared board_dict
+                for m in msgs:
+                    m.confname = b_dict.get(m.confnum)
+                all_messages.extend(msgs)
+            else:
+                all_messages.extend(data)
+        except Exception as e:
+            logger.warning("Skipping file %s in %s due to error: %s", os.path.basename(p), archive_type, e)
+
+    return all_messages, merged_board_dict
+
+
 def load_data(
     input_path: str, logger: logging.Logger, encoding: str = 'cp437'
 ) -> tuple[bytearray | list[ParsedMessage], ConferenceMap]:
@@ -1887,38 +1929,9 @@ def load_data(
                     f"Error: Neither '{MESSAGES_FILENAME}' nor '{REPLY_FILENAME}' found in the zip archive {input_path}."
                 )
 
-            # Merge all found messages into a single list
-            all_messages = []
-            merged_board_dict = ConferenceMap()
-
-            for p in candidate_paths:
-                try:
-                    # Recursive load_data for each file found
-                    data, b_dict = load_data(p, logger, encoding)
-
-                    # Merge conference map and BBS information
-                    if b_dict.bbs_info:
-                        if not merged_board_dict.bbs_info:
-                            merged_board_dict.bbs_info = b_dict.bbs_info
-                        elif b_dict.bbs_info.name and not merged_board_dict.bbs_info.name:
-                            merged_board_dict.bbs_info = b_dict.bbs_info
-
-                    for cid, name in b_dict.items():
-                        if cid not in merged_board_dict:
-                            merged_board_dict[cid] = name
-
-                    # Consolidate messages
-                    if isinstance(data, bytearray):
-                        # For QWK/REP, we must parse the bytes using the conference map from its own source
-                        msgs = list(parse_messages(data, None, encoding))
-                        # Attach conference names since we are merging into a shared board_dict
-                        for m in msgs:
-                            m.confname = b_dict.get(m.confnum)
-                        all_messages.extend(msgs)
-                    else:
-                        all_messages.extend(data)
-                except Exception as e:
-                    logger.warning("Skipping file %s in ZIP due to error: %s", os.path.basename(p), e)
+            all_messages, merged_board_dict = _process_batch_candidate_paths(
+                candidate_paths, logger, encoding, "ZIP"
+            )
 
             if not all_messages:
                 raise ValueError(f"No messages could be loaded from ZIP archive: {input_path}")
@@ -1942,32 +1955,9 @@ def load_data(
             if not candidate_paths:
                 raise ValueError(f"No supported message files found in TAR archive: {input_path}")
 
-            all_messages = []
-            merged_board_dict = ConferenceMap()
-
-            for p in candidate_paths:
-                try:
-                    data, b_dict = load_data(p, logger, encoding)
-
-                    if b_dict.bbs_info:
-                        if not merged_board_dict.bbs_info:
-                            merged_board_dict.bbs_info = b_dict.bbs_info
-                        elif b_dict.bbs_info.name and not merged_board_dict.bbs_info.name:
-                            merged_board_dict.bbs_info = b_dict.bbs_info
-
-                    for cid, name in b_dict.items():
-                        if cid not in merged_board_dict:
-                            merged_board_dict[cid] = name
-
-                    if isinstance(data, bytearray):
-                        msgs = list(parse_messages(data, None, encoding))
-                        for m in msgs:
-                            m.confname = b_dict.get(m.confnum)
-                        all_messages.extend(msgs)
-                    else:
-                        all_messages.extend(data)
-                except Exception as e:
-                    logger.warning("Skipping file %s in TAR due to error: %s", os.path.basename(p), e)
+            all_messages, merged_board_dict = _process_batch_candidate_paths(
+                candidate_paths, logger, encoding, "TAR"
+            )
 
             if not all_messages:
                 raise ValueError(f"No messages could be loaded from TAR archive: {input_path}")
