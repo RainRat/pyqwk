@@ -647,6 +647,15 @@ class QwkGuiApp:
 
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
+        try:
+            sel_range = self.detail_text.tag_ranges("sel")
+            if sel_range:
+                selected_text = self.detail_text.get(*sel_range).strip()
+                if selected_text:
+                    self.search_var.set(selected_text)
+        except tk.TclError:
+            pass
+
         self.search_entry.focus_set()
         self.search_entry.selection_range(0, tk.END)
 
