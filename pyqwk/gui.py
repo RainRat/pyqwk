@@ -349,6 +349,9 @@ class QwkGuiApp:
             ("Shift+Enter", "Find Previous (Search)"),
             ("J / N", "Next Message"),
             ("K / P", "Previous Message"),
+            ("Space", "Scroll Down / Next"),
+            ("Shift+Space", "Scroll Up / Prev"),
+            ("BackSpace", "Scroll Up / Prev"),
         ]
 
         for key, desc in shortcuts:
@@ -479,6 +482,9 @@ class QwkGuiApp:
         self.root.bind("n", lambda e: self._select_relative_message(1))
         self.root.bind("k", lambda e: self._select_relative_message(-1))
         self.root.bind("p", lambda e: self._select_relative_message(-1))
+        self.root.bind("<space>", self._on_space_pressed)
+        self.root.bind("<Shift-space>", self._on_space_pressed)
+        self.root.bind("<BackSpace>", self._on_space_pressed)
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -528,6 +534,33 @@ class QwkGuiApp:
         self.message_list.see(new_item)
         self.message_list.focus(new_item)
         return True
+
+    def _on_space_pressed(self, event: tk.Event) -> str | None:
+        """Handle Space, Shift+Space, and BackSpace for continuous reading."""
+        # If the search entry has focus, let it handle the keys
+        if self.root.focus_get() == self.search_entry:
+            return None
+
+        # Check scroll position: (top, bottom) as fractions of the whole
+        top, bottom = self.detail_text.yview()
+
+        # Space (Forward)
+        if event.keysym == "space" and not (event.state & 0x1):
+            if bottom < 1.0:
+                self.detail_text.yview_scroll(1, "pages")
+            else:
+                self._select_relative_message(1)
+            return "break"
+
+        # Shift+Space or BackSpace (Backward)
+        elif (event.keysym == "space" and (event.state & 0x1)) or event.keysym == "BackSpace":
+            if top > 0.0:
+                self.detail_text.yview_scroll(-1, "pages")
+            else:
+                self._select_relative_message(-1)
+            return "break"
+
+        return None
 
     def clear_search(self, _event: object | None = None) -> None:
         """Clear the search bar first, and if already empty, reset all filters."""
