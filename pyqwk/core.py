@@ -1558,11 +1558,8 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
     re_bbs = re.compile(r"^BBS:\s*(.*)$", re.MULTILINE)
     re_status = re.compile(r"^Status:\s*(.*)$", re.MULTILINE)
     re_msgnum_verbose = re.compile(r"^Message #:\s*(\d+)", re.MULTILINE)
-    re_date_verbose = re.compile(
+    re_date = re.compile(
         r"Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)", re.MULTILINE
-    )
-    re_date_std = re.compile(
-        r"^Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)", re.MULTILINE
     )
     re_from = re.compile(r"^From:\s*(.*)$", re.MULTILINE)
     re_to = re.compile(r"^To:\s*(.*)$", re.MULTILINE)
@@ -1587,17 +1584,13 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
         bbs_match = re_bbs.search(section)
         status_match = re_status.search(section)
         msgnum_v_match = re_msgnum_verbose.search(section)
-        date_v_match = re_date_verbose.search(section)
-        date_s_match = re_date_std.search(section)
+        date_match = re_date.search(section)
         ref_match = re_refnum.search(section)
         attach_match = re_attachments.search(section)
 
         msgnum = None
         if msgnum_v_match:
             msgnum = int(msgnum_v_match.group(1))
-
-        # Use date from verbose or standard header
-        date_match = date_v_match or date_s_match
         date_str = date_match.group(1) if date_match else ""
 
         msg_date = "01-01-70"
@@ -1633,8 +1626,7 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
             bbs_match,
             status_match,
             msgnum_v_match,
-            date_v_match,
-            date_s_match,
+            date_match,
             from_match,
             to_match,
             subj_match,
