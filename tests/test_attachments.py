@@ -235,6 +235,34 @@ def test_uue_invalid_data():
     assert len(binaries) == 0
 
 
+def test_consecutive_uue_blocks():
+    text = """begin 644 file1.txt
+M5&53=####
+begin 644 file2.txt
+M5&53=####
+end
+"""
+    binaries = extract_binaries(text)
+    assert len(binaries) == 2
+    assert binaries[0][0] == "file1.txt"
+    assert binaries[1][0] == "file2.txt"
+    assert len(binaries[0][1]) == 45
+    assert len(binaries[1][1]) == 45
+
+
+def test_yenc_interrupted_by_uue():
+    text = """=ybegin line=128 size=128 name=file1.bin
+part of yenc data
+begin 644 file2.txt
+M5&53=####
+end
+"""
+    binaries = extract_binaries(text)
+    assert len(binaries) == 2
+    assert binaries[0][0] == "file1.bin"
+    assert binaries[1][0] == "file2.txt"
+
+
 def test_base64_unterminated_invalid():
     # Trigger (binascii.Error, ValueError) in _decode_base64 at end of text
     long_line = "A" * 64

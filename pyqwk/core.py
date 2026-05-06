@@ -398,6 +398,8 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
             if clean_line == "end" or clean_line == "`":
                 _flush_binary()
                 continue
+            elif uue_begin_re.match(clean_line) or yenc_begin_re.match(clean_line):
+                _flush_binary()
             else:
                 # Basic check: if it looks like a UUE line (starts with M and has decent length)
                 # or is a common last line (length character at start matches line length)
@@ -417,6 +419,8 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
             if clean_line.startswith("=yend"):
                 _flush_binary()
                 continue
+            elif uue_begin_re.match(clean_line) or yenc_begin_re.match(clean_line):
+                _flush_binary()
             else:
                 current_data.append(line)
                 continue
