@@ -1550,11 +1550,11 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
     sections = re.split(r"\n-{20,}\n", content_norm)
     if len(sections) <= 1:
         # Try splitting by double newlines if no dashes found, looking ahead for headers
-        sections = re.split(r"\n\n(?=Conference:|Message #:|Date:)", content_norm)
+        sections = re.split(r"\n\n(?=Conference:|Area:|Message #:|Date:)", content_norm)
 
     messages = []
 
-    re_conf = re.compile(r"^Conference:\s*(.*?)(?:\s*\((\d+)\))?$", re.MULTILINE)
+    re_conf = re.compile(r"^(?:Conference|Area):\s*(.*?)(?:\s*\((\d+)\))?$", re.MULTILINE)
     re_bbs = re.compile(r"^BBS:\s*(.*)$", re.MULTILINE)
     re_status = re.compile(r"^Status:\s*(.*)$", re.MULTILINE)
     re_msgnum_verbose = re.compile(r"^Message #:\s*(\d+)", re.MULTILINE)
@@ -1566,27 +1566,53 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
     re_subject = re.compile(r"^Subject:\s*(.*)$", re.MULTILINE)
     re_refnum = re.compile(r"^Reference #:\s*(\d+)", re.MULTILINE)
     re_attachments = re.compile(r"^Attachments:\s*(.*)$", re.MULTILINE)
+    re_any_header = re.compile(
+        r"^\s*(Conference|Area|BBS|Status|Message #|Date|From|To|Subject|Reference #|Attachments):"
+    )
 
     for section in sections:
         section = section.strip()
         if not section:
             continue
 
-        from_match = re_from.search(section)
-        to_match = re_to.search(section)
-        subj_match = re_subject.search(section)
+        # Skip horizontal separator if it's the first line after strip()
+        lines = section.split("\n")
+        if lines and re.match(r"^-{20,}$", lines[0].strip()):
+            lines = lines[1:]
+
+        # Separate headers from body to avoid fake headers in body being matched
+        header_lines = []
+        body_idx = 0
+        for i, line in enumerate(lines):
+            if re_any_header.match(line):
+                header_lines.append(line)
+                body_idx = i + 1
+            elif not line.strip() and not header_lines:
+                # Skip leading empty lines before any headers
+                body_idx = i + 1
+                continue
+            else:
+                # First non-header line (or empty line) marks end of headers
+                break
+
+        header_part = "\n".join(header_lines)
+        body = "\n".join(lines[body_idx:]).strip()
+
+        from_match = re_from.search(header_part)
+        to_match = re_to.search(header_part)
+        subj_match = re_subject.search(header_part)
 
         # Minimum required headers to consider it a message
         if not (from_match and to_match and subj_match):
             continue
 
-        conf_match = re_conf.search(section)
-        bbs_match = re_bbs.search(section)
-        status_match = re_status.search(section)
-        msgnum_v_match = re_msgnum_verbose.search(section)
-        date_match = re_date.search(section)
-        ref_match = re_refnum.search(section)
-        attach_match = re_attachments.search(section)
+        conf_match = re_conf.search(header_part)
+        bbs_match = re_bbs.search(header_part)
+        status_match = re_status.search(header_part)
+        msgnum_v_match = re_msgnum_verbose.search(header_part)
+        date_match = re_date.search(header_part)
+        ref_match = re_refnum.search(header_part)
+        attach_match = re_attachments.search(header_part)
 
         msgnum = None
         if msgnum_v_match:
@@ -1618,25 +1644,6 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
             conf_name = conf_match.group(1).strip()
             if conf_match.group(2):
                 conf_num = int(conf_match.group(2))
-
-        # Body starts after headers
-        header_end = 0
-        for m in [
-            conf_match,
-            bbs_match,
-            status_match,
-            msgnum_v_match,
-            date_match,
-            from_match,
-            to_match,
-            subj_match,
-            ref_match,
-            attach_match,
-        ]:
-            if m:
-                header_end = max(header_end, m.end())
-
-        body = section[header_end:].strip()
 
         header = MessageHeader(
             status="*"
