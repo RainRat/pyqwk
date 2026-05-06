@@ -18,6 +18,7 @@ def test_welcome_screen_on_startup():
     with (
         patch("pyqwk.gui.tk") as patched_tk,
         patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.font") as patched_font,
         patch("pyqwk.gui.messagebox") as _,
         patch("pyqwk.gui.filedialog") as _,
         patch("pyqwk.gui.simpledialog") as _,
@@ -55,7 +56,12 @@ def test_welcome_screen_on_startup():
 def test_no_welcome_screen_with_path():
     """Verify that current_path is set when an initial path is provided."""
     mock_root = MagicMock()
-    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.load_data"):
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.font"),
+        patch("pyqwk.gui.load_data"),
+    ):
         from pyqwk.gui import QwkGuiApp
 
         app = QwkGuiApp(mock_root, initial_paths=["test.qwk"])
