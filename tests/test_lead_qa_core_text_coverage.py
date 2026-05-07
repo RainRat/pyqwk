@@ -98,3 +98,14 @@ def test_parse_text_messages_date_std_match_logic(tmp_path):
     assert len(messages) == 1
     assert messages[0].header.msgdate == "01-01-2024"
     assert messages[0].header.msgtime == "12:00"
+
+
+def test_parse_text_messages_leading_empty_lines(tmp_path):
+    content = "------------------------------\n\nFrom: Alice\nTo: Bob\nSubject: Hello\n\nBody content"
+    txt_file = tmp_path / "leading_empty.txt"
+    txt_file.write_text(content)
+
+    messages = _parse_text_messages(str(txt_file))
+    assert len(messages) == 1
+    assert messages[0].header.msgfrom == "Alice"
+    assert messages[0].text == "Body content"
