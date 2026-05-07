@@ -53,7 +53,6 @@ def test_focus_search_without_selection(app):
 def test_focus_search_tcl_error(app):
     """Verify that _focus_search handles errors gracefully."""
     # We mock TclError as well since it's in tkinter
-    import pyqwk.gui
     app.detail_text.tag_ranges.side_effect = Exception("TclError simulation")
 
     # Should not raise exception because of the broad except block or specific handling

@@ -1,7 +1,4 @@
-import os
-import pytest
 import logging
-import tarfile
 import zipfile
 from unittest.mock import MagicMock, patch
 from pyqwk.core import (
@@ -260,7 +257,6 @@ Body
 
 def test_rss_export_attachment_branches(tmp_path):
     """Test _write_rss and related branches in process_merged_files."""
-    from pyqwk.core import process_merged_files
 
     output_file = tmp_path / "test.rss"
     settings = ProcessingSettings(

@@ -1,5 +1,3 @@
-import pytest
-import os
 from pyqwk.core import _parse_text_messages
 
 def test_parse_text_messages_preserves_body_with_fake_headers(tmp_path):

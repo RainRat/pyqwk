@@ -1,5 +1,4 @@
-import pytest
-from pyqwk.core import MessageHeader, ConferenceMap, ParsedMessage, _get_message_mapping
+from pyqwk.core import MessageHeader, ParsedMessage, _get_message_mapping
 
 
 def test_header_format_text_redaction():
