@@ -792,9 +792,10 @@ class TestQwkGui:
         app._render_message(0)
 
         # Verify that stripped values were inserted as interactive links
-        # Subject is inserted first with a newline
+        # Subject is inserted first with a newline as a link
+        subject_tag = f"subject_link_{id(msg)}"
         app.detail_text.insert.assert_any_call(
-            mock_gui_deps["tk"].END, "Subject\n", "header_subject"
+            mock_gui_deps["tk"].END, "Subject\n", ("link", "header_subject", subject_tag)
         )
         # Then From and To are inserted as interactive links (stripped) with separate newline calls
         from_tag = f"from_link_{id(msg)}"

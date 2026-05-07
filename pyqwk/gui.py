@@ -31,6 +31,7 @@ from pyqwk.core import (
     render_stats_as_text,  # noqa: F401
     expand_paths,
     ConferenceMap,
+    _normalize_subject,
 )
 
 
@@ -131,41 +132,59 @@ class QwkGuiApp:
         menu = tk.Menu(self.root, tearoff=0)
 
         # Copy section
+        orig_subject = msg.header.msgsubject.strip()
+        orig_from = msg.header.msgfrom.strip()
+        orig_to = msg.header.msgto.strip()
+        orig_num = str(msg.header.msgnum or "")
+
         menu.add_command(
             label="Copy Subject",
-            command=lambda: self._copy_to_clipboard(msg.header.msgsubject.strip()),
+            command=lambda s=orig_subject: self._copy_to_clipboard(s),
         )
         menu.add_command(
             label="Copy From",
-            command=lambda: self._copy_to_clipboard(msg.header.msgfrom.strip()),
+            command=lambda f=orig_from: self._copy_to_clipboard(f),
         )
         menu.add_command(
             label="Copy To",
-            command=lambda: self._copy_to_clipboard(msg.header.msgto.strip()),
+            command=lambda t=orig_to: self._copy_to_clipboard(t),
         )
         menu.add_command(
             label="Copy Num",
-            command=lambda: self._copy_to_clipboard(str(msg.header.msgnum or "")),
+            command=lambda n=orig_num: self._copy_to_clipboard(n),
         )
         menu.add_separator()
 
         # Filter pivoting
+        author_label = (orig_from[:20] + "...") if len(orig_from) > 20 else orig_from
         menu.add_command(
-            label=f"Filter by Author: {msg.header.msgfrom.strip()[:20]}...",
-            command=lambda: self._pivot_filter(author=msg.header.msgfrom.strip()),
+            label=f"Filter by Author: {author_label}",
+            command=lambda a=orig_from: self._pivot_filter(author=a),
+        )
+
+        subj_label = (
+            (orig_subject[:20] + "...") if len(orig_subject) > 20 else orig_subject
+        )
+        menu.add_command(
+            label=f"Filter by Subject: {subj_label}",
+            command=lambda s=orig_subject: self._pivot_filter(subject=s),
         )
 
         conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
+        conf_label = (conf_name[:20] + "...") if len(conf_name) > 20 else conf_name
         menu.add_command(
-            label=f"Filter by Conference: {conf_name[:20]}...",
-            command=lambda: self._pivot_filter(conf_num=msg.confnum),
+            label=f"Filter by Conference: {conf_label}",
+            command=lambda c=msg.confnum: self._pivot_filter(conf_num=c),
         )
 
         bbs_display = msg.bbs_name or msg.bbs_id
         if bbs_display:
+            bbs_label = (
+                (bbs_display[:20] + "...") if len(bbs_display) > 20 else bbs_display
+            )
             menu.add_command(
-                label=f"Filter by BBS: {bbs_display[:20]}...",
-                command=lambda: self._pivot_filter(bbs_name=bbs_display),
+                label=f"Filter by BBS: {bbs_label}",
+                command=lambda b=bbs_display: self._pivot_filter(bbs_name=b),
             )
 
         menu.post(event.x_root, event.y_root)
@@ -180,6 +199,40 @@ class QwkGuiApp:
             label="Select All",
             command=lambda: self.detail_text.tag_add("sel", "1.0", tk.END),
         )
+
+        # Get current message for information filtering
+        current_selection = self.message_list.selection()
+        msg = None
+        if current_selection:
+            try:
+                idx = int(current_selection[0])
+                msg = self.messages[idx]
+            except (ValueError, IndexError):
+                pass
+
+        if msg:
+            orig_subject = msg.header.msgsubject.strip()
+            orig_from = msg.header.msgfrom.strip()
+            orig_to = msg.header.msgto.strip()
+            orig_num = str(msg.header.msgnum or "")
+
+            menu.add_command(
+                label="Copy Subject",
+                command=lambda s=orig_subject: self._copy_to_clipboard(s),
+            )
+            menu.add_command(
+                label="Copy From",
+                command=lambda f=orig_from: self._copy_to_clipboard(f),
+            )
+            menu.add_command(
+                label="Copy To",
+                command=lambda t=orig_to: self._copy_to_clipboard(t),
+            )
+            menu.add_command(
+                label="Copy Num",
+                command=lambda n=orig_num: self._copy_to_clipboard(n),
+            )
+
         menu.add_command(
             label="Copy Full Message",
             command=lambda: self._copy_to_clipboard(
@@ -187,13 +240,8 @@ class QwkGuiApp:
             ),
         )
 
-        # Get current message for information filtering
-        current_selection = self.message_list.selection()
-        if current_selection:
+        if msg:
             try:
-                idx = int(current_selection[0])
-                msg = self.messages[idx]
-
                 menu.add_separator()
                 author_text = msg.header.msgfrom.strip()
                 author_label = (
@@ -202,6 +250,15 @@ class QwkGuiApp:
                 menu.add_command(
                     label=f"Filter by Author: {author_label}",
                     command=lambda a=author_text: self._pivot_filter(author=a),
+                )
+
+                subj_text = msg.header.msgsubject.strip()
+                subj_label = (
+                    (subj_text[:20] + "...") if len(subj_text) > 20 else subj_text
+                )
+                menu.add_command(
+                    label=f"Filter by Subject: {subj_label}",
+                    command=lambda s=subj_text: self._pivot_filter(subject=s),
                 )
 
                 conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
@@ -330,10 +387,14 @@ class QwkGuiApp:
         author: str | None = None,
         conf_num: int | None = None,
         bbs_name: str | None = None,
+        subject: str | None = None,
     ) -> None:
-        """Update filters based on the selected author, conference, or BBS."""
+        """Update filters based on the selected author, conference, BBS, or subject."""
         if author:
             self.search_var.set(author)
+
+        if subject:
+            self.search_var.set(_normalize_subject(subject))
 
         if bbs_name:
             # Find match in BBS combobox
@@ -1088,8 +1149,8 @@ class QwkGuiApp:
 
     def _render_message(self, message_index: int) -> None:
         """Render a message with rich formatting in the detail view."""
-        message = self.messages[message_index]
-        header = message.header
+        msg = self.messages[message_index]
+        header = msg.header
         conf_name = self.board_dict.get(header.confnum, str(header.confnum))
         settings = self._current_settings()
 
@@ -1099,9 +1160,13 @@ class QwkGuiApp:
         header_start = "1.0"
 
         # Subject as a prominent title
-        subject = header.msgsubject.strip() or "(no subject)"
-        msg_from = header.msgfrom.strip()
-        msg_to = header.msgto.strip()
+        orig_subject = header.msgsubject.strip() or "(no subject)"
+        orig_from = header.msgfrom.strip()
+        orig_to = header.msgto.strip()
+
+        subject = orig_subject
+        msg_from = orig_from
+        msg_to = orig_to
 
         if settings.redact_pii:
             from pyqwk.core import _redact_pii
@@ -1110,28 +1175,37 @@ class QwkGuiApp:
             msg_from = _redact_pii(msg_from)
             msg_to = _redact_pii(msg_to)
 
-        self.detail_text.insert(tk.END, subject + "\n", "header_subject")
+        subject_tag = f"subject_link_{id(msg)}"
+        self.detail_text.insert(
+            tk.END, subject + "\n", ("link", "header_subject", subject_tag)
+        )
+        self.detail_text.tag_bind(
+            subject_tag,
+            "<Button-1>",
+            lambda e, s=orig_subject: self._pivot_filter(subject=s),
+        )
+
         self.detail_text.insert(tk.END, " \n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
         # Primary fields
         self.detail_text.insert(tk.END, "From: ", "header_label")
-        from_tag = f"from_link_{id(message)}"
+        from_tag = f"from_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_from, ("link", "header_value", from_tag))
         self.detail_text.tag_bind(
             from_tag,
             "<Button-1>",
-            lambda e, a=msg_from: self._pivot_filter(author=a),
+            lambda e, a=orig_from: self._pivot_filter(author=a),
         )
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "To:   ", "header_label")
-        to_tag = f"to_link_{id(message)}"
+        to_tag = f"to_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_to, ("link", "header_value", to_tag))
         self.detail_text.tag_bind(
             to_tag,
             "<Button-1>",
-            lambda e, a=msg_to: self._pivot_filter(author=a),
+            lambda e, a=orig_to: self._pivot_filter(author=a),
         )
         self.detail_text.insert(tk.END, "\n\n")
 
@@ -1156,7 +1230,7 @@ class QwkGuiApp:
 
         self.detail_text.insert(tk.END, "  •  ", "header_meta")
 
-        conf_tag = f"conf_link_{id(message)}"
+        conf_tag = f"conf_link_{id(msg)}"
         self.detail_text.insert(tk.END, conf_name, ("link", "header_meta", conf_tag))
         self.detail_text.tag_bind(
             conf_tag,
@@ -1164,52 +1238,52 @@ class QwkGuiApp:
             lambda e, c=header.confnum: self._pivot_filter(conf_num=c),
         )
 
-        if message.bbs_name:
+        if msg.bbs_name:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            bbs_tag = f"bbs_link_{id(message)}"
+            bbs_tag = f"bbs_link_{id(msg)}"
             self.detail_text.insert(
-                tk.END, message.bbs_name, ("link", "header_meta", bbs_tag)
+                tk.END, msg.bbs_name, ("link", "header_meta", bbs_tag)
             )
             self.detail_text.tag_bind(
                 bbs_tag,
                 "<Button-1>",
-                lambda e, b=message.bbs_name: self._pivot_filter(bbs_name=b),
+                lambda e, b=msg.bbs_name: self._pivot_filter(bbs_name=b),
             )
 
         if header.msgnum is not None:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
             self.detail_text.insert(tk.END, f"Msg #{header.msgnum}", "header_meta")
 
-        if message.refnum:
+        if msg.refnum:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            ref_tag = f"ref_link_{id(message)}"
-            self.detail_text.insert(tk.END, f"Ref #{message.refnum}", ("link", ref_tag))
+            ref_tag = f"ref_link_{id(msg)}"
+            self.detail_text.insert(tk.END, f"Ref #{msg.refnum}", ("link", ref_tag))
             self.detail_text.tag_bind(
                 ref_tag,
                 "<Button-1>",
-                lambda e, c=header.confnum, r=message.refnum: self.jump_to_message(
+                lambda e, c=header.confnum, r=msg.refnum: self.jump_to_message(
                     c, r
                 ),
             )
 
         self.detail_text.insert(tk.END, "\n")
 
-        if message.source_file:
+        if msg.source_file:
             self.detail_text.insert(
-                tk.END, f"Source: {message.source_file}\n", "header_meta"
+                tk.END, f"Source: {msg.source_file}\n", "header_meta"
             )
 
-        if message.attachments:
+        if msg.attachments:
             self.detail_text.insert(tk.END, "Attachments: ", "header_label")
-            for i, filename in enumerate(message.attachments):
-                tag = f"attach_link_{id(message)}_{i}"
+            for i, filename in enumerate(msg.attachments):
+                tag = f"attach_link_{id(msg)}_{i}"
                 self.detail_text.insert(tk.END, filename, ("link", tag))
                 self.detail_text.tag_bind(
                     tag,
                     "<Button-1>",
                     lambda e, f=filename, idx=i: self.save_attachment(f, idx),
                 )
-                if i < len(message.attachments) - 1:
+                if i < len(msg.attachments) - 1:
                     self.detail_text.insert(tk.END, ", ", "header_value")
             self.detail_text.insert(tk.END, "\n")
 
@@ -1221,7 +1295,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         # Insert body with quote highlighting
-        for line in message.text.splitlines(keepends=True):
+        for line in msg.text.splitlines(keepends=True):
             tags = ["body"]
             if RE_QUOTE_PATTERN.match(line):
                 tags.append("quote")
