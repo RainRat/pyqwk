@@ -142,7 +142,7 @@ RE_UUE_LOOSE_PATTERN = re.compile(r"^[\x21-\x4d][\x21-\x60]{1,60}$")
 # Identify Base64 blocks by looking for long strings of characters commonly used in Base64 encoding.
 RE_BASE64_PATTERN = re.compile(r"^[A-Za-z0-9+/=]{60,}$")
 RE_YENC_PATTERN = re.compile(r"^=y(begin|part|end)")
-RE_BASE64_LOOSE_PATTERN = re.compile(r"^[A-Za-z0-9+/=]{4,}$")
+RE_BASE64_LOOSE_PATTERN = re.compile(r"^[A-Za-z0-9+/=]{1,}$")
 RE_EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 RE_URL_PATTERN = re.compile(
     r'\b(?:https?|ftp|telnet|gopher)://[^\s<>"]+|www\.[^\s<>"]+', re.IGNORECASE
@@ -366,7 +366,12 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
                     continue
         elif in_base64:
             try:
-                decoded = base64.b64decode("".join(current_data))
+                # Append missing padding to ensure valid Base64 decoding
+                b64_str = "".join(current_data)
+                padding_needed = (4 - (len(b64_str) % 4)) % 4
+                if padding_needed != 3:  # 1 extra char is invalid in Base64
+                    b64_str += "=" * padding_needed
+                decoded = base64.b64decode(b64_str)
             except (binascii.Error, ValueError, TypeError):
                 decoded = b""
         elif in_yenc:
