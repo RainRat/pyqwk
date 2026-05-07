@@ -390,39 +390,63 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "Getting Started:\n", "header_label")
+        self.detail_text.insert(tk.END, "Click ", "header_value")
+        self.detail_text.insert(tk.END, "Open Archive", ("link", "header_value", "link_open"))
+        self.detail_text.tag_bind("link_open", "<Button-1>", self.open_file)
+        self.detail_text.insert(tk.END, " or ", "header_value")
+        self.detail_text.insert(tk.END, "Open Folder", ("link", "header_value", "link_folder"))
+        self.detail_text.tag_bind("link_folder", "<Button-1>", self.open_folder)
         self.detail_text.insert(
             tk.END,
-            "Use Ctrl+O or the 'Open' button in the toolbar to load a message archive.\n\n",
-            "body",
+            " to load messages. You can also use Ctrl+O at any time.\n\n",
+            "header_value",
         )
 
         self.detail_text.insert(tk.END, "Supported Formats:\n", "header_label")
         formats = "QWK, REP, ZIP, TAR, JSON, JSONL, CSV, SQLite (.db), XML, RSS, mbox, EML, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT)"
-        self.detail_text.insert(tk.END, f"{formats}\n\n", "body")
+        self.detail_text.insert(tk.END, f"{formats}\n\n", "header_value")
 
         self.detail_text.insert(tk.END, "Keyboard Shortcuts:\n", "header_label")
-        shortcuts = [
-            ("Ctrl + O", "Open Archive"),
-            ("Ctrl + S", "Export Current View"),
-            ("Ctrl + I", "Archive Statistics"),
-            ("Ctrl + F", "Search / Find"),
-            ("F3", "Find Next"),
-            ("Shift + F3", "Find Previous"),
-            ("Ctrl + G", "Go to Message Number"),
-            ("Ctrl + Q", "Quit Application"),
-            ("Esc", "Clear Search / Filters"),
-            ("Enter", "Find Next (Search)"),
-            ("Shift+Enter", "Find Previous (Search)"),
-            ("J / N", "Next Message"),
-            ("K / P", "Previous Message"),
-            ("Space", "Scroll Down / Next"),
-            ("Shift+Space", "Scroll Up / Prev"),
-            ("BackSpace", "Scroll Up / Prev"),
+
+        shortcut_groups = [
+            (
+                "Archive & Stats",
+                [
+                    ("Ctrl + O", "Open Archive"),
+                    ("Ctrl + S", "Export Current View"),
+                    ("Ctrl + I", "Archive Statistics"),
+                    ("Ctrl + Q", "Quit Application"),
+                ],
+            ),
+            (
+                "Search & Filters",
+                [
+                    ("Ctrl + F", "Search / Find"),
+                    ("F3", "Find Next Match"),
+                    ("Shift + F3", "Find Previous Match"),
+                    ("Enter", "Find Next (Search)"),
+                    ("Shift+Enter", "Find Previous (Search)"),
+                    ("Esc", "Clear Search / Filters"),
+                ],
+            ),
+            (
+                "Navigation",
+                [
+                    ("J / N", "Next Message"),
+                    ("K / P", "Previous Message"),
+                    ("Space", "Scroll Down / Next"),
+                    ("Shift+Space", "Scroll Up / Prev"),
+                    ("BackSpace", "Scroll Up / Prev"),
+                    ("Ctrl + G", "Go to Message Number"),
+                ],
+            ),
         ]
 
-        for key, desc in shortcuts:
-            self.detail_text.insert(tk.END, f"{key:<12}", "header_label")
-            self.detail_text.insert(tk.END, f"{desc}\n", "body")
+        for group_name, shortcuts in shortcut_groups:
+            self.detail_text.insert(tk.END, f"\n  {group_name}\n", "header_meta")
+            for key, desc in shortcuts:
+                self.detail_text.insert(tk.END, f"    {key:<15}", "header_label")
+                self.detail_text.insert(tk.END, f"{desc}\n", "header_value")
 
     def _render_empty_state(self) -> None:
         """Render an interactive empty state when no messages match the filters."""
