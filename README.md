@@ -120,17 +120,27 @@ qwk-gui messages.db
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
+
+**Archive & Stats**
 - **Ctrl + O**: Open an archive.
 - **Ctrl + S**: Export the current view.
 - **Ctrl + I**: View statistics.
-- **Ctrl + F**: Jump to the search bar.
-- **Ctrl + G**: Jump to a message number.
 - **Ctrl + Q**: Exit.
-- **F3 / Enter**: Next search match.
-- **Shift + F3 / Shift + Enter**: Previous search match.
+
+**Search & Filters**
+- **Ctrl + F**: Jump to the search bar.
+- **F3**: Next search match.
+- **Shift + F3**: Previous search match.
+- **Enter**: Next search match (when the search bar is focused).
+- **Shift + Enter**: Previous search match (when the search bar is focused).
+- **Esc**: Clear search (first press) and filters (second press).
+
+**Navigation**
 - **j / n**: Next message.
 - **k / p**: Previous message.
-- **Esc**: Clear search (first press) and filters (second press).
+- **Space**: Scroll down or move to the next message.
+- **Shift + Space / BackSpace**: Scroll up or move to the previous message.
+- **Ctrl + G**: Jump to a message number.
 
 ## Usage Examples
 
