@@ -22,7 +22,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 | Format | Import | Export | Notes |
 | :--- | :---: | :---: | :--- |
-| **QWK / REP** | ✅ | ✅ | Classic BBS packets (.qwk, .rep, .zip, .tar, .tar.gz, .tar.bz2, .tgz, messages.dat) |
+| **QWK / REP** | ✅ | ✅ | Classic BBS packets (.qwk, .rep, .zip, .tar, .tar.gz, .tar.bz2, .tgz, messages.dat, reply.dat) |
 | **JSON / JSONL** | ✅ | ✅ | Modern structured data (.json, .jsonl) |
 | **HTML** | ✅ | ✅ | Browsable files with threading and charts (.html, .htm) |
 | **Markdown** | ✅ | ✅ | Readable text files (.md, .markdown) |
@@ -147,6 +147,15 @@ qwk-gui messages.db
 **Read an archive:**
 ```bash
 qwk archive.qwk
+```
+
+**Show a quick summary:**
+```bash
+# Standard one-line summary
+qwk archive.qwk --oneline
+
+# Custom summary with specific information
+qwk archive.qwk --oneline-pattern "[{confnum}] {author}: {subject}"
 ```
 
 **Save as a text file:**
@@ -339,6 +348,9 @@ for msg in messages:
 | `-r, --redact-pii` | Hide emails and phone numbers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
 | `-S, --search` | Search for keywords. |
+| `-1, --oneline` | Show a one-line summary of each message. |
+| `--oneline-pattern` | Set a custom pattern for one-line summaries. |
+| `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
 | `--dry-run` | Preview actions without writing files. |
 
