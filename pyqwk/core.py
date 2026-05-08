@@ -497,6 +497,7 @@ class ProcessingSettings:
     organize_by_bbs: bool = False
     organize_by_author: bool = False
     organize_by_to: bool = False
+    organize_by_subject: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
     msgnum_filters: set[int] | None = None
@@ -3117,6 +3118,7 @@ def process_merged_files(
                     settings.organize_by_bbs,
                     settings.organize_by_author,
                     settings.organize_by_to,
+                    settings.organize_by_subject,
                 ]
             ):
                 sub_parts = []
@@ -3131,6 +3133,10 @@ def process_merged_files(
                 if settings.organize_by_to:
                     recipient = parsed_message.header.msgto or "unknown_to"
                     sub_parts.append(_slugify(recipient, "to"))
+
+                if settings.organize_by_subject:
+                    norm_subject = _normalize_subject(parsed_message.header.msgsubject)
+                    sub_parts.append(_slugify(norm_subject or "no_subject", "subject"))
 
                 if settings.organize:
                     conf_name = parsed_message.confname or "unknown"

@@ -138,6 +138,11 @@ examples:
         action="store_true",
     )
     io_group.add_argument(
+        "--organize-by-subject",
+        help="Organize individual files into subfolders by message subject.",
+        action="store_true",
+    )
+    io_group.add_argument(
         "--filename-pattern",
         help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, subject_clean, msgnum, confnum, confname, confname_or_num, bbs_name, bbs_id, length, source_file, refnum, status, msgflag, is_private, is_reply, attachments, attachment_count.",
     )
@@ -613,6 +618,7 @@ examples:
         organize_by_bbs=args.organize_by_bbs,
         organize_by_author=getattr(args, "organize_by_author", False),
         organize_by_to=getattr(args, "organize_by_to", False),
+        organize_by_subject=getattr(args, "organize_by_subject", False),
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
         msgnum_filters=msgnum_filters,

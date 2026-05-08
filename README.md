@@ -194,6 +194,11 @@ qwk archive.qwk --individual-files --organize-by-author -o output_folder/
 qwk archive.qwk --individual-files --organize-by-to -o output_folder/
 ```
 
+**Organize files by subject:**
+```bash
+qwk archive.qwk --individual-files --organize-by-subject -o output_folder/
+```
+
 **Use custom filenames:**
 ```bash
 qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}" -o output_folder/
@@ -336,6 +341,7 @@ for msg in messages:
 | `-T`, `--threaded` | Group replies into conversations. |
 | `--clean` | Remove signatures, quotes, and attachments. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
+| `--organize-by-subject` | Organize files by message subject. |
 | `-r, --redact-pii` | Hide emails and phone numbers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
 | `-S, --search` | Search for keywords. |
