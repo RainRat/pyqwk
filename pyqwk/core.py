@@ -1116,8 +1116,6 @@ def _parse_json_messages(
 
 def _safe_to_int(v: Any) -> int | None:
     """Safely convert a value to an integer, returning None on failure."""
-    if v is None or v == "":
-        return None
     try:
         return int(v)
     except (ValueError, TypeError):
