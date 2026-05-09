@@ -996,10 +996,17 @@ class QwkGuiApp:
         scrollbar = ttk.Scrollbar(
             list_frame, orient=tk.VERTICAL, command=self.message_list.yview
         )
-        self.message_list.configure(yscroll=scrollbar.set)
+        h_scrollbar = ttk.Scrollbar(
+            list_frame, orient=tk.HORIZONTAL, command=self.message_list.xview
+        )
+        self.message_list.configure(
+            yscrollcommand=scrollbar.set, xscrollcommand=h_scrollbar.set
+        )
 
         self.message_list.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
+        h_scrollbar.grid(row=1, column=0, sticky="ew")
+
         list_frame.grid_columnconfigure(0, weight=1)
         list_frame.grid_rowconfigure(0, weight=1)
 
