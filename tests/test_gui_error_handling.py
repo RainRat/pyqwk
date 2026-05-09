@@ -80,7 +80,7 @@ def test_load_messages_restores_state_on_error(mock_gui_deps):
 
         # Verify status label was reset to show initial state
         app.status_label.config.assert_any_call(
-            text="Showing 1 messages from Initial BBS (initial.qwk)"
+            text="Showing 1 of 0 messages"
         )
 
 

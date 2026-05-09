@@ -56,6 +56,8 @@ class QwkGuiApp:
         self.logger = logging.getLogger(__name__)
 
         self.messages = []
+        self.total_msg_count = 0
+        self.source_display_name = ""
         self.board_dict: dict[int, str] = {}
         self.current_paths: list[str] = []
         self._cache = {}
@@ -512,6 +514,7 @@ class QwkGuiApp:
     def _render_empty_state(self) -> None:
         """Render an interactive empty state when no messages match the filters."""
         self.detail_text.delete("1.0", tk.END)
+        self._update_status_bar()
         self.search_count_label.config(text="")
 
         self.detail_text.insert(tk.END, "No Messages Found\n", "header_subject")
@@ -1413,10 +1416,7 @@ class QwkGuiApp:
                 )
 
                 # Update status feedback
-                source_display = self.root.title().split(" - ")[0]
-                self.status_label.config(
-                    text=f"Match {self._current_match_idx + 1} of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
-                )
+                self._update_status_bar(message_index)
             else:
                 self.search_count_label.config(text="0 / 0")
 
@@ -1474,10 +1474,14 @@ class QwkGuiApp:
         self.search_count_label.config(
             text=f"{self._current_match_idx + 1} / {len(self._search_matches)}"
         )
-        source_display = self.root.title().split(" - ")[0]
-        self.status_label.config(
-            text=f"Match {self._current_match_idx + 1} of {len(self._search_matches)}  •  Showing {len(self.messages)} messages from {source_display}"
-        )
+        current_selection = self.message_list.selection()
+        current_index = None
+        if current_selection:
+            try:
+                current_index = int(current_selection[0])
+            except (ValueError, IndexError):
+                pass
+        self._update_status_bar(current_index)
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
@@ -1593,6 +1597,8 @@ class QwkGuiApp:
 
         # Save current state for potential restoration on failure
         old_messages = self.messages
+        old_total_msg_count = self.total_msg_count
+        old_source_display_name = self.source_display_name
         old_board_dict = self.board_dict
         old_cache = self._cache
         old_paths = self.current_paths
@@ -1884,12 +1890,13 @@ class QwkGuiApp:
             else:
                 source_display = os.path.basename(path)
 
-            self.status_label.config(
-                text=f"Showing {len(self.messages)} of {total_count} messages from {source_display if len(paths) == 1 else str(len(paths)) + ' archives'}"
+            self.total_msg_count = total_count
+            self.source_display_name = (
+                source_display if len(paths) == 1 else str(len(paths)) + " archives"
             )
-            self.root.title(
-                f"{source_display if len(paths) == 1 else str(len(paths)) + ' archives'} - PyQWK Reader"
-            )
+
+            self._update_status_bar()
+            self.root.title(f"{self.source_display_name} - PyQWK Reader")
 
             # Restore selection if possible
             new_iid_to_select = None
@@ -1918,16 +1925,15 @@ class QwkGuiApp:
         except Exception as exc:
             # Restore previous state on failure
             self.messages = old_messages
+            self.total_msg_count = old_total_msg_count
+            self.source_display_name = old_source_display_name
             self.board_dict = old_board_dict
             self._cache = old_cache
             self.current_paths = old_paths
 
             # Reset status and show error
             if self.current_paths:
-                source_display = self.root.title().split(" - ")[0]
-                self.status_label.config(
-                    text=f"Showing {len(self.messages)} messages from {source_display}"
-                )
+                self._update_status_bar()
             else:
                 self.status_label.config(text="Ready")
                 self.root.title("PyQWK Reader")
@@ -2445,14 +2451,38 @@ class QwkGuiApp:
             txt.config(state=tk.DISABLED)
 
             # Re-set status
-            source_display = self.root.title().split(" - ")[0]
-            self.status_label.config(
-                text=f"Showing {len(self.messages)} messages from {source_display}"
-            )
+            self._update_status_bar()
 
         except Exception as e:
             self.status_label.config(text="Error calculating statistics")
             messagebox.showerror("Statistics Error", str(e))
+
+    def _update_status_bar(self, message_index: int | None = None) -> None:
+        """Update the status label with context-aware information.
+
+        This constructs a comprehensive status string that includes search matches,
+        message selection progress, and archive summary.
+        """
+        parts = []
+
+        # 1. Search Progress
+        if self._search_matches:
+            parts.append(
+                f"Match {self._current_match_idx + 1} of {len(self._search_matches)}"
+            )
+
+        # 2. Message Selection Progress
+        if message_index is not None and len(self.messages) > 0:
+            parts.append(f"Message {message_index + 1} of {len(self.messages)}")
+
+        # 3. Archive Summary
+        summary = f"Showing {len(self.messages)} of {self.total_msg_count} messages"
+        if self.source_display_name:
+            summary += f" from {self.source_display_name}"
+        parts.append(summary)
+
+        # Build final string
+        self.status_label.config(text="  •  ".join(parts))
 
     def on_message_selected(self, _event: object | None = None) -> None:
         selected_items = self.message_list.selection()
@@ -2463,6 +2493,7 @@ class QwkGuiApp:
         try:
             index = int(iid)
             self._render_message(index)
+            self._update_status_bar(index)
         except ValueError:
             # Handle cases where iid is not an integer (e.g., if we change ID generation)
             pass
