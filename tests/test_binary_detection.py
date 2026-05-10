@@ -207,6 +207,19 @@ class TestBinaryDetection:
         assert in_yenc is False
         assert in_uue is False
 
+    def test_detects_uue_data_with_spaces(self):
+        # Verify that UUE lines with spaces (instead of backticks) are detected
+        line = "M" + "A" * 30 + " " + "A" * 29
+        skip, in_yenc, in_uue, in_b64 = _is_binary_line(
+            line,
+            previous_line=None,
+            in_yenc_block=True,
+            in_uue_block=True,
+            in_base64_block=False,
+        )
+        assert skip is True
+        assert in_uue is True
+
     def test_exits_uue_on_invalid_line(self):
         line = "Not a uue line"
         skip, in_yenc, in_uue, in_b64 = _is_binary_line(

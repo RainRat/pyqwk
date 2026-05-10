@@ -137,8 +137,8 @@ def resolve_output_format(
 RE_QUOTE_PATTERN = re.compile(r"^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)")
 RE_UUE_PATTERN = re.compile(r"^begin\s+\d{3}\s+")
 # Match UUE data lines, which traditionally start with 'M' and contain 60 characters of encoded data.
-RE_UUE_DATA_PATTERN = re.compile(r"^M[\x21-\x60]{60}$")
-RE_UUE_LOOSE_PATTERN = re.compile(r"^[\x21-\x4d][\x21-\x60]{1,60}$")
+RE_UUE_DATA_PATTERN = re.compile(r"^M[\x20-\x60]{60}$")
+RE_UUE_LOOSE_PATTERN = re.compile(r"^[\x21-\x4d][\x20-\x60]{1,60}$")
 # Identify Base64 blocks by looking for long strings of characters commonly used in Base64 encoding.
 RE_BASE64_PATTERN = re.compile(r"^[A-Za-z0-9+/=]{60,}$")
 RE_YENC_PATTERN = re.compile(r"^=y(begin|part|end)")
