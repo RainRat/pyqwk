@@ -347,11 +347,16 @@ for msg in messages:
 | `-o`, `--output` | Save results to a file or folder. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
 | `-F, --format` | Set output format (html, json, markdown, etc.). |
+| `-m, --merge` | Combine multiple archives into one file. |
+| `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into conversations. |
 | `--clean` | Remove signatures, quotes, and attachments. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
+| `--organize` | Organize individual files into subfolders by conference. |
 | `--organize-by-subject` | Organize files by message subject. |
+| `--sort` | Sort results by field (date, author, subject, etc.). |
 | `-r, --redact-pii` | Hide emails and phone numbers. |
+| `-H, --headers-only` | Show only the message headers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
 | `-S, --search` | Search for keywords. |
 | `-1, --oneline` | Show a one-line summary of each message. |
