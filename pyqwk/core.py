@@ -2696,6 +2696,7 @@ def _get_message_mapping(
     message: ParsedMessage, count: int, redact_pii: bool = False
 ) -> dict[str, Any]:
     """Generate a dictionary of variables representing a message's archive information."""
+    message.discover_attachments()
     header = message.header
     dt = _parse_qwk_date(header.msgdate, header.msgtime)
 
