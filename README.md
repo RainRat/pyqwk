@@ -270,11 +270,6 @@ qwk archive.qwk -C "General Chat"
 qwk my_archives/ --bbs "The Digital Horizon"
 ```
 
-**Filter by Person:**
-```bash
-qwk archive.qwk --from "Sysop" --to "Alice"
-```
-
 **Keyword Search:**
 ```bash
 qwk archive.qwk --search "BBS"
@@ -282,7 +277,35 @@ qwk archive.qwk --search "BBS"
 
 **Filter by Date:**
 ```bash
+# Between two specific dates
 qwk archive.qwk --after 2023-01-01 --before 2023-12-31
+
+# Messages from "this day" in any year
+qwk archive.qwk --on-this-day
+```
+
+**Find Content:**
+```bash
+# Only messages with links
+qwk archive.qwk --has-links
+
+# Only messages with phone numbers
+qwk archive.qwk --has-phones
+
+# Only messages with email addresses
+qwk archive.qwk --has-emails
+
+# Only messages with color codes
+qwk archive.qwk --has-ansi
+```
+
+**Filter by Person:**
+```bash
+# Messages from or to specific names
+qwk archive.qwk --from "Sysop" --to "Alice"
+
+# Messages specifically for you (based on your user name)
+qwk archive.qwk --mine
 ```
 
 **Filter by Length:**
@@ -353,9 +376,18 @@ for msg in messages:
 | `--clean` | Remove signatures, quotes, and attachments. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
 | `--organize` | Organize individual files into subfolders by conference. |
+| `--organize-by-date` | Organize files into folders by year and month. |
+| `--organize-by-author` | Organize files into folders by author name. |
+| `--organize-by-to` | Organize files into folders by recipient name. |
 | `--organize-by-subject` | Organize files by message subject. |
 | `--sort` | Sort results by field (date, author, subject, etc.). |
-| `-r, --redact-pii` | Hide emails and phone numbers. |
+| `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
+| `--mine` | Show messages sent to or from your user name. |
+| `--has-attachments` | Only show messages that have attachments. |
+| `--has-links` | Only show messages that contain web links. |
+| `--has-emails` | Only show messages that contain email addresses. |
+| `--has-phones` | Only show messages that contain phone numbers. |
+| `--has-ansi` | Only show messages that contain color codes. |
 | `-H, --headers-only` | Show only the message headers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
 | `-S, --search` | Search for keywords. |
@@ -366,6 +398,58 @@ for msg in messages:
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
+
+## Custom Pattern Variables
+
+You can use custom patterns with `--oneline-pattern` (for summaries on the screen) and `--filename-pattern` (for naming individual files).
+
+### Basic Information
+| Variable | Description |
+| :--- | :--- |
+| `{author}` | The name of the person who sent the message. |
+| `{to}` | The name of the recipient. |
+| `{subject}` | The original subject line. |
+| `{subject_clean}` | The subject line without "Re:" or "Fwd:" prefixes. |
+| `{confname}` | The name of the conference (if known). |
+| `{confnum}` | The number of the conference. |
+| `{confname_or_num}` | The conference name, or its number if the name is missing. |
+| `{msgnum}` | The unique message number. |
+| `{snippet}` | The first line of the message body. |
+
+### Dates & Times
+| Variable | Description |
+| :--- | :--- |
+| `{date}` | The date in `MM-DD-YY` format. |
+| `{time}` | The time in `HH:MM` format. |
+| `{year}`, `{month}`, `{day}` | Individual date parts (e.g., `2023`, `10`, `12`). |
+| `{hour}`, `{minute}`, `{second}` | Individual time parts. |
+| `{iso_date}`, `{iso_time}` | Date and time in standard ISO format. |
+
+### BBS & Source
+| Variable | Description |
+| :--- | :--- |
+| `{bbs_name}` | The name of the BBS where the message originated. |
+| `{bbs_id}` | The short ID of the BBS. |
+| `{source_file}` | The name of the archive file that contained the message. |
+
+### Technical Details
+| Variable | Description |
+| :--- | :--- |
+| `{refnum}` | The message number being replied to. |
+| `{status}` | The status code (e.g., `*` for private). |
+| `{msgflag}` | Technical flags from the message header. |
+| `{is_private}` | Returns `true` or `false`. |
+| `{is_reply}` | Returns `true` if the message is a reply. |
+| `{length}` | The number of characters in the message. |
+| `{size}` | The readable size of the message (e.g., `1.2 KB`). |
+| `{flags}` | Short indicators (e.g., `*` for private, `@` for attachments). |
+| `{indent}` | Spaces and symbols used for threading on the screen. |
+
+### Attachments
+| Variable | Description |
+| :--- | :--- |
+| `{attachments}` | A list of all attachment filenames. |
+| `{attachment_count}` | The number of files attached to the message. |
 
 ## Troubleshooting
 
