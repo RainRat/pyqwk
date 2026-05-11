@@ -169,6 +169,9 @@ RE_SUBJECT_PREFIX_PATTERN = re.compile(
 
 RE_ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
+# Identify internal message references like "msg #123" or "message 456".
+RE_MSG_LINK_PATTERN = re.compile(r"(?i)\b(?:msg|message|msg#)\s*#?(\d+)\b")
+
 # Exclude common words from keyword statistics to ensure the report highlights unique and meaningful terms.
 DEFAULT_STOP_WORDS = {
     "the",
@@ -3005,6 +3008,9 @@ def process_merged_files(
                 use_colors=use_colors,
             )
 
+            # Apply highlighting to links and other entities
+            cleaned_body = _highlight_entities(cleaned_body, use_colors)
+
         if settings.oneline:
             if settings.oneline_pattern:
                 try:
@@ -5005,6 +5011,30 @@ def _highlight_quotes(text: str, use_colors: bool) -> str:
         else:
             highlighted_lines.append(line)
     return "".join(highlighted_lines)
+
+
+def _highlight_entities(text: str, use_colors: bool = False) -> str:
+    """Apply terminal highlighting to URLs, emails, phone numbers, and message links."""
+    if not use_colors:
+        return text
+
+    # Apply Underline (4) and Dim (90) to various identifiers for visual distinction
+    text = _apply_highlighting(
+        text, RE_URL_PATTERN.pattern, is_regex=True, start_tag="\x1b[4;90m", end_tag="\x1b[0m"
+    )
+    text = _apply_highlighting(
+        text, RE_EMAIL_PATTERN.pattern, is_regex=True, start_tag="\x1b[4;90m", end_tag="\x1b[0m"
+    )
+    text = _apply_highlighting(
+        text, RE_PHONE_PATTERN.pattern, is_regex=True, start_tag="\x1b[90m", end_tag="\x1b[0m"
+    )
+
+    # Apply Cyan (36) to internal message links to encourage navigation
+    text = _apply_highlighting(
+        text, RE_MSG_LINK_PATTERN.pattern, is_regex=True, start_tag="\x1b[36m", end_tag="\x1b[0m"
+    )
+
+    return text
 
 
 def _highlight_text(

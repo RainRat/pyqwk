@@ -22,6 +22,7 @@ from pyqwk.core import (
     RE_URL_PATTERN,
     RE_EMAIL_PATTERN,
     RE_PHONE_PATTERN,
+    RE_MSG_LINK_PATTERN,
     get_allowed_conferences,
     _parse_qwk_date,
     resolve_output_format,
@@ -1318,6 +1319,8 @@ class QwkGuiApp:
                 entities.append((match.start(), match.end(), "email", match.group(0)))
             for match in RE_PHONE_PATTERN.finditer(line):
                 entities.append((match.start(), match.end(), "phone", match.group(0)))
+            for match in RE_MSG_LINK_PATTERN.finditer(line):
+                entities.append((match.start(), match.end(), "msg_link", match.group(0)))
 
             # Sort entities: primary sort by start position (ascending),
             # secondary sort by end position (descending) to prefer longer matches.
@@ -1332,13 +1335,21 @@ class QwkGuiApp:
                 if start > last_idx:
                     self.detail_text.insert(tk.END, line[last_idx:start], tuple(tags))
 
-                # Determine URI
+                # Determine URI or Action
                 if etype == "url":
                     uri = evalue if "://" in evalue else f"http://{evalue}"
+                    cmd = lambda e, u=uri: webbrowser.open(u)
                 elif etype == "email":
                     uri = f"mailto:{evalue}"
-                else:  # phone
+                    cmd = lambda e, u=uri: webbrowser.open(u)
+                elif etype == "phone":
                     uri = "tel:" + "".join(c for c in evalue if c.isdigit() or c == "+")
+                    cmd = lambda e, u=uri: webbrowser.open(u)
+                else:  # msg_link
+                    # Extract message number from text (e.g. "msg #123" -> 123)
+                    msg_num_match = RE_MSG_LINK_PATTERN.search(evalue)
+                    msg_num = int(msg_num_match.group(1)) if msg_num_match else 0
+                    cmd = lambda e, c=header.confnum, n=msg_num: self.jump_to_message(c, n)
 
                 # Insert Entity
                 entity_tag = f"{etype}_{id(evalue)}_{start}"
@@ -1347,9 +1358,7 @@ class QwkGuiApp:
                     t for t in tags if t != "body"
                 )
                 self.detail_text.insert(tk.END, evalue, link_tags)
-                self.detail_text.tag_bind(
-                    entity_tag, "<Button-1>", lambda e, u=uri: webbrowser.open(u)
-                )
+                self.detail_text.tag_bind(entity_tag, "<Button-1>", cmd)
 
                 last_idx = end
 
