@@ -87,13 +87,13 @@ class TestQwkGui:
 
         # Verify toolbar elements
         mock_gui_deps["ttk"].Label.assert_any_call(
-            ANY, text="Actions", style="GroupHeader.TLabel"
+            ANY, text="Actions", style="GroupHeader.TLabel", padding=(0, 0, 10, 0)
         )
         mock_gui_deps["ttk"].Button.assert_any_call(
-            ANY, text="Open", command=app.open_file
+            ANY, text="Open", width=8, command=app.open_file
         )
         mock_gui_deps["ttk"].Button.assert_any_call(
-            ANY, text="Export", command=app.export_messages
+            ANY, text="Export", width=8, command=app.export_messages
         )
 
     def test_current_settings(self, mock_gui_deps):
