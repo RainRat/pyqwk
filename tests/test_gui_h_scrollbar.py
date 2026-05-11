@@ -1,6 +1,4 @@
-import sys
 from unittest.mock import MagicMock, patch
-import pytest
 
 # We want to avoid global sys.modules mocking here as it's brittle when running the full suite
 # Instead we will patch the components specifically for the test.

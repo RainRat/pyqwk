@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import ParsedMessage, MessageHeader, _get_message_mapping
 
 def test_get_message_mapping_discovers_attachments():

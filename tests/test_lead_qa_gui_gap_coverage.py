@@ -1,4 +1,3 @@
-import tkinter as tk
 from unittest.mock import MagicMock, patch
 import pytest
 from pyqwk.gui import QwkGuiApp

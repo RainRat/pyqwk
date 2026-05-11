@@ -1338,18 +1338,34 @@ class QwkGuiApp:
                 # Determine URI or Action
                 if etype == "url":
                     uri = evalue if "://" in evalue else f"http://{evalue}"
-                    cmd = lambda e, u=uri: webbrowser.open(u)
+
+                    def open_url(e, u=uri):
+                        return webbrowser.open(u)
+
+                    cmd = open_url
                 elif etype == "email":
                     uri = f"mailto:{evalue}"
-                    cmd = lambda e, u=uri: webbrowser.open(u)
+
+                    def open_email(e, u=uri):
+                        return webbrowser.open(u)
+
+                    cmd = open_email
                 elif etype == "phone":
                     uri = "tel:" + "".join(c for c in evalue if c.isdigit() or c == "+")
-                    cmd = lambda e, u=uri: webbrowser.open(u)
+
+                    def open_phone(e, u=uri):
+                        return webbrowser.open(u)
+
+                    cmd = open_phone
                 else:  # msg_link
                     # Extract message number from text (e.g. "msg #123" -> 123)
                     msg_num_match = RE_MSG_LINK_PATTERN.search(evalue)
                     msg_num = int(msg_num_match.group(1)) if msg_num_match else 0
-                    cmd = lambda e, c=header.confnum, n=msg_num: self.jump_to_message(c, n)
+
+                    def jump_msg(e, c=header.confnum, n=msg_num):
+                        return self.jump_to_message(c, n)
+
+                    cmd = jump_msg
 
                 # Insert Entity
                 entity_tag = f"{etype}_{id(evalue)}_{start}"
