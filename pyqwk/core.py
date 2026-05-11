@@ -524,6 +524,13 @@ class ProcessingSettings:
     has_emails: bool = False
     has_phones: bool = False
     has_ansi: bool = False
+    body_search: str | None = None
+    exclude_search: str | None = None
+    exclude_authors: list[str] | None = None
+    exclude_recipients: list[str] | None = None
+    exclude_subjects: list[str] | None = None
+    exclude_conferences: list[str] | None = None
+    exclude_bbs_names: list[str] | None = None
 
 
 @dataclass
@@ -2523,6 +2530,7 @@ def matches_filters(
     settings: ProcessingSettings,
     allowed_conferences: set[int],
     user_name: str | None = None,
+    allowed_exclude_conferences: set[int] | None = None,
 ) -> bool:
     """Check if a message matches all your filters.
 
@@ -2531,6 +2539,7 @@ def matches_filters(
         settings: Settings containing your filter choices.
         allowed_conferences: A set of allowed conference numbers.
         user_name: Your name to use for the "mine" filter.
+        allowed_exclude_conferences: A set of conference numbers to exclude.
 
     Returns:
         True if the message matches all filters, False otherwise.
@@ -2554,6 +2563,71 @@ def matches_filters(
             return True
 
         return any(check_str_match(p, text) for p in pattern_list)
+
+    # --- Exclusion Filters (Negative matching) ---
+    # If any exclusion matches, the message is rejected immediately.
+
+    # 1. Exclude Search
+    if settings.exclude_search:
+        message.discover_attachments()
+        found_exclude = (
+            check_str_match(settings.exclude_search, message.header.msgfrom)
+            or check_str_match(settings.exclude_search, message.header.msgto)
+            or check_str_match(settings.exclude_search, message.header.msgsubject)
+            or check_str_match(settings.exclude_search, message.text)
+            or (
+                message.confname
+                and check_str_match(settings.exclude_search, message.confname)
+            )
+            or (
+                message.bbs_name
+                and check_str_match(settings.exclude_search, message.bbs_name)
+            )
+            or (
+                message.bbs_id
+                and check_str_match(settings.exclude_search, message.bbs_id)
+            )
+            or (
+                message.attachments
+                and any(
+                    check_str_match(settings.exclude_search, a)
+                    for a in message.attachments
+                )
+            )
+        )
+        if found_exclude:
+            return False
+
+    # 2. Exclude Author
+    if settings.exclude_authors and any_match(
+        settings.exclude_authors, message.header.msgfrom
+    ):
+        return False
+
+    # 3. Exclude Recipient
+    if settings.exclude_recipients and any_match(
+        settings.exclude_recipients, message.header.msgto
+    ):
+        return False
+
+    # 4. Exclude Subject
+    if settings.exclude_subjects and any_match(
+        settings.exclude_subjects, message.header.msgsubject
+    ):
+        return False
+
+    # 5. Exclude Conference
+    if allowed_exclude_conferences and message.confnum in allowed_exclude_conferences:
+        return False
+
+    # 6. Exclude BBS
+    if settings.exclude_bbs_names:
+        match_name = any_match(settings.exclude_bbs_names, message.bbs_name or "")
+        match_id = any_match(settings.exclude_bbs_names, message.bbs_id or "")
+        if match_name or match_id:
+            return False
+
+    # --- Inclusion Filters (Positive matching) ---
 
     # 1. Private/Password Check
     if (
@@ -2628,6 +2702,11 @@ def matches_filters(
             )
         )
         if not found:
+            return False
+
+    # 7b. Body-Specific Search
+    if settings.body_search:
+        if not check_str_match(settings.body_search, message.text):
             return False
 
     # 8. Date Filter
@@ -3261,6 +3340,9 @@ def process_merged_files(
         bbs_key = f"{bbs_info.name}|{bbs_info.bbs_id}" if bbs_info else ""
 
         allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
+        allowed_exclude_conferences = get_allowed_conferences(
+            settings.exclude_conferences, board_dict
+        )
 
         desc = f"Processing {os.path.basename(input_path)}"
 
@@ -3299,7 +3381,11 @@ def process_merged_files(
                     or os.path.basename(input_path),
                 )
                 if not matches_filters(
-                    parsed_message, settings, allowed_conferences, user_name
+                    parsed_message,
+                    settings,
+                    allowed_conferences,
+                    user_name,
+                    allowed_exclude_conferences,
                 ):
                     continue
 
@@ -5459,6 +5545,9 @@ def calculate_archive_stats(
             allowed_conferences = get_allowed_conferences(
                 settings.conferences, board_dict
             )
+            allowed_exclude_conferences = get_allowed_conferences(
+                settings.exclude_conferences, board_dict
+            )
 
             desc = f"Analyzing {os.path.basename(input_path)}"
             is_structured = isinstance(file_data, list)
@@ -5493,7 +5582,11 @@ def calculate_archive_stats(
                     )
 
                     if not matches_filters(
-                        message, settings, allowed_conferences, user_name
+                        message,
+                        settings,
+                        allowed_conferences,
+                        user_name,
+                        allowed_exclude_conferences,
                     ):
                         continue
 

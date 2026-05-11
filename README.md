@@ -391,6 +391,10 @@ for msg in messages:
 | `-H, --headers-only` | Show only the message headers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
 | `-S, --search` | Search for keywords. |
+| `--body` | Search for keywords specifically in the message body. |
+| `--exclude` | Exclude messages matching a keyword in any field. |
+| `--exclude-from` | Exclude messages from specific authors. |
+| `--exclude-subject` | Exclude messages by subject keywords. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
