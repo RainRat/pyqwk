@@ -97,6 +97,8 @@ class QwkGuiApp:
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
+        self.exclude_var = tk.StringVar()
+        self.exclude_var.trace_add("write", self._on_search_changed)
         self._search_timer: str | None = None
 
         # Create custom styles
@@ -164,6 +166,10 @@ class QwkGuiApp:
             label=f"Filter by Author: {author_label}",
             command=lambda a=orig_from: self._pivot_filter(author=a),
         )
+        menu.add_command(
+            label="Exclude Author",
+            command=lambda a=orig_from: self._pivot_filter(exclude_author=a),
+        )
 
         subj_label = (
             (orig_subject[:20] + "...") if len(orig_subject) > 20 else orig_subject
@@ -172,12 +178,20 @@ class QwkGuiApp:
             label=f"Filter by Subject: {subj_label}",
             command=lambda s=orig_subject: self._pivot_filter(subject=s),
         )
+        menu.add_command(
+            label="Exclude Subject",
+            command=lambda s=orig_subject: self._pivot_filter(exclude_subject=s),
+        )
 
         conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
         conf_label = (conf_name[:20] + "...") if len(conf_name) > 20 else conf_name
         menu.add_command(
             label=f"Filter by Conference: {conf_label}",
             command=lambda c=msg.confnum: self._pivot_filter(conf_num=c),
+        )
+        menu.add_command(
+            label="Exclude Conference",
+            command=lambda c=msg.confnum: self._pivot_filter(exclude_conf_num=c),
         )
 
         bbs_display = msg.bbs_name or msg.bbs_id
@@ -188,6 +202,10 @@ class QwkGuiApp:
             menu.add_command(
                 label=f"Filter by BBS: {bbs_label}",
                 command=lambda b=bbs_display: self._pivot_filter(bbs_name=b),
+            )
+            menu.add_command(
+                label="Exclude BBS",
+                command=lambda b=bbs_display: self._pivot_filter(exclude_bbs_name=b),
             )
 
         menu.post(event.x_root, event.y_root)
@@ -254,6 +272,10 @@ class QwkGuiApp:
                     label=f"Filter by Author: {author_label}",
                     command=lambda a=author_text: self._pivot_filter(author=a),
                 )
+                menu.add_command(
+                    label="Exclude Author",
+                    command=lambda a=author_text: self._pivot_filter(exclude_author=a),
+                )
 
                 subj_text = msg.header.msgsubject.strip()
                 subj_label = (
@@ -263,6 +285,10 @@ class QwkGuiApp:
                     label=f"Filter by Subject: {subj_label}",
                     command=lambda s=subj_text: self._pivot_filter(subject=s),
                 )
+                menu.add_command(
+                    label="Exclude Subject",
+                    command=lambda s=subj_text: self._pivot_filter(exclude_subject=s),
+                )
 
                 conf_name = self.board_dict.get(msg.confnum, str(msg.confnum))
                 conf_label = (
@@ -271,6 +297,10 @@ class QwkGuiApp:
                 menu.add_command(
                     label=f"Filter by Conference: {conf_label}",
                     command=lambda c=msg.confnum: self._pivot_filter(conf_num=c),
+                )
+                menu.add_command(
+                    label="Exclude Conference",
+                    command=lambda c=msg.confnum: self._pivot_filter(exclude_conf_num=c),
                 )
 
                 bbs_display = msg.bbs_name or msg.bbs_id
@@ -283,6 +313,10 @@ class QwkGuiApp:
                     menu.add_command(
                         label=f"Filter by BBS: {bbs_label}",
                         command=lambda b=bbs_display: self._pivot_filter(bbs_name=b),
+                    )
+                    menu.add_command(
+                        label="Exclude BBS",
+                        command=lambda b=bbs_display: self._pivot_filter(exclude_bbs_name=b),
                     )
             except (ValueError, IndexError):
                 pass
@@ -328,6 +362,9 @@ class QwkGuiApp:
     def _is_any_filter_active(self) -> bool:
         """Return True if any visibility filters are currently active."""
         if self.search_var.get().strip():
+            return True
+
+        if self.exclude_var.get().strip():
             return True
 
         bbs_val = self.bbs_combo.get()
@@ -391,6 +428,10 @@ class QwkGuiApp:
         conf_num: int | None = None,
         bbs_name: str | None = None,
         subject: str | None = None,
+        exclude_author: str | None = None,
+        exclude_conf_num: int | None = None,
+        exclude_bbs_name: str | None = None,
+        exclude_subject: str | None = None,
     ) -> None:
         """Update filters based on the selected author, conference, BBS, or subject."""
         if author:
@@ -412,6 +453,18 @@ class QwkGuiApp:
                 if val.startswith(f"{conf_num}:"):
                     self.conf_combo.current(i)
                     break
+
+        if exclude_author:
+            self.exclude_var.set(exclude_author)
+
+        if exclude_subject:
+            self.exclude_var.set(_normalize_subject(exclude_subject))
+
+        if exclude_bbs_name:
+            self.exclude_var.set(exclude_bbs_name)
+
+        if exclude_conf_num is not None:
+            self.exclude_var.set(str(exclude_conf_num))
 
         self.reload_messages()
 
@@ -726,9 +779,10 @@ class QwkGuiApp:
         return None
 
     def clear_search(self, _event: object | None = None) -> None:
-        """Clear the search bar first, and if already empty, reset all filters."""
-        if self.search_var.get():
+        """Clear the search and exclude bars first, and if already empty, reset all filters."""
+        if self.search_var.get() or self.exclude_var.get():
             self.search_var.set("")
+            self.exclude_var.set("")
             self.reload_messages()
             self.message_list.focus_set()
         else:
@@ -751,6 +805,7 @@ class QwkGuiApp:
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters and search to their default state."""
         self.search_var.set("")
+        self.exclude_var.set("")
         try:
             self.bbs_combo.current(0)
         except Exception:
@@ -850,11 +905,22 @@ class QwkGuiApp:
             side=tk.LEFT
         )
         self.search_entry = ttk.Entry(
-            search_frame, textvariable=self.search_var, width=22
+            search_frame, textvariable=self.search_var, width=18
         )
         self.search_entry.pack(side=tk.LEFT, padx=(10, 0))
         ttk.Button(
             search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
+        ).pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Label(search_frame, text="Exclude", style="GroupHeader.TLabel").pack(
+            side=tk.LEFT, padx=(5, 5)
+        )
+        self.exclude_entry = ttk.Entry(
+            search_frame, textvariable=self.exclude_var, width=18
+        )
+        self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
+        ttk.Button(
+            search_frame, text="✕", width=2, command=lambda: self.exclude_var.set("")
         ).pack(side=tk.LEFT, padx=(0, 2))
 
         self.search_count_label = ttk.Label(
@@ -1112,6 +1178,10 @@ class QwkGuiApp:
         if not search_val:
             search_val = None
 
+        exclude_val = self.exclude_var.get().strip()
+        if not exclude_val:
+            exclude_val = None
+
         selected_bbs_name = self.bbs_combo.get()
         bbs_names = None
         if selected_bbs_name and not selected_bbs_name.startswith("All BBSes"):
@@ -1145,6 +1215,7 @@ class QwkGuiApp:
             regex=self.regex_var.get(),
             quiet=True,
             search_term=search_val if search_val else None,
+            exclude_search=exclude_val if exclude_val else None,
             conferences=conferences,
             bbs_names=bbs_names,
             has_attachments=self.has_attach_var.get(),

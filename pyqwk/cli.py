@@ -363,6 +363,46 @@ examples:
         help="Search for a keyword in author, recipient, subject, body, conference, BBS, and attachments.",
     )
     filter_group.add_argument(
+        "--body",
+        dest="body_search",
+        help="Search for a keyword specifically within the message body text.",
+    )
+    filter_group.add_argument(
+        "--exclude",
+        dest="exclude_search",
+        help="Exclude messages containing this keyword in any field.",
+    )
+    filter_group.add_argument(
+        "--exclude-from",
+        dest="exclude_authors",
+        action="append",
+        help="Exclude messages from this author.",
+    )
+    filter_group.add_argument(
+        "--exclude-to",
+        dest="exclude_recipients",
+        action="append",
+        help="Exclude messages to this recipient.",
+    )
+    filter_group.add_argument(
+        "--exclude-subject",
+        dest="exclude_subjects",
+        action="append",
+        help="Exclude messages with this word in the subject line.",
+    )
+    filter_group.add_argument(
+        "--exclude-conference",
+        dest="exclude_conferences",
+        action="append",
+        help="Exclude messages from this conference (name or number).",
+    )
+    filter_group.add_argument(
+        "--exclude-bbs",
+        dest="exclude_bbs_names",
+        action="append",
+        help="Exclude messages from this BBS.",
+    )
+    filter_group.add_argument(
         "--regex",
         action="store_true",
         help="Use regular expressions (advanced patterns) for searching and filtering.",
@@ -650,6 +690,13 @@ examples:
         has_emails=getattr(args, "has_emails", False),
         has_phones=getattr(args, "has_phones", False),
         has_ansi=getattr(args, "has_ansi", False),
+        body_search=args.body_search,
+        exclude_search=args.exclude_search,
+        exclude_authors=args.exclude_authors,
+        exclude_recipients=args.exclude_recipients,
+        exclude_subjects=args.exclude_subjects,
+        exclude_conferences=args.exclude_conferences,
+        exclude_bbs_names=args.exclude_bbs_names,
         filename_pattern=getattr(args, "filename_pattern", None),
         min_length=getattr(args, "min_length", None),
         max_length=getattr(args, "max_length", None),

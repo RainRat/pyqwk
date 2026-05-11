@@ -36,6 +36,7 @@ def app():
 def test_is_any_filter_active_private_false(app):
     """Test _is_any_filter_active returns True when private_var is False (line 246)."""
     app.search_var.get.return_value = ""
+    app.exclude_var.get.return_value = ""
     for var in [
         app.has_attach_var,
         app.mine_var,
@@ -60,6 +61,7 @@ def test_is_any_filter_active_private_false(app):
 def test_is_any_filter_active_none(app):
     """Test _is_any_filter_active returns False when no filters are active."""
     app.search_var.get.return_value = ""
+    app.exclude_var.get.return_value = ""
     for var in [
         app.has_attach_var,
         app.mine_var,

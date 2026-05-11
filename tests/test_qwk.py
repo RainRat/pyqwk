@@ -101,6 +101,13 @@ def _make_settings(**overrides) -> ProcessingSettings:
         on_this_day=False,
         reference_date=None,
         merge_stats=False,
+        body_search=None,
+        exclude_search=None,
+        exclude_authors=None,
+        exclude_recipients=None,
+        exclude_subjects=None,
+        exclude_conferences=None,
+        exclude_bbs_names=None,
     )
     defaults.update(overrides)
     return ProcessingSettings(**defaults)
@@ -155,6 +162,13 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         mine=False,
         on_this_day=False,
         merge_stats=False,
+        body_search=None,
+        exclude_search=None,
+        exclude_authors=None,
+        exclude_recipients=None,
+        exclude_subjects=None,
+        exclude_conferences=None,
+        exclude_bbs_names=None,
     )
     base.update(overrides)
     return argparse.Namespace(**base)
