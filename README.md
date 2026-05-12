@@ -383,6 +383,7 @@ for msg in messages:
 | `--sort` | Sort results by field (date, author, subject, etc.). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `--mine` | Show messages sent to or from your user name. |
+| `--my-name` | Set your name for the `--mine` filter and QWK exports. |
 | `--has-attachments` | Only show messages that have attachments. |
 | `--has-links` | Only show messages that contain web links. |
 | `--has-emails` | Only show messages that contain email addresses. |
@@ -419,6 +420,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{confname_or_num}` | The conference name, or its number if the name is missing. |
 | `{msgnum}` | The unique message number. |
 | `{snippet}` | The first line of the message body. |
+| `{my_name}` | The user name (either from archive metadata or your override). |
 
 ### Dates & Times
 | Variable | Description |

@@ -489,6 +489,12 @@ examples:
         action="store_true",
     )
     filter_group.add_argument(
+        "--my-name",
+        "--user",
+        dest="my_name",
+        help="Set your name for the --mine filter and QWK exports.",
+    )
+    filter_group.add_argument(
         "--on-this-day",
         help="Show messages sent on this same month and day in any year.",
         action="store_true",
@@ -687,6 +693,7 @@ examples:
         on_this_day=args.on_this_day,
         merge_stats=args.merge_stats,
         has_links=getattr(args, "has_links", False),
+        my_name=getattr(args, "my_name", None),
         has_emails=getattr(args, "has_emails", False),
         has_phones=getattr(args, "has_phones", False),
         has_ansi=getattr(args, "has_ansi", False),

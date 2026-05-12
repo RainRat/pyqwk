@@ -29,7 +29,7 @@ def test_gui_main_with_paths():
         mock_tk_class.assert_called_once()
         mock_expand.assert_called_once_with(["test.qwk"])
         mock_app_class.assert_called_once_with(
-            mock_tk_class.return_value, initial_paths=["test.qwk"]
+            mock_tk_class.return_value, initial_paths=["test.qwk"], my_name=None
         )
         mock_tk_class.return_value.mainloop.assert_called_once()
 
@@ -50,6 +50,6 @@ def test_gui_main_without_paths():
         mock_tk_class.assert_called_once()
         mock_expand.assert_called_once_with([])
         mock_app_class.assert_called_once_with(
-            mock_tk_class.return_value, initial_paths=[]
+            mock_tk_class.return_value, initial_paths=[], my_name=None
         )
         mock_tk_class.return_value.mainloop.assert_called_once()
