@@ -2648,7 +2648,9 @@ def matches_filters(
             return False
 
     # 2c. Mine Filter
-    if settings.mine and user_name:
+    if settings.mine:
+        if not user_name:
+            return False
         is_from_me = user_name.lower() in message.header.msgfrom.lower()
         is_to_me = user_name.lower() in message.header.msgto.lower()
         if not (is_from_me or is_to_me):

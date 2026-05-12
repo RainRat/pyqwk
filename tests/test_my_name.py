@@ -34,7 +34,7 @@ def test_my_name_filter():
     msg = _make_message(msgfrom="Alice")
 
     # settings.mine is True, but no user_name provided to matches_filters.
-    # Currently, it returns True because the filter is skipped if user_name is None.
+    # It should return False because we don't know who "me" is.
     settings = ProcessingSettings(
         verbose=False, private=True, no_header=True, truncate_signatures=False,
         cut_quoting=False, individual_files=False, threaded=False,
@@ -47,6 +47,9 @@ def test_my_name_filter():
     # Here we simulate that determination.
     user_name = settings.my_name
     assert matches_filters(msg, settings, set(), user_name=user_name)
+
+    # Test with user_name=None (should now return False)
+    assert not matches_filters(msg, settings, set(), user_name=None)
 
     # Test mismatch
     assert not matches_filters(msg, settings, set(), user_name="Bob")
