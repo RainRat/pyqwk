@@ -1626,14 +1626,14 @@ class QwkGuiApp:
         self.load_messages(self.current_paths)
 
     def _on_search_changed(self, *args: object) -> None:
-        """Handle search term changes with debouncing to improve UI responsiveness."""
+        """Handle search term changes with a short delay to keep the interface fast."""
         if self._search_timer is not None:
             self.root.after_cancel(self._search_timer)
         self._search_timer = self.root.after(250, self.reload_messages)
 
     def _on_search_enter(self, _event: object) -> None:
-        """Execute search or navigate matches when Enter is pressed."""
-        # If a debounced search is pending, trigger it immediately and focus the list
+        """Run the search or move through matches when Enter is pressed."""
+        # If a delayed search is pending, run it immediately and focus the list
         if self._search_timer is not None:
             self.reload_messages()
             self.message_list.focus_set()
@@ -1646,7 +1646,7 @@ class QwkGuiApp:
             self.message_list.focus_set()
 
     def _on_search_shift_enter(self, _event: object) -> None:
-        """Navigate backwards through matches when Shift+Enter is pressed."""
+        """Move back through matches when Shift+Enter is pressed."""
         if self._search_matches:
             self._navigate_search_matches(-1)
 
@@ -2552,10 +2552,10 @@ class QwkGuiApp:
             messagebox.showerror("Statistics Error", str(e))
 
     def _update_status_bar(self, message_index: int | None = None) -> None:
-        """Update the status label with context-aware information.
+        """Update the status label with relevant information.
 
-        This constructs a comprehensive status string that includes search matches,
-        message selection progress, and archive summary.
+        This builds a detailed status message that includes search matches,
+        message selection, and archive summary.
         """
         parts = []
 
