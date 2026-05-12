@@ -912,17 +912,6 @@ class QwkGuiApp:
             search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
         ).pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Label(search_frame, text="Exclude", style="GroupHeader.TLabel").pack(
-            side=tk.LEFT, padx=(5, 5)
-        )
-        self.exclude_entry = ttk.Entry(
-            search_frame, textvariable=self.exclude_var, width=18
-        )
-        self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
-        ttk.Button(
-            search_frame, text="✕", width=2, command=lambda: self.exclude_var.set("")
-        ).pack(side=tk.LEFT, padx=(0, 2))
-
         self.search_count_label = ttk.Label(
             search_frame, text="", width=12, anchor=tk.CENTER
         )
@@ -940,6 +929,21 @@ class QwkGuiApp:
             width=2,
             command=lambda: self._navigate_search_matches(1),
         ).pack(side=tk.LEFT, padx=(1, 5))
+
+        ttk.Separator(search_frame, orient=tk.VERTICAL).pack(
+            side=tk.LEFT, fill=tk.Y, padx=10
+        )
+
+        ttk.Label(
+            search_frame, text="Exclude", style="GroupHeader.TLabel", padding=(0, 0, 10, 0)
+        ).pack(side=tk.LEFT)
+        self.exclude_entry = ttk.Entry(
+            search_frame, textvariable=self.exclude_var, width=18
+        )
+        self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
+        ttk.Button(
+            search_frame, text="✕", width=2, command=lambda: self.exclude_var.set("")
+        ).pack(side=tk.LEFT, padx=(0, 2))
 
         ttk.Checkbutton(
             search_frame,
@@ -1014,6 +1018,8 @@ class QwkGuiApp:
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<Shift-Return>", self._on_search_shift_enter)
+        self.exclude_entry.bind("<Return>", self._on_search_enter)
+        self.exclude_entry.bind("<Shift-Return>", self._on_search_shift_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind(
             "<Up>", lambda e: self._select_relative_message(-1, force=True)
@@ -1639,7 +1645,8 @@ class QwkGuiApp:
             self.message_list.focus_set()
             return
 
-        if self._search_matches:
+        # Only navigate matches if the search entry is focused
+        if self.root.focus_get() == self.search_entry and self._search_matches:
             self._navigate_search_matches(1)
         else:
             self.reload_messages()
@@ -1647,8 +1654,12 @@ class QwkGuiApp:
 
     def _on_search_shift_enter(self, _event: object) -> None:
         """Navigate backwards through matches when Shift+Enter is pressed."""
-        if self._search_matches:
+        # Only navigate matches if the search entry is focused
+        if self.root.focus_get() == self.search_entry and self._search_matches:
             self._navigate_search_matches(-1)
+        else:
+            self.reload_messages()
+            self.message_list.focus_set()
 
     def reload_messages(self) -> None:
         if self._search_timer is not None:

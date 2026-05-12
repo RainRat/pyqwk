@@ -70,9 +70,10 @@ def test_on_search_enter_navigation(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
-    # Case 1: Search matches exist, no timer -> should navigate
+    # Case 1: Search matches exist, no timer, focused -> should navigate
     app._search_matches = [("1.0", "1.5")]
     app._search_timer = None
+    app.root.focus_get.return_value = app.search_entry
     with patch.object(app, "_navigate_search_matches") as mock_nav:
         app._on_search_enter(MagicMock())
         mock_nav.assert_called_with(1)
@@ -99,8 +100,9 @@ def test_on_search_shift_enter_navigation(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
-    # Navigate back if matches exist
+    # Navigate back if matches exist and focused
     app._search_matches = [("1.0", "1.5")]
+    app.root.focus_get.return_value = app.search_entry
     with patch.object(app, "_navigate_search_matches") as mock_nav:
         app._on_search_shift_enter(MagicMock())
         mock_nav.assert_called_with(-1)
