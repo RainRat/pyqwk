@@ -49,8 +49,14 @@ class QwkGuiApp:
         else:
             self.current_paths = [value]
 
-    def __init__(self, root: tk.Tk, initial_paths: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        root: tk.Tk,
+        initial_paths: list[str] | None = None,
+        my_name: str | None = None,
+    ) -> None:
         self.root = root
+        self.my_name = my_name
         self.root.title("PyQWK Reader")
         self.root.geometry("1100x650")
 
@@ -1218,6 +1224,7 @@ class QwkGuiApp:
             bbs_names=bbs_names,
             has_attachments=self.has_attach_var.get(),
             mine=self.mine_var.get(),
+            my_name=self.my_name,
             on_this_day=self.on_this_day_var.get(),
             oneline=False,
             oneline_pattern=None,
@@ -1300,7 +1307,7 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, " PRIVATE ", "badge_private")
 
         bbs_info = getattr(self.board_dict, "bbs_info", None)
-        user_name = bbs_info.user_name if bbs_info else None
+        user_name = self.my_name or (bbs_info.user_name if bbs_info else None)
         if user_name:
             is_from_me = user_name.lower() in header.msgfrom.lower()
             is_to_me = user_name.lower() in header.msgto.lower()
@@ -1757,7 +1764,7 @@ class QwkGuiApp:
                 bbs_info = getattr(board_dict, "bbs_info", None)
                 if not merged_board_dict.bbs_info:
                     merged_board_dict.bbs_info = bbs_info
-                user_name = bbs_info.user_name if bbs_info else None
+                user_name = self.my_name or (bbs_info.user_name if bbs_info else None)
 
                 # Reconstruct/Discovery of conferences
                 try:
@@ -1918,7 +1925,7 @@ class QwkGuiApp:
 
             # Identify the user's name for highlighting "mine" messages
             bbs_info = getattr(self.board_dict, "bbs_info", None)
-            user_name = bbs_info.user_name if bbs_info else None
+            user_name = self.my_name or (bbs_info.user_name if bbs_info else None)
 
             for index, message in enumerate(self.messages):
                 header = message.header
@@ -2704,6 +2711,12 @@ def main() -> None:
         nargs="*",
         help="Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, mbox, EML, SQLite, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT).",
     )
+    parser.add_argument(
+        "--my-name",
+        "--user",
+        dest="my_name",
+        help="Set your name for highlighting 'mine' messages.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -2711,7 +2724,8 @@ def main() -> None:
     input_paths = expand_paths(args.paths)
 
     root = tk.Tk()
-    QwkGuiApp(root, initial_paths=input_paths)
+    my_name = getattr(args, "my_name", None)
+    QwkGuiApp(root, initial_paths=input_paths, my_name=my_name)
     root.mainloop()
 
 

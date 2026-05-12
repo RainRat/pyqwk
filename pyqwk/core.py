@@ -524,6 +524,7 @@ class ProcessingSettings:
     has_emails: bool = False
     has_phones: bool = False
     has_ansi: bool = False
+    my_name: str | None = None
     body_search: str | None = None
     exclude_search: str | None = None
     exclude_authors: list[str] | None = None
@@ -2775,7 +2776,10 @@ def format_size(size: int) -> str:
 
 
 def _get_message_mapping(
-    message: ParsedMessage, count: int, redact_pii: bool = False
+    message: ParsedMessage,
+    count: int,
+    redact_pii: bool = False,
+    user_name: str | None = None,
 ) -> dict[str, Any]:
     """Generate a dictionary of variables representing a message's archive information."""
     message.discover_attachments()
@@ -2800,6 +2804,15 @@ def _get_message_mapping(
     author = header.msgfrom.strip()
     to = header.msgto.strip()
     subject = header.msgsubject.strip()
+
+    # Determine user name for pattern variable
+    my_name_val = user_name or ""
+    if not my_name_val:
+        bbs_info = getattr(message, "bbs_info", None)
+        if bbs_info:
+            my_name_val = bbs_info.user_name
+        else:
+            my_name_val = author
 
     subject_clean = subject
     while True:
@@ -2855,6 +2868,7 @@ def _get_message_mapping(
         "is_reply": "true" if is_reply else "false",
         "attachments": attachments_str,
         "attachment_count": len(attachments_list),
+        "my_name": my_name_val,
         "length": len(message.text) if message.text else 0,
         "size": format_size(len(message.text)) if message.text else "0 B",
         "flags": flags,
@@ -2879,7 +2893,10 @@ def _generate_safe_filename(
     if settings and settings.filename_pattern:
         try:
             raw_mapping = _get_message_mapping(
-                message, count, redact_pii=settings.redact_pii if settings else False
+                message,
+                count,
+                redact_pii=settings.redact_pii if settings else False,
+                user_name=settings.my_name if settings else None,
             )
 
             # Map of variable names to their slugify defaults for filename compatibility
@@ -3094,7 +3111,10 @@ def process_merged_files(
             if settings.oneline_pattern:
                 try:
                     mapping = _get_message_mapping(
-                        parsed_message, processed_count, redact_pii=settings.redact_pii
+                        parsed_message,
+                        processed_count,
+                        redact_pii=settings.redact_pii,
+                        user_name=user_name,
                     )
                     # Apply fallbacks for oneline display
                     if not mapping["confname"]:
@@ -3332,7 +3352,7 @@ def process_merged_files(
     for input_path in input_paths:
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, "bbs_info", None)
-        user_name = bbs_info.user_name if bbs_info else None
+        user_name = settings.my_name or (bbs_info.user_name if bbs_info else None)
         if bbs_info and not bbs_info_to_use:
             bbs_info_to_use = bbs_info
         if board_dict and not board_dict_to_use:
@@ -4192,6 +4212,11 @@ def _write_html(
                 html_parts.append(
                     f"<div><strong>Packet Date:</strong> {html.escape(bbs_info.packet_at)}</div>"
                 )
+            user_name_to_show = (settings.my_name if settings else None) or bbs_info.user_name
+            if user_name_to_show:
+                html_parts.append(
+                    f"<div><strong>User Name:</strong> {html.escape(user_name_to_show)}</div>"
+                )
             html_parts.append(
                 f"<div><strong>Total Messages:</strong> {len(messages)}</div>"
             )
@@ -4283,6 +4308,9 @@ def _write_markdown(
                 md_parts.append(f"- **Location:** {bbs_info.location}")
             if bbs_info.packet_at:
                 md_parts.append(f"- **Packet Date:** {bbs_info.packet_at}")
+            user_name_to_show = (settings.my_name if settings else None) or bbs_info.user_name
+            if user_name_to_show:
+                md_parts.append(f"- **User Name:** {user_name_to_show}")
             md_parts.append(f"- **Total Messages:** {len(messages)}")
             md_parts.append("")
 
@@ -4500,6 +4528,7 @@ def _serialize_control_dat(
     bbs_info: BBSInfo | None,
     board_dict: Mapping[int, str] | None,
     encoding: str = "cp437",
+    my_name: str | None = None,
 ) -> list[bytes]:
     """Convert BBS information and conference list into CONTROL.DAT format."""
     lines = [b""] * 11
@@ -4513,7 +4542,8 @@ def _serialize_control_dat(
         lines[4] = id_line.encode(encoding)
 
         lines[5] = bbs_info.packet_at.encode(encoding)
-        lines[6] = bbs_info.user_name.encode(encoding)
+        user_name_val = my_name or bbs_info.user_name
+        lines[6] = user_name_val.encode(encoding)
 
     if board_dict:
         # Line 11 (index 10) is number of conferences - 1
@@ -4599,6 +4629,9 @@ def _write_text(
                 parts.append(f"Location: {bbs_info.location}\r\n")
             if bbs_info.packet_at:
                 parts.append(f"Date:     {bbs_info.packet_at}\r\n")
+            user_name_to_show = (settings.my_name if settings else None) or bbs_info.user_name
+            if user_name_to_show:
+                parts.append(f"User:     {user_name_to_show}\r\n")
         parts.append(f"Messages: {len(messages)}\r\n\r\n")
 
         parts.append("Conferences:\r\n")
@@ -4620,10 +4653,16 @@ def _write_text(
         if settings and settings.oneline:
             if settings.oneline_pattern:
                 try:
+                    user_name_to_pass = (
+                        settings.my_name
+                        if settings
+                        else (bbs_info.user_name if bbs_info else None)
+                    )
                     mapping = _get_message_mapping(
                         message,
                         i + 1,
                         redact_pii=settings.redact_pii if settings else False,
+                        user_name=user_name_to_pass,
                     )
                     # Apply fallbacks for oneline display
                     if not mapping["confname"]:
@@ -4773,7 +4812,12 @@ def _write_qwk(
             zf.writestr(MESSAGES_FILENAME, content)
 
             # CONTROL.DAT
-            control_lines = _serialize_control_dat(bbs_info, board_dict, encoding)
+            control_lines = _serialize_control_dat(
+                bbs_info,
+                board_dict,
+                encoding,
+                my_name=settings.my_name if settings else None,
+            )
             zf.writestr(CONTROL_FILENAME, b"\r\n".join(control_lines) + b"\r\n")
 
 
@@ -5314,6 +5358,9 @@ def show_info(
                         print(f"  {_colorize('BBS ID:', BOLD)}   {bbs_info.bbs_id}")
                     if bbs_info.packet_at:
                         print(f"  {_colorize('Packet At:', BOLD)} {bbs_info.packet_at}")
+                user_name_to_show = settings.my_name or (bbs_info.user_name if bbs_info else None)
+                if user_name_to_show:
+                    print(f"  {_colorize('User Name:', BOLD)} {user_name_to_show}")
 
                 print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
                 print(f"  {_colorize('Conferences:', BOLD)}")
@@ -5541,7 +5588,7 @@ def calculate_archive_stats(
                 break
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
             bbs_info = getattr(board_dict, "bbs_info", None)
-            user_name = bbs_info.user_name if bbs_info else None
+            user_name = settings.my_name or (bbs_info.user_name if bbs_info else None)
             allowed_conferences = get_allowed_conferences(
                 settings.conferences, board_dict
             )
