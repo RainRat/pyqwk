@@ -420,7 +420,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{confname_or_num}` | The conference name, or its number if the name is missing. |
 | `{msgnum}` | The unique message number. |
 | `{snippet}` | The first line of the message body. |
-| `{my_name}` | The user name (either from archive metadata or your override). |
+| `{my_name}` | The user name (either from archive information or your override). |
 
 ### Dates & Times
 | Variable | Description |
