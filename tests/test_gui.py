@@ -260,7 +260,11 @@ class TestQwkGui:
     def test_open_file_select(self, mock_gui_deps):
         app = get_app()
         mock_gui_deps["filedialog"].askopenfilenames.return_value = ["selected.qwk"]
-        with patch.object(app, "load_messages") as mock_load:
+
+        def mock_load_impl(paths):
+            app.current_paths = paths
+
+        with patch.object(app, "load_messages", side_effect=mock_load_impl) as mock_load:
             app.open_file()
             assert app.current_path == "selected.qwk"
             mock_load.assert_called_with(["selected.qwk"])

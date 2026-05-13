@@ -1618,8 +1618,7 @@ class QwkGuiApp:
         )
         if not paths:
             return
-        self.current_paths = list(paths)
-        self.load_messages(self.current_paths)
+        self.load_messages(list(paths))
 
     def open_folder(self, _event: object | None = None) -> None:
         """Open all archives in a selected directory."""
@@ -1635,8 +1634,7 @@ class QwkGuiApp:
             )
             return
 
-        self.current_paths = paths
-        self.load_messages(self.current_paths)
+        self.load_messages(paths)
 
     def _on_search_changed(self, *args: object) -> None:
         """Handle search term changes with a short delay to keep the interface fast."""

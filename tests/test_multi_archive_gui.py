@@ -31,9 +31,13 @@ def app():
 
 def test_open_file_multiple(app):
     """Test selecting multiple files in the open dialog."""
+
+    def mock_load_impl(paths):
+        app.current_paths = paths
+
     with patch("pyqwk.gui.filedialog.askopenfilenames") as mock_ask:
         mock_ask.return_value = ["test1.qwk", "test2.qwk"]
-        with patch.object(app, "load_messages") as mock_load:
+        with patch.object(app, "load_messages", side_effect=mock_load_impl) as mock_load:
             app.open_file()
             mock_load.assert_called_once_with(["test1.qwk", "test2.qwk"])
             assert app.current_paths == ["test1.qwk", "test2.qwk"]
@@ -41,6 +45,10 @@ def test_open_file_multiple(app):
 
 def test_open_folder(app):
     """Test opening a folder of archives."""
+
+    def mock_load_impl(paths):
+        app.current_paths = paths
+
     with (
         patch("pyqwk.gui.filedialog.askdirectory") as mock_ask_dir,
         patch("pyqwk.gui.expand_paths") as mock_expand,
@@ -48,7 +56,7 @@ def test_open_folder(app):
         mock_ask_dir.return_value = "/some/path"
         mock_expand.return_value = ["/some/path/a.qwk", "/some/path/b.rep"]
 
-        with patch.object(app, "load_messages") as mock_load:
+        with patch.object(app, "load_messages", side_effect=mock_load_impl) as mock_load:
             app.open_folder()
             mock_expand.assert_called_once_with(["/some/path"])
             mock_load.assert_called_once_with(["/some/path/a.qwk", "/some/path/b.rep"])
