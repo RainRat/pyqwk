@@ -560,6 +560,7 @@ class QwkGuiApp:
                     ("Space", "Scroll Down / Next"),
                     ("Shift+Space", "Scroll Up / Prev"),
                     ("BackSpace", "Scroll Up / Prev"),
+                    ("[ / ]", "Prev / Next Conference"),
                     ("Ctrl + G", "Go to Message Number"),
                 ],
             ),
@@ -705,6 +706,8 @@ class QwkGuiApp:
         self.root.bind("<space>", self._on_space_pressed)
         self.root.bind("<Shift-space>", self._on_space_pressed)
         self.root.bind("<BackSpace>", self._on_space_pressed)
+        self.root.bind("[", lambda e: self._navigate_conference(-1))
+        self.root.bind("]", lambda e: self._navigate_conference(1))
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -969,8 +972,14 @@ class QwkGuiApp:
         ).pack(side=tk.LEFT)
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.pack(side=tk.LEFT, padx=2)
+        ttk.Button(
+            archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
+        ).pack(side=tk.LEFT, padx=(5, 1))
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
-        self.conf_combo.pack(side=tk.LEFT, padx=2)
+        self.conf_combo.pack(side=tk.LEFT, padx=1)
+        ttk.Button(
+            archives_frame, text="▶", width=2, command=lambda: self._navigate_conference(1)
+        ).pack(side=tk.LEFT, padx=(1, 2))
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
@@ -1526,6 +1535,21 @@ class QwkGuiApp:
                 self._update_status_bar(message_index)
             else:
                 self.search_count_label.config(text="0 / 0")
+
+    def _navigate_conference(self, delta: int, _event: object | None = None) -> None:
+        """Cycle through available conferences in the selector."""
+        values = self.conf_combo["values"]
+        if not values:
+            return
+
+        current_idx = self.conf_combo.current()
+        if current_idx == -1:
+            new_idx = 0
+        else:
+            new_idx = (current_idx + delta) % len(values)
+
+        self.conf_combo.current(new_idx)
+        self.reload_messages()
 
     def _navigate_search_matches(
         self, delta: int, _event: object | None = None
