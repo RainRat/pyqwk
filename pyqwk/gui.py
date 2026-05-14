@@ -561,6 +561,7 @@ class QwkGuiApp:
                     ("Shift+Space", "Scroll Up / Prev"),
                     ("BackSpace", "Scroll Up / Prev"),
                     ("Ctrl + G", "Go to Message Number"),
+                    ("[ / ]", "Prev / Next Conference"),
                 ],
             ),
         ]
@@ -705,6 +706,8 @@ class QwkGuiApp:
         self.root.bind("<space>", self._on_space_pressed)
         self.root.bind("<Shift-space>", self._on_space_pressed)
         self.root.bind("<BackSpace>", self._on_space_pressed)
+        self.root.bind("[", lambda e: self._navigate_conference(-1))
+        self.root.bind("]", lambda e: self._navigate_conference(1))
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -754,6 +757,27 @@ class QwkGuiApp:
         self.message_list.see(new_item)
         self.message_list.focus(new_item)
         return True
+
+    def _navigate_conference(self, delta: int) -> None:
+        """Change the selected conference in the combobox by a given offset."""
+        if not self.conf_combo["values"]:
+            return
+
+        # Avoid changing conferences while the user is typing in a search or exclude field
+        focused_widget = self.root.focus_get()
+        if focused_widget in (self.search_entry, self.exclude_entry):
+            return
+
+        current_idx = self.conf_combo.current()
+        num_values = len(self.conf_combo["values"])
+
+        if current_idx == -1:
+            new_idx = 0 if delta > 0 else num_values - 1
+        else:
+            new_idx = (current_idx + delta) % num_values
+
+        self.conf_combo.current(new_idx)
+        self.reload_messages()
 
     def _on_space_pressed(self, event: tk.Event) -> str | None:
         """Handle Space, Shift+Space, and BackSpace for continuous reading."""
@@ -969,8 +993,15 @@ class QwkGuiApp:
         ).pack(side=tk.LEFT)
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.pack(side=tk.LEFT, padx=2)
+
+        ttk.Button(
+            archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
+        ).pack(side=tk.LEFT, padx=(5, 0))
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.conf_combo.pack(side=tk.LEFT, padx=2)
+        ttk.Button(
+            archives_frame, text="▶", width=2, command=lambda: self._navigate_conference(1)
+        ).pack(side=tk.LEFT, padx=(0, 2))
 
         ttk.Separator(row2, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
