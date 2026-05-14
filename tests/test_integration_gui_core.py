@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 import pytest
-import tkinter as tk
 from pyqwk.gui import QwkGuiApp
 from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, matches_filters, _get_message_mapping, _write_html, _write_markdown, _write_text, BBSInfo
 
@@ -132,7 +131,8 @@ def test_is_any_filter_active_full_coverage(mock_gui):
     mock_gui.bbs_combo.get.return_value = "All BBSes"
     mock_gui.conf_combo.get.return_value = "All Conferences"
     vars_to_mock = [mock_gui.has_attach_var, mock_gui.mine_var, mock_gui.on_this_day_var, mock_gui.has_links_var, mock_gui.has_emails_var, mock_gui.has_phones_var, mock_gui.has_ansi_var]
-    for v in vars_to_mock: v.get.return_value = False
+    for v in vars_to_mock:
+        v.get.return_value = False
     mock_gui.private_var.get.return_value = True
     assert mock_gui._is_any_filter_active() is False
     mock_gui.search_var.get.return_value = "findme"
