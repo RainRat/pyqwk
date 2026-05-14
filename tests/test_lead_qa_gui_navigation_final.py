@@ -92,10 +92,14 @@ def test_on_search_enter_with_pending_timer(app):
 
 def test_open_folder_success(app):
     """Test open_folder successfully loads messages (lines 1153-1154)."""
+
+    def mock_load_impl(paths):
+        app.current_paths = paths
+
     with (
         patch("pyqwk.gui.filedialog.askdirectory", return_value="/path/to/archives"),
         patch("pyqwk.gui.expand_paths", return_value=["/path/to/archives/test.qwk"]),
-        patch.object(app, "load_messages") as mock_load,
+        patch.object(app, "load_messages", side_effect=mock_load_impl) as mock_load,
     ):
         app.open_folder()
 
