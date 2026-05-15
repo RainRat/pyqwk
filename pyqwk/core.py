@@ -468,6 +468,12 @@ class ProgressBar(Protocol):
 
 @dataclass
 class ProcessingSettings:
+    """A collection of settings used to control how messages are processed.
+
+    This class stores user preferences and configuration for reading,
+    filtering, and saving messages.
+    """
+
     verbose: bool
     private: bool
     no_header: bool
