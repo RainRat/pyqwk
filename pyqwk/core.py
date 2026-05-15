@@ -468,6 +468,7 @@ class ProgressBar(Protocol):
 
 @dataclass
 class ProcessingSettings:
+    """A collection of settings for controlling how messages are read, filtered, and saved."""
     verbose: bool
     private: bool
     no_header: bool
