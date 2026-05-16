@@ -33,6 +33,7 @@ from pyqwk.core import (
     expand_paths,
     ConferenceMap,
     _normalize_subject,
+    _discover_entities,
 )
 
 
@@ -1424,26 +1425,10 @@ class QwkGuiApp:
             if RE_QUOTE_PATTERN.match(line):
                 tags.append("quote")
 
-            # Unified discovery loop for URLs, Emails, and Phone numbers
-            entities = []
-            for match in RE_URL_PATTERN.finditer(line):
-                entities.append((match.start(), match.end(), "url", match.group(0)))
-            for match in RE_EMAIL_PATTERN.finditer(line):
-                entities.append((match.start(), match.end(), "email", match.group(0)))
-            for match in RE_PHONE_PATTERN.finditer(line):
-                entities.append((match.start(), match.end(), "phone", match.group(0)))
-            for match in RE_MSG_LINK_PATTERN.finditer(line):
-                entities.append((match.start(), match.end(), "msg_link", match.group(0)))
-
-            # Sort entities: primary sort by start position (ascending),
-            # secondary sort by end position (descending) to prefer longer matches.
-            entities.sort(key=lambda x: (x[0], -x[1]))
+            entities = _discover_entities(line)
 
             last_idx = 0
             for start, end, etype, evalue in entities:
-                if start < last_idx:
-                    continue  # Skip overlapping entities
-
                 # Insert text before entity
                 if start > last_idx:
                     self.detail_text.insert(tk.END, line[last_idx:start], tuple(tags))

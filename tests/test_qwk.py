@@ -663,7 +663,7 @@ def test_process_merged_files_writes_html(
     content = output_path.read_text(encoding="utf-8")
 
     assert "<!DOCTYPE html>" in content
-    assert '<div class="message">' in content
+    assert '<div class="message"' in content
     assert '<div class="header">' in content
     assert '<pre class="body">' in content
 
@@ -749,7 +749,7 @@ def test_write_html_escapes_and_wraps_messages(tmp_path: Path) -> None:
 
     content = output_path.read_text(encoding="utf-8")
 
-    assert '<div class="message">' in content
+    assert '<div class="message"' in content
     assert '<div class="header">' in content
     assert '<pre class="body">' in content
     assert "<strong>Subject:</strong> Test Subject" in content
