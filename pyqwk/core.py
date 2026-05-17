@@ -1771,6 +1771,8 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
             continue
 
         subject = subject_match.group(1).strip().replace("**", "")
+        # Remove HTML anchors from subject for round-trip compatibility
+        subject = re.sub(r"\s*<a name=\".*?\"></a>", "", subject)
         date_match = re_date.search(working_section)
         from_match = re_from.search(working_section)
         to_match = re_to.search(working_section)

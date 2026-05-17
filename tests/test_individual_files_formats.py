@@ -136,8 +136,7 @@ def test_individual_files_html_format(
     with files[0].open("r", encoding="utf-8") as f:
         content = f.read()
         assert "<!DOCTYPE html>" in content or "<html>" in content
-        assert '<div class="message">' in content
-
+        assert '<div class="message"' in content
 
 def test_individual_files_markdown_format(
     tmp_path: Path, baseline_path: Path, logger: logging.Logger

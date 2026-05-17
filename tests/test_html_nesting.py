@@ -40,7 +40,7 @@ def test_html_output_decreasing_depth(message_factory):
         # between Grandchild 1's body and Root 2's message.
 
         # Let's check for the triple </div> closing block.
-        assert '</div>\n</div>\n</div>\n<div class="message">' in content
+        assert '</div>\n</div>\n</div>\n<div class="message" id="msg-1-4">' in content
 
 
 def test_html_output_trailing_closing_tags(message_factory):
