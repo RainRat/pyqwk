@@ -3599,6 +3599,7 @@ def process_merged_files(
 
 
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
+    message.discover_attachments()
     return {
         "header": message.header.as_dict,
         "conference": message.confname,
