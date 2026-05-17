@@ -382,6 +382,7 @@ for msg in messages:
 | `--organize-by-author` | Organize files into folders by author name. |
 | `--organize-by-to` | Organize files into folders by recipient name. |
 | `--organize-by-subject` | Organize files by message subject. |
+| `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--sort` | Sort results by field (date, author, subject, etc.). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `--mine` | Show messages sent to or from your user name. |

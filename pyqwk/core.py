@@ -505,6 +505,7 @@ class ProcessingSettings:
     organize_by_author: bool = False
     organize_by_to: bool = False
     organize_by_subject: bool = False
+    organize_attachments: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
     msgnum_filters: set[int] | None = None
@@ -2778,6 +2779,42 @@ def _slugify(text: str, default: str) -> str:
     return slug if slug else default
 
 
+def _get_organization_subpath(
+    message: ParsedMessage, settings: ProcessingSettings
+) -> str:
+    """Determine the subfolder path based on message organization settings."""
+    sub_parts = []
+    if settings.organize_by_bbs:
+        bbs_name = message.bbs_name or "unknown_bbs"
+        sub_parts.append(_slugify(bbs_name, "bbs"))
+
+    if settings.organize_by_author:
+        author = message.header.msgfrom or "unknown_author"
+        sub_parts.append(_slugify(author, "author"))
+
+    if settings.organize_by_to:
+        recipient = message.header.msgto or "unknown_to"
+        sub_parts.append(_slugify(recipient, "to"))
+
+    if settings.organize_by_subject:
+        norm_subject = _normalize_subject(message.header.msgsubject)
+        sub_parts.append(_slugify(norm_subject or "no_subject", "subject"))
+
+    if settings.organize:
+        conf_name = message.confname or "unknown"
+        conf_slug = _slugify(conf_name, "conference")
+        sub_parts.append(f"{message.confnum:03d}-{conf_slug}")
+
+    if settings.organize_by_date:
+        msg_dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+        sub_parts.append(msg_dt.strftime("%Y"))
+        sub_parts.append(msg_dt.strftime("%m"))
+
+    if not sub_parts:
+        return ""
+    return os.path.join(*sub_parts)
+
+
 def format_size(size: int) -> str:
     """Format byte count into a human-readable string (B, KB, MB)."""
     if size < 1024:
@@ -3071,6 +3108,10 @@ def process_merged_files(
                     attach_base = "."
 
                 attach_dir = os.path.join(attach_base, "attachments")
+                if settings.organize_attachments:
+                    attach_subpath = _get_organization_subpath(parsed_message, settings)
+                    if attach_subpath:
+                        attach_dir = os.path.join(attach_dir, attach_subpath)
 
                 if not settings.dry_run:
                     os.makedirs(attach_dir, exist_ok=True)
@@ -3225,59 +3266,33 @@ def process_merged_files(
             assert output_dir is not None
 
             target_dir = output_dir
-            relative_sub_path = ""
-            if any(
-                [
-                    settings.organize,
-                    settings.organize_by_date,
-                    settings.organize_by_bbs,
-                    settings.organize_by_author,
-                    settings.organize_by_to,
-                    settings.organize_by_subject,
-                ]
-            ):
-                sub_parts = []
-                if settings.organize_by_bbs:
-                    bbs_name = parsed_message.bbs_name or "unknown_bbs"
-                    sub_parts.append(_slugify(bbs_name, "bbs"))
-
-                if settings.organize_by_author:
-                    author = parsed_message.header.msgfrom or "unknown_author"
-                    sub_parts.append(_slugify(author, "author"))
-
-                if settings.organize_by_to:
-                    recipient = parsed_message.header.msgto or "unknown_to"
-                    sub_parts.append(_slugify(recipient, "to"))
-
-                if settings.organize_by_subject:
-                    norm_subject = _normalize_subject(parsed_message.header.msgsubject)
-                    sub_parts.append(_slugify(norm_subject or "no_subject", "subject"))
-
-                if settings.organize:
-                    conf_name = parsed_message.confname or "unknown"
-                    conf_slug = _slugify(conf_name, "conference")
-                    sub_parts.append(f"{parsed_message.confnum:03d}-{conf_slug}")
-
-                if settings.organize_by_date:
-                    msg_dt = _parse_qwk_date(
-                        parsed_message.header.msgdate, parsed_message.header.msgtime
-                    )
-                    sub_parts.append(msg_dt.strftime("%Y"))
-                    sub_parts.append(msg_dt.strftime("%m"))
-
-                relative_sub_path = os.path.join(*sub_parts)
+            relative_sub_path = _get_organization_subpath(parsed_message, settings)
+            if relative_sub_path:
                 target_dir = os.path.join(output_dir, relative_sub_path)
                 if not settings.dry_run:
                     os.makedirs(target_dir, exist_ok=True)
 
             attachment_prefix = None
             if settings.extract_attachments:
+                prefix = ""
                 if relative_sub_path:
                     # Each level of directory nesting requires an extra '../'
                     depth = len(relative_sub_path.replace(os.sep, "/").split("/"))
-                    attachment_prefix = ("../" * depth) + "attachments/"
+                    prefix = "../" * depth
+
+                if settings.organize_attachments:
+                    attach_subpath = _get_organization_subpath(parsed_message, settings)
+                    if attach_subpath:
+                        attachment_prefix = (
+                            os.path.join(prefix, "attachments", attach_subpath).replace(
+                                os.sep, "/"
+                            )
+                            + "/"
+                        )
+                    else:
+                        attachment_prefix = prefix + "attachments/"
                 else:
-                    attachment_prefix = "attachments/"
+                    attachment_prefix = prefix + "attachments/"
 
             if settings.format == "text":
                 encoded_buffer = processed_buffer.encode(target_encoding)

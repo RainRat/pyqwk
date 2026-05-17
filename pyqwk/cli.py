@@ -112,6 +112,11 @@ examples:
         action="store_true",
     )
     io_group.add_argument(
+        "--organize-attachments",
+        help="Organize extracted attachments into subfolders using the same criteria as message organization.",
+        action="store_true",
+    )
+    io_group.add_argument(
         "--organize",
         help="Organize individual files into subfolders by conference.",
         action="store_true",
@@ -665,6 +670,7 @@ examples:
         organize_by_author=getattr(args, "organize_by_author", False),
         organize_by_to=getattr(args, "organize_by_to", False),
         organize_by_subject=getattr(args, "organize_by_subject", False),
+        organize_attachments=getattr(args, "organize_attachments", False),
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
         msgnum_filters=msgnum_filters,
