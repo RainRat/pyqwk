@@ -5321,6 +5321,8 @@ def _linkify_text(
                     result.append(val_esc)
             else:
                 result.append(val_esc)
+        else:
+            result.append(val_esc)
 
         last_end = end
 
