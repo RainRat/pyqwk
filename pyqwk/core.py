@@ -1831,6 +1831,9 @@ def _parse_markdown_messages(path: str) -> list[ParsedMessage]:
 
         body = "\n".join(lines[body_start_idx:]).strip()
 
+        # Clean Markdown links from body for round-trip compatibility
+        body = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", body)
+
         # Construct MessageHeader
         header = MessageHeader(
             status=" ",
@@ -3904,12 +3907,19 @@ def _render_single_message_html(
 ) -> list[str]:
     """Render a single message into HTML components with quote highlighting."""
     parts = []
+    # Use msg_id if provided, otherwise fallback to stable anchor format
+    if not msg_id and message.header.msgnum is not None:
+        msg_id = f"msg-{message.confnum}-{message.header.msgnum}"
     id_attr = f' id="{msg_id}"' if msg_id else ""
     parts.append(f'<div class="message"{id_attr}>')
 
     def h_esc(text: str) -> str:
-        return _apply_highlighting(
-            text, search_term, is_regex, "<mark>", "</mark>", escape_func=html.escape
+        return _linkify_text(
+            text,
+            "html",
+            conf_num=message.confnum,
+            search_term=search_term,
+            is_regex=is_regex,
         )
 
     # Header
@@ -4104,9 +4114,19 @@ def _render_single_message_markdown(
     parts = []
 
     def md_high(text: str) -> str:
-        return _apply_highlighting(text, search_term, is_regex, "**", "**")
+        return _linkify_text(
+            text,
+            "markdown",
+            conf_num=message.confnum,
+            search_term=search_term,
+            is_regex=is_regex,
+        )
 
-    parts.append(f"## {md_high(header.msgsubject)}")
+    msg_anchor = ""
+    if header.msgnum is not None:
+        msg_anchor = f' <a name="msg-{message.confnum}-{header.msgnum}"></a>'
+
+    parts.append(f"## {md_high(header.msgsubject)}{msg_anchor}")
     parts.append(f"- **Date:** {header.msgdate} {header.msgtime}")
     parts.append(f"- **From:** {md_high(header.msgfrom)}")
     parts.append(f"- **To:** {md_high(header.msgto)}")
@@ -5151,28 +5171,164 @@ def _highlight_quotes(text: str, use_colors: bool) -> str:
     return "".join(highlighted_lines)
 
 
-def _highlight_entities(text: str, use_colors: bool = False) -> str:
-    """Apply terminal highlighting to URLs, emails, phone numbers, and message links."""
-    if not use_colors:
+def _discover_entities(
+    text: str, search_term: str | None = None, is_regex: bool = False
+) -> list[tuple[int, int, str, str]]:
+    """Identify non-overlapping entities in text (URLs, emails, phones, msg links, search matches).
+
+    Returns:
+        List of (start, end, type, value) sorted by position.
+    """
+    entities: list[tuple[int, int, str, str]] = []
+
+    # 1. Search Matches
+    if search_term:
+        flags = re.IGNORECASE
+        pattern_str = search_term if is_regex else re.escape(search_term)
+        try:
+            pattern = re.compile(pattern_str, flags)
+            for match in pattern.finditer(text):
+                entities.append((match.start(), match.end(), "search", match.group(0)))
+        except re.error:
+            pass
+
+    # 2. Standard Entities
+    for match in RE_URL_PATTERN.finditer(text):
+        entities.append((match.start(), match.end(), "url", match.group(0)))
+    for match in RE_EMAIL_PATTERN.finditer(text):
+        entities.append((match.start(), match.end(), "email", match.group(0)))
+    for match in RE_PHONE_PATTERN.finditer(text):
+        entities.append((match.start(), match.end(), "phone", match.group(0)))
+    for match in RE_MSG_LINK_PATTERN.finditer(text):
+        entities.append((match.start(), match.end(), "msg_link", match.group(0)))
+
+    # Sort entities: primary sort by start position (ascending),
+    # secondary sort by end position (descending) to prefer longer matches.
+    entities.sort(key=lambda x: (x[0], -x[1]))
+
+    # Filter out overlaps
+    filtered_entities: list[tuple[int, int, str, str]] = []
+    last_end = 0
+    for start, end, etype, evalue in entities:
+        if start >= last_end:
+            filtered_entities.append((start, end, etype, evalue))
+            last_end = end
+
+    return filtered_entities
+
+
+def _linkify_text(
+    text: str,
+    output_format: str,
+    conf_num: int | None = None,
+    search_term: str | None = None,
+    is_regex: bool = False,
+    use_colors: bool = False,
+) -> str:
+    """Wrap entities in text with appropriate link tags based on output format.
+
+    Args:
+        text: The input text.
+        output_format: 'html', 'markdown', or 'ansi'.
+        conf_num: Optional conference number for internal links.
+        search_term: Optional term to highlight.
+        is_regex: Whether search_term is a regex.
+        use_colors: Whether to use colors for 'ansi' format.
+    """
+    entities = _discover_entities(text, search_term, is_regex)
+
+    if not entities:
+        if output_format == "html":
+            return html.escape(text)
         return text
 
-    # Apply Underline (4) and Dim (90) to various identifiers for visual distinction
-    text = _apply_highlighting(
-        text, RE_URL_PATTERN.pattern, is_regex=True, start_tag="\x1b[4;90m", end_tag="\x1b[0m"
-    )
-    text = _apply_highlighting(
-        text, RE_EMAIL_PATTERN.pattern, is_regex=True, start_tag="\x1b[4;90m", end_tag="\x1b[0m"
-    )
-    text = _apply_highlighting(
-        text, RE_PHONE_PATTERN.pattern, is_regex=True, start_tag="\x1b[90m", end_tag="\x1b[0m"
-    )
+    result = []
+    last_end = 0
 
-    # Apply Cyan (36) to internal message links to encourage navigation
-    text = _apply_highlighting(
-        text, RE_MSG_LINK_PATTERN.pattern, is_regex=True, start_tag="\x1b[36m", end_tag="\x1b[0m"
-    )
+    def escape(t):
+        if output_format == "html":
+            return html.escape(t)
+        return t
 
-    return text
+    for start, end, etype, evalue in entities:
+        # Non-matching part
+        result.append(escape(text[last_end:start]))
+
+        # Matching part
+        val_esc = escape(evalue)
+
+        if etype == "search":
+            if output_format == "html":
+                result.append(f"<mark>{val_esc}</mark>")
+            elif output_format == "markdown":
+                result.append(f"**{val_esc}**")
+            elif output_format == "ansi" and use_colors:
+                result.append(f"\x1b[7m{val_esc}\x1b[0m")
+            else:
+                result.append(val_esc)
+        elif etype == "url":
+            uri = (
+                evalue
+                if "://" in evalue.lower() or evalue.lower().startswith("www.")
+                else f"http://{evalue}"
+            )
+            if output_format == "html":
+                result.append(f'<a href="{html.escape(uri)}">{val_esc}</a>')
+            elif output_format == "markdown":
+                result.append(f"[{val_esc}]({uri})")
+            elif output_format == "ansi" and use_colors:
+                result.append(f"\x1b[4;90m{val_esc}\x1b[0m")
+            else:
+                result.append(val_esc)
+        elif etype == "email":
+            uri = f"mailto:{evalue}"
+            if output_format == "html":
+                result.append(f'<a href="{html.escape(uri)}">{val_esc}</a>')
+            elif output_format == "markdown":
+                result.append(f"[{val_esc}]({uri})")
+            elif output_format == "ansi" and use_colors:
+                result.append(f"\x1b[4;90m{val_esc}\x1b[0m")
+            else:
+                result.append(val_esc)
+        elif etype == "phone":
+            if output_format == "ansi" and use_colors:
+                result.append(f"\x1b[90m{val_esc}\x1b[0m")
+            else:
+                result.append(val_esc)
+        elif etype == "msg_link":
+            msg_num_match = RE_MSG_LINK_PATTERN.search(evalue)
+            msg_num = msg_num_match.group(1) if msg_num_match else None
+            if msg_num:
+                if output_format == "html":
+                    anchor = (
+                        f"msg-{conf_num}-{msg_num}"
+                        if conf_num is not None
+                        else f"msg-{msg_num}"
+                    )
+                    result.append(f'<a href="#{anchor}">{val_esc}</a>')
+                elif output_format == "markdown":
+                    anchor = (
+                        f"msg-{conf_num}-{msg_num}"
+                        if conf_num is not None
+                        else f"msg-{msg_num}"
+                    )
+                    result.append(f"[{val_esc}](#{anchor})")
+                elif output_format == "ansi" and use_colors:
+                    result.append(f"\x1b[36m{val_esc}\x1b[0m")
+                else:
+                    result.append(val_esc)
+            else:
+                result.append(val_esc)
+
+        last_end = end
+
+    result.append(escape(text[last_end:]))
+    return "".join(result)
+
+
+def _highlight_entities(text: str, use_colors: bool = False) -> str:
+    """Apply terminal highlighting to URLs, emails, phone numbers, and message links."""
+    return _linkify_text(text, "ansi", use_colors=use_colors)
 
 
 def _highlight_text(
@@ -5182,11 +5338,8 @@ def _highlight_text(
     use_colors: bool = False,
 ) -> str:
     """Apply inverted colors highlighting to matching terms in text for terminal output."""
-    if not term or not use_colors:
-        return text
-
-    return _apply_highlighting(
-        text, term, is_regex, start_tag="\x1b[7m", end_tag="\x1b[0m"
+    return _linkify_text(
+        text, "ansi", search_term=term, is_regex=is_regex, use_colors=use_colors
     )
 
 
