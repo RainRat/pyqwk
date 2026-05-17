@@ -113,7 +113,7 @@ qwk-gui messages.db
 **Key Features:**
 - **Search:** Find messages by keyword or use "Regex" for advanced patterns. You can easily cycle through matches with **F3** or **Shift + F3**, and the reader will automatically move to the next or previous message when you reach the end of the current one. You can also right-click any highlighted text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
-- **Filtering:** Narrow your view by BBS, conference, author, or recipient. You can also filter for private messages or messages with attachments.
+- **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Use "Clean" view to hide signatures and quotes. Use "Remove Colors" to strip ANSI color codes.
@@ -141,6 +141,7 @@ qwk-gui messages.db
 - **Space**: Scroll down or move to the next message.
 - **Shift + Space / BackSpace**: Scroll up or move to the previous message.
 - **Ctrl + G**: Jump to a message number.
+- **[ / ]**: Previous or next conference.
 
 ## Usage Examples
 
@@ -377,6 +378,7 @@ for msg in messages:
 | `-x, --extract-attachments` | Save attachments to a folder. |
 | `--organize` | Organize individual files into subfolders by conference. |
 | `--organize-by-date` | Organize files into folders by year and month. |
+| `--organize-by-bbs` | Organize archives into folders named after the BBS. |
 | `--organize-by-author` | Organize files into folders by author name. |
 | `--organize-by-to` | Organize files into folders by recipient name. |
 | `--organize-by-subject` | Organize files by message subject. |
@@ -395,7 +397,20 @@ for msg in messages:
 | `--body` | Search for keywords specifically in the message body. |
 | `--exclude` | Exclude messages matching a keyword in any field. |
 | `--exclude-from` | Exclude messages from specific authors. |
+| `--exclude-to` | Exclude messages sent to specific recipients. |
 | `--exclude-subject` | Exclude messages by subject keywords. |
+| `--exclude-conference` | Exclude messages from specific conferences. |
+| `--exclude-bbs` | Exclude messages from specific BBSes. |
+| `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
+| `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
+| `--on-this-day` | Show messages from the same month and day. |
+| `--limit` | Stop after a specific number of matching messages. |
+| `--skip` | Skip a specific number of matching messages. |
+| `--regex` | Use regular expressions for search and filters. |
+| `--reverse` | Reverse the sorting order. |
+| `--min-length` | Show messages with at least this many characters. |
+| `--max-length` | Show messages with at most this many characters. |
+| `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
