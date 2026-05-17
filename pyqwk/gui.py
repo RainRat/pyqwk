@@ -731,8 +731,8 @@ class QwkGuiApp:
         if not self.messages:
             return False
 
-        # If the search entry has focus, don't hijack keyboard navigation unless forced
-        if not force and self.root.focus_get() == self.search_entry:
+        # If a search or exclude entry has focus, don't hijack keyboard navigation unless forced
+        if not force and self.root.focus_get() in (self.search_entry, self.exclude_entry):
             return False
 
         all_items = self._get_all_tree_items()
@@ -781,8 +781,8 @@ class QwkGuiApp:
 
     def _on_space_pressed(self, event: tk.Event) -> str | None:
         """Handle Space, Shift+Space, and BackSpace for continuous reading."""
-        # If the search entry has focus, let it handle the keys
-        if self.root.focus_get() == self.search_entry:
+        # If a search or exclude entry has focus, let it handle the keys
+        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
             return None
 
         # Check scroll position: (top, bottom) as fractions of the whole
