@@ -6067,18 +6067,16 @@ def _normalize_subject(subject: str) -> str:
 def _order_messages_by_thread(
     messages: list[ProcessedMessage],
 ) -> list[ProcessedMessage]:
-    """Order processed messages so that threads are grouped together.
+    """Arrange messages into conversations so that replies follow their original posts.
 
-    Messages are rearranged so that parent messages appear before children and
-    warnings are emitted for circular references.
+    Messages are reordered to make discussions easier to follow. The tool also
+    identifies and handles loops where messages accidentally refer back to themselves.
 
     Args:
-        messages: Messages that have already been processed and may contain
-            reference links to other messages in the same conference.
+        messages: A list of messages that have been read from an archive.
 
     Returns:
-        Messages ordered to reflect reply relationships while preserving
-        unattached messages.
+        The same messages, now grouped and ordered by their conversation threads.
     """
     if not messages:
         return []
