@@ -334,7 +334,7 @@ def test_threading_cycle_nested_report(caplog):
         #   child_idx=1 is in path -> report cycle
         #   second time we see the cycle, it shouldn't report? No, cycle_reported handles that.
         _order_messages_by_thread([msg1, msg2])
-        assert "Circular reference detected" in caplog.text
+        assert "Conversation loop detected" in caplog.text
 
 
 def test_organize_by_bbs_exists(tmp_path):

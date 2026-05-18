@@ -122,7 +122,7 @@ def test_threading_circular_reference_logging(message_factory, caplog, logger):
 
     with caplog.at_level(logging.WARNING):
         _order_messages_by_thread([m1, m2])
-        assert "Circular reference detected" in caplog.text
+        assert "Conversation loop detected" in caplog.text
 
 
 def test_load_data_sqlite_bbs_name(tmp_path, logger):

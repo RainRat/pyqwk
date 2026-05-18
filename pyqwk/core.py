@@ -573,7 +573,7 @@ class ParsedMessage:
     """A fully parsed and processed message from an archive.
 
     This class contains the message body text, conference details, and
-    threading information used for organizing conversations.
+    information used for organizing and grouping conversations.
     """
 
     text: str
@@ -926,7 +926,7 @@ class MessageHeader:
                 flags_display = f"\x1b[90m{flags_display}\x1b[0m"
             subject = f"{flags_display} {subject}"
 
-        # Apply threading indent to subject
+        # Apply indentation for conversations to the subject
         if depth > 0:
             indent = "  " * (depth - 1)
             subject = f"{indent}└ {subject}"
@@ -4427,7 +4427,7 @@ def _serialize_rfc822(
 ) -> str:
     """Convert a message to RFC 822 (Email) format with optional MBOX header.
 
-    Includes standard email headers for threading (Message-ID, In-Reply-To, References)
+    Includes standard email headers for grouping conversations (Message-ID, In-Reply-To, References)
     and custom X-QWK headers for conference names, message numbers, and statuses.
     """
     header = message.header
@@ -4475,7 +4475,7 @@ def _serialize_rfc822(
     )
     parts.append(f"Message-ID: {msg_id}")
 
-    # Threading headers
+    # Conversation grouping headers
     if message.parent_msgnum is not None:
         parent_id = f"<{header.confnum}.{message.parent_msgnum}@qwk>"
         parts.append(f"In-Reply-To: {parent_id}")
@@ -4606,7 +4606,7 @@ def _write_text(
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
-    """Write messages to text format with indentation for threads."""
+    """Write messages to text format with indentation for grouping conversations."""
     parts = []
 
     use_colors = (
@@ -4721,7 +4721,7 @@ def _write_text(
                         redact_pii=settings.redact_pii,
                     )
             else:
-                # Re-format oneline summary to account for threading depth
+                # Re-format one-line summary to account for conversation depth
                 text = message.header.format_oneline(
                     {},  # board_dict not needed when conf_name is provided
                     use_colors=use_colors,
@@ -4740,7 +4740,7 @@ def _write_text(
             # Apply quote highlighting for terminal output
             text = _highlight_quotes(text, use_colors)
 
-            # Apply indentation for threads
+            # Apply indentation for grouping conversations
             if message.depth > 0:
                 indent = "  " * message.depth
                 lines = text.splitlines(keepends=True)
@@ -6054,7 +6054,7 @@ def process_multiple_files(
 
 
 def _normalize_subject(subject: str) -> str:
-    """Normalize subject line for threading by removing prefixes."""
+    """Normalize subject line for grouping conversations by removing prefixes."""
     s = subject.strip()
     while True:
         new_s = RE_SUBJECT_PREFIX_PATTERN.sub("", s)
@@ -6067,18 +6067,18 @@ def _normalize_subject(subject: str) -> str:
 def _order_messages_by_thread(
     messages: list[ProcessedMessage],
 ) -> list[ProcessedMessage]:
-    """Order processed messages so that threads are grouped together.
+    """Order processed messages so that conversations are grouped together.
 
-    Messages are rearranged so that parent messages appear before children and
-    warnings are emitted for circular references.
+    Messages are rearranged so that original posts appear before replies and
+    warnings are emitted for conversation loops.
 
     Args:
         messages: Messages that have already been processed and may contain
-            reference links to other messages in the same conference.
+            links to other messages in the same conference.
 
     Returns:
-        Messages ordered to reflect reply relationships while preserving
-        unattached messages.
+        Messages ordered to reflect how they relate as replies while
+        preserving messages that are not part of a conversation.
     """
     if not messages:
         return []
@@ -6100,7 +6100,7 @@ def _order_messages_by_thread(
         if subj:
             index_by_subject[(message.confnum, subj)].append(index)
 
-    # Link replies to their parent messages using message numbers or subjects
+    # Link replies to their original posts using message numbers or subjects
     parent_map: dict[int, int] = {}
 
     for index, message in enumerate(messages):
@@ -6112,7 +6112,7 @@ def _order_messages_by_thread(
 
             if parent_index is None:
                 logger.debug(
-                    "Message %s references missing or external message %s (conf %s).",
+                    "Message %s refers to missing or external message %s (conf %s).",
                     message.msgnum,
                     message.refnum,
                     message.confnum,
@@ -6129,11 +6129,11 @@ def _order_messages_by_thread(
                     parent_index = preceding[-1]
 
         if parent_index is not None and parent_index != index:
-            # Check for immediate cycle (parent is already a child of this message)
+            # Check for immediate cycle (post is already a reply to this message)
             if index in children and parent_index in children[index]:
                 child_msg = messages[index]
                 logger.warning(
-                    "Circular reference detected (conf %s, msgnum %s) - skipping parent assignment.",
+                    "Conversation loop detected (conf %s, msgnum %s) - skipping reply assignment.",
                     child_msg.confnum,
                     child_msg.msgnum,
                 )
@@ -6144,7 +6144,7 @@ def _order_messages_by_thread(
         else:
             roots.append(index)
 
-    # Group messages into threads while handling loops and deep nests
+    # Group messages into conversations while handling loops and deep nests
     ordered_messages: list[ProcessedMessage] = []
     visited: set[int] = set()
     cycle_reported: set[int] = set()
@@ -6200,7 +6200,7 @@ def _order_messages_by_thread(
                 if child_idx not in cycle_reported:
                     child_msg = messages[child_idx]
                     logger.warning(
-                        "Circular reference detected (conf %s, msgnum %s).",
+                        "Conversation loop detected (conf %s, msgnum %s).",
                         child_msg.confnum,
                         child_msg.msgnum,
                     )
