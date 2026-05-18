@@ -568,7 +568,7 @@ class QwkGuiApp:
         ]
 
         for group_name, shortcuts in shortcut_groups:
-            self.detail_text.insert(tk.END, f"\n  {group_name}\n", "header_meta")
+            self.detail_text.insert(tk.END, f"\n  {group_name}\n", "header_meta_label")
             for key, desc in shortcuts:
                 self.detail_text.insert(tk.END, f"    {key:<15}", "header_label")
                 self.detail_text.insert(tk.END, f"{desc}\n", "header_value")
@@ -1178,6 +1178,9 @@ class QwkGuiApp:
             "header_meta", font=("TkDefaultFont", 9), foreground="#888888"
         )
         self.detail_text.tag_configure(
+            "header_meta_label", font=("TkDefaultFont", 9, "bold"), foreground="#666666"
+        )
+        self.detail_text.tag_configure(
             "header_hr", font=("TkDefaultFont", 1), background="#eeeeee"
         )
         self.detail_text.tag_configure("header_area", background="#f9f9f9")
@@ -1335,6 +1338,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n\n")
 
         # Information line (Date, Conference, BBS, Msg #)
+        self.detail_text.insert(tk.END, "Date: ", "header_meta_label")
         self.detail_text.insert(
             tk.END, f"{header.msgdate} {header.msgtime}", "header_meta"
         )
@@ -1355,6 +1359,7 @@ class QwkGuiApp:
 
         self.detail_text.insert(tk.END, "  •  ", "header_meta")
 
+        self.detail_text.insert(tk.END, "Conf: ", "header_meta_label")
         conf_tag = f"conf_link_{id(msg)}"
         self.detail_text.insert(tk.END, conf_name, ("link", "header_meta", conf_tag))
         self.detail_text.tag_bind(
@@ -1365,6 +1370,7 @@ class QwkGuiApp:
 
         if msg.bbs_name:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
+            self.detail_text.insert(tk.END, "BBS: ", "header_meta_label")
             bbs_tag = f"bbs_link_{id(msg)}"
             self.detail_text.insert(
                 tk.END, msg.bbs_name, ("link", "header_meta", bbs_tag)
@@ -1377,12 +1383,14 @@ class QwkGuiApp:
 
         if header.msgnum is not None:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, f"Msg #{header.msgnum}", "header_meta")
+            self.detail_text.insert(tk.END, "Msg: ", "header_meta_label")
+            self.detail_text.insert(tk.END, str(header.msgnum), "header_meta")
 
         if msg.refnum:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
+            self.detail_text.insert(tk.END, "Ref: ", "header_meta_label")
             ref_tag = f"ref_link_{id(msg)}"
-            self.detail_text.insert(tk.END, f"Ref #{msg.refnum}", ("link", ref_tag))
+            self.detail_text.insert(tk.END, str(msg.refnum), ("link", "header_meta", ref_tag))
             self.detail_text.tag_bind(
                 ref_tag,
                 "<Button-1>",
@@ -1394,9 +1402,8 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         if msg.source_file:
-            self.detail_text.insert(
-                tk.END, f"Source: {msg.source_file}\n", "header_meta"
-            )
+            self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
+            self.detail_text.insert(tk.END, f"{msg.source_file}\n", "header_meta")
 
         if msg.attachments:
             self.detail_text.insert(tk.END, "Attachments: ", "header_label")
