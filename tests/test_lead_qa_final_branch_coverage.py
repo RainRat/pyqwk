@@ -116,7 +116,7 @@ def test_order_messages_by_thread_cycle_reported_branch(caplog):
     with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         _order_messages_by_thread(messages)
 
-    assert any("Circular reference detected" in r.message for r in caplog.records)
+    assert any("Conversation loop detected" in r.message for r in caplog.records)
 
 
 def test_parse_rss_messages_invalid_guid_parts():

@@ -141,7 +141,7 @@ def test_threading_cycle_already_reported(caplog):
     with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(msgs)
 
-    assert "Circular reference detected" in caplog.text
+    assert "Conversation loop detected" in caplog.text
     assert len(ordered) == 4
 
 

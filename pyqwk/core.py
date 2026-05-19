@@ -573,7 +573,7 @@ class ParsedMessage:
     """A fully parsed and processed message from an archive.
 
     This class contains the message body text, conference details, and
-    threading information used for organizing conversations.
+    information used for organizing conversations.
     """
 
     text: str
@@ -6067,10 +6067,10 @@ def _normalize_subject(subject: str) -> str:
 def _order_messages_by_thread(
     messages: list[ProcessedMessage],
 ) -> list[ProcessedMessage]:
-    """Order processed messages so that threads are grouped together.
+    """Order processed messages so that conversations are grouped together.
 
-    Messages are rearranged so that parent messages appear before children and
-    warnings are emitted for circular references.
+    Messages are rearranged so that original posts appear before replies and
+    warnings are emitted for conversation loops.
 
     Args:
         messages: Messages that have already been processed and may contain
@@ -6133,7 +6133,7 @@ def _order_messages_by_thread(
             if index in children and parent_index in children[index]:
                 child_msg = messages[index]
                 logger.warning(
-                    "Circular reference detected (conf %s, msgnum %s) - skipping parent assignment.",
+                    "Conversation loop detected (conf %s, msgnum %s) - skipping link assignment.",
                     child_msg.confnum,
                     child_msg.msgnum,
                 )
@@ -6200,7 +6200,7 @@ def _order_messages_by_thread(
                 if child_idx not in cycle_reported:
                     child_msg = messages[child_idx]
                     logger.warning(
-                        "Circular reference detected (conf %s, msgnum %s).",
+                        "Conversation loop detected (conf %s, msgnum %s).",
                         child_msg.confnum,
                         child_msg.msgnum,
                     )
