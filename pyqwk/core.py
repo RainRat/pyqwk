@@ -3109,16 +3109,13 @@ def process_merged_files(
             # Apply quote highlighting for terminal output
             cleaned_body = _highlight_quotes(cleaned_body, use_colors)
 
-            # Apply search highlighting to body for terminal output
+            # Apply highlighting to search matches, links, and other entities
             cleaned_body = _highlight_text(
                 cleaned_body,
                 settings.search_term,
                 settings.regex,
                 use_colors=use_colors,
             )
-
-            # Apply highlighting to links and other entities
-            cleaned_body = _highlight_entities(cleaned_body, use_colors)
 
         if settings.oneline:
             if settings.oneline_pattern:
