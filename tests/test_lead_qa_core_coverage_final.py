@@ -133,7 +133,7 @@ def test_order_messages_by_thread_circular_already_reported(caplog):
 
     with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         _order_messages_by_thread(msgs)
-    assert any("Circular reference detected" in r.message for r in caplog.records)
+    assert any("Conversation loop detected" in r.message for r in caplog.records)
 
 def test_order_messages_by_thread_visited_but_not_path():
     # Covers line 6049: if child_idx in visited: (True branch)

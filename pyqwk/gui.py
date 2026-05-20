@@ -1036,7 +1036,7 @@ class QwkGuiApp:
 
         for i, (text, var, cmd) in enumerate(
             [
-                ("Threaded", self.threaded_var, self.reload_messages),
+                ("Conversations", self.threaded_var, self.reload_messages),
                 ("Clean", self.clean_var, self.reload_messages),
                 ("Wrap", self.wrap_var, self._update_wrap),
                 ("Remove Colors", self.ansi_var, self.reload_messages),

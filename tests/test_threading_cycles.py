@@ -15,7 +15,7 @@ def test_threading_circular_reference(message_factory, caplog):
         ordered = _order_messages_by_thread(msgs)
 
     # Check for warning
-    assert "Circular reference detected" in caplog.text
+    assert "Conversation loop detected" in caplog.text
     # Cycle is detected when processing the second message (B), which tries to set A as parent
     # but A is already a child of B (due to B appearing later in list/processing order).
     assert "conf 1, msgnum 2" in caplog.text
@@ -47,7 +47,7 @@ def test_threading_self_reference(message_factory, caplog):
         ordered = _order_messages_by_thread(msgs)
 
     # Should be no warning because it's filtered out before traversal
-    assert "Circular reference detected" not in caplog.text
+    assert "Conversation loop detected" not in caplog.text
 
     assert len(ordered) == 1
     assert ordered[0].msgnum == 1
@@ -67,7 +67,7 @@ def test_threading_long_cycle(message_factory, caplog):
     with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(msgs)
 
-    assert "Circular reference detected" in caplog.text
+    assert "Conversation loop detected" in caplog.text
     assert len(ordered) == 3
 
     # One should be root, others nested
