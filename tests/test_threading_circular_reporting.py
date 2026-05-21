@@ -62,4 +62,4 @@ def test_order_messages_by_thread_circular_reporting(caplog):
     with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         _order_messages_by_thread(msgs)
 
-    assert "Circular reference detected" in caplog.text
+    assert "Conversation loop detected" in caplog.text

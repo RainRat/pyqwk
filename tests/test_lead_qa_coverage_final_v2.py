@@ -159,7 +159,7 @@ def test_order_messages_by_thread_circular_reference_complex():
         _order_messages_by_thread(messages)
 
     assert any(
-        "Circular reference detected" in call[0][0]
+        "Conversation loop detected" in call[0][0]
         for call in mock_logger.warning.call_args_list
     )
 

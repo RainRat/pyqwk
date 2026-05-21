@@ -11,7 +11,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 ## Features
 
 - **Supports many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, EML, Markdown, HTML, and Plain Text.
-- **Groups conversations:** Use "threading" to group replies and follow discussions easily.
+- **Groups conversations:** Group replies into conversations to follow discussions easily.
 - **Cleans content:** Automatically remove signatures, old quotes, and attachments.
 - **Protects privacy:** Hide personal information or private messages.
 - **Processes many files:** Convert several archives at once or merge them into one file.
@@ -24,7 +24,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 | :--- | :---: | :---: | :--- |
 | **QWK / REP** | ✅ | ✅ | Classic BBS packets (.qwk, .rep, .zip, .tar, .tar.gz, .tar.bz2, .tgz, messages.dat, reply.dat) |
 | **JSON / JSONL** | ✅ | ✅ | Modern structured data (.json, .jsonl) |
-| **HTML** | ✅ | ✅ | Browsable files with threading and charts (.html, .htm) |
+| **HTML** | ✅ | ✅ | Browsable files with conversation grouping and charts (.html, .htm) |
 | **Markdown** | ✅ | ✅ | Readable text files (.md, .markdown) |
 | **CSV** | ✅ | ✅ | Spreadsheets and databases (.csv) |
 | **RSS** | ✅ | ✅ | Feed readers and syndication (.rss) |
@@ -164,7 +164,7 @@ qwk archive.qwk --oneline-pattern "[{confnum}] {author}: {subject}"
 qwk archive.qwk -o messages.txt
 ```
 
-**Group messages by thread:**
+**Group messages into conversations:**
 ```bash
 qwk archive.qwk --threaded -o messages.txt
 ```
@@ -465,7 +465,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{length}` | The number of characters in the message. |
 | `{size}` | The readable size of the message (e.g., `1.2 KB`). |
 | `{flags}` | Short indicators (e.g., `*` for private, `@` for attachments). |
-| `{indent}` | Spaces and symbols used for threading on the screen. |
+| `{indent}` | Spaces and symbols used for organizing conversations on the screen. |
 
 ### Attachments
 | Variable | Description |
