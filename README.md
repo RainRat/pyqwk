@@ -376,6 +376,7 @@ for msg in messages:
 | `-T`, `--threaded` | Group replies into conversations. |
 | `--clean` | Remove signatures, quotes, and attachments. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
+| `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize` | Organize individual files into subfolders by conference. |
 | `--organize-by-date` | Organize files into folders by year and month. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. |
