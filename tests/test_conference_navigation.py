@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, patch, call, ANY
+from unittest.mock import MagicMock, patch, ANY
 import pytest
 
 # Mock tkinter before any pyqwk.gui imports
@@ -10,7 +10,6 @@ sys.modules["tkinter.filedialog"] = MagicMock()
 sys.modules["tkinter.messagebox"] = MagicMock()
 sys.modules["tkinter.ttk"] = mock_ttk
 
-from pyqwk.core import ParsedMessage, MessageHeader
 
 @pytest.fixture
 def mock_gui_deps():

@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from pyqwk.core import _linkify_text, _apply_highlighting, _parse_html_messages
 

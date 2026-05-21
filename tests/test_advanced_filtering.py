@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import ParsedMessage, MessageHeader, ProcessingSettings, matches_filters
 
 def create_msg(text="Hello world", author="Alice", to="Bob", subject="Greetings", confnum=1, bbs_name="MyBBS"):

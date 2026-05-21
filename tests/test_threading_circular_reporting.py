@@ -1,5 +1,4 @@
-import pytest
-from pyqwk.core import _parse_html_messages, _parse_text_messages, _order_messages_by_thread, ProcessedMessage, MessageHeader
+from pyqwk.core import _parse_html_messages, _order_messages_by_thread, ProcessedMessage, MessageHeader
 import logging
 
 def test_parse_html_messages_depth_and_date_gaps(tmp_path):

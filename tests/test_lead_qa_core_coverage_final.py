@@ -1,17 +1,12 @@
 import logging
-import io
-from unittest.mock import MagicMock, patch
-from collections import defaultdict
 from pyqwk.core import (
     _parse_html_messages,
-    _parse_text_messages,
     matches_filters,
     _get_message_mapping,
     _order_messages_by_thread,
     ProcessingSettings,
     ParsedMessage,
     MessageHeader,
-    BBSInfo,
 )
 
 def _make_settings(**kwargs):

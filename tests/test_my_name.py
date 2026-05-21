@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import (
     ProcessingSettings,
     matches_filters,
@@ -78,7 +77,6 @@ def test_my_name_qwk_serialization():
 
 def test_gui_mine_logic(mocker):
     """Test that QwkGuiApp uses my_name for its internal logic."""
-    import sys
     from unittest.mock import MagicMock
 
     # Mock tkinter components
