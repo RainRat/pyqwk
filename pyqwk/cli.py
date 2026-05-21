@@ -93,7 +93,7 @@ examples:
     )
     parser.add_argument(
         "input_paths",
-        help="Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, mbox, EML, SQLite, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT). ZIP and TAR archives can contain multiple files and formats which the tool merges automatically.",
+        help="Path to archives, folders, or compressed files (ZIP/TAR). Supports QWK, JSON, SQLite, EML, and many other formats. Multiple archives are automatically merged.",
         nargs="+",
     )
 
@@ -144,7 +144,7 @@ examples:
     )
     io_group.add_argument(
         "--filename-pattern",
-        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: date, time, author, to, subject, subject_clean, msgnum, confnum, confname, confname_or_num, bbs_name, bbs_id, length, source_file, refnum, status, msgflag, is_private, is_reply, attachments, attachment_count.",
+        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, confname, confname_or_num, confnum, date, day, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgnum, my_name, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, year.",
     )
     io_group.add_argument(
         "-E",
@@ -285,7 +285,7 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: confnum, confname, confname_or_num, msgnum, author, to, subject, subject_clean, date, time, year, month, day, hour, minute, second, iso_date, iso_time, bbs_name, bbs_id, source_file, refnum, status, msgflag, is_private, is_reply, attachments, attachment_count, length, size, flags, snippet, indent.",
+        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, confname, confname_or_num, confnum, date, day, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgnum, my_name, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, year.",
     )
     format_group.add_argument(
         "--toc",
