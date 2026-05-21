@@ -1178,7 +1178,7 @@ class QwkGuiApp:
             "header_meta_label", font=("TkDefaultFont", 9, "bold"), foreground="#666666"
         )
         self.detail_text.tag_configure(
-            "header_meta", font=("TkDefaultFont", 9), foreground="#888888"
+            "header_meta", font=("TkDefaultFont", 9), foreground="#666666"
         )
         self.detail_text.tag_configure(
             "header_hr", font=("TkDefaultFont", 1), background="#eeeeee"
@@ -1317,7 +1317,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         # Primary fields
-        self.detail_text.insert(tk.END, "From: ", "header_label")
+        self.detail_text.insert(tk.END, "From:   ", "header_label")
         from_tag = f"from_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_from, ("link", "header_value", from_tag))
         self.detail_text.tag_bind(
@@ -1327,7 +1327,7 @@ class QwkGuiApp:
         )
         self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "To:   ", "header_label")
+        self.detail_text.insert(tk.END, "To:     ", "header_label")
         to_tag = f"to_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_to, ("link", "header_value", to_tag))
         self.detail_text.tag_bind(
@@ -1403,8 +1403,14 @@ class QwkGuiApp:
 
         if msg.source_file:
             self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
+            source_tag = f"source_link_{id(msg)}"
             self.detail_text.insert(
-                tk.END, f"{msg.source_file}\n", "header_meta"
+                tk.END, f"{msg.source_file}\n", ("link", "header_meta", source_tag)
+            )
+            self.detail_text.tag_bind(
+                source_tag,
+                "<Button-1>",
+                lambda e, s=msg.source_file: [self.search_var.set(s), self.reload_messages()],
             )
 
         if msg.attachments:
