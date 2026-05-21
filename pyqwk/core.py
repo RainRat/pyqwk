@@ -3157,9 +3157,6 @@ def process_merged_files(
                 use_colors=use_colors,
             )
 
-            # Apply highlighting to links and other entities
-            cleaned_body = _highlight_entities(cleaned_body, use_colors)
-
         if settings.oneline:
             if settings.oneline_pattern:
                 try:
