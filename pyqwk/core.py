@@ -5334,11 +5334,6 @@ def _linkify_text(
     return "".join(result)
 
 
-def _highlight_entities(text: str, use_colors: bool = False) -> str:
-    """Apply terminal highlighting to URLs, emails, phone numbers, and message links."""
-    return _linkify_text(text, "ansi", use_colors=use_colors)
-
-
 def _highlight_text(
     text: str,
     term: str | None,
