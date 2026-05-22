@@ -1314,7 +1314,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         # Primary fields
-        self.detail_text.insert(tk.END, "From:   ", "header_label")
+        self.detail_text.insert(tk.END, "From:   ", "header_meta_label")
         from_tag = f"from_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_from, ("link", "header_value", from_tag))
         self.detail_text.tag_bind(
@@ -1324,7 +1324,7 @@ class QwkGuiApp:
         )
         self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "To:     ", "header_label")
+        self.detail_text.insert(tk.END, "To:     ", "header_meta_label")
         to_tag = f"to_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_to, ("link", "header_value", to_tag))
         self.detail_text.tag_bind(
@@ -1402,7 +1402,7 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
             source_tag = f"source_link_{id(msg)}"
             self.detail_text.insert(
-                tk.END, f"{msg.source_file}\n", ("link", "header_meta", source_tag)
+                tk.END, f"{msg.source_file}\n", ("link", "header_value", source_tag)
             )
             self.detail_text.tag_bind(
                 source_tag,
@@ -1411,10 +1411,10 @@ class QwkGuiApp:
             )
 
         if msg.attachments:
-            self.detail_text.insert(tk.END, "Attachments: ", "header_label")
+            self.detail_text.insert(tk.END, "Files:  ", "header_meta_label")
             for i, filename in enumerate(msg.attachments):
                 tag = f"attach_link_{id(msg)}_{i}"
-                self.detail_text.insert(tk.END, filename, ("link", tag))
+                self.detail_text.insert(tk.END, filename, ("link", "header_value", tag))
                 self.detail_text.tag_bind(
                     tag,
                     "<Button-1>",
