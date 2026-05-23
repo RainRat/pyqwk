@@ -335,10 +335,10 @@ def _is_binary_line(
 
 
 def extract_binaries(text: str) -> list[tuple[str, bytes]]:
-    """Scan text for attachment blocks (UUE, yEnc, Base64) and decode them.
+    """Scan text for attachments (like UUE, yEnc, or Base64) and decode them.
 
     Returns:
-        A list of (filename, data) pairs.
+        A list of pairs containing the filename and the file data as bytes.
     """
     lines = text.splitlines()
     binaries: list[tuple[str, bytes]] = []
@@ -5248,10 +5248,14 @@ def _highlight_quotes(text: str, use_colors: bool) -> str:
 def _discover_entities(
     text: str, search_term: str | None = None, is_regex: bool = False
 ) -> list[tuple[int, int, str, str]]:
-    """Identify non-overlapping entities in text (URLs, emails, phones, msg links, search matches).
+    """Find links, email addresses, phone numbers, and search matches in text.
+
+    This function ensures that if a piece of text matches multiple patterns,
+    only the most relevant one is used.
 
     Returns:
-        List of (start, end, type, value) sorted by position.
+        A list of information about each match, including its start position,
+        end position, type (like 'url' or 'email'), and the original text.
     """
     entities: list[tuple[int, int, str, str]] = []
 
@@ -5299,15 +5303,15 @@ def _linkify_text(
     is_regex: bool = False,
     use_colors: bool = False,
 ) -> str:
-    """Wrap entities in text with appropriate link tags based on output format.
+    """Turn links, email addresses, and phone numbers into clickable links or highlighted text.
 
     Args:
-        text: The input text.
-        output_format: 'html', 'markdown', or 'ansi'.
-        conf_num: Optional conference number for internal links.
-        search_term: Optional term to highlight.
-        is_regex: Whether search_term is a regex.
-        use_colors: Whether to use colors for 'ansi' format.
+        text: The message text to process.
+        output_format: The type of output to create ('html', 'markdown', or 'ansi' for terminal).
+        conf_num: The conference number used to create links between messages.
+        search_term: A keyword or pattern to highlight in the results.
+        is_regex: Set to True if the search_term is a regular expression.
+        use_colors: Set to True to use colors when printing to the terminal.
     """
     entities = _discover_entities(text, search_term, is_regex)
 
