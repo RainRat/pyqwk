@@ -6,6 +6,8 @@ pyqwk converts message archives into modern, readable formats like HTML, Markdow
 
 QWK files were created in the 1980s for Bulletin Board Systems (BBS). Users downloaded their messages in a single "packet," read them offline, and then uploaded their replies in a `.REP` packet.
 
+Inside these packets, messages are organized into **Conferences**. You can think of a Conference as a modern forum, channel, or newsgroup dedicated to a specific topic.
+
 pyqwk helps you open these archives and convert them into modern, readable formats.
 
 ## Features
