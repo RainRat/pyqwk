@@ -3783,6 +3783,9 @@ def _get_html_header(title: str) -> list[str]:
         ".stats-bar-count { width: 40px; text-align: right; margin-right: 10px; font-weight: bold; font-size: 0.9em; }",
         ".stats-bar { height: 1.2em; background-color: #00aaaa; min-width: 1px; }",
         ".stats-summary-info { margin-bottom: 1em; font-size: 0.95em; color: #555; }",
+        ".message-nav { font-size: 0.85em; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid #eee; color: #666; }",
+        ".message-nav a { text-decoration: none; color: #0055aa; margin: 0 0.5em; }",
+        ".message-nav a:hover { text-decoration: underline; }",
         "</style>",
         "</head>",
         "<body>",
@@ -3910,14 +3913,38 @@ def _render_single_message_html(
     attachment_prefix: str | None = None,
     search_term: str | None = None,
     is_regex: bool = False,
+    prev_id: str | None = None,
+    next_id: str | None = None,
+    parent_id: str | None = None,
+    toc_id: str | None = None,
 ) -> list[str]:
     """Render a single message into HTML components with quote highlighting."""
     parts = []
     # Use msg_id if provided, otherwise fallback to stable anchor format
-    if not msg_id and message.header.msgnum is not None:
-        msg_id = f"msg-{message.confnum}-{message.header.msgnum}"
+    stable_anchor = f"msg-{message.confnum}-{message.header.msgnum}" if message.header.msgnum is not None else None
+
     id_attr = f' id="{msg_id}"' if msg_id else ""
     parts.append(f'<div class="message"{id_attr}>')
+
+    if stable_anchor and msg_id != stable_anchor:
+        # If we used a custom msg_id (like msg-0, msg-1), also provide the stable anchor
+        parts.append(f'<a id="{stable_anchor}"></a>')
+
+    # Navigation bar
+    nav_links = []
+    if parent_id:
+        nav_links.append(f'<a href="#{parent_id}">Parent</a>')
+    if prev_id:
+        nav_links.append(f'<a href="#{prev_id}">Previous</a>')
+    if next_id:
+        nav_links.append(f'<a href="#{next_id}">Next</a>')
+    if toc_id:
+        nav_links.append(f'<a href="#{toc_id}">Contents</a>')
+
+    if nav_links:
+        parts.append('<div class="message-nav">')
+        parts.append(" | ".join(nav_links))
+        parts.append("</div>")
 
     def h_esc(text: str) -> str:
         return _linkify_text(
@@ -4114,6 +4141,11 @@ def _render_single_message_markdown(
     attachment_prefix: str | None = None,
     search_term: str | None = None,
     is_regex: bool = False,
+    msg_id: str | None = None,
+    prev_id: str | None = None,
+    next_id: str | None = None,
+    parent_id: str | None = None,
+    toc_id: str | None = None,
 ) -> list[str]:
     """Render a single message into Markdown with blockquote standardization."""
     header = message.header
@@ -4129,8 +4161,10 @@ def _render_single_message_markdown(
         )
 
     msg_anchor = ""
+    if msg_id:
+        msg_anchor += f' <a name="{msg_id}"></a>'
     if header.msgnum is not None:
-        msg_anchor = f' <a name="msg-{message.confnum}-{header.msgnum}"></a>'
+        msg_anchor += f' <a name="msg-{message.confnum}-{header.msgnum}"></a>'
 
     parts.append(f"## {md_high(header.msgsubject)}{msg_anchor}")
     parts.append(f"- **Date:** {header.msgdate} {header.msgtime}")
@@ -4147,6 +4181,20 @@ def _render_single_message_markdown(
 
     if header.msgnum is not None:
         parts.append(f"- **Number:** {header.msgnum}")
+
+    # Navigation bar
+    nav_links = []
+    if parent_id:
+        nav_links.append(f"[Parent](#{parent_id})")
+    if prev_id:
+        nav_links.append(f"[Previous](#{prev_id})")
+    if next_id:
+        nav_links.append(f"[Next](#{next_id})")
+    if toc_id:
+        nav_links.append(f"[Contents](#{toc_id})")
+
+    if nav_links:
+        parts.append(" | ".join(nav_links))
 
     if message.attachments:
         links = []
@@ -4226,7 +4274,7 @@ def _write_html(
     )
 
     if settings and settings.include_toc:
-        html_parts.append(f"<h1>{html.escape(title)}</h1>")
+        html_parts.append(f'<h1 id="top">{html.escape(title)}</h1>')
 
         # Add Statistics Summary
         stats = _compute_stats_from_messages(iter(messages))
@@ -4287,7 +4335,12 @@ def _write_html(
             html_parts.append("</div>")
             current_depth -= 1
 
-        msg_id = f"msg-{i}" if settings and settings.include_toc else None
+        msg_id = f"msg-{i}"
+        prev_id = f"msg-{i-1}" if i > 0 else None
+        next_id = f"msg-{i+1}" if i < len(messages) - 1 else None
+        toc_id = "top" if settings and settings.include_toc else None
+        parent_id = f"msg-{message.confnum}-{message.parent_msgnum}" if message.parent_msgnum else None
+
         html_parts.extend(
             _render_single_message_html(
                 message,
@@ -4295,6 +4348,10 @@ def _write_html(
                 attachment_prefix=attachment_prefix,
                 search_term=search_term,
                 is_regex=is_regex,
+                prev_id=prev_id,
+                next_id=next_id,
+                parent_id=parent_id,
+                toc_id=toc_id,
             )
         )
 
@@ -4325,7 +4382,7 @@ def _write_markdown(
     search_term = settings.search_term if settings else None
     is_regex = settings.regex if settings else False
 
-    md_parts = [f"# {title}\n"]
+    md_parts = [f'# {title} <a name="top"></a>\n']
     attachment_prefix = (
         "attachments/" if settings and settings.extract_attachments else None
     )
@@ -4360,17 +4417,28 @@ def _write_markdown(
         md_parts.append("\n---\n")
 
     last_confnum = None
-    for message in messages:
+    for i, message in enumerate(messages):
         if settings and settings.include_toc and message.confnum != last_confnum:
             conf_name = message.confname or f"Conference {message.confnum}"
             md_parts.append(f'## {conf_name} <a name="conf-{message.confnum}"></a>\n')
             last_confnum = message.confnum
+
+        msg_id = f"msg-{i}"
+        prev_id = f"msg-{i-1}" if i > 0 else None
+        next_id = f"msg-{i+1}" if i < len(messages) - 1 else None
+        toc_id = "top" if settings and settings.include_toc else None
+        parent_id = f"msg-{message.confnum}-{message.parent_msgnum}" if message.parent_msgnum else None
 
         single_md = _render_single_message_markdown(
             message,
             attachment_prefix=attachment_prefix,
             search_term=search_term,
             is_regex=is_regex,
+            msg_id=msg_id,
+            prev_id=prev_id,
+            next_id=next_id,
+            parent_id=parent_id,
+            toc_id=toc_id,
         )
         if message.depth > 0:
             prefix = "> " * message.depth
