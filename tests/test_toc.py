@@ -108,7 +108,7 @@ def test_toc_html(mock_messages, bbs_info, monkeypatch):
     _write_html(mock_messages, None, "utf-8", settings, bbs_info)
 
     html_out = captured_content[0]
-    assert "<h1>Test BBS Archive</h1>" in html_out
+    assert '<h1 id="top">Test BBS Archive</h1>' in html_out
     assert '<li><a href="#conf-1">General (Conf 1)</a></li>' in html_out
     assert '<li><a href="#conf-2">Games (Conf 2)</a></li>' in html_out
     assert '<h2 id="conf-1">General</h2>' in html_out

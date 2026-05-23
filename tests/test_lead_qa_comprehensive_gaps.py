@@ -221,7 +221,7 @@ def test_write_html_toc_no_bbs_info(monkeypatch):
     )
 
     _write_html([msg], None, "utf-8", settings, bbs_info=None)
-    assert "<h1>QWK Messages</h1>" in captured[0]
+    assert '<h1 id="top">QWK Messages</h1>' in captured[0]
     assert "Conferences" in captured[0]
 
 
