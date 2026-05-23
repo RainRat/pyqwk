@@ -1314,7 +1314,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n")
 
         # Primary fields
-        self.detail_text.insert(tk.END, "From:   ", "header_label")
+        self.detail_text.insert(tk.END, "From:   ", "header_meta_label")
         from_tag = f"from_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_from, ("link", "header_value", from_tag))
         self.detail_text.tag_bind(
@@ -1324,7 +1324,7 @@ class QwkGuiApp:
         )
         self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "To:     ", "header_label")
+        self.detail_text.insert(tk.END, "To:     ", "header_meta_label")
         to_tag = f"to_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_to, ("link", "header_value", to_tag))
         self.detail_text.tag_bind(
@@ -1335,7 +1335,7 @@ class QwkGuiApp:
         self.detail_text.insert(tk.END, "\n\n")
 
         # Information line (Date, Conference, BBS, Msg #)
-        self.detail_text.insert(tk.END, "Date: ", "header_meta_label")
+        self.detail_text.insert(tk.END, "Date:   ", "header_meta_label")
         self.detail_text.insert(
             tk.END, f"{header.msgdate} {header.msgtime}", "header_meta"
         )
@@ -1411,7 +1411,7 @@ class QwkGuiApp:
             )
 
         if msg.attachments:
-            self.detail_text.insert(tk.END, "Attachments: ", "header_label")
+            self.detail_text.insert(tk.END, "Attach: ", "header_meta_label")
             for i, filename in enumerate(msg.attachments):
                 tag = f"attach_link_{id(msg)}_{i}"
                 self.detail_text.insert(tk.END, filename, ("link", tag))
