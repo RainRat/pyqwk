@@ -14,7 +14,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 - **Supports many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, EML, Markdown, HTML, and Plain Text.
 - **Groups conversations:** Group replies into conversations to follow discussions easily.
-- **Cleans content:** Automatically remove signatures, old quotes, and attachments.
+- **Cleans content:** Automatically remove signatures, old quotes, attachments, and color codes.
 - **Protects privacy:** Hide personal information or private messages.
 - **Processes many files:** Convert several archives at once or merge them into one file.
 - **Previews changes:** Use "Dry Run" mode to see results before writing any files.
@@ -118,7 +118,7 @@ qwk-gui messages.db
 - **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Use "Clean" view to hide signatures and quotes. Use "Remove Colors" to strip ANSI color codes.
+- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only ANSI color codes.
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
@@ -221,7 +221,7 @@ qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}
 qwk archive1.qwk archive2.qwk --merge --unique -o combined.mbox
 ```
 
-**Clean up messages (removes signatures and quotes):**
+**Clean up messages (removes signatures, quotes, attachments, and color codes):**
 ```bash
 qwk archive.qwk --clean -o clean.txt
 ```
@@ -352,7 +352,7 @@ else:
 
 # Process messages
 for msg in messages:
-    # Remove signatures and quotes
+    # Remove signatures, quotes, and attachments
     clean_text = process_message(
         msg.text,
         truncate_signatures=True,
@@ -376,7 +376,7 @@ for msg in messages:
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into conversations. |
-| `--clean` | Remove signatures, quotes, and attachments. |
+| `--clean` | Remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize` | Organize individual files into subfolders by conference. |
