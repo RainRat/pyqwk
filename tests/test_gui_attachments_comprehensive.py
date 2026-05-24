@@ -90,10 +90,10 @@ def test_gui_renders_attachments(mock_gui_deps):
     # Check if attachment names were inserted as links
     msg_id = id(message)
     app.detail_text.insert.assert_any_call(
-        mock_gui_deps["tk"].END, "file1.zip", ("link", f"attach_link_{msg_id}_0")
+        mock_gui_deps["tk"].END, "file1.zip", ("link", "header_meta", f"attach_link_{msg_id}_0")
     )
     app.detail_text.insert.assert_any_call(
-        mock_gui_deps["tk"].END, "image.jpg", ("link", f"attach_link_{msg_id}_1")
+        mock_gui_deps["tk"].END, "image.jpg", ("link", "header_meta", f"attach_link_{msg_id}_1")
     )
 
 
