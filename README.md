@@ -433,11 +433,16 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{to}` | The name of the recipient. |
 | `{subject}` | The original subject line. |
 | `{subject_clean}` | The subject line without "Re:" or "Fwd:" prefixes. |
+| `{body}` | The full text of the message body. |
+| `{body_clean}` | The message body with all whitespace collapsed into single spaces. |
 | `{confname}` | The name of the conference (if known). |
 | `{confnum}` | The number of the conference. |
 | `{confname_or_num}` | The conference name, or its number if the name is missing. |
 | `{msgnum}` | The unique message number. |
 | `{snippet}` | The first line of the message body. |
+| `{url_count}` | The number of web links found in the message. |
+| `{email_count}` | The number of email addresses found in the message. |
+| `{phone_count}` | The number of phone numbers found in the message. |
 | `{my_name}` | The user name (either from archive information or your override). |
 
 ### Dates & Times
@@ -459,6 +464,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 ### Technical Details
 | Variable | Description |
 | :--- | :--- |
+| `{msgid}` | A unique identifier for the message (`conf.msg@bbs`). |
 | `{refnum}` | The message number being replied to. |
 | `{status}` | The status code (e.g., `*` for private). |
 | `{msgflag}` | Technical flags from the message header. |
