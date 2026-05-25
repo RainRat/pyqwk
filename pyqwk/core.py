@@ -1429,7 +1429,7 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
     )
 
     # Pre-calculate depths for all message starts in a single pass
-    div_tags = list(re.finditer(r"<(div|/div)([^>]*)>", content, re.IGNORECASE))
+    div_tags = list(re.finditer(r"<(div|/div)\b([^>]*)>", content, re.IGNORECASE))
     msg_depths = {}
     current_depth = 0
     stack = []
