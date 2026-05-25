@@ -1316,7 +1316,7 @@ class QwkGuiApp:
         # Primary fields
         self.detail_text.insert(tk.END, "From:   ", "header_meta_label")
         from_tag = f"from_link_{id(msg)}"
-        self.detail_text.insert(tk.END, msg_from, ("link", "header_value", from_tag))
+        self.detail_text.insert(tk.END, msg_from, ("link", "header_meta", from_tag))
         self.detail_text.tag_bind(
             from_tag,
             "<Button-1>",
@@ -1326,13 +1326,13 @@ class QwkGuiApp:
 
         self.detail_text.insert(tk.END, "To:     ", "header_meta_label")
         to_tag = f"to_link_{id(msg)}"
-        self.detail_text.insert(tk.END, msg_to, ("link", "header_value", to_tag))
+        self.detail_text.insert(tk.END, msg_to, ("link", "header_meta", to_tag))
         self.detail_text.tag_bind(
             to_tag,
             "<Button-1>",
             lambda e, a=orig_to: self._pivot_filter(author=a),
         )
-        self.detail_text.insert(tk.END, "\n\n")
+        self.detail_text.insert(tk.END, "\n")
 
         # Information line (Date, Conference, BBS, Msg #)
         self.detail_text.insert(tk.END, "Date:   ", "header_meta_label")
@@ -1367,7 +1367,7 @@ class QwkGuiApp:
 
         if msg.bbs_name:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, "BBS:  ", "header_meta_label")
+            self.detail_text.insert(tk.END, "BBS: ", "header_meta_label")
             bbs_tag = f"bbs_link_{id(msg)}"
             self.detail_text.insert(
                 tk.END, msg.bbs_name, ("link", "header_meta", bbs_tag)
@@ -1380,12 +1380,12 @@ class QwkGuiApp:
 
         if header.msgnum is not None:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, "Msg:  ", "header_meta_label")
+            self.detail_text.insert(tk.END, "Msg: ", "header_meta_label")
             self.detail_text.insert(tk.END, f"{header.msgnum}", "header_meta")
 
         if msg.refnum:
             self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, "Ref:  ", "header_meta_label")
+            self.detail_text.insert(tk.END, "Ref: ", "header_meta_label")
             ref_tag = f"ref_link_{id(msg)}"
             self.detail_text.insert(tk.END, f"{msg.refnum}", ("link", "header_meta", ref_tag))
             self.detail_text.tag_bind(
@@ -1414,14 +1414,14 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, "Attach: ", "header_meta_label")
             for i, filename in enumerate(msg.attachments):
                 tag = f"attach_link_{id(msg)}_{i}"
-                self.detail_text.insert(tk.END, filename, ("link", tag))
+                self.detail_text.insert(tk.END, filename, ("link", "header_meta", tag))
                 self.detail_text.tag_bind(
                     tag,
                     "<Button-1>",
                     lambda e, f=filename, idx=i: self.save_attachment(f, idx),
                 )
                 if i < len(msg.attachments) - 1:
-                    self.detail_text.insert(tk.END, ", ", "header_value")
+                    self.detail_text.insert(tk.END, ", ", "header_meta")
             self.detail_text.insert(tk.END, "\n")
 
         header_end = self.detail_text.index(tk.INSERT)
