@@ -2888,6 +2888,22 @@ def _get_message_mapping(
     attachments_list = message.attachments or []
     attachments_str = ", ".join(attachments_list)
 
+    body = message.text or ""
+    body_clean = " ".join(body.split())
+
+    if redact_pii:
+        body = _redact_pii(body)
+        body_clean = _redact_pii(body_clean)
+
+    entities = _discover_entities(message.text or "")
+    url_count = sum(1 for e in entities if e[2] == "url")
+    email_count = sum(1 for e in entities if e[2] == "email")
+    phone_count = sum(1 for e in entities if e[2] == "phone")
+
+    msgnum_val = header.msgnum if header.msgnum is not None else 0
+    bbs_id_val = message.bbs_id or ""
+    msgid = f"{header.confnum}.{msgnum_val}@{bbs_id_val}"
+
     return {
         "confnum": header.confnum,
         "confname": message.confname or "",
@@ -2897,6 +2913,8 @@ def _get_message_mapping(
         "to": to,
         "subject": subject,
         "subject_clean": subject_clean,
+        "body": body,
+        "body_clean": body_clean,
         "date": header.msgdate,
         "time": header.msgtime,
         "year": dt.year,
@@ -2909,6 +2927,7 @@ def _get_message_mapping(
         "iso_time": dt.time().isoformat(),
         "bbs_name": message.bbs_name or "",
         "bbs_id": message.bbs_id or "",
+        "msgid": msgid,
         "source_file": message.source_file or "",
         "refnum": header.refnum if header.refnum is not None else 0,
         "status": header.status,
@@ -2917,6 +2936,9 @@ def _get_message_mapping(
         "is_reply": "true" if is_reply else "false",
         "attachments": attachments_str,
         "attachment_count": len(attachments_list),
+        "url_count": url_count,
+        "email_count": email_count,
+        "phone_count": phone_count,
         "my_name": my_name_val,
         "length": len(message.text) if message.text else 0,
         "size": format_size(len(message.text)) if message.text else "0 B",

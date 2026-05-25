@@ -144,7 +144,7 @@ examples:
     )
     io_group.add_argument(
         "--filename-pattern",
-        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, confname, confname_or_num, confnum, date, day, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgnum, my_name, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, year.",
+        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
     )
     io_group.add_argument(
         "-E",
@@ -285,7 +285,7 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, confname, confname_or_num, confnum, date, day, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgnum, my_name, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, year.",
+        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
     )
     format_group.add_argument(
         "--toc",
