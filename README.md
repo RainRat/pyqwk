@@ -47,7 +47,8 @@ pyqwk helps you open these archives and convert them into modern, readable forma
   - **Arch Linux:** `sudo pacman -S tk`
 - **tqdm:** Adds a progress bar. Install with: `python -m pip install tqdm`
 - **unzip:** Helps open older ZIP archives. Install it if `pyqwk` cannot open your file:
-  - **Ubuntu/Debian/Fedora:** `sudo apt install unzip` or `sudo dnf install unzip`
+  - **Ubuntu/Debian:** `sudo apt install unzip`
+  - **Fedora:** `sudo dnf install unzip`
   - **Arch Linux:** `sudo pacman -S unzip`
   - **macOS:** `brew install unzip`
   - **Windows:** `winget install GnuWin32.UnZip`
