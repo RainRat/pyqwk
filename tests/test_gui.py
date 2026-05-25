@@ -807,10 +807,10 @@ class TestQwkGui:
         to_tag = f"to_link_{id(msg)}"
 
         app.detail_text.insert.assert_any_call(
-            mock_gui_deps["tk"].END, "User", ("link", "header_value", from_tag)
+            mock_gui_deps["tk"].END, "User", ("link", "header_meta", from_tag)
         )
         app.detail_text.insert.assert_any_call(
-            mock_gui_deps["tk"].END, "All", ("link", "header_value", to_tag)
+            mock_gui_deps["tk"].END, "All", ("link", "header_meta", to_tag)
         )
 
     def test_initial_path_loading(self, mock_gui_deps):
