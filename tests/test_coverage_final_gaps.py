@@ -190,7 +190,7 @@ def test_eml_serialize_no_from_header_coverage(message_factory):
     result = _serialize_rfc822(msg, include_mbox_header=False)
     # RFC 822 (EML) serialization does not have the mbox "From " separator
     assert not result.startswith("From ")
-    assert "From: " in result
+    assert "From: " in result or "From:\n" in result
     assert "Subject: Test" in result
 
 

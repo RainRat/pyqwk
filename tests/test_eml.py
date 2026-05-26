@@ -69,7 +69,7 @@ def test_eml_export_individual_files(tmp_path: Path, testdata_dir: Path) -> None
     assert "From: GammaO #571 @0*1" in content
     assert "Subject: New User" in content
     assert "X-QWK-Conference: 3" in content
-    assert "Content-Type: text/plain; charset=utf-8" in content
+    assert "Content-Type: text/plain; charset=\"utf-8\"" in content
     # EML should NOT have the mbox "From " separator
     assert not content.startswith("From ")
 

@@ -1,3 +1,4 @@
+from email.message import EmailMessage
 import sys
 import zipfile
 import tarfile
@@ -1351,19 +1352,40 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
         except (ValueError, TypeError):
             pass
 
-    # Message body
+    # Message body and MIME attachments
     body = ""
+    uue_parts = []
     if msg_obj.is_multipart():
         for part in msg_obj.walk():
-            if part.get_content_type() == "text/plain":
+            content_type = part.get_content_type()
+            filename = part.get_filename()
+            is_attachment = filename is not None or part.get("Content-Disposition", "").startswith("attachment")
+
+            if content_type == "text/plain" and not is_attachment and not body:
                 payload = part.get_payload(decode=True)
                 if payload:
                     body = payload.decode("utf-8", errors="replace")
-                break
+            elif is_attachment or (content_type != "text/plain" and content_type != "multipart/mixed"):
+                # Convert MIME attachment to UUE block for round-trip compatibility
+                payload = part.get_payload(decode=True)
+                if payload:
+                    fname = filename or "attachment.bin"
+                    uue_block = [f"begin 644 {fname}"]
+                    for i in range(0, len(payload), 45):
+                        chunk = payload[i : i + 45]
+                        uue_block.append(binascii.b2a_uu(chunk).decode("ascii").strip("\n"))
+                    uue_block.append("`")
+                    uue_block.append("end")
+                    uue_parts.append("\r\n".join(uue_block))
     else:
         payload = msg_obj.get_payload(decode=True)
         if payload:
             body = payload.decode("utf-8", errors="replace")
+
+    if uue_parts:
+        if body and not body.endswith("\r\n"):
+            body += "\r\n"
+        body += "\r\n".join(uue_parts) + "\r\n"
 
     # Construct MessageHeader
     header = MessageHeader(
@@ -4525,91 +4547,101 @@ def _serialize_rfc822(
     and custom X-QWK headers for conference names, message numbers, and statuses.
     """
     header = message.header
+    msg = EmailMessage()
 
-    # Parse date
+    msg["From"] = header.msgfrom
+    msg["To"] = header.msgto
+    msg["Subject"] = header.msgsubject
+
     dt = _parse_qwk_date(header.msgdate, header.msgtime)
+    msg["Date"] = email.utils.format_datetime(dt)
 
-    # Format dates
-    # "From " line uses ctime format: "Day Mon DD HH:MM:SS YYYY"
-    # email.utils.formatdate uses RFC 2822
+    msg_id = (
+        f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
+    )
+    msg["Message-ID"] = msg_id
 
-    from_line_date = dt.ctime()
-    rfc_date = email.utils.format_datetime(dt)
+    if message.parent_msgnum is not None:
+        parent_id = f"<{header.confnum}.{message.parent_msgnum}@qwk>"
+        msg["In-Reply-To"] = parent_id
+        msg["References"] = parent_id
+
+    msg["X-QWK-Conference"] = str(header.confnum)
+    if message.confname:
+        msg["X-QWK-Conference-Name"] = message.confname
+    if message.bbs_name:
+        msg["X-QWK-BBS-Name"] = message.bbs_name
+    if message.bbs_id:
+        msg["X-QWK-BBS-ID"] = message.bbs_id
+    if message.source_file:
+        msg["X-QWK-Source-File"] = message.source_file
+    if header.msgnum is not None:
+        msg["X-QWK-Message-Number"] = str(header.msgnum)
+    if header.status.strip():
+        msg["X-QWK-Status"] = header.status
+    if header.msgflag.strip():
+        msg["X-QWK-Flags"] = header.msgflag
+    if header.refnum is not None:
+        msg["X-QWK-Reference"] = str(header.refnum)
+    if message.attachments:
+        msg["X-QWK-Attachments"] = ";".join(message.attachments)
+    if message.depth > 0:
+        msg["X-QWK-Depth"] = str(message.depth)
+    if message.thread_id:
+        msg["X-QWK-Thread-ID"] = message.thread_id
+    if message.parent_msgnum is not None:
+        msg["X-QWK-Parent-Msgnum"] = str(message.parent_msgnum)
+
+    # Attach binaries if any, and remove them from the body for modern email compliance
+    found_binaries = extract_binaries(message.text)
+    clean_body_text = process_message(
+        message.text,
+        truncate_signatures=False,
+        cut_quoting=False,
+        binaries_removal=True,
+        redact_pii=False,
+        strip_ansi=False,
+    )
 
     # Escape "From " lines in body
     body_lines = []
-    for line in message.text.splitlines():
+    for line in clean_body_text.splitlines():
         if line.startswith("From "):
             body_lines.append(">" + line)
         else:
             body_lines.append(line)
     body = "\n".join(body_lines)
 
-    parts = []
+    msg.set_content(body)
+
+    for filename, data in found_binaries:
+        # Simple mime type guessing
+        maintype, subtype = "application", "octet-stream"
+        if filename.lower().endswith((".jpg", ".jpeg")):
+            maintype, subtype = "image", "jpeg"
+        elif filename.lower().endswith(".png"):
+            maintype, subtype = "image", "png"
+        elif filename.lower().endswith(".gif"):
+            maintype, subtype = "image", "gif"
+        elif filename.lower().endswith(".txt"):
+            maintype, subtype = "text", "plain"
+
+        msg.add_attachment(
+            data, maintype=maintype, subtype=subtype, filename=os.path.basename(filename)
+        )
+
+    serialized = msg.as_string()
+
     if include_mbox_header:
         if "@" in header.msgfrom:
             sender_addr = header.msgfrom
         else:
-            # Create a safe address from the name
             safe_name = re.sub(r"[^A-Za-z0-9]", ".", header.msgfrom).strip(".")
             sender_addr = f"{safe_name}@example.com"
-        # Construct mbox entry
-        # From <sender> <date>
-        parts.append(f"From {sender_addr} {from_line_date}")
+        from_line = f"From {sender_addr} {dt.ctime()}\n"
+        return from_line + serialized
 
-    parts.append(f"From: {header.msgfrom}")
-    parts.append(f"To: {header.msgto}")
-    parts.append(f"Subject: {header.msgsubject}")
-    parts.append(f"Date: {rfc_date}")
-
-    # Generate a unique Message-ID
-    # <confnum.msgnum@qwk>
-    msg_id = (
-        f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
-    )
-    parts.append(f"Message-ID: {msg_id}")
-
-    # Conversation headers
-    if message.parent_msgnum is not None:
-        parent_id = f"<{header.confnum}.{message.parent_msgnum}@qwk>"
-        parts.append(f"In-Reply-To: {parent_id}")
-        parts.append(f"References: {parent_id}")
-
-    # QWK Information headers
-    parts.append(f"X-QWK-Conference: {header.confnum}")
-    if message.confname:
-        parts.append(f"X-QWK-Conference-Name: {message.confname}")
-    if message.bbs_name:
-        parts.append(f"X-QWK-BBS-Name: {message.bbs_name}")
-    if message.bbs_id:
-        parts.append(f"X-QWK-BBS-ID: {message.bbs_id}")
-    if message.source_file:
-        parts.append(f"X-QWK-Source-File: {message.source_file}")
-    if header.msgnum is not None:
-        parts.append(f"X-QWK-Message-Number: {header.msgnum}")
-    if header.status.strip():
-        parts.append(f"X-QWK-Status: {header.status}")
-    if header.msgflag.strip():
-        parts.append(f"X-QWK-Flags: {header.msgflag}")
-    if header.refnum is not None:
-        parts.append(f"X-QWK-Reference: {header.refnum}")
-    if message.attachments:
-        parts.append(f"X-QWK-Attachments: {';'.join(message.attachments)}")
-    if message.depth > 0:
-        parts.append(f"X-QWK-Depth: {message.depth}")
-    if message.thread_id:
-        parts.append(f"X-QWK-Thread-ID: {message.thread_id}")
-    if message.parent_msgnum is not None:
-        parts.append(f"X-QWK-Parent-Msgnum: {message.parent_msgnum}")
-
-    parts.append("Content-Type: text/plain; charset=utf-8")
-    parts.append("Content-Transfer-Encoding: 8bit")
-
-    parts.append("")  # Separator before body
-    parts.append(body)
-    parts.append("")  # Trailing newline required by mbox/eml
-
-    return "\n".join(parts)
+    return serialized
 
 
 def _write_mbox(

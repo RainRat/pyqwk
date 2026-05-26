@@ -26,7 +26,7 @@ def test_message_from_email_multipart_no_text_plain():
     msg.add_attachment(b"fake image data", maintype="image", subtype="png")
 
     parsed = _message_from_email(msg)
-    assert parsed.text == ""
+    assert "begin 644 attachment.bin" in parsed.text
 
 
 def test_message_from_email_invalid_date_fallback():
