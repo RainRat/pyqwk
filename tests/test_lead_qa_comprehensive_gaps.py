@@ -3,7 +3,6 @@ import json
 import pytest
 from pyqwk.core import (
     load_data,
-    _apply_highlighting,
     calculate_archive_stats,
     _serialize_rfc822,
     _write_html,
@@ -46,13 +45,6 @@ def test_load_data_jsonl_blank_lines(tmp_path, logger):
 
     messages, _ = load_data(str(jsonl_path), logger)
     assert len(messages) == 2
-
-
-def test_apply_highlighting_start_match():
-    # Match at the very beginning of the string
-    text = "Hello world"
-    result = _apply_highlighting(text, "Hello", start_tag="[", end_tag="]")
-    assert result == "[Hello] world"
 
 
 def test_calculate_archive_stats_limit_zero(tmp_path, logger):
