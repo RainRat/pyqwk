@@ -144,7 +144,16 @@ examples:
     )
     io_group.add_argument(
         "--filename-pattern",
-        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
+        help=(
+            "Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). "
+            "Available variables: "
+            "Basic Information (author, body, body_clean, snippet, subject, subject_clean, to); "
+            "Conference (confname, confname_or_num, confnum); "
+            "Dates & Times (date, day, hour, iso_date, iso_time, minute, month, second, time, year); "
+            "BBS & Source (bbs_id, bbs_name, source_file); "
+            "Technical Details (flags, indent, is_private, is_reply, length, msgflag, msgid, msgnum, my_name, refnum, size, status); "
+            "Attachments & Links (attachment_count, attachments, email_count, phone_count, url_count)."
+        ),
     )
     io_group.add_argument(
         "-E",
@@ -285,7 +294,16 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
+        help=(
+            "Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). "
+            "Available variables: "
+            "Basic Information (author, body, body_clean, snippet, subject, subject_clean, to); "
+            "Conference (confname, confname_or_num, confnum); "
+            "Dates & Times (date, day, hour, iso_date, iso_time, minute, month, second, time, year); "
+            "BBS & Source (bbs_id, bbs_name, source_file); "
+            "Technical Details (flags, indent, is_private, is_reply, length, msgflag, msgid, msgnum, my_name, refnum, size, status); "
+            "Attachments & Links (attachment_count, attachments, email_count, phone_count, url_count)."
+        ),
     )
     format_group.add_argument(
         "--toc",
