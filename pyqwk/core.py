@@ -461,6 +461,33 @@ def extract_binaries(text: str) -> list[tuple[str, bytes]]:
     return binaries
 
 
+def _bytes_to_uue(data: bytes, filename: str) -> str:
+    """Convert binary data into a UUE-encoded text block.
+
+    Args:
+        data: The binary data to encode.
+        filename: The filename to include in the UUE header.
+
+    Returns:
+        A string containing the formatted UUE block.
+    """
+    if not data:
+        return ""
+
+    result = [f"begin 644 {filename}"]
+
+    # Process data in 45-byte chunks as per UUE standard
+    for i in range(0, len(data), 45):
+        chunk = data[i : i + 45]
+        # b2a_uu handles the length prefix and encoding
+        line = binascii.b2a_uu(chunk).decode("ascii").rstrip("\n")
+        result.append(line)
+
+    result.append("`")  # UUE zero-length line indicator
+    result.append("end")
+    return "\n".join(result) + "\n"
+
+
 class ProgressBar(Protocol):
     def update(self, __n: int, /) -> None:
         """Advance the progress by ``__n`` units."""
@@ -1351,19 +1378,33 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
         except (ValueError, TypeError):
             pass
 
-    # Message body
+    # Message body and MIME attachments
     body = ""
+    uue_blocks = []
     if msg_obj.is_multipart():
         for part in msg_obj.walk():
-            if part.get_content_type() == "text/plain":
-                payload = part.get_payload(decode=True)
-                if payload:
+            content_type = part.get_content_type()
+            filename = part.get_filename()
+            payload = part.get_payload(decode=True)
+
+            if payload:
+                # Capture the first plain text part as the main body
+                if content_type == "text/plain" and not filename and not body:
                     body = payload.decode("utf-8", errors="replace")
-                break
+                else:
+                    # Convert other MIME parts into UUE blocks appended to the body
+                    # This ensures compatibility with pyqwk's internal attachment pipeline
+                    fname = filename or f"attachment_{len(uue_blocks) + 1}.bin"
+                    uue_blocks.append(_bytes_to_uue(payload, fname))
     else:
         payload = msg_obj.get_payload(decode=True)
         if payload:
             body = payload.decode("utf-8", errors="replace")
+
+    if uue_blocks:
+        if body and not body.endswith("\n"):
+            body += "\n"
+        body += "\n" + "\n".join(uue_blocks)
 
     # Construct MessageHeader
     header = MessageHeader(
@@ -4523,93 +4564,109 @@ def _serialize_rfc822(
 
     Includes standard email headers for conversations (Message-ID, In-Reply-To, References)
     and custom X-QWK headers for conference names, message numbers, and statuses.
+    Attachments found in the text are converted into proper MIME parts.
     """
+    from email.message import EmailMessage
+
     header = message.header
-
-    # Parse date
     dt = _parse_qwk_date(header.msgdate, header.msgtime)
-
-    # Format dates
-    # "From " line uses ctime format: "Day Mon DD HH:MM:SS YYYY"
-    # email.utils.formatdate uses RFC 2822
-
-    from_line_date = dt.ctime()
     rfc_date = email.utils.format_datetime(dt)
 
-    # Escape "From " lines in body
-    body_lines = []
-    for line in message.text.splitlines():
+    # 1. Identify and extract attachments from the body
+    # We remove them from the text part so the email looks modern
+    found_binaries = extract_binaries(message.text) if message.text else []
+    clean_body = message.text or ""
+    if found_binaries:
+        # Simple removal of lines that look like parts of UUE/Base64/yEnc blocks
+        # This is a bit coarse but effective for the goal of a "clean" MIME email.
+        body_lines = clean_body.splitlines()
+        new_body_lines = []
+        in_y = in_u = in_b = False
+        prev_line = None
+        for line in body_lines:
+            # Re-use the logic from process_message for binaries removal
+            should_skip, in_y, in_u, in_b = _is_binary_line(line, prev_line, in_y, in_u, in_b)
+            if should_skip:
+                prev_line = line
+                continue
+            new_body_lines.append(line)
+            prev_line = line
+        clean_body = "\n".join(new_body_lines)
+
+    # 2. Build the EmailMessage
+    msg = EmailMessage()
+
+    # Escape "From " lines in body for mbox compatibility
+    escaped_body_lines = []
+    for line in clean_body.splitlines():
         if line.startswith("From "):
-            body_lines.append(">" + line)
+            escaped_body_lines.append(">" + line)
         else:
-            body_lines.append(line)
-    body = "\n".join(body_lines)
+            escaped_body_lines.append(line)
+    clean_body = "\n".join(escaped_body_lines)
 
-    parts = []
-    if include_mbox_header:
-        if "@" in header.msgfrom:
-            sender_addr = header.msgfrom
-        else:
-            # Create a safe address from the name
-            safe_name = re.sub(r"[^A-Za-z0-9]", ".", header.msgfrom).strip(".")
-            sender_addr = f"{safe_name}@example.com"
-        # Construct mbox entry
-        # From <sender> <date>
-        parts.append(f"From {sender_addr} {from_line_date}")
+    msg["From"] = header.msgfrom
+    msg["To"] = header.msgto
+    msg["Subject"] = header.msgsubject
+    msg["Date"] = rfc_date
 
-    parts.append(f"From: {header.msgfrom}")
-    parts.append(f"To: {header.msgto}")
-    parts.append(f"Subject: {header.msgsubject}")
-    parts.append(f"Date: {rfc_date}")
+    msg_id = f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
+    msg["Message-ID"] = msg_id
 
-    # Generate a unique Message-ID
-    # <confnum.msgnum@qwk>
-    msg_id = (
-        f"<{header.confnum}.{header.msgnum if header.msgnum is not None else 'x'}@qwk>"
-    )
-    parts.append(f"Message-ID: {msg_id}")
-
-    # Conversation headers
     if message.parent_msgnum is not None:
         parent_id = f"<{header.confnum}.{message.parent_msgnum}@qwk>"
-        parts.append(f"In-Reply-To: {parent_id}")
-        parts.append(f"References: {parent_id}")
+        msg["In-Reply-To"] = parent_id
+        msg["References"] = parent_id
 
     # QWK Information headers
-    parts.append(f"X-QWK-Conference: {header.confnum}")
+    msg["X-QWK-Conference"] = str(header.confnum)
     if message.confname:
-        parts.append(f"X-QWK-Conference-Name: {message.confname}")
+        msg["X-QWK-Conference-Name"] = message.confname
     if message.bbs_name:
-        parts.append(f"X-QWK-BBS-Name: {message.bbs_name}")
+        msg["X-QWK-BBS-Name"] = message.bbs_name
     if message.bbs_id:
-        parts.append(f"X-QWK-BBS-ID: {message.bbs_id}")
+        msg["X-QWK-BBS-ID"] = message.bbs_id
     if message.source_file:
-        parts.append(f"X-QWK-Source-File: {message.source_file}")
+        msg["X-QWK-Source-File"] = message.source_file
     if header.msgnum is not None:
-        parts.append(f"X-QWK-Message-Number: {header.msgnum}")
+        msg["X-QWK-Message-Number"] = str(header.msgnum)
     if header.status.strip():
-        parts.append(f"X-QWK-Status: {header.status}")
+        msg["X-QWK-Status"] = header.status
     if header.msgflag.strip():
-        parts.append(f"X-QWK-Flags: {header.msgflag}")
+        msg["X-QWK-Flags"] = header.msgflag
     if header.refnum is not None:
-        parts.append(f"X-QWK-Reference: {header.refnum}")
+        msg["X-QWK-Reference"] = str(header.refnum)
     if message.attachments:
-        parts.append(f"X-QWK-Attachments: {';'.join(message.attachments)}")
+        msg["X-QWK-Attachments"] = ";".join(message.attachments)
     if message.depth > 0:
-        parts.append(f"X-QWK-Depth: {message.depth}")
+        msg["X-QWK-Depth"] = str(message.depth)
     if message.thread_id:
-        parts.append(f"X-QWK-Thread-ID: {message.thread_id}")
+        msg["X-QWK-Thread-ID"] = message.thread_id
     if message.parent_msgnum is not None:
-        parts.append(f"X-QWK-Parent-Msgnum: {message.parent_msgnum}")
+        msg["X-QWK-Parent-Msgnum"] = str(message.parent_msgnum)
 
-    parts.append("Content-Type: text/plain; charset=utf-8")
-    parts.append("Content-Transfer-Encoding: 8bit")
+    msg.set_content(clean_body)
 
-    parts.append("")  # Separator before body
-    parts.append(body)
-    parts.append("")  # Trailing newline required by mbox/eml
+    # 3. Add MIME attachments
+    for filename, data in found_binaries:
+        msg.add_attachment(
+            data,
+            maintype="application",
+            subtype="octet-stream",
+            filename=filename or "attachment.bin",
+        )
 
-    return "\n".join(parts)
+    # 4. Handle mbox "From " line if needed
+    output = msg.as_string()
+    if include_mbox_header:
+        from_line_date = dt.ctime()
+        sender_addr = header.msgfrom
+        if "@" not in sender_addr:
+            safe_name = re.sub(r"[^A-Za-z0-9]", ".", sender_addr).strip(".")
+            sender_addr = f"{safe_name}@example.com"
+        output = f"From {sender_addr} {from_line_date}\n" + output
+
+    return output
 
 
 def _write_mbox(

@@ -71,7 +71,7 @@ def test_serialize_message_mbox_with_metadata(sample_message):
     assert "X-QWK-Conference-Name: Main Board" in mbox_content
     assert "X-QWK-Message-Number: 123" in mbox_content
     assert "X-QWK-Status: *" in mbox_content
-    assert "Content-Type: text/plain; charset=utf-8" in mbox_content
+    assert 'Content-Type: text/plain; charset="utf-8"' in mbox_content
 
 
 def test_serialize_message_mbox_threading(sample_message):
