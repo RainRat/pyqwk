@@ -1448,7 +1448,7 @@ def _parse_html_messages(path: str) -> list[ParsedMessage]:
                     current_depth += 1
                 else:
                     stack.append("other")
-            elif tag_name == "/div":
+            else:  # tag_name == "/div"
                 if stack:
                     if stack.pop() == "reply":
                         current_depth -= 1
@@ -1582,9 +1582,7 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
     re_bbs = re.compile(r"^BBS:\s*(.*)$", re.MULTILINE)
     re_status = re.compile(r"^Status:\s*(.*)$", re.MULTILINE)
     re_msgnum_verbose = re.compile(r"^Message #:\s*(\d+)", re.MULTILINE)
-    re_date = re.compile(
-        r"Date:\s*(\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}(?::\d{2})?)", re.MULTILINE
-    )
+    re_date = re.compile(r"^Date:\s*(.*)$", re.MULTILINE)
     re_from = re.compile(r"^From:\s*(.*)$", re.MULTILINE)
     re_to = re.compile(r"^To:\s*(.*)$", re.MULTILINE)
     re_subject = re.compile(r"^Subject:\s*(.*)$", re.MULTILINE)

@@ -235,15 +235,10 @@ def test_parse_text_messages_empty_date_parts(tmp_path):
     # If we have "Date:  \n", split() will be empty.
     from pyqwk.core import _parse_text_messages
 
-    content = """
-Conference: Gen
-BBS: MyBBS
-Status:
-Message #: 1
-Date:
-From: User
+    content = """From: User
 To: All
 Subject: Test
+Date:
 --------------------------------------------------------------------------------
 Body
 """
