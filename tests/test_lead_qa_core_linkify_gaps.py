@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from pyqwk.core import _linkify_text, _apply_highlighting, _parse_html_messages
+from pyqwk.core import _linkify_text, _parse_html_messages
 
 def test_linkify_text_unknown_entity_type():
     # This test demonstrates the bug where unknown entity types cause text deletion.
@@ -48,24 +48,6 @@ def test_linkify_text_overlaps():
     result = _linkify_text(text, "text", search_term="example")
     # Due to sorting and filtering in _discover_entities, it should prefer the longer URL
     assert result == "Visit www.example.com"
-
-def test_apply_highlighting_none_term():
-    assert _apply_highlighting("text", None) == "text"
-    def escape(t): return t.upper()
-    assert _apply_highlighting("text", None, escape_func=escape) == "TEXT"
-
-def test_apply_highlighting_regex_error():
-    # Invalid regex pattern
-    assert _apply_highlighting("text", "[", is_regex=True) == "text"
-
-def test_apply_highlighting_matches():
-    text = "abc def ghi"
-    # Match at start
-    assert _apply_highlighting(text, "abc", start_tag="<", end_tag=">") == "<abc> def ghi"
-    # Match at end
-    assert _apply_highlighting(text, "ghi", start_tag="<", end_tag=">") == "abc def <ghi>"
-    # Match in middle
-    assert _apply_highlighting(text, "def", start_tag="<", end_tag=">") == "abc <def> ghi"
 
 def test_parse_html_messages_stray_div_close(tmp_path):
     # Covers line 1451-1453: if stack is empty

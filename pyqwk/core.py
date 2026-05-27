@@ -5440,60 +5440,6 @@ def _highlight_text(
     )
 
 
-def _apply_highlighting(
-    text: str,
-    term: str | None,
-    is_regex: bool = False,
-    start_tag: str = "",
-    end_tag: str = "",
-    escape_func: Callable[[str], str] | None = None,
-) -> str:
-    """Apply highlighting to matching terms in text, optionally escaping parts.
-
-    Args:
-        text: The input text.
-        term: The search term or pattern.
-        is_regex: Whether the term is a regular expression.
-        start_tag: The string to prepend to matches.
-        end_tag: The string to append to matches.
-        escape_func: Optional function to escape both matching and non-matching parts.
-
-    Returns:
-        The text with highlighting applied.
-    """
-    if not term:
-        return escape_func(text) if escape_func else text
-
-    flags = re.IGNORECASE
-    pattern_str = term if is_regex else re.escape(term)
-    try:
-        pattern = re.compile(pattern_str, flags)
-    except re.error:
-        return escape_func(text) if escape_func else text
-
-    result = []
-    last_end = 0
-    for match in pattern.finditer(text):
-        start, end = match.span()
-        # Non-matching part
-        non_match = text[last_end:start]
-        if non_match:
-            result.append(escape_func(non_match) if escape_func else non_match)
-
-        # Matching part
-        match_text = match.group(0)
-        processed_match = escape_func(match_text) if escape_func else match_text
-        result.append(f"{start_tag}{processed_match}{end_tag}")
-        last_end = end
-
-    # Remaining non-matching part
-    remaining = text[last_end:]
-    if remaining:
-        result.append(escape_func(remaining) if escape_func else remaining)
-
-    return "".join(result)
-
-
 def _render_stats_bar_chart(
     title: str,
     items: list[tuple[Any, int]],
