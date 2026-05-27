@@ -41,6 +41,30 @@ def _parse_msgnum_ranges(msgnum_str: str | None) -> set[int] | None:
     return msgnums
 
 
+PATTERN_VARIABLES_HELP = """
+Available variables:
+
+Basic Information:
+  author, to, subject, subject_clean, body, body_clean,
+  confname, confnum, confname_or_num, msgnum, snippet,
+  url_count, email_count, phone_count, my_name
+
+Dates & Times:
+  date, time, year, month, day, hour, minute, second,
+  iso_date, iso_time
+
+BBS & Source:
+  bbs_name, bbs_id, source_file
+
+Technical Details:
+  msgid, refnum, status, msgflag, is_private, is_reply,
+  length, size, flags, indent
+
+Attachments:
+  attachments, attachment_count
+"""
+
+
 def _parse_cli_date(
     date_str: str | None, end_of_day: bool = False
 ) -> datetime.datetime | None:
@@ -69,7 +93,7 @@ def _parse_cli_date(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert old BBS message packets (like QWK and REP) into modern formats.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 examples:
   # Show a one-line summary of all messages
@@ -144,7 +168,7 @@ examples:
     )
     io_group.add_argument(
         "--filename-pattern",
-        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
+        help=f"Set a pattern for naming individual files (e.g., '{{date}}_{{author}}_{{subject}}'). {PATTERN_VARIABLES_HELP}",
     )
     io_group.add_argument(
         "-E",
@@ -285,7 +309,7 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
+        help=f"Set a custom pattern for one-line summaries (e.g., '[{{confnum}}] {{author}}: {{subject}}'). {PATTERN_VARIABLES_HELP}",
     )
     format_group.add_argument(
         "--toc",
