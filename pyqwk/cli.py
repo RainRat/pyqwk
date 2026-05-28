@@ -69,7 +69,7 @@ def _parse_cli_date(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert old BBS message packets (like QWK and REP) into modern formats.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 examples:
   # Show a one-line summary of all messages
@@ -93,7 +93,11 @@ examples:
     )
     parser.add_argument(
         "input_paths",
-        help="Path to archives, folders, or compressed files (ZIP/TAR). Supports QWK, JSON, SQLite, EML, and many other formats. Multiple archives are automatically merged.",
+        help=(
+            "Path to archives, folders, or compressed files (ZIP/TAR).\n"
+            "Supports QWK, JSON, SQLite, EML, and many other formats.\n"
+            "Multiple archives are automatically merged."
+        ),
         nargs="+",
     )
 
@@ -142,9 +146,26 @@ examples:
         help="Organize individual files into subfolders by message subject.",
         action="store_true",
     )
+    pattern_help = (
+        "Set a pattern using these variables:\n"
+        "  Basic Information:\n"
+        "    {author}, {to}, {subject}, {subject_clean}, {body}, {body_clean},\n"
+        "    {confname}, {confnum}, {confname_or_num}, {msgnum}, {snippet},\n"
+        "    {url_count}, {email_count}, {phone_count}, {my_name}\n"
+        "  Dates & Times:\n"
+        "    {date}, {time}, {year}, {month}, {day}, {hour}, {minute}, {second},\n"
+        "    {iso_date}, {iso_time}\n"
+        "  BBS & Source:\n"
+        "    {bbs_name}, {bbs_id}, {source_file}\n"
+        "  Technical Details:\n"
+        "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
+        "    {length}, {size}, {flags}, {indent}\n"
+        "  Attachments:\n"
+        "    {attachments}, {attachment_count}"
+    )
     io_group.add_argument(
         "--filename-pattern",
-        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
+        help=f"Set a pattern for naming individual files (e.g., '{{date}}_{{author}}_{{subject}}').\n{pattern_help}",
     )
     io_group.add_argument(
         "-E",
@@ -285,7 +306,7 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}'). Available variables: attachments, attachment_count, author, bbs_id, bbs_name, body, body_clean, confname, confname_or_num, confnum, date, day, email_count, flags, hour, indent, is_private, is_reply, iso_date, iso_time, length, minute, month, msgflag, msgid, msgnum, my_name, phone_count, refnum, second, size, snippet, source_file, status, subject, subject_clean, time, to, url_count, year.",
+        help=f"Set a custom pattern for one-line summaries (e.g., '[{{confnum}}] {{author}}: {{subject}}').\n{pattern_help}",
     )
     format_group.add_argument(
         "--toc",
