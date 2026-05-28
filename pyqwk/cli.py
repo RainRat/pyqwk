@@ -209,6 +209,12 @@ examples:
         action="store_true",
     )
     content_group.add_argument(
+        "--embed-attachments",
+        dest="embed_attachments",
+        help="Embed image attachments directly into HTML output as Base64 data URIs.",
+        action="store_true",
+    )
+    content_group.add_argument(
         "--organize-attachments",
         dest="organize_attachments",
         help="Organize extracted attachments into subfolders using the same rules as messages.",
@@ -694,6 +700,7 @@ examples:
         organize_by_subject=getattr(args, "organize_by_subject", False),
         include_toc=args.include_toc,
         extract_attachments=args.extractattachments,
+        embed_attachments=args.embed_attachments,
         organize_attachments=args.organize_attachments,
         msgnum_filters=msgnum_filters,
         format=output_format,

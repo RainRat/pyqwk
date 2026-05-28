@@ -98,6 +98,7 @@ class QwkGuiApp:
         self.has_phones_var = tk.BooleanVar(value=False)
         self.has_ansi_var = tk.BooleanVar(value=False)
         self.redact_pii_var = tk.BooleanVar(value=False)
+        self.embed_attach_var = tk.BooleanVar(value=False)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -1038,6 +1039,7 @@ class QwkGuiApp:
                 ("Wrap", self.wrap_var, self._update_wrap),
                 ("Remove Colors", self.ansi_var, self.reload_messages),
                 ("Hide Personal Info", self.redact_pii_var, self.reload_messages),
+                ("Embed Attachments", self.embed_attach_var, self.reload_messages),
             ]
         ):
             ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd).pack(
@@ -1270,6 +1272,7 @@ class QwkGuiApp:
             has_emails=self.has_emails_var.get(),
             has_phones=self.has_phones_var.get(),
             has_ansi=self.has_ansi_var.get(),
+            embed_attachments=self.embed_attach_var.get(),
         )
 
     def _render_message(self, message_index: int) -> None:

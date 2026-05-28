@@ -534,6 +534,7 @@ class ProcessingSettings:
     organize_by_subject: bool = False
     include_toc: bool = False
     extract_attachments: bool = False
+    embed_attachments: bool = False
     organize_attachments: bool = False
     msgnum_filters: set[int] | None = None
     conferences: list[str] | None = None
@@ -617,6 +618,7 @@ class ParsedMessage:
     bbs_id: str | None = None
     source_file: str | None = None
     attachments: list[str] | None = None
+    original_text: str | None = None
 
     def discover_attachments(self) -> list[str] | None:
         """Lazily discover and cache attachment filenames from the message text."""
@@ -3317,7 +3319,9 @@ def process_merged_files(
         else:
             text_content = processed_buffer
 
-        temp_msg = replace(parsed_message, text=text_content)
+        temp_msg = replace(
+            parsed_message, text=text_content, original_text=parsed_message.text
+        )
 
         if settings.individual_files:
             assert output_dir is not None
@@ -3359,6 +3363,7 @@ def process_merged_files(
                     attachment_prefix=attachment_prefix,
                     search_term=settings.search_term,
                     is_regex=settings.regex,
+                    embed_attachments=settings.embed_attachments,
                 ).encode(target_encoding)
             elif settings.format == "markdown":
                 encoded_buffer = _serialize_message_markdown(
@@ -3978,6 +3983,7 @@ def _render_single_message_html(
     next_id: str | None = None,
     parent_id: str | None = None,
     toc_id: str | None = None,
+    embed_attachments: bool = False,
 ) -> list[str]:
     """Render a single message into HTML components with quote highlighting."""
     parts = []
@@ -4052,6 +4058,25 @@ def _render_single_message_html(
                 links.append(html.escape(filename))
         parts.append(f"<div><strong>Attachments:</strong> {', '.join(links)}</div>")
 
+    if embed_attachments:
+        text_to_scan = message.original_text or message.text
+        found_binaries = extract_binaries(text_to_scan) if text_to_scan else []
+        for filename, data in found_binaries:
+            ext = os.path.splitext(filename.lower())[1]
+            if ext in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+                mime_type = {
+                    ".png": "image/png",
+                    ".gif": "image/gif",
+                    ".webp": "image/webp",
+                }.get(ext, "image/jpeg")
+
+                b64_data = base64.b64encode(data).decode("ascii")
+                parts.append(
+                    f'<div><img src="data:{mime_type};base64,{b64_data}" '
+                    f'alt="{html.escape(filename)}" '
+                    'style="max-width: 100%; height: auto; margin-top: 1em; border: 1px solid #ddd;" /></div>'
+                )
+
     parts.append("</div>")
 
     # Body
@@ -4081,6 +4106,7 @@ def _serialize_message_html(
     attachment_prefix: str | None = None,
     search_term: str | None = None,
     is_regex: bool = False,
+    embed_attachments: bool = False,
 ) -> str:
     """Convert a single message to an HTML string."""
     title = f"Search Results for '{search_term}'" if search_term else "QWK Message"
@@ -4091,6 +4117,7 @@ def _serialize_message_html(
             attachment_prefix=attachment_prefix,
             search_term=search_term,
             is_regex=is_regex,
+            embed_attachments=embed_attachments,
         )
     )
     html_parts.extend(_get_html_footer())
@@ -4413,6 +4440,7 @@ def _write_html(
                 next_id=next_id,
                 parent_id=parent_id,
                 toc_id=toc_id,
+                embed_attachments=settings.embed_attachments if settings else False,
             )
         )
 
