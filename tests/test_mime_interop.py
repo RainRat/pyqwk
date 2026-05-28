@@ -1,7 +1,6 @@
 import email
 import email.message
 import email.policy
-import pytest
 from pyqwk.core import _message_from_email, _serialize_rfc822, ParsedMessage, MessageHeader
 
 def test_eml_import_with_mime_attachments():
