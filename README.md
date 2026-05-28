@@ -378,6 +378,8 @@ for msg in messages:
 | `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into conversations. |
 | `--clean` | Remove signatures, quotes, attachments, and color codes. |
+| `-p, --private` | Include private messages in the output. |
+| `-A, --strip-ansi` | Remove color codes and formatting symbols. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize` | Organize individual files into subfolders by conference. |
@@ -397,6 +399,11 @@ for msg in messages:
 | `--has-ansi` | Only show messages that contain color codes. |
 | `-H, --headers-only` | Show only the message headers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
+| `-C, --conference` | Show messages from specific conferences (name or number). |
+| `--bbs` | Show messages from specific BBSes. |
+| `-f, --from` | Show messages from specific authors. |
+| `--to` | Show messages to specific recipients. |
+| `-s, --subject` | Show messages with specific subject keywords. |
 | `-S, --search` | Search for keywords. |
 | `--body` | Search for keywords specifically in the message body. |
 | `--exclude` | Exclude messages matching a keyword in any field. |
@@ -408,8 +415,9 @@ for msg in messages:
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--on-this-day` | Show messages from the same month and day. |
-| `--limit` | Stop after a specific number of matching messages. |
-| `--skip` | Skip a specific number of matching messages. |
+| `-N, --msgnum` | Show specific message numbers or ranges (e.g., '100-200'). |
+| `-L, --limit` | Stop after a specific number of matching messages. |
+| `-K, --skip` | Skip a specific number of matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
 | `--reverse` | Reverse the sorting order. |
 | `--min-length` | Show messages with at least this many characters. |
@@ -419,6 +427,7 @@ for msg in messages:
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
+| `-v, --verbose` | Show more details like conference names and message numbers. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
