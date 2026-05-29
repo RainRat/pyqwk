@@ -484,9 +484,9 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 ## Troubleshooting
 
-- **Unsupported Compression:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
-- **Incorrect Text:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
-- **Conflicting Options:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
+- **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
+- **If options do not work together:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
 
 ## Contributing
 
