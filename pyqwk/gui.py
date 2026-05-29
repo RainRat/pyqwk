@@ -1302,7 +1302,7 @@ class QwkGuiApp:
 
         subject_tag = f"subject_link_{id(msg)}"
         self.detail_text.insert(
-            tk.END, subject + "\n", ("link", "header_subject", subject_tag)
+            tk.END, subject, ("link", "header_subject", subject_tag)
         )
         self.detail_text.tag_bind(
             subject_tag,
@@ -1310,6 +1310,21 @@ class QwkGuiApp:
             lambda e, s=orig_subject: self._pivot_filter(subject=s),
         )
 
+        # Badges
+        if header.is_private:
+            self.detail_text.insert(tk.END, "  ")
+            self.detail_text.insert(tk.END, " PRIVATE ", "badge_private")
+
+        bbs_info = getattr(self.board_dict, "bbs_info", None)
+        user_name = self.my_name or (bbs_info.user_name if bbs_info else None)
+        if user_name:
+            is_from_me = user_name.lower() in header.msgfrom.lower()
+            is_to_me = user_name.lower() in header.msgto.lower()
+            if is_from_me or is_to_me:
+                self.detail_text.insert(tk.END, "  ")
+                self.detail_text.insert(tk.END, " MINE ", "badge_mine")
+
+        self.detail_text.insert(tk.END, "\n")
         self.detail_text.insert(tk.END, " \n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
@@ -1337,28 +1352,12 @@ class QwkGuiApp:
         # Information line (Date, Conference, BBS, Msg #)
         self.detail_text.insert(tk.END, "Date:   ", "header_meta_label")
         self.detail_text.insert(
-            tk.END, f"{header.msgdate} {header.msgtime}", "header_meta"
+            tk.END, f"{header.msgdate} {header.msgtime}\n", "header_meta"
         )
 
-        # Badges
-        if header.is_private:
-            self.detail_text.insert(tk.END, "  ")
-            self.detail_text.insert(tk.END, " PRIVATE ", "badge_private")
-
-        bbs_info = getattr(self.board_dict, "bbs_info", None)
-        user_name = self.my_name or (bbs_info.user_name if bbs_info else None)
-        if user_name:
-            is_from_me = user_name.lower() in header.msgfrom.lower()
-            is_to_me = user_name.lower() in header.msgto.lower()
-            if is_from_me or is_to_me:
-                self.detail_text.insert(tk.END, "  ")
-                self.detail_text.insert(tk.END, " MINE ", "badge_mine")
-
-        self.detail_text.insert(tk.END, "  •  ", "header_meta")
-        self.detail_text.insert(tk.END, "Conf: ", "header_meta_label")
-
+        self.detail_text.insert(tk.END, "Conf:   ", "header_meta_label")
         conf_tag = f"conf_link_{id(msg)}"
-        self.detail_text.insert(tk.END, conf_name, ("link", "header_meta", conf_tag))
+        self.detail_text.insert(tk.END, conf_name + "\n", ("link", "header_meta", conf_tag))
         self.detail_text.tag_bind(
             conf_tag,
             "<Button-1>",
@@ -1366,11 +1365,10 @@ class QwkGuiApp:
         )
 
         if msg.bbs_name:
-            self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, "BBS: ", "header_meta_label")
+            self.detail_text.insert(tk.END, "BBS:    ", "header_meta_label")
             bbs_tag = f"bbs_link_{id(msg)}"
             self.detail_text.insert(
-                tk.END, msg.bbs_name, ("link", "header_meta", bbs_tag)
+                tk.END, msg.bbs_name + "\n", ("link", "header_meta", bbs_tag)
             )
             self.detail_text.tag_bind(
                 bbs_tag,
@@ -1379,15 +1377,13 @@ class QwkGuiApp:
             )
 
         if header.msgnum is not None:
-            self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, "Msg: ", "header_meta_label")
-            self.detail_text.insert(tk.END, f"{header.msgnum}", "header_meta")
+            self.detail_text.insert(tk.END, "Msg:    ", "header_meta_label")
+            self.detail_text.insert(tk.END, f"{header.msgnum}\n", "header_meta")
 
         if msg.refnum:
-            self.detail_text.insert(tk.END, "  •  ", "header_meta")
-            self.detail_text.insert(tk.END, "Ref: ", "header_meta_label")
+            self.detail_text.insert(tk.END, "Ref:    ", "header_meta_label")
             ref_tag = f"ref_link_{id(msg)}"
-            self.detail_text.insert(tk.END, f"{msg.refnum}", ("link", "header_meta", ref_tag))
+            self.detail_text.insert(tk.END, f"{msg.refnum}\n", ("link", "header_meta", ref_tag))
             self.detail_text.tag_bind(
                 ref_tag,
                 "<Button-1>",
@@ -1395,8 +1391,6 @@ class QwkGuiApp:
                     c, r
                 ),
             )
-
-        self.detail_text.insert(tk.END, "\n")
 
         if msg.source_file:
             self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
@@ -1428,7 +1422,6 @@ class QwkGuiApp:
         self.detail_text.tag_add("header_area", header_start, header_end)
 
         # Visual separator
-        self.detail_text.insert(tk.END, "\n")
         self.detail_text.insert(tk.END, "\n")
 
         # Insert body with quote highlighting
