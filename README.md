@@ -372,6 +372,7 @@ for msg in messages:
 | Flag | Description |
 | :--- | :--- |
 | `-o`, `--output` | Save results to a file or folder. |
+| `-v, --verbose` | Show more details like conference names and message numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
 | `-F, --format` | Set output format (html, json, markdown, etc.). |
 | `-m, --merge` | Combine multiple archives into one file. |
@@ -388,6 +389,7 @@ for msg in messages:
 | `--organize-by-subject` | Organize files by message subject. |
 | `--sort` | Sort results by field (date, author, subject, etc.). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
+| `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
 | `--my-name` | Set your name for the `--mine` filter and QWK exports. |
 | `--has-attachments` | Only show messages that have attachments. |
@@ -395,9 +397,15 @@ for msg in messages:
 | `--has-emails` | Only show messages that contain email addresses. |
 | `--has-phones` | Only show messages that contain phone numbers. |
 | `--has-ansi` | Only show messages that contain color codes. |
+| `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show only the message headers. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
 | `-S, --search` | Search for keywords. |
+| `-C, --conference` | Show messages from a specific conference. |
+| `--bbs` | Show messages from a specific BBS. |
+| `-f, --from` | Show messages from a specific author. |
+| `--to` | Show messages to a specific recipient. |
+| `-s, --subject` | Show messages with a specific word in the subject. |
 | `--body` | Search for keywords specifically in the message body. |
 | `--exclude` | Exclude messages matching a keyword in any field. |
 | `--exclude-from` | Exclude messages from specific authors. |
@@ -408,8 +416,9 @@ for msg in messages:
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--on-this-day` | Show messages from the same month and day. |
-| `--limit` | Stop after a specific number of matching messages. |
-| `--skip` | Skip a specific number of matching messages. |
+| `-N, --msgnum` | Show specific message numbers or ranges. |
+| `-L, --limit` | Stop after a specific number of matching messages. |
+| `-K, --skip` | Skip a specific number of matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
 | `--reverse` | Reverse the sorting order. |
 | `--min-length` | Show messages with at least this many characters. |
@@ -484,9 +493,9 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 ## Troubleshooting
 
-- **Unsupported Compression:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
-- **Incorrect Text:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
-- **Conflicting Options:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
+- **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
+- **If options do not work together:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
 
 ## Contributing
 
