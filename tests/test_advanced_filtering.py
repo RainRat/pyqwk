@@ -118,3 +118,35 @@ def test_combined_inclusion_exclusion():
     settings.exclude_search = "spam"
     # Matches author Alice, no exclusion.
     assert matches_filters(msg, settings, set()) is True
+
+
+def test_exclude_search_source_file():
+    msg = create_msg(text="Normal message")
+    msg.source_file = "suspicious_file.qwk"
+    settings = ProcessingSettings(
+        verbose=False,
+        private=True,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        exclude_search="suspicious",
+    )
+    # Should be excluded because source_file matches "suspicious"
+    assert matches_filters(msg, settings, set()) is False
+
+    settings.exclude_search = "normal"
+    # Should be excluded because text matches "normal"
+    assert matches_filters(msg, settings, set()) is False
+
+    settings.exclude_search = "safe"
+    # Should NOT be excluded
+    assert matches_filters(msg, settings, set()) is True
