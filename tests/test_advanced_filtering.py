@@ -103,6 +103,21 @@ def test_exclude_bbs():
     )
     assert matches_filters(msg, settings, set()) is False
 
+def test_exclude_search_source_file():
+    msg = create_msg()
+    msg.source_file = "bad_source.qwk"
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False,
+        binaries_removal=False, redact_pii=False, format="text",
+        separator="none", output_mode="stdout", output_path=None,
+        encoding="cp437", exclude_search="bad_source"
+    )
+    assert matches_filters(msg, settings, set()) is False
+
+    settings.exclude_search = "good_source"
+    assert matches_filters(msg, settings, set()) is True
+
 def test_combined_inclusion_exclusion():
     msg = create_msg(text="Good content", author="Alice")
     settings = ProcessingSettings(
