@@ -131,7 +131,7 @@ def test_render_message_links_robustness_pii(mock_gui_deps):
     inserted_texts = [c.args[1] for c in insert_calls]
     # Check for redacted elements
     assert "[EMAIL]" in inserted_texts # From or To
-    assert "Testing [PHONE]\n" in inserted_texts # Subject
+    assert "Testing [PHONE]" in inserted_texts # Subject
 
     # Find tags
     from_tags = [t for t in tag_callbacks if t.startswith("from_link_")]

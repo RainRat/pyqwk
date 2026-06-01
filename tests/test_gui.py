@@ -183,10 +183,10 @@ class TestQwkGui:
 
             # Verify Ref: was rendered
             app._render_message(0)
-            # Find the call with "99" (the value). The tag should be ('link', 'header_meta', 'ref_link_...')
+            # Find the call with "99\n" (the value). The tag should be ('link', 'header_meta', 'ref_link_...')
             found_ref = False
             for call_obj in app.detail_text.insert.call_args_list:
-                if len(call_obj.args) >= 2 and call_obj.args[1] == "99":
+                if len(call_obj.args) >= 2 and call_obj.args[1] == "99\n":
                     tags = call_obj.args[2]
                     if (
                         isinstance(tags, tuple)
@@ -797,10 +797,10 @@ class TestQwkGui:
         app._render_message(0)
 
         # Verify that stripped values were inserted as interactive links
-        # Subject is inserted first with a newline as a link
+        # Subject is inserted first as a link
         subject_tag = f"subject_link_{id(msg)}"
         app.detail_text.insert.assert_any_call(
-            mock_gui_deps["tk"].END, "Subject\n", ("link", "header_subject", subject_tag)
+            mock_gui_deps["tk"].END, "Subject", ("link", "header_subject", subject_tag)
         )
         # Then From and To are inserted as interactive links (stripped) with separate newline calls
         from_tag = f"from_link_{id(msg)}"
