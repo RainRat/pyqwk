@@ -68,7 +68,7 @@ def _parse_cli_date(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Convert old BBS message packets (like QWK and REP) into modern formats.",
+        description="Convert old BBS message packets (like QWK and REP) into modern,\nreadable formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 examples:
@@ -96,7 +96,7 @@ examples:
         help=(
             "Path to archives, folders, or compressed files (ZIP/TAR).\n"
             "Supports QWK, JSON, SQLite, EML, and many other formats.\n"
-            "Multiple archives are automatically merged."
+            "Multiple archives are automatically merged into one view."
         ),
         nargs="+",
     )
@@ -170,7 +170,7 @@ examples:
     io_group.add_argument(
         "-E",
         "--encoding",
-        help="Set the text encoding of the input files. Default is 'cp437' (standard for older BBSs). Use this if messages show incorrect characters.",
+        help="Set the text encoding for input files. Default is 'cp437' (standard\nfor older BBSs). Use this if messages show incorrect characters.",
         default="cp437",
     )
 
@@ -252,8 +252,8 @@ examples:
         "-F",
         "--format",
         help=(
-            "Set the output format (text, html, json, etc.). "
-            "If omitted, the format is determined by the output file extension."
+            "Set the output format (text, html, json, etc.). If omitted, the\n"
+            "format is determined by the output file extension."
         ),
         default=None,
         choices=[
@@ -393,7 +393,7 @@ examples:
         "-S",
         "--search",
         dest="search_term",
-        help="Search for a keyword in author, recipient, subject, body, conference, BBS, and attachments.",
+        help="Search for a keyword in sender, recipient, subject, body, conference,\nBBS name, BBS ID, source file, and attachments.",
     )
     filter_group.add_argument(
         "--body",
@@ -403,7 +403,7 @@ examples:
     filter_group.add_argument(
         "--exclude",
         dest="exclude_search",
-        help="Exclude messages containing this keyword in any field.",
+        help="Exclude messages matching this keyword in any field (sender,\nrecipient, subject, body, conference, BBS, source file, or attachments).",
     )
     filter_group.add_argument(
         "--exclude-from",
