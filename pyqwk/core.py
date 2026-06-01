@@ -2694,8 +2694,8 @@ def matches_filters(
     if settings.mine:
         if not user_name:
             return False
-        is_from_me = user_name.lower() in message.header.msgfrom.lower()
-        is_to_me = user_name.lower() in message.header.msgto.lower()
+        is_from_me = check_str_match(user_name, message.header.msgfrom)
+        is_to_me = check_str_match(user_name, message.header.msgto)
         if not (is_from_me or is_to_me):
             return False
 
