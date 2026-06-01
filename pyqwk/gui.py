@@ -508,7 +508,7 @@ class QwkGuiApp:
         self.detail_text.delete("1.0", tk.END)
 
         self.detail_text.insert(tk.END, "Welcome to PyQWK\n", "header_subject")
-        self.detail_text.insert(tk.END, " \n", "header_hr")
+        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "Getting Started:\n", "header_label")
@@ -578,7 +578,7 @@ class QwkGuiApp:
         self.search_count_label.config(text="")
 
         self.detail_text.insert(tk.END, "No Messages Found\n", "header_subject")
-        self.detail_text.insert(tk.END, " \n", "header_hr")
+        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(
@@ -1180,7 +1180,7 @@ class QwkGuiApp:
             "header_meta", font=("TkDefaultFont", 9), foreground="#666666"
         )
         self.detail_text.tag_configure(
-            "header_hr", font=("TkDefaultFont", 1), background="#eeeeee"
+            "header_hr", font=("TkDefaultFont", 1), background="#dddddd"
         )
         self.detail_text.tag_configure("header_area", background="#f9f9f9")
         self.detail_text.tag_configure("header_value", font=("TkDefaultFont", 10))
@@ -1328,7 +1328,7 @@ class QwkGuiApp:
                 self.detail_text.insert(tk.END, " MINE ", "badge_mine")
 
         self.detail_text.insert(tk.END, "\n")
-        self.detail_text.insert(tk.END, " \n", "header_hr")
+        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
         self.detail_text.insert(tk.END, "\n")
 
         # Metadata fields (standardized 8-char labels)
