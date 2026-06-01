@@ -2618,39 +2618,29 @@ def matches_filters(
 
         return any(check_str_match(p, text) for p in pattern_list)
 
+    def matches_any_field(pattern: str) -> bool:
+        message.discover_attachments()
+        return (
+            check_str_match(pattern, message.header.msgfrom)
+            or check_str_match(pattern, message.header.msgto)
+            or check_str_match(pattern, message.header.msgsubject)
+            or check_str_match(pattern, message.text)
+            or (message.confname and check_str_match(pattern, message.confname))
+            or (message.bbs_name and check_str_match(pattern, message.bbs_name))
+            or (message.bbs_id and check_str_match(pattern, message.bbs_id))
+            or (message.source_file and check_str_match(pattern, message.source_file))
+            or (
+                message.attachments
+                and any(check_str_match(pattern, a) for a in message.attachments)
+            )
+        )
+
     # --- Exclusion Filters (Negative matching) ---
     # If any exclusion matches, the message is rejected immediately.
 
     # 1. Exclude Search
-    if settings.exclude_search:
-        message.discover_attachments()
-        found_exclude = (
-            check_str_match(settings.exclude_search, message.header.msgfrom)
-            or check_str_match(settings.exclude_search, message.header.msgto)
-            or check_str_match(settings.exclude_search, message.header.msgsubject)
-            or check_str_match(settings.exclude_search, message.text)
-            or (
-                message.confname
-                and check_str_match(settings.exclude_search, message.confname)
-            )
-            or (
-                message.bbs_name
-                and check_str_match(settings.exclude_search, message.bbs_name)
-            )
-            or (
-                message.bbs_id
-                and check_str_match(settings.exclude_search, message.bbs_id)
-            )
-            or (
-                message.attachments
-                and any(
-                    check_str_match(settings.exclude_search, a)
-                    for a in message.attachments
-                )
-            )
-        )
-        if found_exclude:
-            return False
+    if settings.exclude_search and matches_any_field(settings.exclude_search):
+        return False
 
     # 2. Exclude Author
     if settings.exclude_authors and any_match(
@@ -2727,38 +2717,8 @@ def matches_filters(
         return False
 
     # 7. Full-Text Search
-    if settings.search_term:
-        message.discover_attachments()
-        found = (
-            check_str_match(settings.search_term, message.header.msgfrom)
-            or check_str_match(settings.search_term, message.header.msgto)
-            or check_str_match(settings.search_term, message.header.msgsubject)
-            or check_str_match(settings.search_term, message.text)
-            or (
-                message.confname
-                and check_str_match(settings.search_term, message.confname)
-            )
-            or (
-                message.bbs_name
-                and check_str_match(settings.search_term, message.bbs_name)
-            )
-            or (
-                message.bbs_id and check_str_match(settings.search_term, message.bbs_id)
-            )
-            or (
-                message.source_file
-                and check_str_match(settings.search_term, message.source_file)
-            )
-            or (
-                message.attachments
-                and any(
-                    check_str_match(settings.search_term, a)
-                    for a in message.attachments
-                )
-            )
-        )
-        if not found:
-            return False
+    if settings.search_term and not matches_any_field(settings.search_term):
+        return False
 
     # 7b. Body-Specific Search
     if settings.body_search:
