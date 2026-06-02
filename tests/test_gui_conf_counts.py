@@ -11,8 +11,8 @@ def mock_gui_deps():
     with (
         patch("pyqwk.gui.tk") as mock_tk,
         patch("pyqwk.gui.ttk") as mock_ttk,
-        patch("pyqwk.gui.filedialog") as mock_fd,
-        patch("pyqwk.gui.messagebox") as mock_mb,
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
     ):
 
         def make_var(value=None):

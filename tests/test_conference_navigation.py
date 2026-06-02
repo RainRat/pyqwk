@@ -107,7 +107,7 @@ class TestConferenceNavigation:
             mock_reload.assert_not_called()
 
     def test_navigation_buttons_existence(self, mock_gui_deps):
-        app = get_app()
+        get_app()
         # Verify that buttons with ◀ and ▶ were created
         mock_gui_deps["ttk"].Button.assert_any_call(
             ANY, text="◀", width=2, command=ANY

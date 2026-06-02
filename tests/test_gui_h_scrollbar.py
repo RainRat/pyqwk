@@ -27,7 +27,7 @@ def test_gui_horizontal_scrollbar_initialization():
         pyqwk.gui.tk.VERTICAL = "vertical"
 
         root = MagicMock()
-        app = QwkGuiApp(root)
+        QwkGuiApp(root)
 
         # Check for horizontal scrollbars
         h_scrollbars = [m for m in scrollbar_instances if m.orient == "horizontal"]

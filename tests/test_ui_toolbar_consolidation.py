@@ -21,7 +21,7 @@ def test_toolbar_consolidation():
         from pyqwk.gui import QwkGuiApp
 
         root = MagicMock()
-        app = QwkGuiApp(root)
+        QwkGuiApp(root)
 
         # Check that "Filters" label exists
         filter_label_calls = [

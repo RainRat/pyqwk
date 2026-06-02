@@ -117,7 +117,7 @@ def test_order_messages_by_thread_circular_already_reported(caplog):
     # 3 -> 4
     # 4 -> 1 (Cycle)
 
-    mR = make_msg(1, None)
+    make_msg(1, None)
     mA = make_msg(2, 1)
     mB = make_msg(3, 1)
     mC1 = make_msg(4, 2)

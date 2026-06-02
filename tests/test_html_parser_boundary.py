@@ -1,4 +1,3 @@
-import pytest
 from pyqwk.core import _parse_html_messages
 
 def test_parse_html_messages_div_boundary(tmp_path):

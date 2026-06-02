@@ -191,7 +191,7 @@ def test_gui_url_rendering(mock_gui_deps):
     app.messages = [msg]
     app.board_dict = {1: "General"}
 
-    with patch("webbrowser.open") as mock_open:
+    with patch("webbrowser.open"):
         app._render_message(0)
 
         # Verify URL was inserted with specific tags

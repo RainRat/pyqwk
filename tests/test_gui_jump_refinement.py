@@ -19,7 +19,7 @@ def app():
     root = MagicMock()
     with (
         patch("pyqwk.gui.tk") as mock_tk,
-        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.ttk"),
         patch("pyqwk.gui.simpledialog"),
     ):
         # Ensure distinct mocks for each Variable call to avoid crosstalk

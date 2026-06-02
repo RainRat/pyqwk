@@ -1,10 +1,7 @@
 import pytest
-import os
-import random
 from unittest.mock import MagicMock, patch
-from pyqwk.core import ProcessingSettings, process_merged_files, ParsedMessage, BBSInfo, ConferenceMap
+from pyqwk.core import ProcessingSettings, process_merged_files
 from pyqwk.gui import QwkGuiApp
-import tkinter as tk
 
 def test_cli_random_sort(tmp_path, capsys):
     # Create a small set of messages in a JSON format for easy loading

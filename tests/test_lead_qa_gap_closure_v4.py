@@ -407,7 +407,7 @@ def test_matches_filters_bbs_id_only(logger):
         quiet=True,
         bbs_names=["TargetID"],
     )
-    assert matches_filters(msg, settings, set()) == True
+    assert matches_filters(msg, settings, set())
 
 
 def test_matches_filters_bbs_no_match(logger):
@@ -433,7 +433,7 @@ def test_matches_filters_bbs_no_match(logger):
         quiet=True,
         bbs_names=["TargetID"],
     )
-    assert matches_filters(msg, settings, set()) == False
+    assert not matches_filters(msg, settings, set())
 
 
 def test_markdown_import_no_messages(tmp_path, logger):

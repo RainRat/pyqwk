@@ -21,7 +21,7 @@ def app():
     root.title.return_value = "pyqwk - Graphical Reader"
     with (
         patch("pyqwk.gui.tk") as m_tk,
-        patch("pyqwk.gui.ttk") as m_ttk,
+        patch("pyqwk.gui.ttk"),
         patch("pyqwk.gui.simpledialog"),
     ):
         m_tk.BooleanVar.side_effect = lambda **kwargs: MagicMock()

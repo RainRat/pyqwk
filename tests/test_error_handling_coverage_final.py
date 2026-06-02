@@ -133,7 +133,7 @@ def test_cli_main_block():
 
 def test_gui_main_block():
     """Cover if __name__ == '__main__': block in gui.py (1278)."""
-    with patch("pyqwk.gui.main") as mock_main:
+    with patch("pyqwk.gui.main"):
         with patch("sys.argv", ["gui.py", "--help"]):
             with pytest.raises(SystemExit):
                 runpy.run_path("pyqwk/gui.py", run_name="__main__")

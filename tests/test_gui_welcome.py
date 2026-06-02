@@ -18,7 +18,7 @@ def test_welcome_screen_on_startup():
     with (
         patch("pyqwk.gui.tk") as patched_tk,
         patch("pyqwk.gui.ttk"),
-        patch("pyqwk.gui.font") as patched_font,
+        patch("pyqwk.gui.font"),
         patch("pyqwk.gui.messagebox") as _,
         patch("pyqwk.gui.filedialog") as _,
         patch("pyqwk.gui.simpledialog") as _,

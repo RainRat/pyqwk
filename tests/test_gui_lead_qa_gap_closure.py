@@ -155,7 +155,7 @@ def test_show_stats_window_with_bbs_and_confs(app):
 
     with (
         patch("pyqwk.gui.calculate_archive_stats", return_value=stats_data),
-        patch("pyqwk.gui.tk.Toplevel") as mock_top,
+        patch("pyqwk.gui.tk.Toplevel"),
     ):
         # We need to mock the Text widget inside show_stats_window
         mock_text = MagicMock()

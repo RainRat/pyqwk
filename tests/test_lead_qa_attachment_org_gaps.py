@@ -1,5 +1,4 @@
 import logging
-import os
 from pyqwk.core import (
     ProcessingSettings,
     ParsedMessage,

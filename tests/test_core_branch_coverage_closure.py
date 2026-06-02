@@ -137,7 +137,7 @@ def test_threading_cycle_already_reported(caplog):
 
     msgs = [msg1, msg2, msg3, msg4]
 
-    logger = logging.getLogger("pyqwk.core")
+    logging.getLogger("pyqwk.core")
     with caplog.at_level(logging.WARNING, logger="pyqwk.core"):
         ordered = _order_messages_by_thread(msgs)
 
