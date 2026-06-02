@@ -61,8 +61,8 @@ def _make_settings(**kwargs):
 
 def test_load_data_mbox_error():
     # Lines 1061-1062
-    with patch("pyqwk.core._parse_mbox_messages") as mock_parse:
-        mock_parse.side_effect = Exception("Mock mbox error")
+    with patch("pyqwk.core.mailbox.mbox") as mock_mbox:
+        mock_mbox.side_effect = Exception("Mock mbox error")
         with pytest.raises(
             ValueError, match="Failed to load mbox archive: Mock mbox error"
         ):
@@ -71,10 +71,13 @@ def test_load_data_mbox_error():
 
 def test_load_data_eml_error():
     # Lines 1070-1071
-    with patch("pyqwk.core._parse_eml_messages") as mock_parse:
+    with patch("pyqwk.core.email.message_from_binary_file") as mock_parse:
         mock_parse.side_effect = Exception("Mock eml error")
-        with pytest.raises(ValueError, match="Failed to load EML file: Mock eml error"):
-            load_data("test.eml", MagicMock())
+        with patch("pyqwk.core.open", MagicMock()):
+            with pytest.raises(
+                ValueError, match="Failed to load EML file: Mock eml error"
+            ):
+                load_data("test.eml", MagicMock())
 
 
 def test_write_text_toc_colors():

@@ -1443,20 +1443,8 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
     )
 
 
-def _parse_mbox_messages(path: str) -> list[ParsedMessage]:
-    """Import messages from an mbox file."""
-    messages = []
-    mbox = mailbox.mbox(path)
-    for msg_obj in mbox:
-        messages.append(_message_from_email(msg_obj))
-    return messages
 
 
-def _parse_eml_messages(path: str) -> list[ParsedMessage]:
-    """Import messages from an EML file."""
-    with open(path, "rb") as f:
-        msg_obj = email.message_from_binary_file(f)
-    return [_message_from_email(msg_obj)]
 
 
 def _parse_html_messages(path: str) -> list[ParsedMessage]:
@@ -2023,7 +2011,11 @@ def load_data(
 
     if input_path.lower().endswith(".mbox"):
         try:
-            messages = _parse_mbox_messages(input_path)
+            messages = []
+            mbox = mailbox.mbox(input_path)
+            for msg_obj in mbox:
+                messages.append(_message_from_email(msg_obj))
+            mbox.close()
         except Exception as e:
             raise ValueError(f"Failed to load mbox archive: {e}")
 
@@ -2041,7 +2033,9 @@ def load_data(
 
     if input_path.lower().endswith(".eml"):
         try:
-            messages = _parse_eml_messages(input_path)
+            with open(input_path, "rb") as f:
+                msg_obj = email.message_from_binary_file(f)
+            messages = [_message_from_email(msg_obj)]
         except Exception as e:
             raise ValueError(f"Failed to load EML file: {e}")
 
