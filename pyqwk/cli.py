@@ -68,26 +68,26 @@ def _parse_cli_date(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Convert old BBS message packets (like QWK and REP) into modern formats.",
+        description="Convert old BBS message archives into modern formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 examples:
-  # Show a one-line summary of all messages
+  # Show a one-line summary for all messages
   qwk archive.qwk --oneline
 
-  # Convert to a single HTML file
+  # Save as a single HTML file
   qwk archive.qwk --format html -o messages.html
 
-  # Save as individual EML files in a folder
+  # Save as separate EML files in a folder
   qwk archive.qwk --format eml -o ./output/
 
-  # Search for a keyword and show headers only
+  # Search for a keyword and show only headers
   qwk archive.qwk --search "vintage computing" --headers-only
 
-  # Extract attachments to an attachments/ folder
+  # Save attachments to a folder
   qwk archive.qwk --extract-attachments
 
-  # Show message stats (authors, conferences, keywords, etc.)
+  # Show activity reports and charts
   qwk archive.qwk --stats
 """,
     )
@@ -106,7 +106,7 @@ examples:
         "-o",
         "--output",
         dest="output_path",
-        help="Save results to a file or folder. By default, it prints to the screen.",
+        help="Save results to a file or folder. If omitted, messages are printed to the screen.",
     )
     io_group.add_argument(
         "-i",
@@ -170,14 +170,14 @@ examples:
     io_group.add_argument(
         "-E",
         "--encoding",
-        help="Set the text encoding of the input files. Default is 'cp437' (standard for older BBSs). Use this if messages show incorrect characters.",
+        help="Set the text encoding (default is 'cp437'). Use this if characters look wrong.",
         default="cp437",
     )
 
     content_group = parser.add_argument_group("Content Processing")
     content_group.add_argument(
         "--clean",
-        help="Remove signatures, quoted replies, attachments, and color codes.",
+        help="Remove signatures, old quotes, attachments, and color codes.",
         action="store_true",
     )
     content_group.add_argument(
@@ -251,10 +251,7 @@ examples:
     format_group.add_argument(
         "-F",
         "--format",
-        help=(
-            "Set the output format (text, html, json, etc.). "
-            "If omitted, the format is determined by the output file extension."
-        ),
+        help="Set the output format. If omitted, the format is chosen based on the file extension.",
         default=None,
         choices=[
             "text",
@@ -393,7 +390,7 @@ examples:
         "-S",
         "--search",
         dest="search_term",
-        help="Search for a keyword in author, recipient, subject, body, conference, BBS, and attachments.",
+        help="Search for keywords in common fields (Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments).",
     )
     filter_group.add_argument(
         "--body",
@@ -403,7 +400,7 @@ examples:
     filter_group.add_argument(
         "--exclude",
         dest="exclude_search",
-        help="Exclude messages containing this keyword in any field.",
+        help="Hide messages that match this keyword in any field.",
     )
     filter_group.add_argument(
         "--exclude-from",
