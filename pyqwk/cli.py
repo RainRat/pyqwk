@@ -489,7 +489,7 @@ examples:
     )
     filter_group.add_argument(
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, or size).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random).",
         choices=[
             "date",
             "author",
@@ -500,6 +500,7 @@ examples:
             "bbs",
             "length",
             "size",
+            "random",
         ],
         default=None,
     )

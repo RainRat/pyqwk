@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import random
 import hashlib
 import logging
 import os
@@ -928,6 +929,9 @@ class QwkGuiApp:
         ).pack(side=tk.LEFT, padx=2)
         ttk.Button(
             nav_frame, text="Jump", width=8, command=self.prompt_jump_to_message
+        ).pack(side=tk.LEFT, padx=2)
+        ttk.Button(
+            nav_frame, text="Random", width=8, command=self._select_random_message
         ).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
@@ -2322,6 +2326,17 @@ class QwkGuiApp:
             self.message_list.selection_set(iid)
             self.message_list.see(iid)
             self.message_list.focus(iid)
+
+    def _select_random_message(self, _event: object | None = None) -> None:
+        """Pick a random message from the currently visible list and select it."""
+        all_items = self._get_all_tree_items()
+        if not all_items:
+            return
+
+        target_iid = random.choice(all_items)
+        self.message_list.selection_set(target_iid)
+        self.message_list.see(target_iid)
+        self.message_list.focus(target_iid)
 
     def jump_to_message(self, confnum: int, msgnum: int) -> None:
         """Find and select a message by conference and message number."""
