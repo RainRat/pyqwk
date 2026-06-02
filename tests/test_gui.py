@@ -60,6 +60,10 @@ def mock_gui_deps():
         mock_combo = MagicMock()
         mock_ttk.Combobox.return_value = mock_combo
 
+        # Mock Progressbar
+        mock_progress = MagicMock()
+        mock_ttk.Progressbar.return_value = mock_progress
+
         yield {
             "tk": mock_tk,
             "ttk": mock_ttk,

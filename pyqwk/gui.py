@@ -875,6 +875,10 @@ class QwkGuiApp:
         self.status_label = ttk.Label(status_bar, text="Ready", padding=(5, 2))
         self.status_label.pack(side=tk.LEFT)
 
+        self.progress = ttk.Progressbar(
+            status_bar, orient=tk.HORIZONTAL, length=150, mode="determinate"
+        )
+
         ttk.Sizegrip(status_bar).pack(side=tk.RIGHT)
 
     def _build_toolbar(self) -> None:
@@ -1739,6 +1743,9 @@ class QwkGuiApp:
 
         try:
             self.status_label.config(text="Loading...")
+            self.progress.pack(side=tk.RIGHT, padx=10)
+            self.progress["value"] = 0
+            self.progress["maximum"] = len(paths)
             self.root.update_idletasks()
 
             # For now, we only cache single file loads. Multi-file loads are re-processed.
@@ -1785,7 +1792,10 @@ class QwkGuiApp:
             bbs_counts = Counter()
             bbs_identities = {}
 
-            for path in paths:
+            for i, path in enumerate(paths):
+                self.progress["value"] = i
+                self.root.update_idletasks()
+
                 if len(paths) == 1 and self._cache.get("path") == path:
                     file_data = self._cache["file_data"]
                     board_dict = self._cache["board_dict"]
@@ -2029,6 +2039,7 @@ class QwkGuiApp:
                 source_display if len(paths) == 1 else str(len(paths)) + " archives"
             )
 
+            self.progress["value"] = len(paths)
             self._update_status_bar()
             self.root.title(f"{self.source_display_name} - PyQWK Reader")
 
@@ -2056,7 +2067,9 @@ class QwkGuiApp:
                 self.message_list.see(item_to_select)
             else:
                 self._render_empty_state()
+            self.progress.pack_forget()
         except Exception as exc:
+            self.progress.pack_forget()
             # Restore previous state on failure
             self.messages = old_messages
             self.total_msg_count = old_total_msg_count
@@ -2123,7 +2136,13 @@ class QwkGuiApp:
             # Use messages in their current display order from the treeview
             ordered_item_ids = self._get_all_tree_items()
 
-            for iid in ordered_item_ids:
+            self.progress.pack(side=tk.RIGHT, padx=10)
+            self.progress["value"] = 0
+            self.progress["maximum"] = len(ordered_item_ids)
+
+            for i, iid in enumerate(ordered_item_ids):
+                self.progress["value"] = i
+                self.root.update_idletasks()
                 try:
                     idx = int(iid)
                     msg = self.messages[idx]
@@ -2159,7 +2178,9 @@ class QwkGuiApp:
                 f"Successfully extracted {count} attachments to {folder}",
             )
             self.status_label.config(text=f"Extracted {count} attachments")
+            self.progress.pack_forget()
         except Exception as e:
+            self.progress.pack_forget()
             messagebox.showerror(
                 "Extraction Failed", f"Failed to extract attachments: {e}"
             )
@@ -2214,7 +2235,13 @@ class QwkGuiApp:
             export_list = []
             bbs_info = getattr(self.board_dict, "bbs_info", None)
 
-            for iid in ordered_item_ids:
+            self.progress.pack(side=tk.RIGHT, padx=10)
+            self.progress["value"] = 0
+            self.progress["maximum"] = len(ordered_item_ids)
+
+            for i, iid in enumerate(ordered_item_ids):
+                self.progress["value"] = i
+                self.root.update_idletasks()
                 try:
                     idx = int(iid)
                     msg = self.messages[idx]
@@ -2253,7 +2280,9 @@ class QwkGuiApp:
                 "Export Successful",
                 f"Successfully exported {len(export_list)} messages to {os.path.basename(path)}",
             )
+            self.progress.pack_forget()
         except Exception as exc:
+            self.progress.pack_forget()
             messagebox.showerror("Export Failed", str(exc))
 
     def prompt_jump_to_message(self, _event: object | None = None) -> None:
