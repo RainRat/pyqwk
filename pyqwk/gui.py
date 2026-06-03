@@ -2398,9 +2398,49 @@ class QwkGuiApp:
             sb_x = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=txt.xview)
             txt.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
 
-            # Footer for close button
+            # Footer for buttons
             footer = ttk.Frame(stats_win, padding=(10, 5))
             footer.pack(side=tk.BOTTOM, fill=tk.X)
+
+            def save_report():
+                report_filetypes = [
+                    ("HTML files", "*.html"),
+                    ("Markdown files", "*.md"),
+                    ("JSON files", "*.json"),
+                    ("Text files", "*.txt"),
+                    ("All files", "*.*"),
+                ]
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Statistics Report",
+                    filetypes=report_filetypes,
+                    defaultextension=".html",
+                )
+                if not save_path:
+                    return
+
+                try:
+                    # Resolve format from extension
+                    from pyqwk.core import show_stats as core_show_stats
+
+                    report_fmt = resolve_output_format(None, save_path, "file")
+                    report_settings = replace(
+                        settings,
+                        format=report_fmt,
+                        output_mode="file",
+                        output_path=save_path,
+                    )
+                    core_show_stats(self.current_paths, report_settings, self.logger)
+                    messagebox.showinfo(
+                        "Report Saved",
+                        f"Successfully saved statistics report to {os.path.basename(save_path)}",
+                    )
+                except Exception as e:
+                    messagebox.showerror("Save Report Error", str(e))
+
+            ttk.Button(footer, text="Save Report...", command=save_report).pack(
+                side=tk.LEFT, padx=5
+            )
+
             ttk.Button(footer, text="Close", command=stats_win.destroy).pack(
                 side=tk.RIGHT
             )

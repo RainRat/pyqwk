@@ -89,6 +89,12 @@ examples:
 
   # Show activity reports and charts
   qwk archive.qwk --stats
+
+  # Save statistics as an HTML report with charts
+  qwk archive.qwk --stats --format html -o stats.html
+
+  # Save archive information as a Markdown report
+  qwk archive.qwk --info --format markdown -o info.md
 """,
     )
     parser.add_argument(
@@ -555,12 +561,12 @@ examples:
         "-I",
         "--info",
         action="store_true",
-        help="Show a summary of the archive and exit. Use --format json for JSON output.",
+        help="Show a summary of the archive and exit. Supports file export via -o and --format (json, html, markdown, text).",
     )
     parser.add_argument(
         "--stats",
         action="store_true",
-        help="Show detailed statistics and exit. Use --format json for JSON output.",
+        help="Show detailed statistics and exit. Supports file export via -o and --format (json, html, markdown, text).",
     )
     parser.add_argument(
         "--merge-stats",
