@@ -3826,6 +3826,50 @@ def _get_html_footer() -> list[str]:
     ]
 
 
+def _get_stats_distributions(stats: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Prepare distribution data lists for statistics rendering."""
+    dist = {}
+
+    dist["conferences"] = [
+        {"name": f"{c['number']}: {c['name']}", "count": c["count"]}
+        for c in stats.get("conferences", [])
+    ]
+
+    if stats.get("year_distribution"):
+        dist["years"] = [
+            {"label": y, "count": c}
+            for y, c in sorted(stats["year_distribution"].items())
+        ]
+
+    if stats.get("month_distribution"):
+        dist["months"] = [
+            {"label": m, "count": c}
+            for m, c in sorted(stats["month_distribution"].items())
+        ]
+
+    if stats.get("day_of_week"):
+        days_order = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        dist["days"] = [
+            {"label": d, "count": stats["day_of_week"].get(d, 0)} for d in days_order
+        ]
+
+    if stats.get("hour_of_day"):
+        dist["hours"] = [
+            {"label": f"{int(h):02}:00", "count": c}
+            for h, c in sorted(stats["hour_of_day"].items(), key=lambda x: int(x[0]))
+        ]
+
+    return dist
+
+
 def _render_stats_html(stats: dict[str, Any]) -> list[str]:
     """Render a statistics summary as an HTML fragment."""
     parts = []
@@ -3855,7 +3899,7 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
             return
         parts.append('<div class="stats-box">')
         parts.append(f"<h3>{title}</h3>")
-        max_count = max(item[count_key] for item in items) if items else 1
+        max_count = max(item[count_key] for item in items)
         for item in items[:5]:
             width = int(item[count_key] * 100 / max_count)
             label = str(item[label_key])
@@ -3870,15 +3914,12 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
 
     parts.append('<div class="stats-grid">')
 
+    dist = _get_stats_distributions(stats)
+
     render_html_bar_chart("Top Authors", stats.get("authors"), "name", "count")
     render_html_bar_chart("Top Recipients", stats.get("recipients"), "name", "count")
     render_html_bar_chart("Top BBSes", stats.get("bbses"), "name", "count")
-
-    confs = [
-        {"name": f"{c['number']}: {c['name']}", "count": c["count"]}
-        for c in stats.get("conferences", [])
-    ]
-    render_html_bar_chart("Top Conferences", confs, "name", "count")
+    render_html_bar_chart("Top Conferences", dist.get("conferences"), "name", "count")
 
     render_html_bar_chart("Top Subjects", stats.get("subjects"), "subject", "count")
     render_html_bar_chart("Top Keywords", stats.get("keywords"), "word", "count")
@@ -3893,41 +3934,10 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
     )
 
     # Activity Distributions
-    if stats.get("year_distribution"):
-        years = [
-            {"label": y, "count": c}
-            for y, c in sorted(stats["year_distribution"].items())
-        ]
-        render_html_bar_chart("Yearly Activity", years, "label", "count")
-
-    if stats.get("month_distribution"):
-        months = [
-            {"label": m, "count": c}
-            for m, c in sorted(stats["month_distribution"].items())
-        ]
-        render_html_bar_chart("Monthly Activity", months, "label", "count")
-
-    if stats.get("day_of_week"):
-        days_order = [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ]
-        days = [
-            {"label": d, "count": stats["day_of_week"].get(d, 0)} for d in days_order
-        ]
-        render_html_bar_chart("Day of Week Distribution", days, "label", "count")
-
-    if stats.get("hour_of_day"):
-        hours = [
-            {"label": f"{int(h):02}:00", "count": c}
-            for h, c in sorted(stats["hour_of_day"].items(), key=lambda x: int(x[0]))
-        ]
-        render_html_bar_chart("Hourly Distribution", hours, "label", "count")
+    render_html_bar_chart("Yearly Activity", dist.get("years"), "label", "count")
+    render_html_bar_chart("Monthly Activity", dist.get("months"), "label", "count")
+    render_html_bar_chart("Day of Week Distribution", dist.get("days"), "label", "count")
+    render_html_bar_chart("Hourly Distribution", dist.get("hours"), "label", "count")
 
     parts.append("</div>")  # stats-grid
     parts.append("</div>")  # stats-container
@@ -4114,7 +4124,7 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
         parts.append(f"#### {title}\n")
         parts.append(f"| {label_key.capitalize()} | Count | |")
         parts.append("|---|---|---|")
-        max_count = max(item[count_key] for item in items) if items else 1
+        max_count = max(item[count_key] for item in items)
         for item in items[:5]:
             bar_len = int(item[count_key] * 20 / max_count) if max_count > 0 else 0
             bar = "#" * bar_len
@@ -4122,15 +4132,12 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
             parts.append(f"| {label} | {item[count_key]} | `{bar}` |")
         parts.append("")
 
+    dist = _get_stats_distributions(stats)
+
     render_md_bar_chart("Top Authors", stats.get("authors"), "name", "count")
     render_md_bar_chart("Top Recipients", stats.get("recipients"), "name", "count")
     render_md_bar_chart("Top BBSes", stats.get("bbses"), "name", "count")
-
-    confs = [
-        {"name": f"{c['number']}: {c['name']}", "count": c["count"]}
-        for c in stats.get("conferences", [])
-    ]
-    render_md_bar_chart("Top Conferences", confs, "name", "count")
+    render_md_bar_chart("Top Conferences", dist.get("conferences"), "name", "count")
 
     render_md_bar_chart("Top Subjects", stats.get("subjects"), "subject", "count")
     render_md_bar_chart("Top Keywords", stats.get("keywords"), "word", "count")
@@ -4145,41 +4152,10 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
     )
 
     # Activity Distributions
-    if stats.get("year_distribution"):
-        years = [
-            {"label": y, "count": c}
-            for y, c in sorted(stats["year_distribution"].items())
-        ]
-        render_md_bar_chart("Yearly Activity", years, "label", "count")
-
-    if stats.get("month_distribution"):
-        months = [
-            {"label": m, "count": c}
-            for m, c in sorted(stats["month_distribution"].items())
-        ]
-        render_md_bar_chart("Monthly Activity", months, "label", "count")
-
-    if stats.get("day_of_week"):
-        days_order = [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ]
-        days = [
-            {"label": d, "count": stats["day_of_week"].get(d, 0)} for d in days_order
-        ]
-        render_md_bar_chart("Day of Week Distribution", days, "label", "count")
-
-    if stats.get("hour_of_day"):
-        hours = [
-            {"label": f"{int(h):02}:00", "count": c}
-            for h, c in sorted(stats["hour_of_day"].items(), key=lambda x: int(x[0]))
-        ]
-        render_md_bar_chart("Hourly Distribution", hours, "label", "count")
+    render_md_bar_chart("Yearly Activity", dist.get("years"), "label", "count")
+    render_md_bar_chart("Monthly Activity", dist.get("months"), "label", "count")
+    render_md_bar_chart("Day of Week Distribution", dist.get("days"), "label", "count")
+    render_md_bar_chart("Hourly Distribution", dist.get("hours"), "label", "count")
 
     parts.append("---\n")
     return parts
