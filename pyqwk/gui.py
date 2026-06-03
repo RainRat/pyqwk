@@ -12,6 +12,7 @@ from dataclasses import replace
 from tkinter import filedialog, messagebox, ttk, simpledialog
 
 from pyqwk.core import (
+    __version__,
     ProcessingSettings,
     _order_messages_by_thread,
     format_size,
@@ -2782,17 +2783,44 @@ class QwkGuiApp:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="PyQWK Graphical Reader")
+    parser = argparse.ArgumentParser(
+        description="Browse and read BBS message archives in a modern, easy-to-use interface.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+examples:
+  # Open the reader
+  qwk-gui
+
+  # Open a specific file
+  qwk-gui archive.qwk
+
+  # Open all archives in a folder
+  qwk-gui archives/
+
+  # Open a database
+  qwk-gui messages.db
+""",
+    )
     parser.add_argument(
         "paths",
         nargs="*",
-        help="Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, mbox, EML, SQLite, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT).",
+        help=(
+            "Path to archives, folders, or compressed files (ZIP/TAR).\n"
+            "Supports QWK, JSON, SQLite, mbox, and many other formats."
+        ),
     )
     parser.add_argument(
         "--my-name",
         "--user",
         dest="my_name",
-        help="Set your name for highlighting 'mine' messages.",
+        help="Set your name to highlight messages sent to or from you.",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the version number and exit.",
     )
     args = parser.parse_args()
 
