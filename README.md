@@ -119,7 +119,7 @@ qwk-gui messages.db
 - **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only ANSI color codes.
+- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only ANSI color codes. Use "Embed Attachments" to include images directly in messages.
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
@@ -175,6 +175,11 @@ qwk archive.qwk --threaded -o messages.txt
 **Create a browsable HTML file:**
 ```bash
 qwk archive.qwk --format html -o messages.html
+```
+
+**Create a self-contained HTML file (includes images):**
+```bash
+qwk archive.qwk --embed-attachments -o messages.html
 ```
 
 **Convert to an mbox file (for email apps):**
@@ -380,6 +385,7 @@ for msg in messages:
 | `-T`, `--threaded` | Group replies into conversations. |
 | `--clean` | Remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
+| `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize` | Organize individual files into subfolders by conference. |
 | `--organize-by-date` | Organize files into folders by year and month. |
@@ -428,6 +434,7 @@ for msg in messages:
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
+| `--merge-stats` | Show a single merged report for multiple archives. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
