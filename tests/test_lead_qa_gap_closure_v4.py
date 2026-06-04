@@ -292,7 +292,7 @@ def test_write_text_oneline_no_colors(capsys):
         sys.stdout.isatty = original_isatty
     captured = capsys.readouterr()
     assert (
-        "Num    Conference   Date           From            To              Subject"
+        "Num    Conference   Date           From            To              Flg Subject"
         in captured.out
     )
     assert "\x1b[" not in captured.out

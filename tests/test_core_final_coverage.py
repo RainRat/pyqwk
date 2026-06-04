@@ -444,18 +444,18 @@ def test_format_oneline_flags():
     )
 
     formatted = header.format_oneline({1: "General"}, is_private=True)
-    assert "*  Subject" in formatted
+    assert "*   Subject" in formatted
 
     formatted = header.format_oneline({1: "General"}, has_attachments=True)
-    assert "@  Subject" in formatted
+    assert "@   Subject" in formatted
 
     formatted = header.format_oneline(
         {1: "General"}, is_private=True, has_attachments=True
     )
-    assert "*@ Subject" in formatted
+    assert "*@  Subject" in formatted
 
     formatted = header.format_oneline({1: "General"}, is_private=True, use_colors=True)
-    assert "\x1b[90m* \x1b[0m Subject" in formatted
+    assert "\x1b[90m*  \x1b[0m Subject" in formatted
 
 
 def test_parse_html_empty_attachments(tmp_path):

@@ -90,7 +90,7 @@ def test_oneline_alignment_with_highlighting():
     assert "Author Name    " in oneline.replace("\x1b[7m", "").replace("\x1b[0m", "")
 
     # Check the whole line structure
-    plain_line = oneline.replace("\x1b[7m", "").replace("\x1b[0m", "")
+    plain_line = oneline.replace("\x1b[7m", "").replace("\x1b[90m", "").replace("\x1b[0m", "")
     # Conf (12) + space (1) + Date (14) + space (1) + From (15) + space (1) + To (15) + space (1) + Subject
     # "Conference  " (12)
     # "01-01-24 12:00 " (14+1)
@@ -100,7 +100,7 @@ def test_oneline_alignment_with_highlighting():
     # "Subject"
 
     expected_start = (
-        "Conference   01-01-24 12:00 Author Name     Recipient       Subject"
+        "Conference   01-01-24 12:00 Author Name     Recipient           Subject"
     )
     assert plain_line.startswith(expected_start)
 
@@ -131,7 +131,8 @@ def test_threaded_oneline_indentation():
     # 12 (Conf) + 1 + 14 (Date) + 1 + 15 (From) + 1 + 15 (To) + 1 = 60 chars before subject
     prefix_d1 = oneline_d1[:60]
     assert prefix_d1 == "Conference   01-01-24 12:00 Author          Recipient       "
-    assert oneline_d1[60:].startswith("└ Threaded Subject")
+    # New flags column (3 chars) + 1 space = 64 chars before subject indentation
+    assert oneline_d1[64:].startswith("└ Threaded Subject")
 
     # Depth 2: Subject should start with "  └ "
     oneline_d2 = header.format_oneline(board_dict, depth=2)
@@ -139,4 +140,5 @@ def test_threaded_oneline_indentation():
     # Verify metadata alignment remains consistent
     prefix_d2 = oneline_d2[:60]
     assert prefix_d2 == "Conference   01-01-24 12:00 Author          Recipient       "
-    assert oneline_d2[60:].startswith("  └ Threaded Subject")
+    # New flags column (3 chars) + 1 space = 64 chars before subject indentation
+    assert oneline_d2[64:].startswith("  └ Threaded Subject")
