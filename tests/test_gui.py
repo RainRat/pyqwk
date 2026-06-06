@@ -90,8 +90,8 @@ class TestQwkGui:
         app.root.bind.assert_any_call("<Escape>", app.clear_search)
 
         # Verify toolbar elements
-        mock_gui_deps["ttk"].Label.assert_any_call(
-            ANY, text="Actions", style="GroupHeader.TLabel", padding=(0, 0, 10, 0)
+        mock_gui_deps["ttk"].Labelframe.assert_any_call(
+            ANY, text="Archive", padding=(5, 5)
         )
         mock_gui_deps["ttk"].Button.assert_any_call(
             ANY, text="Open", width=8, command=app.open_file
