@@ -28,6 +28,7 @@ from pyqwk.core import (
     extract_binaries,
     calculate_archive_stats,
     render_stats_as_text,  # noqa: F401
+    __version__,
     expand_paths,
     ConferenceMap,
     _normalize_subject,
@@ -2782,17 +2783,42 @@ class QwkGuiApp:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="PyQWK Graphical Reader")
+    parser = argparse.ArgumentParser(
+        description="Browse and search BBS message archives in a graphical reader.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+examples:
+  # Open a specific archive
+  qwk-gui messages.qwk
+
+  # Open all archives in a folder
+  qwk-gui archives/
+
+  # Open a database file
+  qwk-gui messages.db
+""",
+    )
     parser.add_argument(
         "paths",
         nargs="*",
-        help="Path to message archives, ZIP and TAR archives, or folders. Supports QWK, REP, JSON, JSONL, CSV, XML, RSS, mbox, EML, SQLite, Markdown, HTML, Plain Text, and data files (MESSAGES.DAT, REPLY.DAT).",
+        help=(
+            "Path to message archives, folders, or compressed files (ZIP/TAR).\n"
+            "Supports QWK, JSON, SQLite, EML, and many other formats.\n"
+            "If omitted, the reader starts with a welcome screen."
+        ),
     )
     parser.add_argument(
         "--my-name",
         "--user",
         dest="my_name",
-        help="Set your name for highlighting 'mine' messages.",
+        help="Set your name for highlighting messages sent to or from you.",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the version number and exit.",
     )
     args = parser.parse_args()
 
