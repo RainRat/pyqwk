@@ -852,10 +852,8 @@ class MessageHeader:
         ) -> str:
             suffix = "\r\n" if newline else ""
             label_fmt = f"{label:<{pad}}"
-            if use_colors:
-                # Use Dim (90) for labels to create better visual hierarchy
-                return f"\x1b[90m{label_fmt}\x1b[0m{fmt_val(value)}{suffix}"
-            return f"{label_fmt}{fmt_val(value)}{suffix}"
+            label_part = _colorize(label_fmt, "90", enabled=use_colors)
+            return f"{label_part}{fmt_val(value)}{suffix}"
 
         header_parts: list[str] = []
         if include_separator:
@@ -867,9 +865,7 @@ class MessageHeader:
             width = min(80, width)
 
             sep = ("-" * width) + "\r\n"
-            if use_colors:
-                sep = f"\x1b[90m{sep}\x1b[0m"
-            header_parts.append(sep)
+            header_parts.append(_colorize(sep, "90", enabled=use_colors))
 
         if verbose or not not_found_flag:
             header_parts.append(fmt_line("Conference:", str(conf_name)))
@@ -938,9 +934,7 @@ class MessageHeader:
             display_len = len(truncated)
             truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
             res = truncated + (" " * (width - display_len))
-            if use_colors and dim:
-                return f"\x1b[90m{res}\x1b[0m"
-            return res
+            return _colorize(res, "90", enabled=use_colors and dim)
 
         conf_part = prepare_field(conf_name, 12, dim=True)
         from_part = prepare_field(from_name, 15)
@@ -959,23 +953,17 @@ class MessageHeader:
             subject = f"{indent}└ {subject}"
 
         flags_display = flags.ljust(3)
-        if use_colors:
-            # Dim the flags
-            flags_display = f"\x1b[90m{flags_display}\x1b[0m"
+        flags_display = _colorize(flags_display, "90", enabled=use_colors)
         subject = f"{flags_display} {subject}"
         subject_part = _highlight_text(subject, highlight_term, is_regex, use_colors)
 
         msgnum_part = ""
         if verbose:
             msgnum_val = str(self.msgnum or "")
-            if use_colors:
-                msgnum_part = f"\x1b[90m{msgnum_val:<6}\x1b[0m "
-            else:
-                msgnum_part = f"{msgnum_val:<6} "
+            msgnum_part = _colorize(f"{msgnum_val:<6}", "90", enabled=use_colors) + " "
 
         date_part = date_str.ljust(14)
-        if use_colors:
-            date_part = f"\x1b[90m{date_part}\x1b[0m"
+        date_part = _colorize(date_part, "90", enabled=use_colors)
 
         return f"{msgnum_part}{conf_part} {date_part} {from_part} {to_part} {subject_part}\r\n"
 
@@ -3076,9 +3064,7 @@ def process_merged_files(
     separator_str = ""
     if separator_mode == "dashes":
         separator_str = ("-" * 80) + "\r\n"
-        if use_colors:
-            # ANSI Dim (90)
-            separator_str = f"\x1b[90m{separator_str}\x1b[0m"
+        separator_str = _colorize(separator_str, "90", enabled=use_colors)
     elif separator_mode == "blank":
         separator_str = "\r\n"
 
@@ -3615,15 +3601,12 @@ def process_merged_files(
             msg += "."
 
         # Use a localized colorization that respects terminal settings
-        if use_colors:
-            print(f"\n\033[{BOLD};{GREEN}m{msg}\033[0m")
-        else:
-            print(f"\n{msg}")
+        print(f"\n{_colorize(msg, BOLD, GREEN, enabled=use_colors)}")
 
     if settings.dry_run:
         CYAN = "36"
         BOLD = "1"
-        print(f"\n{_colorize('--- Dry Run Summary ---', BOLD, CYAN)}")
+        print(f"\n{_colorize('--- Dry Run Summary ---', BOLD, CYAN, enabled=use_colors)}")
         print(f"Archives processed: {len(input_paths)}")
         print(f"Matching messages:  {processed_count}")
         if total_attachments > 0:
@@ -3635,7 +3618,7 @@ def process_merged_files(
 
         size_str = format_size(estimated_bytes)
         print(f"Estimated size:     {size_str}")
-        print(f"{_colorize('No changes were made to the disk.', BOLD)}")
+        print(f"{_colorize('No changes were made to the disk.', BOLD, enabled=use_colors)}")
 
 
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
@@ -4746,28 +4729,22 @@ def _write_text(
         # "Flg" header for the new 3-character flags column
         subj_hdr = "Flg Subject"
 
-        if use_colors:
-            BOLD = "1"
-
-            def b(t):
-                return f"\033[{BOLD}m{t}\033[0m"
-
-            header_line = f"{b(msgnum_hdr)}{b(conf_hdr)} {b(date_hdr)} {b(from_hdr)} {b(to_hdr)} {b(subj_hdr)}\r\n"
-        else:
-            header_line = (
-                f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}\r\n"
-            )
-
+        BOLD = "1"
+        header_line = (
+            f"{_colorize(msgnum_hdr, BOLD, enabled=use_colors)}"
+            f"{_colorize(conf_hdr, BOLD, enabled=use_colors)} "
+            f"{_colorize(date_hdr, BOLD, enabled=use_colors)} "
+            f"{_colorize(from_hdr, BOLD, enabled=use_colors)} "
+            f"{_colorize(to_hdr, BOLD, enabled=use_colors)} "
+            f"{_colorize(subj_hdr, BOLD, enabled=use_colors)}\r\n"
+        )
         parts.append(header_line)
         # Calculate separator length from the plain text header
         plain_header = (
             f"{msgnum_hdr}{conf_hdr} {date_hdr} {from_hdr} {to_hdr} {subj_hdr}"
         )
         separator_line = "-" * len(plain_header) + "\r\n"
-        if use_colors:
-            # ANSI Dim (90)
-            separator_line = f"\x1b[90m{separator_line}\x1b[0m"
-        parts.append(separator_line)
+        parts.append(_colorize(separator_line, "90", enabled=use_colors))
 
     if settings and settings.include_toc:
         title = "QWK Message Archive"
@@ -4799,10 +4776,7 @@ def _write_text(
                 parts.append(f"  {msg.confnum:3}: {conf_name} ({count} messages)\r\n")
                 seen_confs.add(msg.confnum)
         separator_line = "-" * 80 + "\r\n\r\n"
-        if use_colors:
-            # ANSI Dim (90)
-            separator_line = f"\x1b[90m{separator_line}\x1b[0m"
-        parts.append(separator_line)
+        parts.append(_colorize(separator_line, "90", enabled=use_colors))
 
     for i, message in enumerate(messages):
         if settings and settings.oneline:
@@ -5272,11 +5246,13 @@ def _write_text_output(
             f.write(content)
 
 
-def _colorize(text: str, *attributes: str) -> str:
-    """Apply ANSI color codes if the output is a terminal."""
-    if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+def _colorize(text: Any, *attributes: str, enabled: bool | None = None) -> str:
+    """Apply ANSI color codes if the output is a terminal or explicitly enabled."""
+    if enabled is True or (
+        enabled is None and hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+    ):
         return f"\033[{';'.join(attributes)}m{text}\033[0m"
-    return text
+    return str(text)
 
 
 def _highlight_quotes(text: str, use_colors: bool) -> str:
@@ -5292,7 +5268,7 @@ def _highlight_quotes(text: str, use_colors: bool) -> str:
             content = line.rstrip("\r\n")
             ending = line[len(content) :]
             # ANSI Green (32)
-            highlighted_lines.append(f"\x1b[32m{content}\x1b[0m{ending}")
+            highlighted_lines.append(_colorize(content, "32", enabled=True) + ending)
         else:
             highlighted_lines.append(line)
     return "".join(highlighted_lines)
@@ -5394,7 +5370,7 @@ def _linkify_text(
             elif output_format == "markdown":
                 result.append(f"**{val_esc}**")
             elif output_format == "ansi" and use_colors:
-                result.append(f"\x1b[7m{val_esc}\x1b[0m")
+                result.append(_colorize(val_esc, "7", enabled=True))
             else:
                 result.append(val_esc)
         elif etype == "url":
@@ -5408,7 +5384,7 @@ def _linkify_text(
             elif output_format == "markdown":
                 result.append(f"[{val_esc}]({uri})")
             elif output_format == "ansi" and use_colors:
-                result.append(f"\x1b[4;90m{val_esc}\x1b[0m")
+                result.append(_colorize(val_esc, "4", "90", enabled=True))
             else:
                 result.append(val_esc)
         elif etype == "email":
@@ -5418,12 +5394,12 @@ def _linkify_text(
             elif output_format == "markdown":
                 result.append(f"[{val_esc}]({uri})")
             elif output_format == "ansi" and use_colors:
-                result.append(f"\x1b[4;90m{val_esc}\x1b[0m")
+                result.append(_colorize(val_esc, "4", "90", enabled=True))
             else:
                 result.append(val_esc)
         elif etype == "phone":
             if output_format == "ansi" and use_colors:
-                result.append(f"\x1b[90m{val_esc}\x1b[0m")
+                result.append(_colorize(val_esc, "90", enabled=True))
             else:
                 result.append(val_esc)
         elif etype == "msg_link":
@@ -5445,7 +5421,7 @@ def _linkify_text(
                     )
                     result.append(f"[{val_esc}](#{anchor})")
                 elif output_format == "ansi" and use_colors:
-                    result.append(f"\x1b[36m{val_esc}\x1b[0m")
+                    result.append(_colorize(val_esc, "36", enabled=True))
                 else:
                     result.append(val_esc)
             else:
@@ -5495,13 +5471,8 @@ def _render_stats_bar_chart(
     if not items:
         return []
 
-    def c(t, *a):
-        if use_colors:
-            return f"\033[{';'.join(a)}m{t}\033[0m"
-        return str(t)
-
     parts = []
-    parts.append(f"\n  {c(title, bold)}")
+    parts.append(f"\n  {_colorize(title, bold, enabled=use_colors)}")
 
     max_count = max(count for _, count in items)
     for label, count in items:
@@ -5515,7 +5486,7 @@ def _render_stats_bar_chart(
 
         # Consistent coloring: Dim labels, Bold counts, Cyan bars
         parts.append(
-            f"    {c(truncated_label, dim)} : {c(count_str, bold)} {c(bar, cyan)}"
+            f"    {_colorize(truncated_label, dim, enabled=use_colors)} : {_colorize(count_str, bold, enabled=use_colors)} {_colorize(bar, cyan, enabled=use_colors)}"
         )
 
     return parts
@@ -5526,14 +5497,9 @@ def render_info_as_text(all_info: list[dict[str, Any]], use_colors: bool = False
     BOLD = "1"
     CYAN = "36"
 
-    def c(t, *a):
-        if use_colors:
-            return f"\033[{';'.join(a)}m{t}\033[0m"
-        return t
-
     parts = []
     for info in all_info:
-        parts.append(f"File: {c(info['file'], CYAN)}")
+        parts.append(f"File: {_colorize(info['file'], CYAN, enabled=use_colors)}")
         if info.get("error"):
             parts.append(f"  {info['error']}")
             parts.append("")
@@ -5542,23 +5508,23 @@ def render_info_as_text(all_info: list[dict[str, Any]], use_colors: bool = False
         bbs = info.get("bbs_info")
         if bbs:
             if bbs.get("name"):
-                parts.append(f"  {c('BBS Name:', BOLD)} {bbs['name']}")
+                parts.append(f"  {_colorize('BBS Name:', BOLD, enabled=use_colors)} {bbs['name']}")
             if bbs.get("sysop"):
-                parts.append(f"  {c('SysOp:', BOLD)}    {bbs['sysop']}")
+                parts.append(f"  {_colorize('SysOp:', BOLD, enabled=use_colors)}    {bbs['sysop']}")
             if bbs.get("location"):
-                parts.append(f"  {c('Location:', BOLD)} {bbs['location']}")
+                parts.append(f"  {_colorize('Location:', BOLD, enabled=use_colors)} {bbs['location']}")
             if bbs.get("bbs_id"):
-                parts.append(f"  {c('BBS ID:', BOLD)}   {bbs['bbs_id']}")
+                parts.append(f"  {_colorize('BBS ID:', BOLD, enabled=use_colors)}   {bbs['bbs_id']}")
             if bbs.get("packet_at"):
-                parts.append(f"  {c('Packet At:', BOLD)} {bbs['packet_at']}")
+                parts.append(f"  {_colorize('Packet At:', BOLD, enabled=use_colors)} {bbs['packet_at']}")
             if bbs.get("user_name"):
-                parts.append(f"  {c('User Name:', BOLD)} {bbs['user_name']}")
+                parts.append(f"  {_colorize('User Name:', BOLD, enabled=use_colors)} {bbs['user_name']}")
 
-        parts.append(f"  {c('Total Messages:', BOLD)} {info['total_messages']}")
-        parts.append(f"  {c('Conferences:', BOLD)}")
+        parts.append(f"  {_colorize('Total Messages:', BOLD, enabled=use_colors)} {info['total_messages']}")
+        parts.append(f"  {_colorize('Conferences:', BOLD, enabled=use_colors)}")
 
         for conf in info["conferences"]:
-            count_str = c(str(conf["message_count"]), BOLD)
+            count_str = _colorize(conf["message_count"], BOLD, enabled=use_colors)
             parts.append(
                 f"    {conf['number']}: {conf['name']} ({count_str} messages)"
             )
@@ -6034,20 +6000,15 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
     BOLD = "1"
     CYAN = "36"
 
-    def c(t, *a):
-        if use_colors:
-            return f"\033[{';'.join(a)}m{t}\033[0m"
-        return t
-
     parts = []
-    parts.append(f"Statistics for: {c(stats['file'], CYAN)}")
+    parts.append(f"Statistics for: {_colorize(stats['file'], CYAN, enabled=use_colors)}")
     parts.append(
-        f"  {c('Messages:', BOLD)} {stats['matching_messages']} matching / {stats['total_messages']} total"
+        f"  {_colorize('Messages:', BOLD, enabled=use_colors)} {stats['matching_messages']} matching / {stats['total_messages']} total"
     )
 
     if stats["attachments_count"] > 0:
         parts.append(
-            f"  {c('Attachments:', BOLD)} {stats['attachments_count']} files detected"
+            f"  {_colorize('Attachments:', BOLD, enabled=use_colors)} {stats['attachments_count']} files detected"
         )
 
     if stats["dates"]["earliest"]:
@@ -6057,11 +6018,11 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
         latest = datetime.datetime.fromisoformat(stats["dates"]["latest"]).strftime(
             "%Y-%m-%d"
         )
-        parts.append(f"  {c('Date Range:', BOLD)} {earliest} to {latest}")
+        parts.append(f"  {_colorize('Date Range:', BOLD, enabled=use_colors)} {earliest} to {latest}")
 
-    parts.append(f"  {c('Private:', BOLD)}    {stats['private_count']} messages")
+    parts.append(f"  {_colorize('Private:', BOLD, enabled=use_colors)}    {stats['private_count']} messages")
 
-    parts.append(f"\n  {c('Activity & Content:', BOLD)}")
+    parts.append(f"\n  {_colorize('Activity & Content:', BOLD, enabled=use_colors)}")
     parts.append(
         f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)"
     )
