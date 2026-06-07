@@ -506,12 +506,16 @@ class QwkGuiApp:
             return None
         return "break"
 
+    def _render_hr(self) -> None:
+        """Render a horizontal line separator in the detail view."""
+        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
+
     def _render_welcome_screen(self) -> None:
         """Render a welcome screen with instructions and shortcuts."""
         self.detail_text.delete("1.0", tk.END)
 
         self.detail_text.insert(tk.END, "Welcome to PyQWK\n", "header_subject")
-        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
+        self._render_hr()
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(tk.END, "Getting Started:\n", "header_label")
@@ -581,7 +585,7 @@ class QwkGuiApp:
         self.search_count_label.config(text="")
 
         self.detail_text.insert(tk.END, "No Messages Found\n", "header_subject")
-        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
+        self._render_hr()
         self.detail_text.insert(tk.END, "\n")
 
         self.detail_text.insert(
@@ -1340,7 +1344,7 @@ class QwkGuiApp:
                 self.detail_text.insert(tk.END, " MINE ", "badge_mine")
 
         self.detail_text.insert(tk.END, "\n")
-        self.detail_text.insert(tk.END, "\u00A0" * 1000 + "\n", "header_hr")
+        self._render_hr()
         self.detail_text.insert(tk.END, "\n")
 
         # Metadata fields (standardized 8-char labels)
