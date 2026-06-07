@@ -476,6 +476,10 @@ class QwkGuiApp:
 
     def _block_text_input(self, event: tk.Event) -> str | None:
         """Block keyboard input in the detail view while allowing common shortcuts."""
+        # Delegate continuous reading keys (Space, BackSpace, PgDn, PgUp)
+        if event.keysym in ("space", "BackSpace", "Prior", "Next"):
+            return self._on_space_pressed(event)
+
         # Allow Control+C (copy) and Control+A (select all)
         if event.state & 0x4:  # Control mask
             if event.keysym.lower() in ("c", "a"):
@@ -496,8 +500,6 @@ class QwkGuiApp:
             "Down",
             "Left",
             "Right",
-            "Prior",
-            "Next",
             "Home",
             "End",
         ):
@@ -557,8 +559,8 @@ class QwkGuiApp:
                 [
                     ("J / N", "Next Message"),
                     ("K / P", "Previous Message"),
-                    ("Space", "Scroll Down / Next"),
-                    ("Shift+Space", "Scroll Up / Prev"),
+                    ("Space / PgDn", "Scroll Down / Next"),
+                    ("Shift+Spc / PgUp", "Scroll Up / Prev"),
                     ("BackSpace", "Scroll Up / Prev"),
                     ("Ctrl + G", "Go to Message Number"),
                     ("[ / ]", "Prev / Next Conference"),
@@ -706,6 +708,8 @@ class QwkGuiApp:
         self.root.bind("<space>", self._on_space_pressed)
         self.root.bind("<Shift-space>", self._on_space_pressed)
         self.root.bind("<BackSpace>", self._on_space_pressed)
+        self.root.bind("<Prior>", self._on_space_pressed)
+        self.root.bind("<Next>", self._on_space_pressed)
         self.root.bind("[", lambda e: self._navigate_conference(-1))
         self.root.bind("]", lambda e: self._navigate_conference(1))
 
@@ -780,7 +784,7 @@ class QwkGuiApp:
         self.reload_messages()
 
     def _on_space_pressed(self, event: tk.Event) -> str | None:
-        """Handle Space, Shift+Space, and BackSpace for continuous reading."""
+        """Handle Space, PgDn, PgUp, and BackSpace for continuous reading."""
         # If a search or exclude entry has focus, let it handle the keys
         if self.root.focus_get() in (self.search_entry, self.exclude_entry):
             return None
@@ -788,18 +792,18 @@ class QwkGuiApp:
         # Check scroll position: (top, bottom) as fractions of the whole
         top, bottom = self.detail_text.yview()
 
-        # Space (Forward)
-        if event.keysym == "space" and not (event.state & 0x1):
+        # Space / Next (Forward)
+        if event.keysym in ("space", "Next") and not (event.state & 0x1):
             if bottom < 1.0:
                 self.detail_text.yview_scroll(1, "pages")
             else:
                 self._select_relative_message(1)
             return "break"
 
-        # Shift+Space or BackSpace (Backward)
+        # Shift+Space, BackSpace, or Prior (Backward)
         elif (
             event.keysym == "space" and (event.state & 0x1)
-        ) or event.keysym == "BackSpace":
+        ) or event.keysym in ("BackSpace", "Prior"):
             if top > 0.0:
                 self.detail_text.yview_scroll(-1, "pages")
             else:
