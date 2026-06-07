@@ -2695,8 +2695,8 @@ def matches_filters(
             return False
 
     # 3. Message Number Filter
-    if settings.msgnum_filters and message.msgnum is not None:
-        if message.msgnum not in settings.msgnum_filters:
+    if settings.msgnum_filters:
+        if message.msgnum is None or message.msgnum not in settings.msgnum_filters:
             return False
 
     # 4. Author Filter
