@@ -5510,14 +5510,151 @@ def _render_stats_bar_chart(
     return parts
 
 
+def render_info_as_text(all_info: list[dict[str, Any]], use_colors: bool = False) -> str:
+    """Render archive information into a human-readable text report."""
+    BOLD = "1"
+    CYAN = "36"
+
+    def c(t, *a):
+        if use_colors:
+            return f"\033[{';'.join(a)}m{t}\033[0m"
+        return t
+
+    parts = []
+    for info in all_info:
+        parts.append(f"File: {c(info['file'], CYAN)}")
+        if info.get("error"):
+            parts.append(f"  {info['error']}")
+            parts.append("")
+            continue
+
+        bbs = info.get("bbs_info")
+        if bbs:
+            if bbs.get("name"):
+                parts.append(f"  {c('BBS Name:', BOLD)} {bbs['name']}")
+            if bbs.get("sysop"):
+                parts.append(f"  {c('SysOp:', BOLD)}    {bbs['sysop']}")
+            if bbs.get("location"):
+                parts.append(f"  {c('Location:', BOLD)} {bbs['location']}")
+            if bbs.get("bbs_id"):
+                parts.append(f"  {c('BBS ID:', BOLD)}   {bbs['bbs_id']}")
+            if bbs.get("packet_at"):
+                parts.append(f"  {c('Packet At:', BOLD)} {bbs['packet_at']}")
+            if bbs.get("user_name"):
+                parts.append(f"  {c('User Name:', BOLD)} {bbs['user_name']}")
+
+        parts.append(f"  {c('Total Messages:', BOLD)} {info['total_messages']}")
+        parts.append(f"  {c('Conferences:', BOLD)}")
+
+        for conf in info["conferences"]:
+            count_str = c(str(conf["message_count"]), BOLD)
+            parts.append(
+                f"    {conf['number']}: {conf['name']} ({count_str} messages)"
+            )
+        parts.append("")
+    return "\n".join(parts)
+
+
+def _render_info_html(all_info: list[dict[str, Any]]) -> list[str]:
+    """Render archive information as an HTML fragment."""
+    parts = []
+    for info in all_info:
+        parts.append('<div class="stats-container">')
+        parts.append(f"<h2>File: {html.escape(info['file'])}</h2>")
+
+        if info.get("error"):
+            parts.append(f"<p>{html.escape(info['error'])}</p>")
+            parts.append("</div>")
+            continue
+
+        bbs = info.get("bbs_info")
+        if bbs:
+            parts.append('<div class="stats-summary-info">')
+            if bbs.get("name"):
+                parts.append(
+                    f"<div><strong>BBS Name:</strong> {html.escape(bbs['name'])}</div>"
+                )
+            if bbs.get("sysop"):
+                parts.append(
+                    f"<div><strong>SysOp:</strong> {html.escape(bbs['sysop'])}</div>"
+                )
+            if bbs.get("location"):
+                parts.append(
+                    f"<div><strong>Location:</strong> {html.escape(bbs['location'])}</div>"
+                )
+            if bbs.get("bbs_id"):
+                parts.append(
+                    f"<div><strong>BBS ID:</strong> {html.escape(bbs['bbs_id'])}</div>"
+                )
+            if bbs.get("packet_at"):
+                parts.append(
+                    f"<div><strong>Packet At:</strong> {html.escape(bbs['packet_at'])}</div>"
+                )
+            if bbs.get("user_name"):
+                parts.append(
+                    f"<div><strong>User Name:</strong> {html.escape(bbs['user_name'])}</div>"
+                )
+            parts.append("</div>")
+
+        parts.append(
+            f"<div><strong>Total Messages:</strong> {info['total_messages']}</div>"
+        )
+
+        if info["conferences"]:
+            parts.append("<h3>Conferences</h3>")
+            parts.append("<ul>")
+            for conf in info["conferences"]:
+                parts.append(
+                    f"<li>{conf['number']}: {html.escape(conf['name'])} ({conf['message_count']} messages)</li>"
+                )
+            parts.append("</ul>")
+        parts.append("</div>")
+    return parts
+
+
+def _render_info_markdown(all_info: list[dict[str, Any]]) -> list[str]:
+    """Render archive information as a Markdown fragment."""
+    parts = []
+    for info in all_info:
+        parts.append(f"## File: {info['file']}\n")
+
+        if info.get("error"):
+            parts.append(f"{info['error']}\n")
+            continue
+
+        bbs = info.get("bbs_info")
+        if bbs:
+            if bbs.get("name"):
+                parts.append(f"- **BBS Name:** {bbs['name']}")
+            if bbs.get("sysop"):
+                parts.append(f"- **SysOp:** {bbs['sysop']}")
+            if bbs.get("location"):
+                parts.append(f"- **Location:** {bbs['location']}")
+            if bbs.get("bbs_id"):
+                parts.append(f"- **BBS ID:** {bbs['bbs_id']}")
+            if bbs.get("packet_at"):
+                parts.append(f"- **Packet At:** {bbs['packet_at']}")
+            if bbs.get("user_name"):
+                parts.append(f"- **User Name:** {bbs['user_name']}")
+
+        parts.append(f"- **Total Messages:** {info['total_messages']}")
+
+        if info["conferences"]:
+            parts.append("\n### Conferences\n")
+            parts.append("| # | Name | Messages |")
+            parts.append("|---|---|---|")
+            for conf in info["conferences"]:
+                parts.append(
+                    f"| {conf['number']} | {conf['name']} | {conf['message_count']} |"
+                )
+            parts.append("")
+    return parts
+
+
 def show_info(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
     """Show a summary of the QWK packet contents."""
-    # ANSI Attribute codes
-    BOLD = "1"
-    CYAN = "36"
-
     all_info = []
 
     for input_path in input_paths:
@@ -5532,15 +5669,15 @@ def show_info(
 
             bbs_info = getattr(board_dict, "bbs_info", None)
             if bbs_info:
+                if settings.my_name:
+                    bbs_info.user_name = settings.my_name
                 info_entry["bbs_info"] = asdict(bbs_info)
 
             if isinstance(file_data, list):
                 messages_to_process = file_data
             else:
                 if len(file_data) < BLOCK_SIZE:
-                    if settings.format != "json":
-                        print(f"File: {_colorize(input_path, CYAN)}")
-                        print("  Invalid or empty file.")
+                    info_entry["error"] = "Invalid or empty file."
                     all_info.append(info_entry)
                     continue
                 messages_to_process = parse_messages(
@@ -5569,40 +5706,38 @@ def show_info(
                     {"number": conf_num, "name": conf_name, "message_count": count}
                 )
 
-            if settings.format != "json":
-                print(f"File: {_colorize(input_path, CYAN)}")
-                if bbs_info:
-                    if bbs_info.name:
-                        print(f"  {_colorize('BBS Name:', BOLD)} {bbs_info.name}")
-                    if bbs_info.sysop:
-                        print(f"  {_colorize('SysOp:', BOLD)}    {bbs_info.sysop}")
-                    if bbs_info.location:
-                        print(f"  {_colorize('Location:', BOLD)} {bbs_info.location}")
-                    if bbs_info.bbs_id:
-                        print(f"  {_colorize('BBS ID:', BOLD)}   {bbs_info.bbs_id}")
-                    if bbs_info.packet_at:
-                        print(f"  {_colorize('Packet At:', BOLD)} {bbs_info.packet_at}")
-                user_name_to_show = settings.my_name or (bbs_info.user_name if bbs_info else None)
-                if user_name_to_show:
-                    print(f"  {_colorize('User Name:', BOLD)} {user_name_to_show}")
-
-                print(f"  {_colorize('Total Messages:', BOLD)} {total_messages}")
-                print(f"  {_colorize('Conferences:', BOLD)}")
-
-                for conf in info_entry["conferences"]:
-                    count_str = _colorize(str(conf["message_count"]), BOLD)
-                    print(
-                        f"    {conf['number']}: {conf['name']} ({count_str} messages)"
-                    )
-                print("")
-
             all_info.append(info_entry)
 
         except PROCESSING_EXCEPTIONS as e:
             logger.error(f"Error reading info for {input_path}: {e}")
 
+    if not all_info:
+        return
+
+    output = ""
     if settings.format == "json":
-        print(json.dumps(all_info, indent=4, ensure_ascii=False))
+        output = json.dumps(all_info, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        title = "Archive Information"
+        html_parts = _get_html_header(title)
+        html_parts.append(f"<h1>{title}</h1>")
+        html_parts.extend(_render_info_html(all_info))
+        html_parts.extend(_get_html_footer())
+        output = "\n".join(html_parts)
+    elif settings.format == "markdown":
+        title = "Archive Information"
+        md_parts = [f"# {title}\n"]
+        md_parts.extend(_render_info_markdown(all_info))
+        output = "\n".join(md_parts)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_info_as_text(all_info, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
 
 
 def _compute_stats_from_messages(
@@ -6059,17 +6194,9 @@ def show_stats(
     """Show detailed statistics about the messages in the QWK archives."""
     all_stats = []
 
-    use_colors = (
-        settings.format == "text"
-        and hasattr(sys.stdout, "isatty")
-        and sys.stdout.isatty()
-    )
-
     if settings.merge_stats:
         try:
             stats_entry = calculate_archive_stats(input_paths, settings, logger)
-            if settings.format != "json":
-                print(render_stats_as_text(stats_entry, use_colors=use_colors))
             all_stats.append(stats_entry)
         except PROCESSING_EXCEPTIONS as e:
             logger.error(f"Error calculating merged stats: {e}")
@@ -6077,14 +6204,42 @@ def show_stats(
         for input_path in input_paths:
             try:
                 stats_entry = calculate_archive_stats([input_path], settings, logger)
-                if settings.format != "json":
-                    print(render_stats_as_text(stats_entry, use_colors=use_colors))
                 all_stats.append(stats_entry)
             except PROCESSING_EXCEPTIONS as e:
                 logger.error(f"Error calculating stats for {input_path}: {e}")
 
+    if not all_stats:
+        return
+
+    output = ""
     if settings.format == "json":
-        print(json.dumps(all_stats, indent=4, ensure_ascii=False))
+        output = json.dumps(all_stats, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        title = "Archive Statistics"
+        html_parts = _get_html_header(title)
+        html_parts.append(f"<h1>{title}</h1>")
+        for stats in all_stats:
+            html_parts.extend(_render_stats_html(stats))
+        html_parts.extend(_get_html_footer())
+        output = "\n".join(html_parts)
+    elif settings.format == "markdown":
+        title = "Archive Statistics"
+        md_parts = [f"# {title}\n"]
+        for stats in all_stats:
+            md_parts.extend(_render_stats_markdown(stats))
+        output = "\n".join(md_parts)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        parts = []
+        for stats in all_stats:
+            parts.append(render_stats_as_text(stats, use_colors=use_colors))
+        output = "\n".join(parts)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
 
 
 def process_multiple_files(
