@@ -23,13 +23,13 @@ def test_toolbar_consolidation():
         root = MagicMock()
         QwkGuiApp(root)
 
-        # Check that "Filters" label exists
-        filter_label_calls = [
+        # Check that "Filters" labelframe exists
+        filter_frame_calls = [
             call
-            for call in mock_ttk.Label.call_args_list
+            for call in mock_ttk.Labelframe.call_args_list
             if call[1].get("text") == "Filters"
         ]
-        assert len(filter_label_calls) == 1, "Expected one 'Filters' label"
+        assert len(filter_frame_calls) == 1, "Expected one 'Filters' labelframe"
 
         # Check that "Discovery:" label DOES NOT exist
         discovery_label_calls = [
