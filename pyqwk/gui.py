@@ -490,6 +490,12 @@ class QwkGuiApp:
         if key in ("k", "p"):
             self._select_relative_message(-1)
             return "break"
+        if key == "r":
+            self._select_random_message()
+            return "break"
+        if key == "slash" or event.char == "/":
+            self._focus_search()
+            return "break"
 
         # Allow text navigation keys
         if event.keysym in (
@@ -547,7 +553,7 @@ class QwkGuiApp:
             (
                 "Search & Filters",
                 [
-                    ("Ctrl + F", "Search / Find"),
+                    ("Ctrl + F / /", "Search / Find"),
                     ("F3", "Find Next Match"),
                     ("Shift + F3", "Find Previous Match"),
                     ("Enter", "Find Next (Search)"),
@@ -564,6 +570,7 @@ class QwkGuiApp:
                     ("Shift+Spc / PgUp", "Scroll Up / Prev"),
                     ("BackSpace", "Scroll Up / Prev"),
                     ("Ctrl + G", "Go to Message Number"),
+                    ("R", "Random Message"),
                     ("[ / ]", "Prev / Next Conference"),
                 ],
             ),
@@ -713,6 +720,8 @@ class QwkGuiApp:
         self.root.bind("<Next>", self._on_space_pressed)
         self.root.bind("[", lambda e: self._navigate_conference(-1))
         self.root.bind("]", lambda e: self._navigate_conference(1))
+        self.root.bind("/", self._focus_search)
+        self.root.bind("r", self._select_random_message)
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -825,6 +834,12 @@ class QwkGuiApp:
 
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
+        if hasattr(self, "root") and self.root.focus_get() in (
+            getattr(self, "search_entry", None),
+            getattr(self, "exclude_entry", None),
+        ):
+            return
+
         try:
             sel_range = self.detail_text.tag_ranges("sel")
             if sel_range:
@@ -2303,6 +2318,12 @@ class QwkGuiApp:
 
     def _select_random_message(self, _event: object | None = None) -> None:
         """Pick a random message from the currently visible list and select it."""
+        if hasattr(self, "root") and self.root.focus_get() in (
+            getattr(self, "search_entry", None),
+            getattr(self, "exclude_entry", None),
+        ):
+            return
+
         all_items = self._get_all_tree_items()
         if not all_items:
             return
