@@ -68,32 +68,32 @@ def _parse_cli_date(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Convert old BBS message archives into modern formats like HTML, Markdown, and SQLite.",
+        description="Save BBS message archives in modern formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 examples:
-  # Show a one-line summary for all messages
+  # Show a one-line summary
   qwk archive.qwk --oneline
 
-  # Save as a single HTML file
+  # Save as an HTML file
   qwk archive.qwk --format html -o messages.html
 
-  # Save as separate EML files in a folder
+  # Save as EML files
   qwk archive.qwk --format eml -o ./output/
 
-  # Search for a keyword and show only headers
+  # Search for a keyword and show headers
   qwk archive.qwk --search "vintage computing" --headers-only
 
-  # Save attachments to a folder
+  # Extract attachments
   qwk archive.qwk --extract-attachments
 
-  # Show activity reports and charts
+  # Show statistics
   qwk archive.qwk --stats
 
-  # Save statistics as an HTML report with charts
+  # Save statistics as an HTML report
   qwk archive.qwk --stats --format html -o stats.html
 
-  # Save archive information as a Markdown report
+  # Save archive info as Markdown
   qwk archive.qwk --info --format markdown -o info.md
 """,
     )
@@ -112,7 +112,7 @@ examples:
         "-o",
         "--output",
         dest="output_path",
-        help="Save results to a file or folder. If omitted, messages are printed to the screen.",
+        help="Save results to a file or folder. Messages print to the screen if you omit this.",
     )
     io_group.add_argument(
         "-i",
@@ -176,7 +176,7 @@ examples:
     io_group.add_argument(
         "-E",
         "--encoding",
-        help="Set the text encoding (default is 'cp437'). Use this if characters look wrong.",
+        help="Set the text encoding (default is 'cp437'). Use this if text looks incorrect.",
         default="cp437",
     )
 
@@ -561,12 +561,12 @@ examples:
         "-I",
         "--info",
         action="store_true",
-        help="Show a summary of the archive and exit. Supports file export via -o and --format (json, html, markdown, text).",
+        help="Show archive information and exit. You can save this to a file with -o.",
     )
     parser.add_argument(
         "--stats",
         action="store_true",
-        help="Show detailed statistics and exit. Supports file export via -o and --format (json, html, markdown, text).",
+        help="Show archive statistics and exit. You can save this to a file with -o.",
     )
     parser.add_argument(
         "--merge-stats",
