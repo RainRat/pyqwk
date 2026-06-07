@@ -64,3 +64,17 @@ def test_gui_random_message():
             app.message_list.selection_set.assert_called_once_with("3")
             app.message_list.see.assert_called_once_with("3")
             app.message_list.focus.assert_called_once_with("3")
+
+def test_gui_random_message_empty():
+    # Mocking Tk and root to avoid TclError
+    with patch("tkinter.Tk"), patch("tkinter.ttk.Style"), patch("tkinter.font.Font"):
+        root = MagicMock()
+        # Mocking QwkGuiApp's __init__ to avoid building the whole UI
+        with patch.object(QwkGuiApp, "__init__", return_value=None):
+            app = QwkGuiApp(root)
+            app.message_list = MagicMock()
+            app._get_all_tree_items = MagicMock(return_value=[])
+
+            app._select_random_message()
+
+            app.message_list.selection_set.assert_not_called()
