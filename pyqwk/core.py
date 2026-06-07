@@ -933,13 +933,16 @@ class MessageHeader:
             to_name = _redact_pii(to_name)
             subject = _redact_pii(subject)
 
-        def prepare_field(text: str, width: int) -> str:
+        def prepare_field(text: str, width: int, dim: bool = False) -> str:
             truncated = text[:width]
             display_len = len(truncated)
             truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
-            return truncated + (" " * (width - display_len))
+            res = truncated + (" " * (width - display_len))
+            if use_colors and dim:
+                return f"\x1b[90m{res}\x1b[0m"
+            return res
 
-        conf_part = prepare_field(conf_name, 12)
+        conf_part = prepare_field(conf_name, 12, dim=True)
         from_part = prepare_field(from_name, 15)
         to_part = prepare_field(to_name, 15)
 
@@ -950,24 +953,31 @@ class MessageHeader:
         if has_attachments:
             flags += "@"
 
-        if flags:
-            flags_display = flags.ljust(2)
-            if use_colors:
-                # Dim the flags
-                flags_display = f"\x1b[90m{flags_display}\x1b[0m"
-            subject = f"{flags_display} {subject}"
-
         # Apply conversation indent to subject
         if depth > 0:
             indent = "  " * (depth - 1)
             subject = f"{indent}└ {subject}"
+
+        flags_display = flags.ljust(3)
+        if use_colors:
+            # Dim the flags
+            flags_display = f"\x1b[90m{flags_display}\x1b[0m"
+        subject = f"{flags_display} {subject}"
         subject_part = _highlight_text(subject, highlight_term, is_regex, use_colors)
 
         msgnum_part = ""
         if verbose:
-            msgnum_part = f"{(self.msgnum or ''):<6} "
+            msgnum_val = str(self.msgnum or "")
+            if use_colors:
+                msgnum_part = f"\x1b[90m{msgnum_val:<6}\x1b[0m "
+            else:
+                msgnum_part = f"{msgnum_val:<6} "
 
-        return f"{msgnum_part}{conf_part} {date_str:<14} {from_part} {to_part} {subject_part}\r\n"
+        date_part = date_str.ljust(14)
+        if use_colors:
+            date_part = f"\x1b[90m{date_part}\x1b[0m"
+
+        return f"{msgnum_part}{conf_part} {date_part} {from_part} {to_part} {subject_part}\r\n"
 
 
 class MessagesDatFormatError(Exception):
@@ -4733,7 +4743,8 @@ def _write_text(
         date_hdr = f"{'Date':<14}"
         from_hdr = f"{'From':<15}"
         to_hdr = f"{'To':<15}"
-        subj_hdr = "Subject"
+        # "Flg" header for the new 3-character flags column
+        subj_hdr = "Flg Subject"
 
         if use_colors:
             BOLD = "1"
