@@ -364,33 +364,33 @@ examples:
         "--conference",
         dest="conferences",
         action="append",
-        help="Show messages from this conference (can be used multiple times).",
+        help="Show messages from specific conferences. You can use names (partial matches) or numbers.",
     )
     filter_group.add_argument(
         "--bbs",
         dest="bbs_names",
         action="append",
-        help="Show messages from this BBS (can be used multiple times).",
+        help="Show messages from specific BBSes. You can use names or short IDs (partial matches).",
     )
     filter_group.add_argument(
         "-f",
         "--from",
         dest="authors",
         action="append",
-        help="Show messages from this author (you can use part of the name).",
+        help="Show messages from specific authors (partial matches).",
     )
     filter_group.add_argument(
         "--to",
         dest="recipients",
         action="append",
-        help="Show messages to this recipient (you can use part of the name).",
+        help="Show messages to specific recipients (partial matches).",
     )
     filter_group.add_argument(
         "-s",
         "--subject",
         dest="subjects",
         action="append",
-        help="Show messages with this word in the subject line.",
+        help="Show messages with specific keywords in the subject line (partial matches).",
     )
     filter_group.add_argument(
         "-S",
@@ -412,31 +412,31 @@ examples:
         "--exclude-from",
         dest="exclude_authors",
         action="append",
-        help="Exclude messages from this author.",
+        help="Hide messages from specific authors (partial matches).",
     )
     filter_group.add_argument(
         "--exclude-to",
         dest="exclude_recipients",
         action="append",
-        help="Exclude messages to this recipient.",
+        help="Hide messages to specific recipients (partial matches).",
     )
     filter_group.add_argument(
         "--exclude-subject",
         dest="exclude_subjects",
         action="append",
-        help="Exclude messages with this word in the subject line.",
+        help="Hide messages with specific keywords in the subject line (partial matches).",
     )
     filter_group.add_argument(
         "--exclude-conference",
         dest="exclude_conferences",
         action="append",
-        help="Exclude messages from this conference (name or number).",
+        help="Hide messages from specific conferences. You can use names (partial matches) or numbers.",
     )
     filter_group.add_argument(
         "--exclude-bbs",
         dest="exclude_bbs_names",
         action="append",
-        help="Exclude messages from this BBS.",
+        help="Hide messages from specific BBSes. You can use names or short IDs (partial matches).",
     )
     filter_group.add_argument(
         "--regex",
