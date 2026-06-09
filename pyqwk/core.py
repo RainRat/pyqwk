@@ -37,12 +37,32 @@ REPLY_FILENAME = "reply.dat"
 CONTROL_FILENAME = "control.dat"
 
 
+def _is_maildir(path: str) -> bool:
+    """Check if a directory is a Maildir structure."""
+    if not os.path.isdir(path):
+        return False
+    try:
+        # A Maildir must contain 'cur', 'new', and 'tmp' subdirectories.
+        # Checking for their existence in the directory listing is more robust
+        # than calling isdir() on each, especially in tests with broad mocks.
+        contents = set(os.listdir(path))
+        return {"cur", "new", "tmp"}.issubset(contents)
+    except (OSError, PermissionError):
+        return False
+
+
 def expand_paths(paths: list[str]) -> list[str]:
     """Recursively find supported QWK files in directories."""
     expanded_paths = []
     for path in paths:
         if os.path.isdir(path):
-            for root, _, files in os.walk(path):
+            for root, dirs, files in os.walk(path):
+                # Detect Maildir: does this directory contain cur, new, and tmp?
+                if {"cur", "new", "tmp"}.issubset(set(dirs)):
+                    expanded_paths.append(root)
+                    del dirs[:]  # Stop recursing into Maildir subdirectories
+                    continue
+
                 for file in files:
                     lower_file = file.lower()
                     if lower_file.endswith(
@@ -68,6 +88,8 @@ def expand_paths(paths: list[str]) -> list[str]:
                             ".html",
                             ".htm",
                             ".txt",
+                            ".maildir",
+                            ".mdir",
                         )
                     ) or lower_file in (MESSAGES_FILENAME, REPLY_FILENAME):
                         expanded_paths.append(os.path.join(root, file))
@@ -90,6 +112,7 @@ FORMAT_EXTENSIONS = {
     "eml": ".eml",
     "qwk": ".qwk",
     "rep": ".rep",
+    "maildir": ".maildir",
 }
 
 
@@ -128,6 +151,8 @@ def resolve_output_format(
             ".db": "sqlite",
             ".qwk": "qwk",
             ".rep": "rep",
+            ".maildir": "maildir",
+            ".mdir": "maildir",
         }
         if ext in mapping:
             return mapping[ext]
@@ -1953,7 +1978,7 @@ def load_data(
     """Load message data and conference mappings from an archive file.
 
     This function handles both older formats (QWK, REP) and modern
-    formats (JSON, JSONL, SQLite, XML, RSS, CSV, mbox, EML, Markdown, HTML, Plain Text).
+    formats (JSON, JSONL, SQLite, XML, RSS, CSV, mbox, Maildir, EML, Markdown, HTML, Plain Text).
 
     Args:
         input_path: Path to the archive file or an original 'MESSAGES.DAT' file.
@@ -1971,6 +1996,18 @@ def load_data(
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
     board_dict = ConferenceMap()
+
+    if _is_maildir(input_path) or input_path.lower().endswith((".maildir", ".mdir")):
+        try:
+            messages = []
+            mdir = mailbox.Maildir(input_path)
+            for msg_obj in mdir:
+                messages.append(_message_from_email(msg_obj))
+        except Exception as e:
+            raise ValueError(f"Failed to load Maildir archive: {e}")
+
+        board_dict = _reconstruct_archive_information(messages)
+        return messages, board_dict
 
     if input_path.lower().endswith((".db", ".sqlite")) or input_path == ":memory:":
         try:
@@ -4661,6 +4698,24 @@ def _write_eml(
     _write_text_output("\n\n".join(parts), output_path, encoding=encoding)
 
 
+def _write_maildir(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = "utf-8",
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    """Write messages to a Maildir structure."""
+    if output_path is None:
+        raise ValueError("Output path is required for Maildir export.")
+
+    mdir = mailbox.Maildir(output_path, create=True)
+    for message in messages:
+        rfc822_str = _serialize_rfc822(message, include_mbox_header=False)
+        mdir.add(rfc822_str.encode(encoding))
+
+
 def _serialize_control_dat(
     bbs_info: BBSInfo | None,
     board_dict: Mapping[int, str] | None,
@@ -5119,6 +5174,7 @@ def write_messages(
         "sqlite": _write_sqlite,
         "qwk": _write_qwk,
         "rep": _write_qwk,
+        "maildir": _write_maildir,
     }
 
     writer = writers.get(settings.format, _write_text)

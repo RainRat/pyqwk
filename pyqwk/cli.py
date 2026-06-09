@@ -271,6 +271,7 @@ examples:
             "mbox",
             "eml",
             "sqlite",
+            "maildir",
         ],
     )
     format_group.add_argument(

@@ -2192,6 +2192,7 @@ class QwkGuiApp:
             ("JSONL files", "*.jsonl"),
             ("mbox files", "*.mbox"),
             ("EML files", "*.eml"),
+            ("Maildir", "*.maildir *.mdir"),
             ("CSV files", "*.csv"),
             ("SQLite database", "*.db"),
             ("XML files", "*.xml"),

@@ -12,7 +12,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 
 ## Features
 
-- **Supports many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, EML, Markdown, HTML, and Plain Text.
+- **Supports many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, Maildir, EML, Markdown, HTML, and Plain Text.
 - **Groups conversations:** Group replies into conversations to follow discussions easily.
 - **Cleans content:** Automatically remove signatures, old quotes, attachments, and color codes.
 - **Protects privacy:** Hide personal information or private messages.
@@ -33,6 +33,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 | **XML** | ✅ | ✅ | Generic structured data (.xml) |
 | **SQLite** | ✅ | ✅ | Relational databases (.db, .sqlite) |
 | **mbox / EML** | ✅ | ✅ | Email applications (.mbox, .eml) |
+| **Maildir** | ✅ | ✅ | Standard email directory structure (.maildir, .mdir) |
 | **Plain Text** | ✅ | ✅ | Simple readable text (.txt) |
 
 ## Prerequisites
