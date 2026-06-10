@@ -13,16 +13,18 @@ def test_linkify_text_unknown_entity_type():
         assert result == "Hello world!"
 
 def test_linkify_text_html_formats():
-    text = "Check http://example.com and test@example.com and msg #123"
+    text = "Check http://example.com and www.example.com and test@example.com and msg #123"
     result = _linkify_text(text, "html", conf_num=1)
     assert '<a href="http://example.com">http://example.com</a>' in result
+    assert '<a href="http://www.example.com">www.example.com</a>' in result
     assert '<a href="mailto:test@example.com">test@example.com</a>' in result
     assert '<a href="#msg-1-123">msg #123</a>' in result
 
 def test_linkify_text_markdown_formats():
-    text = "Check http://example.com and test@example.com and msg #123"
+    text = "Check http://example.com and www.example.com and test@example.com and msg #123"
     result = _linkify_text(text, "markdown", conf_num=1)
     assert '[http://example.com](http://example.com)' in result
+    assert '[www.example.com](http://www.example.com)' in result
     assert '[test@example.com](mailto:test@example.com)' in result
     assert '[msg #123](#msg-1-123)' in result
 
