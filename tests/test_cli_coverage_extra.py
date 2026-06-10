@@ -126,7 +126,7 @@ def test_individual_eml_output_not_a_directory(
 
     stderr = capsys.readouterr().err
     assert (
-        "The output path must be a folder when saving messages as individual EML files."
+        "The output path must be a folder when saving messages in EML format."
         in stderr
     )
 

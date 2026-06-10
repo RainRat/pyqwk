@@ -37,12 +37,33 @@ REPLY_FILENAME = "reply.dat"
 CONTROL_FILENAME = "control.dat"
 
 
+def _is_maildir(path: str) -> bool:
+    """Check if a directory is a valid Maildir."""
+    if not os.path.isdir(path):
+        return False
+    # A Maildir is a directory containing 'cur', 'new', and 'tmp' subdirectories.
+    try:
+        subdirs = set(os.listdir(path))
+        return {"cur", "new", "tmp"}.issubset(subdirs)
+    except OSError:
+        return False
+
+
 def expand_paths(paths: list[str]) -> list[str]:
     """Recursively find supported QWK files in directories."""
     expanded_paths = []
     for path in paths:
         if os.path.isdir(path):
-            for root, _, files in os.walk(path):
+            if _is_maildir(path):
+                expanded_paths.append(path)
+                continue
+
+            for root, dirs, files in os.walk(path):
+                if _is_maildir(root):
+                    expanded_paths.append(root)
+                    del dirs[:]  # Don't recurse into Maildir subdirectories
+                    continue
+
                 for file in files:
                     lower_file = file.lower()
                     if lower_file.endswith(
@@ -88,6 +109,7 @@ FORMAT_EXTENSIONS = {
     "rss": ".rss",
     "sqlite": ".db",
     "eml": ".eml",
+    "maildir": ".maildir",
     "qwk": ".qwk",
     "rep": ".rep",
 }
@@ -126,6 +148,8 @@ def resolve_output_format(
             ".markdown": "markdown",
             ".sqlite": "sqlite",
             ".db": "sqlite",
+            ".maildir": "maildir",
+            ".mdir": "maildir",
             ".qwk": "qwk",
             ".rep": "rep",
         }
@@ -1995,6 +2019,19 @@ def load_data(
                 if line.strip():
                     data = json.loads(line)
                     messages.extend(_parse_json_messages(data))
+
+        board_dict = _reconstruct_archive_information(messages)
+        return messages, board_dict
+
+    if _is_maildir(input_path) or input_path.lower().endswith((".maildir", ".mdir")):
+        try:
+            messages = []
+            mdir = mailbox.Maildir(input_path)
+            for msg_obj in mdir:
+                messages.append(_message_from_email(msg_obj))
+            mdir.close()
+        except Exception as e:
+            raise ValueError(f"Failed to load Maildir: {e}")
 
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
@@ -4661,6 +4698,25 @@ def _write_eml(
     _write_text_output("\n\n".join(parts), output_path, encoding=encoding)
 
 
+def _write_maildir(
+    messages: list[ProcessedMessage],
+    output_path: str | None,
+    encoding: str = "utf-8",
+    settings: ProcessingSettings | None = None,
+    bbs_info: BBSInfo | None = None,
+    board_dict: Mapping[int, str] | None = None,
+) -> None:
+    """Write messages to a Maildir."""
+    if output_path is None:
+        raise ValueError("Output path is required for Maildir export.")
+
+    mdir = mailbox.Maildir(output_path, create=True)
+    for message in messages:
+        rfc822_content = _serialize_rfc822(message, include_mbox_header=False)
+        mdir.add(rfc822_content.encode(encoding))
+    mdir.close()
+
+
 def _serialize_control_dat(
     bbs_info: BBSInfo | None,
     board_dict: Mapping[int, str] | None,
@@ -5116,6 +5172,7 @@ def write_messages(
         "csv": _write_csv,
         "mbox": _write_mbox,
         "eml": _write_eml,
+        "maildir": _write_maildir,
         "sqlite": _write_sqlite,
         "qwk": _write_qwk,
         "rep": _write_qwk,

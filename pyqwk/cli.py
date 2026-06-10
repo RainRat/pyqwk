@@ -270,6 +270,7 @@ examples:
             "csv",
             "mbox",
             "eml",
+            "maildir",
             "sqlite",
         ],
     )
@@ -653,14 +654,14 @@ examples:
 
     output_format = resolve_output_format(args.format, output_path, output_mode)
 
-    if args.threaded and output_format == "eml":
-        parser.error("You cannot use --threaded with EML format.")
+    if args.threaded and output_format in ("eml", "maildir"):
+        parser.error(f"You cannot use --threaded with {output_format.upper()} format.")
 
     # Default to individual files for EML format if an output path is provided
-    if output_format == "eml" and not args.individualfiles and output_path:
+    if output_format in ("eml", "maildir") and not args.individualfiles and output_path:
         args.individualfiles = True
         # If the user provided an output path that looks like a file (has an extension),
-        # but EML forces individual files (directory), it's confusing.
+        # but these formats force individual files (directory), it's confusing.
         # However, the core logic requires output_path to be a directory for individual files.
         if (
             output_path
@@ -668,7 +669,7 @@ examples:
             and not os.path.isdir(output_path)
         ):
             parser.error(
-                "The output path must be a folder when saving messages as individual EML files."
+                f"The output path must be a folder when saving messages in {output_format.upper()} format."
             )
 
         output_mode = "file"

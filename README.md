@@ -32,7 +32,7 @@ pyqwk helps you open these archives and convert them into modern, readable forma
 | **RSS** | ✅ | ✅ | Feed readers and syndication (.rss) |
 | **XML** | ✅ | ✅ | Generic structured data (.xml) |
 | **SQLite** | ✅ | ✅ | Relational databases (.db, .sqlite) |
-| **mbox / EML** | ✅ | ✅ | Email applications (.mbox, .eml) |
+| **mbox / EML / Maildir** | ✅ | ✅ | Email applications (.mbox, .eml, .maildir) |
 | **Plain Text** | ✅ | ✅ | Simple readable text (.txt) |
 
 ## Prerequisites
@@ -265,6 +265,11 @@ qwk archive.qwk --format rss -o feed.xml
 **Convert between modern formats (mbox to EML):**
 ```bash
 qwk messages.mbox --format eml -o ./emails/
+```
+
+**Convert to Maildir:**
+```bash
+qwk archive.qwk --format maildir -o ./my_maildir/
 ```
 
 ## Filtering & Searching
