@@ -954,7 +954,10 @@ class QwkGuiApp:
         )
         self.search_entry.pack(side=tk.LEFT, padx=(0, 0))
         ttk.Button(
-            search_frame, text="✕", width=2, command=lambda: self.search_var.set("")
+            search_frame,
+            text="✕",
+            width=2,
+            command=lambda: [self.search_var.set(""), self.search_entry.focus_set()],
         ).pack(side=tk.LEFT, padx=(0, 5))
 
         self.search_count_label = ttk.Label(
@@ -975,16 +978,25 @@ class QwkGuiApp:
             command=lambda: self._navigate_search_matches(1),
         ).pack(side=tk.LEFT, padx=(1, 5))
 
-        ttk.Label(search_frame, text="Exclude: ", padding=(10, 0, 0, 0)).pack(
-            side=tk.LEFT
+        ttk.Separator(search_frame, orient=tk.VERTICAL).pack(
+            side=tk.LEFT, fill=tk.Y, padx=5
         )
+
+        ttk.Label(search_frame, text="Exclude: ").pack(side=tk.LEFT)
         self.exclude_entry = ttk.Entry(
             search_frame, textvariable=self.exclude_var, width=18
         )
         self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
         ttk.Button(
-            search_frame, text="✕", width=2, command=lambda: self.exclude_var.set("")
+            search_frame,
+            text="✕",
+            width=2,
+            command=lambda: [self.exclude_var.set(""), self.exclude_entry.focus_set()],
         ).pack(side=tk.LEFT, padx=(0, 2))
+
+        ttk.Separator(search_frame, orient=tk.VERTICAL).pack(
+            side=tk.LEFT, fill=tk.Y, padx=5
+        )
 
         ttk.Checkbutton(
             search_frame,
