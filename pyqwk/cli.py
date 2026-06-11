@@ -174,6 +174,10 @@ examples:
         help=f"Set a pattern for naming individual files (e.g., '{{date}}_{{author}}_{{subject}}').\n{pattern_help}",
     )
     io_group.add_argument(
+        "--organize-pattern",
+        help=f"Set a pattern for organizing individual files into folders (e.g., '{{year}}/{{month}}/{{author}}').\n{pattern_help}",
+    )
+    io_group.add_argument(
         "-E",
         "--encoding",
         help="Set the text encoding (default is 'cp437'). Use this if text looks incorrect.",
@@ -751,6 +755,7 @@ examples:
         exclude_conferences=args.exclude_conferences,
         exclude_bbs_names=args.exclude_bbs_names,
         filename_pattern=getattr(args, "filename_pattern", None),
+        organize_pattern=getattr(args, "organize_pattern", None),
         min_length=getattr(args, "min_length", None),
         max_length=getattr(args, "max_length", None),
     )

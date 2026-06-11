@@ -592,6 +592,7 @@ class ProcessingSettings:
     exclude_subjects: list[str] | None = None
     exclude_conferences: list[str] | None = None
     exclude_bbs_names: list[str] | None = None
+    organize_pattern: str | None = None
 
 
 @dataclass
@@ -2814,6 +2815,30 @@ def _get_organization_subpath(
     message: ParsedMessage, settings: ProcessingSettings
 ) -> str:
     """Determine the relative subfolder path for a message or its attachments."""
+    if settings.organize_pattern:
+        try:
+            raw_mapping = _get_message_mapping(
+                message,
+                0,
+                redact_pii=settings.redact_pii,
+                user_name=settings.my_name,
+            )
+
+            mapping = {}
+            for k, v in raw_mapping.items():
+                if isinstance(v, str):
+                    mapping[k] = _slugify(v, k)
+                else:
+                    mapping[k] = v
+
+            subpath = settings.organize_pattern.format(**mapping)
+            # Support both forward and backward slashes for cross-platform patterns
+            parts = [p for p in subpath.replace("\\", "/").split("/") if p]
+            return os.path.join(*parts) if parts else ""
+        except (KeyError, ValueError, AttributeError):
+            # Fallback to standard organization if pattern fails
+            pass
+
     sub_parts = []
 
     if settings.organize_by_bbs:
