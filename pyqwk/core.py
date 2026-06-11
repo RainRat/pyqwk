@@ -5431,11 +5431,7 @@ def _linkify_text(
             else:
                 result.append(val_esc)
         elif etype == "url":
-            uri = (
-                evalue
-                if "://" in evalue.lower() or evalue.lower().startswith("www.")
-                else f"http://{evalue}"
-            )
+            uri = evalue if "://" in evalue.lower() else f"http://{evalue}"
             if output_format == "html":
                 result.append(f'<a href="{html.escape(uri)}">{val_esc}</a>')
             elif output_format == "markdown":
