@@ -144,6 +144,7 @@ qwk-gui messages.db
 - **Space**: Scroll down or move to the next message.
 - **Shift + Space / BackSpace**: Scroll up or move to the previous message.
 - **Ctrl + G**: Jump to a message number.
+- **r**: Random message.
 - **[ / ]**: Previous or next conference.
 
 ## Usage Examples
