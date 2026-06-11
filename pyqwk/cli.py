@@ -249,7 +249,7 @@ examples:
     content_group.add_argument(
         "-H",
         "--headers-only",
-        help="Show only the message headers.",
+        help="Show only the message details (metadata).",
         action="store_true",
     )
 
@@ -311,7 +311,7 @@ examples:
     format_group.add_argument(
         "-1",
         "--oneline",
-        help="Show a one-line summary (Conference, Date, From, To, Subject).",
+        help="Show a one-line summary (MsgNum, Conf, Date, From, To, Flags, Subject).",
         action="store_true",
     )
     format_group.add_argument(
@@ -365,79 +365,85 @@ examples:
         "--conference",
         dest="conferences",
         action="append",
-        help="Show messages from this conference (can be used multiple times).",
+        help="Show messages from a specific conference (name or number).",
     )
     filter_group.add_argument(
         "--bbs",
         dest="bbs_names",
         action="append",
-        help="Show messages from this BBS (can be used multiple times).",
+        help="Show messages from a specific BBS (name or ID).",
     )
     filter_group.add_argument(
         "-f",
         "--from",
         dest="authors",
         action="append",
-        help="Show messages from this author (you can use part of the name).",
+        help="Show messages from a specific author (supports partial matches).",
     )
     filter_group.add_argument(
         "--to",
         dest="recipients",
         action="append",
-        help="Show messages to this recipient (you can use part of the name).",
+        help="Show messages to a specific recipient (supports partial matches).",
     )
     filter_group.add_argument(
         "-s",
         "--subject",
         dest="subjects",
         action="append",
-        help="Show messages with this word in the subject line.",
+        help="Show messages with a specific word in the subject line.",
     )
     filter_group.add_argument(
         "-S",
         "--search",
         dest="search_term",
-        help="Search for keywords in common fields (Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments).",
+        help=(
+            "Search for keywords in common fields:\n"
+            "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments."
+        ),
     )
     filter_group.add_argument(
         "--body",
         dest="body_search",
-        help="Search for a keyword specifically within the message body text.",
+        help="Search for a specific keyword within the message body text.",
     )
     filter_group.add_argument(
         "--exclude",
         dest="exclude_search",
-        help="Hide messages that match this keyword in any field.",
+        help=(
+            "Hide messages that match a specific keyword in any common field:\n"
+            "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments."
+        ),
     )
     filter_group.add_argument(
         "--exclude-from",
         dest="exclude_authors",
         action="append",
-        help="Exclude messages from this author.",
+        help="Hide messages from a specific author (supports partial matches).",
     )
     filter_group.add_argument(
         "--exclude-to",
         dest="exclude_recipients",
         action="append",
-        help="Exclude messages to this recipient.",
+        help="Hide messages sent to a specific recipient (supports partial matches).",
     )
     filter_group.add_argument(
         "--exclude-subject",
         dest="exclude_subjects",
         action="append",
-        help="Exclude messages with this word in the subject line.",
+        help="Hide messages with a specific word in the subject line.",
     )
     filter_group.add_argument(
         "--exclude-conference",
         dest="exclude_conferences",
         action="append",
-        help="Exclude messages from this conference (name or number).",
+        help="Hide messages from a specific conference (name or number).",
     )
     filter_group.add_argument(
         "--exclude-bbs",
         dest="exclude_bbs_names",
         action="append",
-        help="Exclude messages from this BBS.",
+        help="Hide messages from a specific BBS (name or ID).",
     )
     filter_group.add_argument(
         "--regex",
