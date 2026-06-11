@@ -3931,7 +3931,7 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
         parts.append(f"<h3>{title}</h3>")
         max_count = max(item[count_key] for item in items)
         for item in items[:5]:
-            width = int(item[count_key] * 100 / max_count)
+            width = int(item[count_key] * 100 / max_count) if max_count > 0 else 0
             label = str(item[label_key])
             parts.append('<div class="stats-bar-container">')
             parts.append(
