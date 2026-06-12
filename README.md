@@ -131,7 +131,7 @@ qwk-gui messages.db
 - **Ctrl + Q**: Exit.
 
 **Search & Filters**
-- **Ctrl + F**: Jump to the search bar.
+- **Ctrl + F** or **/**: Jump to the search bar.
 - **F3**: Next search match.
 - **Shift + F3**: Previous search match.
 - **Enter**: Next search match (when the search bar is focused).
@@ -141,8 +141,8 @@ qwk-gui messages.db
 **Navigation**
 - **j / n**: Next message.
 - **k / p**: Previous message.
-- **Space**: Scroll down or move to the next message.
-- **Shift + Space / BackSpace**: Scroll up or move to the previous message.
+- **Space** or **PgDn**: Scroll down or move to the next message.
+- **Shift + Space**, **BackSpace**, or **PgUp**: Scroll up or move to the previous message.
 - **Ctrl + G**: Jump to a message number.
 - **r**: Random message.
 - **[ / ]**: Previous or next conference.
