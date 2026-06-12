@@ -145,6 +145,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         loglevel="INFO",
         encoding="cp437",
         conferences=None,
+        bbs_names=None,
         authors=None,
         recipients=None,
         subjects=None,

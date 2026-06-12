@@ -365,13 +365,14 @@ examples:
         "--conference",
         dest="conferences",
         action="append",
-        help="Show messages from a specific conference (name or number).",
+        help="Show messages from a specific conference (name or number). Supports partial matches.",
     )
     filter_group.add_argument(
+        "-B",
         "--bbs",
         dest="bbs_names",
         action="append",
-        help="Show messages from a specific BBS (name or ID).",
+        help="Show messages from a specific BBS (name or ID). Supports partial matches.",
     )
     filter_group.add_argument(
         "-f",
@@ -408,6 +409,7 @@ examples:
         help="Search for a specific keyword within the message body text.",
     )
     filter_group.add_argument(
+        "-X",
         "--exclude",
         dest="exclude_search",
         help=(
@@ -501,6 +503,7 @@ examples:
         action="store_true",
     )
     filter_group.add_argument(
+        "-O",
         "--sort",
         help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random).",
         choices=[
@@ -721,6 +724,7 @@ examples:
         encoding=args.encoding,
         regex=args.regex,
         conferences=args.conferences,
+        bbs_names=args.bbs_names,
         authors=args.authors,
         recipients=args.recipients,
         subjects=args.subjects,
