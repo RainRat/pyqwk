@@ -399,6 +399,7 @@ for msg in messages:
 | `--organize-by-author` | Organize files into folders by author name. |
 | `--organize-by-to` | Organize files into folders by recipient name. |
 | `--organize-by-subject` | Organize files by message subject. |
+| `--organize-pattern` | Set a custom folder structure for individual files. |
 | `--sort` | Sort results by field (date, author, subject, etc.). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
