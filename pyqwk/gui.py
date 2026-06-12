@@ -477,9 +477,9 @@ class QwkGuiApp:
         if event.keysym in ("space", "BackSpace", "Prior", "Next"):
             return self._on_space_pressed(event)
 
-        # Allow Control+C (copy) and Control+A (select all)
+        # Allow common Control key shortcuts to propagate to root bindings
         if event.state & 0x4:  # Control mask
-            if event.keysym.lower() in ("c", "a"):
+            if event.keysym.lower() in ("c", "a", "f", "g", "o", "s", "i", "q"):
                 return None
 
         # Handle message navigation shortcuts
@@ -496,8 +496,14 @@ class QwkGuiApp:
         if key == "slash" or event.char == "/":
             self._focus_search()
             return "break"
+        if event.keysym == "bracketleft" or event.char == "[":
+            self._navigate_conference(-1)
+            return "break"
+        if event.keysym == "bracketright" or event.char == "]":
+            self._navigate_conference(1)
+            return "break"
 
-        # Allow text navigation keys
+        # Allow text navigation keys and search controls
         if event.keysym in (
             "Up",
             "Down",
@@ -505,6 +511,8 @@ class QwkGuiApp:
             "Right",
             "Home",
             "End",
+            "Escape",
+            "F3",
         ):
             return None
         return "break"
