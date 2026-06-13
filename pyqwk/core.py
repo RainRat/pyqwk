@@ -4592,7 +4592,8 @@ def _serialize_rfc822(
 
     # 1. Identify and extract attachments from the body
     # We remove them from the text part so the email looks modern
-    found_binaries = extract_binaries(message.text) if message.text else []
+    text_to_scan = message.original_text or message.text
+    found_binaries = extract_binaries(text_to_scan) if text_to_scan else []
     clean_body = message.text or ""
     if found_binaries:
         # Simple removal of lines that look like parts of UUE/Base64/yEnc blocks
