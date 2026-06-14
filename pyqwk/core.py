@@ -1157,11 +1157,22 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
 def _parse_json_messages(
     data: list[dict[str, Any]] | dict[str, Any],
 ) -> list[ParsedMessage]:
-    """Convert a list of dictionaries or a single dictionary into ParsedMessage objects."""
+    """Convert a list of dictionaries or a single dictionary into ParsedMessage objects.
+
+    This function supports both a plain list of message objects and a structured
+    dictionary containing metadata and a 'messages' list.
+    """
     if isinstance(data, dict):
-        data = [data]
+        if data.get("type") == "qwk_archive" and "messages" in data:
+            data = data["messages"]
+        elif data.get("type") == "metadata":
+            return []
+        else:
+            data = [data]
     messages = []
     for entry in data:
+        if not isinstance(entry, dict) or entry.get("type") == "metadata":
+            continue
         header_dict = entry.get("header", {})
         header = MessageHeader.from_dict(header_dict)
 
@@ -2010,18 +2021,37 @@ def load_data(
             data = json.load(f)
             messages = _parse_json_messages(data)
 
-            board_dict = _reconstruct_archive_information(messages)
+            if isinstance(data, dict) and data.get("type") == "qwk_archive":
+                board_dict = ConferenceMap()
+                if data.get("bbs_info"):
+                    board_dict.bbs_info = BBSInfo(**data["bbs_info"])
+                if data.get("conferences"):
+                    for k, v in data["conferences"].items():
+                        board_dict[int(k)] = v
+            else:
+                board_dict = _reconstruct_archive_information(messages)
             return messages, board_dict
 
     if input_path.lower().endswith(".jsonl"):
         messages = []
+        board_dict = ConferenceMap()
+        has_metadata = False
         with open(input_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     data = json.loads(line)
-                    messages.extend(_parse_json_messages(data))
+                    if isinstance(data, dict) and data.get("type") == "metadata":
+                        has_metadata = True
+                        if data.get("bbs_info"):
+                            board_dict.bbs_info = BBSInfo(**data["bbs_info"])
+                        if data.get("conferences"):
+                            for k, v in data["conferences"].items():
+                                board_dict[int(k)] = v
+                    else:
+                        messages.extend(_parse_json_messages(data))
 
-        board_dict = _reconstruct_archive_information(messages)
+        if not has_metadata:
+            board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
     if _is_maildir(input_path) or input_path.lower().endswith((".maildir", ".mdir")):
@@ -3707,7 +3737,21 @@ def _write_json(
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
-    output_data = [_message_to_dict(msg) for msg in messages]
+    """Write messages to a JSON file, optionally including archive metadata."""
+    message_list = [_message_to_dict(msg) for msg in messages]
+    # Only use the structured format if verbose/toc is set or if settings is missing (library use)
+    use_wrapper = (settings and (settings.verbose or settings.include_toc)) or (
+        not settings and (bbs_info or board_dict)
+    )
+    if use_wrapper and (bbs_info or board_dict):
+        output_data = {
+            "type": "qwk_archive",
+            "bbs_info": asdict(bbs_info) if bbs_info else None,
+            "conferences": dict(board_dict) if board_dict else None,
+            "messages": message_list,
+        }
+    else:
+        output_data = message_list
     output_json = json.dumps(output_data, indent=4, ensure_ascii=False)
     _write_text_output(output_json, output_path, encoding="utf-8")
 
@@ -3720,10 +3764,22 @@ def _write_jsonl(
     bbs_info: BBSInfo | None = None,
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
+    """Write messages to a JSONL file, optionally prepending a metadata record."""
     lines = []
+    # Only include metadata line if verbose/toc is set or if settings is missing (library use)
+    use_metadata = (settings and (settings.verbose or settings.include_toc)) or (
+        not settings and (bbs_info or board_dict)
+    )
+    if use_metadata and (bbs_info or board_dict):
+        metadata = {
+            "type": "metadata",
+            "bbs_info": asdict(bbs_info) if bbs_info else None,
+            "conferences": dict(board_dict) if board_dict else None,
+        }
+        lines.append(json.dumps(metadata, ensure_ascii=False))
     for msg in messages:
         lines.append(json.dumps(_message_to_dict(msg), ensure_ascii=False))
-    output_jsonl = "\n".join(lines)
+    output_jsonl = "\n".join(lines) + "\n"
     _write_text_output(output_jsonl, output_path, encoding="utf-8")
 
 
