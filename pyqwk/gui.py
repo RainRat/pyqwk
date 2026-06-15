@@ -1908,6 +1908,7 @@ class QwkGuiApp:
                                     parsed_message,
                                     text=processed_buffer,
                                     attachments=attachments,
+                                    original_text=parsed_message.text,
                                 )
                             )
 

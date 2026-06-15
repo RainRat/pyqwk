@@ -343,6 +343,9 @@ def _is_binary_line(
             return True, in_yenc_block, True, in_base64_block
         in_uue_block = False
 
+    if stripped_line == "end" and previous_line and previous_line.strip() == "`":
+        return True, in_yenc_block, False, in_base64_block
+
     if RE_BASE64_PATTERN.match(stripped_line):
         return True, in_yenc_block, in_uue_block, True
     elif RE_UUE_DATA_PATTERN.match(stripped_line) or RE_UUE_PATTERN.match(
@@ -4648,7 +4651,8 @@ def _serialize_rfc822(
 
     # 1. Identify and extract attachments from the body
     # We remove them from the text part so the email looks modern
-    found_binaries = extract_binaries(message.text) if message.text else []
+    text_to_scan = message.original_text or message.text
+    found_binaries = extract_binaries(text_to_scan) if text_to_scan else []
     clean_body = message.text or ""
     if found_binaries:
         # Simple removal of lines that look like parts of UUE/Base64/yEnc blocks
