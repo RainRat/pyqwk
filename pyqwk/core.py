@@ -3791,6 +3791,11 @@ XML_INVALID_CHAR_PATTERN = re.compile(
 )
 
 
+def _xml_safe(text: Any) -> str:
+    """Sanitize a value for safe inclusion in an XML element."""
+    return XML_INVALID_CHAR_PATTERN.sub("", str(text if text is not None else ""))
+
+
 def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
     """Convert a message to an XML Element."""
     msg_element = ET.Element("message")
@@ -3798,32 +3803,30 @@ def _message_to_xml_element(message: ProcessedMessage) -> ET.Element:
     if message.depth > 0:
         ET.SubElement(msg_element, "depth").text = str(message.depth)
     if message.thread_id:
-        ET.SubElement(msg_element, "thread_id").text = str(message.thread_id)
+        ET.SubElement(msg_element, "thread_id").text = _xml_safe(message.thread_id)
     if message.parent_msgnum is not None:
         ET.SubElement(msg_element, "parent_msgnum").text = str(message.parent_msgnum)
 
     if message.confname:
-        ET.SubElement(msg_element, "conference_name").text = message.confname
+        ET.SubElement(msg_element, "conference_name").text = _xml_safe(message.confname)
     if message.bbs_name:
-        ET.SubElement(msg_element, "bbs_name").text = message.bbs_name
+        ET.SubElement(msg_element, "bbs_name").text = _xml_safe(message.bbs_name)
     if message.bbs_id:
-        ET.SubElement(msg_element, "bbs_id").text = message.bbs_id
+        ET.SubElement(msg_element, "bbs_id").text = _xml_safe(message.bbs_id)
     if message.source_file:
-        ET.SubElement(msg_element, "source_file").text = message.source_file
+        ET.SubElement(msg_element, "source_file").text = _xml_safe(message.source_file)
 
     header_element = ET.SubElement(msg_element, "header")
     header_data = message.header.as_dict
     for key, value in header_data.items():
-        child = ET.SubElement(header_element, key)
-        child.text = XML_INVALID_CHAR_PATTERN.sub("", str(value))
+        ET.SubElement(header_element, key).text = _xml_safe(value)
 
-    text_element = ET.SubElement(msg_element, "text")
-    text_element.text = XML_INVALID_CHAR_PATTERN.sub("", message.text)
+    ET.SubElement(msg_element, "text").text = _xml_safe(message.text)
 
     if message.attachments:
         attachments_element = ET.SubElement(msg_element, "attachments")
         for filename in message.attachments:
-            ET.SubElement(attachments_element, "attachment").text = filename
+            ET.SubElement(attachments_element, "attachment").text = _xml_safe(filename)
 
     return msg_element
 
@@ -3873,17 +3876,13 @@ def _write_rss(
 
     for message in messages:
         item = ET.SubElement(channel, "item")
-        ET.SubElement(item, "title").text = XML_INVALID_CHAR_PATTERN.sub(
-            "", message.header.msgsubject
-        )
+        ET.SubElement(item, "title").text = _xml_safe(message.header.msgsubject)
 
         # pubDate
         dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
         ET.SubElement(item, "pubDate").text = email.utils.format_datetime(dt)
 
-        ET.SubElement(item, "author").text = XML_INVALID_CHAR_PATTERN.sub(
-            "", message.header.msgfrom
-        )
+        ET.SubElement(item, "author").text = _xml_safe(message.header.msgfrom)
 
         # GUID
         msg_id = f"{message.header.confnum}.{message.header.msgnum if message.header.msgnum is not None else 'x'}@qwk"
@@ -3892,12 +3891,10 @@ def _write_rss(
 
         # Description (body)
         desc = ET.SubElement(item, "description")
-        desc.text = XML_INVALID_CHAR_PATTERN.sub("", message.text)
+        desc.text = _xml_safe(message.text)
 
         if message.confname:
-            ET.SubElement(item, "category").text = XML_INVALID_CHAR_PATTERN.sub(
-                "", message.confname
-            )
+            ET.SubElement(item, "category").text = _xml_safe(message.confname)
 
     xml_text = '<?xml version="1.0" encoding="utf-8"?>\n' + _xml_element_to_str(rss)
     _write_text_output(xml_text, output_path, encoding="utf-8")
