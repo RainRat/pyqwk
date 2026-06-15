@@ -67,10 +67,28 @@ def _parse_cli_date(
 
 
 def main() -> None:
+    template_variables = (
+        "template variables:\n"
+        "  Basic Information:\n"
+        "    {author}, {to}, {subject}, {subject_clean}, {body}, {body_clean},\n"
+        "    {confname}, {confnum}, {confname_or_num}, {msgnum}, {snippet},\n"
+        "    {url_count}, {email_count}, {phone_count}, {my_name}\n"
+        "  Dates & Times:\n"
+        "    {date}, {time}, {year}, {month}, {day}, {hour}, {minute}, {second},\n"
+        "    {iso_date}, {iso_time}\n"
+        "  BBS & Source:\n"
+        "    {bbs_name}, {bbs_id}, {source_file}\n"
+        "  Technical Details:\n"
+        "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
+        "    {length}, {size}, {flags}, {indent}\n"
+        "  Attachments:\n"
+        "    {attachments}, {attachment_count}"
+    )
+
     parser = argparse.ArgumentParser(
         description="Save BBS message archives in modern formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog="""
+        epilog=f"""
 examples:
   # Show a one-line summary
   qwk archive.qwk --oneline
@@ -95,6 +113,8 @@ examples:
 
   # Save archive info as Markdown
   qwk archive.qwk --info --format markdown -o info.md
+
+{template_variables}
 """,
     )
     parser.add_argument(
@@ -152,30 +172,13 @@ examples:
         help="Organize individual files into subfolders by message subject.",
         action="store_true",
     )
-    pattern_help = (
-        "Set a pattern using these variables:\n"
-        "  Basic Information:\n"
-        "    {author}, {to}, {subject}, {subject_clean}, {body}, {body_clean},\n"
-        "    {confname}, {confnum}, {confname_or_num}, {msgnum}, {snippet},\n"
-        "    {url_count}, {email_count}, {phone_count}, {my_name}\n"
-        "  Dates & Times:\n"
-        "    {date}, {time}, {year}, {month}, {day}, {hour}, {minute}, {second},\n"
-        "    {iso_date}, {iso_time}\n"
-        "  BBS & Source:\n"
-        "    {bbs_name}, {bbs_id}, {source_file}\n"
-        "  Technical Details:\n"
-        "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
-        "    {length}, {size}, {flags}, {indent}\n"
-        "  Attachments:\n"
-        "    {attachments}, {attachment_count}"
-    )
     io_group.add_argument(
         "--filename-pattern",
-        help=f"Set a pattern for naming individual files (e.g., '{{date}}_{{author}}_{{subject}}').\n{pattern_help}",
+        help="Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}').\nSee template variables below.",
     )
     io_group.add_argument(
         "--organize-pattern",
-        help=f"Set a pattern for organizing individual files into folders (e.g., '{{year}}/{{month}}/{{author}}').\n{pattern_help}",
+        help="Set a pattern for organizing individual files into folders (e.g., '{year}/{month}/{author}').\nSee template variables below.",
     )
     io_group.add_argument(
         "-E",
@@ -320,7 +323,7 @@ examples:
     )
     format_group.add_argument(
         "--oneline-pattern",
-        help=f"Set a custom pattern for one-line summaries (e.g., '[{{confnum}}] {{author}}: {{subject}}').\n{pattern_help}",
+        help="Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}').\nSee template variables below.",
     )
     format_group.add_argument(
         "--toc",
