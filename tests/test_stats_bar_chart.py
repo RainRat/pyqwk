@@ -31,6 +31,8 @@ def test_render_stats_bar_chart_with_colors():
     assert "\033[" in output[0]
     assert "\033[" in output[1]
     assert "Label A" in output[1]
+    # Verify Unicode block usage when colors are enabled
+    assert "█" * 40 in output[1]
 
 
 def test_render_stats_bar_chart_long_labels():

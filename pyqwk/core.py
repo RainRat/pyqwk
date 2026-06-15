@@ -5620,7 +5620,10 @@ def _render_stats_bar_chart(
         count_str = f"{count:4}"
         # Scale bars to a maximum of 40 characters
         bar_len = int(count * 40 / max_count) if max_count > 0 else 0
-        bar = "#" * bar_len
+
+        # Use solid block for bar if colors (and thus terminal features) are enabled
+        bar_char = "█" if use_colors else "#"
+        bar = bar_char * bar_len
 
         # Consistent coloring: Dim labels, Bold counts, Cyan bars
         parts.append(
