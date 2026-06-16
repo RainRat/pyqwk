@@ -190,7 +190,7 @@ class TestQwkGui:
             # Find the call with "99\n" (the value). The tag should be ('link', 'header_meta', 'ref_link_...')
             found_ref = False
             for call_obj in app.detail_text.insert.call_args_list:
-                if len(call_obj.args) >= 2 and call_obj.args[1] == "99\n":
+                if len(call_obj.args) >= 2 and call_obj.args[1] == "99":
                     tags = call_obj.args[2]
                     if (
                         isinstance(tags, tuple)
