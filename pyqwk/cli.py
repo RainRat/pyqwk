@@ -132,7 +132,7 @@ examples:
         "-o",
         "--output",
         dest="output_path",
-        help="Save results to a file or folder. Messages print to the screen if you omit this.",
+        help="Save results to a file or folder. If omitted, messages print to the screen.",
     )
     io_group.add_argument(
         "-i",
@@ -386,41 +386,41 @@ examples:
         "--from",
         dest="authors",
         action="append",
-        help="Show messages from a specific author (supports partial matches).",
+        help="Show messages from a specific author. Supports partial matches.",
     )
     filter_group.add_argument(
         "--to",
         dest="recipients",
         action="append",
-        help="Show messages to a specific recipient (supports partial matches).",
+        help="Show messages to a specific recipient. Supports partial matches.",
     )
     filter_group.add_argument(
         "-s",
         "--subject",
         dest="subjects",
         action="append",
-        help="Show messages with a specific word in the subject line.",
+        help="Show messages with specific keywords in the subject. Supports partial matches.",
     )
     filter_group.add_argument(
         "-S",
         "--search",
         dest="search_term",
         help=(
-            "Search for keywords in common fields:\n"
+            "Show messages with specific keywords in any common field:\n"
             "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments."
         ),
     )
     filter_group.add_argument(
         "--body",
         dest="body_search",
-        help="Search for a specific keyword within the message body text.",
+        help="Show messages with specific keywords in the body. Supports partial matches.",
     )
     filter_group.add_argument(
         "-X",
         "--exclude",
         dest="exclude_search",
         help=(
-            "Hide messages that match a specific keyword in any common field:\n"
+            "Hide messages with specific keywords in any common field:\n"
             "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments."
         ),
     )
@@ -428,31 +428,31 @@ examples:
         "--exclude-from",
         dest="exclude_authors",
         action="append",
-        help="Hide messages from a specific author (supports partial matches).",
+        help="Hide messages from a specific author. Supports partial matches.",
     )
     filter_group.add_argument(
         "--exclude-to",
         dest="exclude_recipients",
         action="append",
-        help="Hide messages sent to a specific recipient (supports partial matches).",
+        help="Hide messages sent to a specific recipient. Supports partial matches.",
     )
     filter_group.add_argument(
         "--exclude-subject",
         dest="exclude_subjects",
         action="append",
-        help="Hide messages with a specific word in the subject line.",
+        help="Hide messages with specific keywords in the subject. Supports partial matches.",
     )
     filter_group.add_argument(
         "--exclude-conference",
         dest="exclude_conferences",
         action="append",
-        help="Hide messages from a specific conference (name or number).",
+        help="Hide messages from a specific conference. Supports partial matches.",
     )
     filter_group.add_argument(
         "--exclude-bbs",
         dest="exclude_bbs_names",
         action="append",
-        help="Hide messages from a specific BBS (name or ID).",
+        help="Hide messages from a specific BBS. Supports partial matches.",
     )
     filter_group.add_argument(
         "--regex",

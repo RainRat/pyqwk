@@ -6,7 +6,7 @@ import logging
 import os
 import webbrowser
 import tkinter as tk
-from tkinter import font
+from tkinter import font  # Required for patching in test suite
 from collections import Counter
 from dataclasses import replace
 from tkinter import filedialog, messagebox, ttk, simpledialog, font
@@ -2901,7 +2901,7 @@ examples:
         "--my-name",
         "--user",
         dest="my_name",
-        help="Set your name for highlighting messages sent to or from you.",
+        help="Set your name to highlight messages sent to or from you.",
     )
     parser.add_argument(
         "-V",
