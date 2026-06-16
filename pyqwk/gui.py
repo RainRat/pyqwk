@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import font  # Required for patching in test suite
 from collections import Counter
 from dataclasses import replace
-from tkinter import filedialog, messagebox, ttk, simpledialog, font
+from tkinter import filedialog, messagebox, ttk, simpledialog, font  # noqa: F401 (Needed for tests)
 
 from pyqwk.core import (
     ProcessingSettings,
@@ -1349,8 +1349,9 @@ class QwkGuiApp:
         self._render_hr()
         self.detail_text.insert(tk.END, "\n")
 
-        # Metadata fields (standardized 8-char labels)
-        self.detail_text.insert(tk.END, "From:   ", "header_meta_label")
+        # Metadata fields grouped for information density
+        # Row 1: From & To
+        self.detail_text.insert(tk.END, "From: ", "header_meta_label")
         from_tag = f"from_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_from, ("link", "header_meta", from_tag))
         self.detail_text.tag_bind(
@@ -1358,9 +1359,10 @@ class QwkGuiApp:
             "<Button-1>",
             lambda e, a=orig_from: self._pivot_filter(author=a),
         )
-        self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "To:     ", "header_meta_label")
+        self.detail_text.insert(tk.END, "  •  ", "header_separator")
+
+        self.detail_text.insert(tk.END, "To: ", "header_meta_label")
         to_tag = f"to_link_{id(msg)}"
         self.detail_text.insert(tk.END, msg_to, ("link", "header_meta", to_tag))
         self.detail_text.tag_bind(
@@ -1370,12 +1372,15 @@ class QwkGuiApp:
         )
         self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(tk.END, "Date:   ", "header_meta_label")
+        # Row 2: Date & Conference
+        self.detail_text.insert(tk.END, "Date: ", "header_meta_label")
         self.detail_text.insert(
-            tk.END, f"{header.msgdate} {header.msgtime}\n", "header_meta"
+            tk.END, f"{header.msgdate} {header.msgtime}", "header_meta"
         )
 
-        self.detail_text.insert(tk.END, "Conf:   ", "header_meta_label")
+        self.detail_text.insert(tk.END, "  •  ", "header_separator")
+
+        self.detail_text.insert(tk.END, "Conf: ", "header_meta_label")
         conf_tag = f"conf_link_{id(msg)}"
         self.detail_text.insert(tk.END, conf_name, ("link", "header_meta", conf_tag))
         self.detail_text.tag_bind(
@@ -1385,33 +1390,47 @@ class QwkGuiApp:
         )
         self.detail_text.insert(tk.END, "\n")
 
+        # Row 3: BBS, Msg, and Ref (conditional)
+        row3_parts = []
         if msg.bbs_name:
-            self.detail_text.insert(tk.END, "BBS:    ", "header_meta_label")
-            bbs_tag = f"bbs_link_{id(msg)}"
-            self.detail_text.insert(
-                tk.END, f"{msg.bbs_name}\n", ("link", "header_meta", bbs_tag)
-            )
-            self.detail_text.tag_bind(
-                bbs_tag,
-                "<Button-1>",
-                lambda e, b=msg.bbs_name: self._pivot_filter(bbs_name=b),
-            )
-
+            row3_parts.append("bbs")
         if header.msgnum is not None:
-            self.detail_text.insert(tk.END, "Msg:    ", "header_meta_label")
-            self.detail_text.insert(tk.END, f"{header.msgnum}\n", "header_meta")
-
+            row3_parts.append("msg")
         if msg.refnum:
-            self.detail_text.insert(tk.END, "Ref:    ", "header_meta_label")
-            ref_tag = f"ref_link_{id(msg)}"
-            self.detail_text.insert(tk.END, f"{msg.refnum}\n", ("link", "header_meta", ref_tag))
-            self.detail_text.tag_bind(
-                ref_tag,
-                "<Button-1>",
-                lambda e, c=header.confnum, r=msg.refnum: self.jump_to_message(
-                    c, r
-                ),
-            )
+            row3_parts.append("ref")
+
+        for i, part_type in enumerate(row3_parts):
+            if part_type == "bbs":
+                self.detail_text.insert(tk.END, "BBS: ", "header_meta_label")
+                bbs_tag = f"bbs_link_{id(msg)}"
+                self.detail_text.insert(
+                    tk.END, f"{msg.bbs_name}", ("link", "header_meta", bbs_tag)
+                )
+                self.detail_text.tag_bind(
+                    bbs_tag,
+                    "<Button-1>",
+                    lambda e, b=msg.bbs_name: self._pivot_filter(bbs_name=b),
+                )
+            elif part_type == "msg":
+                self.detail_text.insert(tk.END, "Msg: ", "header_meta_label")
+                self.detail_text.insert(tk.END, f"{header.msgnum}", "header_meta")
+            elif part_type == "ref":
+                self.detail_text.insert(tk.END, "Ref: ", "header_meta_label")
+                ref_tag = f"ref_link_{id(msg)}"
+                self.detail_text.insert(tk.END, f"{msg.refnum}", ("link", "header_meta", ref_tag))
+                self.detail_text.tag_bind(
+                    ref_tag,
+                    "<Button-1>",
+                    lambda e, c=header.confnum, r=msg.refnum: self.jump_to_message(
+                        c, r
+                    ),
+                )
+
+            if i < len(row3_parts) - 1:
+                self.detail_text.insert(tk.END, "  •  ", "header_separator")
+
+        if row3_parts:
+            self.detail_text.insert(tk.END, "\n")
 
         if msg.source_file:
             self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
