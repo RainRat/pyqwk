@@ -14,6 +14,7 @@ from pyqwk.core import (
     ProcessingSettings,
     _order_messages_by_thread,
     format_size,
+    format_duration,
     load_data,
     parse_messages,
     process_message,
@@ -2524,7 +2525,22 @@ class QwkGuiApp:
             )
             insert_info("Avg Length", f"{int(stats['avg_message_length'])} characters")
 
-            def render_gui_bar_chart(title, data, filter_type=None):
+            if stats.get("conversation"):
+                conv = stats["conversation"]
+                txt.insert(tk.END, "\nConversation Analysis\n", "h2")
+                insert_info(
+                    "Threads",
+                    f"{conv['thread_count']} total / {conv['avg_thread_length']:.1f} avg length",
+                )
+                insert_info("Longest Thread", f"{conv['max_thread_length']} messages")
+
+                if conv["avg_response_time"] > 0:
+                    insert_info(
+                        "Response Time",
+                        f"{format_duration(conv['avg_response_time'])} avg / {format_duration(conv['min_response_time'])} fastest",
+                    )
+
+            def render_gui_bar_chart(title, data, filter_type=None, extra_label_map=None):
                 if not data:
                     return
                 txt.insert(tk.END, f"\n{title}\n", "h2")
@@ -2576,7 +2592,24 @@ class QwkGuiApp:
                     txt.insert(tk.END, " ", "")
                     if bar_len > 0:
                         txt.insert(tk.END, " " * bar_len, "cyan_bar")
+                    if extra_label_map and label in extra_label_map:
+                        txt.insert(tk.END, f" ({extra_label_map[label]})")
                     txt.insert(tk.END, "\n")
+
+            if (
+                stats.get("conversation")
+                and stats["conversation"].get("top_responders")
+            ):
+                responders = stats["conversation"]["top_responders"]
+                speed_map = {
+                    r["name"]: format_duration(r["avg_speed"]) for r in responders
+                }
+                render_gui_bar_chart(
+                    "Fastest Responders",
+                    [(r["name"], r["count"], r["name"]) for r in responders],
+                    filter_type="author",
+                    extra_label_map=speed_map,
+                )
 
             if stats["year_distribution"]:
                 items = [(y, c) for y, c in sorted(stats["year_distribution"].items())]

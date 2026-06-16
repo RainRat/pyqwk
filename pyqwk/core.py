@@ -2913,6 +2913,18 @@ def format_size(size: int) -> str:
         return f"{size / (1024 * 1024):.1f} MB"
 
 
+def format_duration(seconds: float) -> str:
+    """Format a duration in seconds into a human-readable string."""
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+    elif seconds < 3600:
+        return f"{seconds / 60:.1f}m"
+    elif seconds < 86400:
+        return f"{seconds / 3600:.1f}h"
+    else:
+        return f"{seconds / 86400:.1f}d"
+
+
 def _get_message_mapping(
     message: ParsedMessage,
     count: int,
@@ -4006,6 +4018,16 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
     parts.append(
         f"<div><strong>Avg Length:</strong> {int(stats.get('avg_message_length', 0))} characters</div>"
     )
+
+    if stats.get("conversation"):
+        conv = stats["conversation"]
+        parts.append(
+            f"<div><strong>Threads:</strong> {conv['thread_count']} total / {conv['avg_thread_length']:.1f} avg length / {conv['max_thread_length']} max length</div>"
+        )
+        if conv["avg_response_time"] > 0:
+            parts.append(
+                f"<div><strong>Response Time:</strong> {format_duration(conv['avg_response_time'])} average / {format_duration(conv['min_response_time'])} fastest</div>"
+            )
     parts.append("</div>")
 
     def render_html_bar_chart(title, items, label_key, count_key):
@@ -4046,6 +4068,31 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
     render_html_bar_chart(
         "Top Attachment Types", stats.get("top_attachment_types"), "extension", "count"
     )
+
+    if stats.get("conversation") and stats["conversation"].get("top_responders"):
+        items = [
+            {"name": r["name"], "count": r["count"], "speed": r["avg_speed"]}
+            for r in stats["conversation"]["top_responders"]
+        ]
+
+        def render_responders_chart(title, items):
+            parts.append('<div class="stats-box">')
+            parts.append(f"<h3>{title}</h3>")
+            max_count = max(item["count"] for item in items)
+
+            for item in items[:5]:
+                width = int(item["count"] * 100 / max_count) if max_count > 0 else 0
+                label = f"{item['name']} ({format_duration(item['speed'])})"
+                parts.append('<div class="stats-bar-container">')
+                parts.append(
+                    f'<div class="stats-bar-label" title="{html.escape(label)}">{html.escape(label)}</div>'
+                )
+                parts.append(f'<div class="stats-bar-count">{item["count"]}</div>')
+                parts.append(f'<div class="stats-bar" style="width: {width}%"></div>')
+                parts.append("</div>")
+            parts.append("</div>")
+
+        render_responders_chart("Fastest Responders", items)
 
     # Activity Distributions
     render_html_bar_chart("Yearly Activity", dist.get("years"), "label", "count")
@@ -4230,6 +4277,16 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
     parts.append(
         f"- **Avg Length:** {int(stats.get('avg_message_length', 0))} characters"
     )
+
+    if stats.get("conversation"):
+        conv = stats["conversation"]
+        parts.append(
+            f"- **Conversation:** {conv['thread_count']} threads / {conv['avg_thread_length']:.1f} avg length"
+        )
+        if conv["avg_response_time"] > 0:
+            parts.append(
+                f"- **Response Time:** {format_duration(conv['avg_response_time'])} avg / {format_duration(conv['min_response_time'])} fastest"
+            )
     parts.append("")
 
     def render_md_bar_chart(title, items, label_key, count_key):
@@ -4264,6 +4321,21 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
     render_md_bar_chart(
         "Top Attachment Types", stats.get("top_attachment_types"), "extension", "count"
     )
+
+    if stats.get("conversation") and stats["conversation"].get("top_responders"):
+        items = stats["conversation"]["top_responders"]
+        parts.append("#### Fastest Responders\n")
+        parts.append("| Name | Replies | Avg Speed | |")
+        parts.append("|---|---|---|---|")
+        max_count = max(item["count"] for item in items)
+
+        for item in items[:5]:
+            bar_len = int(item["count"] * 20 / max_count) if max_count > 0 else 0
+            bar = "#" * bar_len
+            name = str(item["name"]).replace("|", "\\|")
+            speed = format_duration(item["avg_speed"])
+            parts.append(f"| {name} | {item['count']} | {speed} | `{bar}` |")
+        parts.append("")
 
     # Activity Distributions
     render_md_bar_chart("Yearly Activity", dist.get("years"), "label", "count")
@@ -5888,6 +5960,15 @@ def _compute_stats_from_messages(
         "reply_count": 0,
         "reply_rate": 0.0,
         "avg_message_length": 0.0,
+        "conversation": {
+            "avg_response_time": 0,
+            "min_response_time": 0,
+            "max_response_time": 0,
+            "thread_count": 0,
+            "avg_thread_length": 0,
+            "max_thread_length": 0,
+            "top_responders": [],
+        },
     }
 
     author_counter: Counter = Counter()
@@ -5914,6 +5995,13 @@ def _compute_stats_from_messages(
     processed_count = 0
     reply_count = 0
     total_chars = 0
+
+    msg_timestamps = {}
+    response_deltas = []
+    author_deltas = defaultdict(list)
+    parent_to_children = defaultdict(list)
+    all_msg_keys = set()
+    has_parent = set()
 
     for message in messages:
         processed_count += 1
@@ -5945,11 +6033,27 @@ def _compute_stats_from_messages(
             private_count += 1
 
         # Detect if it's a reply
+        msg_key = (message.confnum, message.header.msgnum)
+        if message.header.msgnum is not None:
+            msg_timestamps[msg_key] = dt
+            all_msg_keys.add(msg_key)
+
         is_reply = (
             message.header.refnum is not None and message.header.refnum != 0
         ) or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
+
         if is_reply:
             reply_count += 1
+            if message.header.refnum:
+                parent_key = (message.confnum, message.header.refnum)
+                if parent_key in msg_timestamps:
+                    delta = (dt - msg_timestamps[parent_key]).total_seconds()
+                    if delta >= 0:
+                        response_deltas.append(delta)
+                        author_deltas[message.header.msgfrom.strip()].append(delta)
+
+                parent_to_children[parent_key].append(msg_key)
+                has_parent.add(msg_key)
 
         # Check for attachments in the full message
         if message.text:
@@ -6046,6 +6150,44 @@ def _compute_stats_from_messages(
         str(k): v for k, v in sorted(year_counter.items())
     }
     stats_entry["month_distribution"] = dict(sorted(month_counter.items()))
+
+    # Conversation Analysis
+    if response_deltas:
+        stats_entry["conversation"]["avg_response_time"] = sum(response_deltas) / len(
+            response_deltas
+        )
+        stats_entry["conversation"]["min_response_time"] = min(response_deltas)
+        stats_entry["conversation"]["max_response_time"] = max(response_deltas)
+
+    avg_author_deltas = []
+    for author, deltas in author_deltas.items():
+        if deltas:
+            avg_author_deltas.append((author, sum(deltas) / len(deltas), len(deltas)))
+    avg_author_deltas.sort(key=lambda x: x[1])
+    stats_entry["conversation"]["top_responders"] = [
+        {"name": a, "avg_speed": s, "count": c}
+        for a, s, c in avg_author_deltas
+        if c >= 2
+    ][:10]
+
+    roots = all_msg_keys - has_parent
+    thread_lengths = []
+    for root in roots:
+        size = 0
+        stack = [root]
+        while stack:
+            curr = stack.pop()
+            size += 1
+            if curr in parent_to_children:
+                stack.extend(parent_to_children[curr])
+        thread_lengths.append(size)
+
+    if thread_lengths:
+        stats_entry["conversation"]["thread_count"] = len(thread_lengths)
+        stats_entry["conversation"]["avg_thread_length"] = sum(thread_lengths) / len(
+            thread_lengths
+        )
+        stats_entry["conversation"]["max_thread_length"] = max(thread_lengths)
 
     return stats_entry
 
@@ -6168,6 +6310,41 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
         f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)"
     )
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
+
+    if stats.get("conversation"):
+        conv = stats["conversation"]
+        parts.append(
+            f"\n  {_colorize('Conversation Analysis:', BOLD, enabled=use_colors)}"
+        )
+        parts.append(f"    Threads:       {conv['thread_count']}")
+        parts.append(f"    Avg Thread:    {conv['avg_thread_length']:.1f} messages")
+        parts.append(f"    Longest Thread: {conv['max_thread_length']} messages")
+
+        if conv["avg_response_time"] > 0:
+            parts.append(
+                f"    Response Time: Avg {format_duration(conv['avg_response_time'])}, Min {format_duration(conv['min_response_time'])}, Max {format_duration(conv['max_response_time'])}"
+            )
+
+        if conv.get("top_responders"):
+            items = [(r["name"], r["count"]) for r in conv["top_responders"]]
+            # Custom label for speed display
+            speed_map = {
+                r["name"]: format_duration(r["avg_speed"])
+                for r in conv["top_responders"]
+            }
+            parts.append(
+                f"\n  {_colorize('Fastest Responders (min 2 replies):', BOLD, enabled=use_colors)}"
+            )
+            max_count = max(c for _, c in items)
+            for name, count in items:
+                truncated_label = f"{name[:25]:<25}"
+                count_str = f"{count:4}"
+                bar_len = int(count * 40 / max_count) if max_count > 0 else 0
+                bar = "#" * bar_len
+                speed = speed_map[name]
+                parts.append(
+                    f"    {_colorize(truncated_label, '90', enabled=use_colors)} : {_colorize(count_str, BOLD, enabled=use_colors)} {_colorize(bar, '36', enabled=use_colors)} ({speed} avg)"
+                )
 
     if stats["year_distribution"]:
         items = [(y, c) for y, c in sorted(stats["year_distribution"].items())]
