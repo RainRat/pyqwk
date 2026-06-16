@@ -2985,9 +2985,13 @@ def _get_message_mapping(
         body_clean = _redact_pii(body_clean)
 
     entities = _discover_entities(message.text or "")
-    url_count = sum(1 for e in entities if e[2] == "url")
-    email_count = sum(1 for e in entities if e[2] == "email")
-    phone_count = sum(1 for e in entities if e[2] == "phone")
+    urls_list = [e[3] for e in entities if e[2] == "url"]
+    emails_list = [e[3] for e in entities if e[2] == "email"]
+    phones_list = [e[3] for e in entities if e[2] == "phone"]
+
+    url_count = len(urls_list)
+    email_count = len(emails_list)
+    phone_count = len(phones_list)
 
     msgnum_val = header.msgnum if header.msgnum is not None else 0
     bbs_id_val = message.bbs_id or ""
@@ -3026,9 +3030,15 @@ def _get_message_mapping(
         "attachments": attachments_str,
         "attachment_count": len(attachments_list),
         "url_count": url_count,
+        "urls": ", ".join(urls_list),
         "email_count": email_count,
+        "emails": ", ".join(emails_list),
         "phone_count": phone_count,
+        "phones": ", ".join(phones_list),
         "my_name": my_name_val,
+        "thread_id": message.thread_id or "",
+        "parent_msgnum": message.parent_msgnum if message.parent_msgnum is not None else 0,
+        "depth": message.depth,
         "length": len(message.text) if message.text else 0,
         "size": format_size(len(message.text)) if message.text else "0 B",
         "flags": flags,
@@ -3167,7 +3177,7 @@ def process_merged_files(
     processed_count = 0
     estimated_bytes = 0
     potential_files = 0
-    use_streaming = not (settings.sort or settings.reverse)
+    use_streaming = not (settings.sort or settings.reverse or settings.threaded)
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
     collected_for_index: list[dict[str, Any]] = []
     bbs_info_to_use = None
@@ -3465,6 +3475,7 @@ def process_merged_files(
                         or f"Conference {parsed_message.confnum}",
                         "msgnum": parsed_message.header.msgnum,
                         "attachments": parsed_message.attachments,
+                        "depth": parsed_message.depth,
                     }
                 )
 
@@ -3481,10 +3492,20 @@ def process_merged_files(
         file_data, board_dict = load_data(input_path, logger, settings.encoding)
         bbs_info = getattr(board_dict, "bbs_info", None)
         user_name = settings.my_name or (bbs_info.user_name if bbs_info else None)
+
+        if board_dict:
+            if board_dict_to_use is None:
+                board_dict_to_use = ConferenceMap(board_dict)
+                board_dict_to_use.bbs_info = bbs_info
+            else:
+                for k, v in board_dict.items():
+                    if k not in board_dict_to_use:
+                        board_dict_to_use[k] = v
+                if bbs_info and not board_dict_to_use.bbs_info:
+                    board_dict_to_use.bbs_info = bbs_info
+
         if bbs_info and not bbs_info_to_use:
             bbs_info_to_use = bbs_info
-        if board_dict and not board_dict_to_use:
-            board_dict_to_use = board_dict
         bbs_key = f"{bbs_info.name}|{bbs_info.bbs_id}" if bbs_info else ""
 
         allowed_conferences = get_allowed_conferences(settings.conferences, board_dict)
@@ -3576,6 +3597,17 @@ def process_merged_files(
 
     if not use_streaming:
         reversal_needed = settings.reverse
+        if settings.threaded:
+            # Apply conversation threading to the buffered messages.
+            msgs_only = [m for m, bd in sort_buffer]
+            threaded_msgs = _order_messages_by_thread(msgs_only)
+
+            sort_buffer = []
+            for m in threaded_msgs:
+                # Re-attach the merged board_dict. handle_output's use of board_dict
+                # is for formatting headers, which benefits from the global map.
+                sort_buffer.append((m, board_dict_to_use or {}))
+
         if settings.sort:
             if settings.sort == "random":
                 random.shuffle(sort_buffer)
@@ -3650,6 +3682,7 @@ def process_merged_files(
                         header=h,
                         confname=info["conf_name"],
                         attachments=info["attachments"],
+                        depth=info.get("depth", 0),
                     )
 
             export_stats = _compute_stats_from_messages(gen_dummy_messages())
@@ -5322,8 +5355,14 @@ def _write_html_index(
             html_parts.append(f"<td>{html.escape(msg['date'])}</td>")
             html_parts.append(f"<td>{html.escape(msg['from'])}</td>")
             html_parts.append(f"<td>{html.escape(msg['to'])}</td>")
+
+            indent = ""
+            depth = msg.get("depth", 0)
+            if depth > 0:
+                indent = "&nbsp;&nbsp;" * (depth - 1) + "└&nbsp;"
+
             html_parts.append(
-                f'<td><a href="{html.escape(msg["path"])}">{html.escape(msg["subject"] or "(no subject)")}</a></td>'
+                f'<td>{indent}<a href="{html.escape(msg["path"])}">{html.escape(msg["subject"] or "(no subject)")}</a></td>'
             )
             attach_count = len(msg["attachments"]) if msg.get("attachments") else 0
             html_parts.append(f"<td>{attach_count if attach_count > 0 else ''}</td>")
@@ -5364,10 +5403,16 @@ def _write_markdown_index(
             subj = esc_md(msg["subject"] or "(no subject)")
             from_name = esc_md(msg["from"])
             to_name = esc_md(msg["to"])
+
+            indent = ""
+            depth = msg.get("depth", 0)
+            if depth > 0:
+                indent = "&nbsp;&nbsp;" * (depth - 1) + "└&nbsp;"
+
             attach_count = len(msg["attachments"]) if msg.get("attachments") else 0
             attach_str = str(attach_count) if attach_count > 0 else ""
             md_parts.append(
-                f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | [{subj}]({msg['path']}) | {attach_str} |"
+                f"| {msg['msgnum'] or ''} | {msg['date']} | {from_name} | {to_name} | {indent}[{subj}]({msg['path']}) | {attach_str} |"
             )
         md_parts.append("")
 

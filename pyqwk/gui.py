@@ -6,6 +6,7 @@ import logging
 import os
 import webbrowser
 import tkinter as tk
+from tkinter import font  # Keep for test mocking
 from collections import Counter
 from dataclasses import replace
 from tkinter import filedialog, messagebox, ttk, simpledialog

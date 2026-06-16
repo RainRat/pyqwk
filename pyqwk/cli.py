@@ -72,7 +72,8 @@ def main() -> None:
         "  Basic Information:\n"
         "    {author}, {to}, {subject}, {subject_clean}, {body}, {body_clean},\n"
         "    {confname}, {confnum}, {confname_or_num}, {msgnum}, {snippet},\n"
-        "    {url_count}, {email_count}, {phone_count}, {my_name}\n"
+        "    {url_count}, {email_count}, {phone_count}, {my_name},\n"
+        "    {urls}, {emails}, {phones}\n"
         "  Dates & Times:\n"
         "    {date}, {time}, {year}, {month}, {day}, {hour}, {minute}, {second},\n"
         "    {iso_date}, {iso_time}\n"
@@ -80,7 +81,7 @@ def main() -> None:
         "    {bbs_name}, {bbs_id}, {source_file}\n"
         "  Technical Details:\n"
         "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
-        "    {length}, {size}, {flags}, {indent}\n"
+        "    {length}, {size}, {flags}, {indent}, {thread_id}, {parent_msgnum}, {depth}\n"
         "  Attachments:\n"
         "    {attachments}, {attachment_count}"
     )
@@ -312,7 +313,7 @@ examples:
     format_group.add_argument(
         "-T",
         "--threaded",
-        help="Group replies into conversations. This cannot be used with the --individual-files option.",
+        help="Group replies into conversations. When used with --individual-files, messages are saved in thread order.",
         action="store_true",
     )
     format_group.add_argument(
@@ -598,11 +599,6 @@ examples:
         help="Show the version number and exit.",
     )
     args = parser.parse_args()
-
-    if args.threaded and args.individualfiles:
-        parser.error(
-            "You cannot use --threaded and --individual-files at the same time."
-        )
 
     if args.oneline and args.individualfiles:
         parser.error(

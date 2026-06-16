@@ -1002,12 +1002,13 @@ def test_process_merged_files_separator_blank(
     assert ("-" * 80) not in captured.out
 
 
-def test_cli_rejects_threaded_with_individual_files(
+def test_cli_allows_threaded_with_individual_files(
     monkeypatch: pytest.MonkeyPatch,
     baseline_path: Path,
-    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
 ) -> None:
-    logging.basicConfig(level=logging.ERROR, force=True)
+    logging.basicConfig(level=logging.INFO, force=True)
+    outdir = tmp_path / "outdir"
     monkeypatch.setattr(
         sys,
         "argv",
@@ -1017,17 +1018,13 @@ def test_cli_rejects_threaded_with_individual_files(
             "--threaded",
             "--individual-files",
             "-o",
-            "outdir",
+            str(outdir),
         ],
     )
 
-    with pytest.raises(SystemExit):
-        main()
-
-    stderr = capsys.readouterr().err
-    assert (
-        "You cannot use --threaded and --individual-files at the same time." in stderr
-    )
+    # Should not raise SystemExit anymore
+    main()
+    assert outdir.exists()
 
 
 def test_cli_allows_noheader_with_structured_formats(

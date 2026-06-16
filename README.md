@@ -465,8 +465,11 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{msgnum}` | The unique message number. |
 | `{snippet}` | The first line of the message body. |
 | `{url_count}` | The number of web links found in the message. |
+| `{urls}` | A comma-separated list of web links found in the message. |
 | `{email_count}` | The number of email addresses found in the message. |
+| `{emails}` | A comma-separated list of email addresses found in the message. |
 | `{phone_count}` | The number of phone numbers found in the message. |
+| `{phones}` | A comma-separated list of phone numbers found in the message. |
 | `{my_name}` | The user name (either from archive information or your override). |
 
 ### Dates & Times
@@ -494,6 +497,9 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{msgflag}` | Technical flags from the message header. |
 | `{is_private}` | Returns `true` or `false`. |
 | `{is_reply}` | Returns `true` if the message is a reply. |
+| `{thread_id}` | A unique ID for the conversation thread. |
+| `{parent_msgnum}` | The message number of the post being replied to. |
+| `{depth}` | The depth of the message in the conversation (0 for original posts). |
 | `{length}` | The number of characters in the message. |
 | `{size}` | The readable size of the message (e.g., `1.2 KB`). |
 | `{flags}` | Short indicators (e.g., `*` for private, `@` for attachments). |
@@ -509,7 +515,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 - **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
 - **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
-- **If options do not work together:** Some options cannot be used together, such as `--threaded` and `--individual-files`.
+- **If options do not work together:** Some options cannot be used together, such as `--oneline` and `--individual-files`.
 
 ## Contributing
 
