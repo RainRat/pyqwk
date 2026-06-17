@@ -100,6 +100,7 @@ class QwkGuiApp:
         self.has_emails_var = tk.BooleanVar(value=False)
         self.has_phones_var = tk.BooleanVar(value=False)
         self.has_ansi_var = tk.BooleanVar(value=False)
+        self.has_msg_links_var = tk.BooleanVar(value=False)
         self.redact_pii_var = tk.BooleanVar(value=False)
         self.embed_attach_var = tk.BooleanVar(value=False)
 
@@ -633,6 +634,7 @@ class QwkGuiApp:
             ("Emails", self.has_emails_var),
             ("Phones", self.has_phones_var),
             ("Colors", self.has_ansi_var),
+            ("Message Links", self.has_msg_links_var),
         ]:
             if var.get():
                 active_bools.append(text)
@@ -880,6 +882,7 @@ class QwkGuiApp:
         self.has_emails_var.set(False)
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
+        self.has_msg_links_var.set(False)
         self.redact_pii_var.set(False)
         self.wrap_var.set(True)
         self._update_wrap()
@@ -1043,6 +1046,7 @@ class QwkGuiApp:
                 ("Emails", self.has_emails_var),
                 ("Phones", self.has_phones_var),
                 ("Colors", self.has_ansi_var),
+                ("Message Links", self.has_msg_links_var),
             ]
         ):
             ttk.Checkbutton(
@@ -1290,6 +1294,7 @@ class QwkGuiApp:
             has_emails=self.has_emails_var.get(),
             has_phones=self.has_phones_var.get(),
             has_ansi=self.has_ansi_var.get(),
+            has_msg_links=self.has_msg_links_var.get(),
             embed_attachments=self.embed_attach_var.get(),
         )
 

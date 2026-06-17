@@ -587,6 +587,7 @@ class ProcessingSettings:
     has_emails: bool = False
     has_phones: bool = False
     has_ansi: bool = False
+    has_msg_links: bool = False
     my_name: str | None = None
     body_search: str | None = None
     exclude_search: str | None = None
@@ -2828,6 +2829,11 @@ def matches_filters(
         if not (message.text and RE_ANSI_ESCAPE_PATTERN.search(message.text)):
             return False
 
+    # 9f. Message Links Filter
+    if settings.has_msg_links:
+        if not (message.text and RE_MSG_LINK_PATTERN.search(message.text)):
+            return False
+
     # 10. Length Filter
     msg_len = len(message.text) if message.text else 0
     if settings.min_length is not None and msg_len < settings.min_length:
@@ -3000,10 +3006,12 @@ def _get_message_mapping(
     urls_list = [e[3] for e in entities if e[2] == "url"]
     emails_list = [e[3] for e in entities if e[2] == "email"]
     phones_list = [e[3] for e in entities if e[2] == "phone"]
+    msg_links_list = [e[3] for e in entities if e[2] == "msg_link"]
 
     url_count = len(urls_list)
     email_count = len(emails_list)
     phone_count = len(phones_list)
+    msg_link_count = len(msg_links_list)
 
     msgnum_val = header.msgnum if header.msgnum is not None else 0
     bbs_id_val = message.bbs_id or ""
@@ -3047,6 +3055,8 @@ def _get_message_mapping(
         "emails": ", ".join(emails_list),
         "phone_count": phone_count,
         "phones": ", ".join(phones_list),
+        "msg_link_count": msg_link_count,
+        "msg_links": ", ".join(msg_links_list),
         "my_name": my_name_val,
         "thread_id": message.thread_id or "",
         "parent_msgnum": message.parent_msgnum if message.parent_msgnum is not None else 0,
