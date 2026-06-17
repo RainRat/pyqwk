@@ -394,13 +394,13 @@ for msg in messages:
 | `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize` | Organize individual files into subfolders by conference. |
-| `--organize-by-date` | Organize files into folders by year and month. |
-| `--organize-by-bbs` | Organize archives into folders named after the BBS. |
-| `--organize-by-author` | Organize files into folders by author name. |
-| `--organize-by-to` | Organize files into folders by recipient name. |
-| `--organize-by-subject` | Organize files by message subject. |
+| `--organize-by-date` | Organize individual files into subfolders by date (YYYY/MM). |
+| `--organize-by-bbs` | Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead. |
+| `--organize-by-author` | Organize individual files into subfolders by author name. |
+| `--organize-by-to` | Organize individual files into subfolders by recipient name. |
+| `--organize-by-subject` | Organize individual files into subfolders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
-| `--sort` | Sort results by field (date, author, subject, etc.). |
+| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
@@ -411,21 +411,21 @@ for msg in messages:
 | `--has-phones` | Only show messages that contain phone numbers. |
 | `--has-ansi` | Only show messages that contain color codes. |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
-| `-H, --headers-only` | Show only the message headers. |
+| `-H, --headers-only` | Show only the message details (metadata). |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
-| `-S, --search` | Search for keywords. |
-| `-C, --conference` | Show messages from a specific conference. |
-| `--bbs` | Show messages from a specific BBS. |
-| `-f, --from` | Show messages from a specific author. |
-| `--to` | Show messages to a specific recipient. |
-| `-s, --subject` | Show messages with a specific word in the subject. |
-| `--body` | Search for keywords specifically in the message body. |
-| `--exclude` | Exclude messages matching a keyword in any field. |
-| `--exclude-from` | Exclude messages from specific authors. |
-| `--exclude-to` | Exclude messages sent to specific recipients. |
-| `--exclude-subject` | Exclude messages by subject keywords. |
-| `--exclude-conference` | Exclude messages from specific conferences. |
-| `--exclude-bbs` | Exclude messages from specific BBSes. |
+| `-S, --search` | Show messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. |
+| `-C, --conference` | Show messages from a specific conference (name or number). Supports partial matches. |
+| `-B, --bbs` | Show messages from a specific BBS (name or ID). Supports partial matches. |
+| `-f, --from` | Show messages from a specific author. Supports partial matches. |
+| `--to` | Show messages to a specific recipient. Supports partial matches. |
+| `-s, --subject` | Show messages with specific keywords in the subject. Supports partial matches. |
+| `--body` | Show messages with specific keywords in the body. Supports partial matches. |
+| `-X, --exclude` | Hide messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. |
+| `--exclude-from` | Hide messages from a specific author. Supports partial matches. |
+| `--exclude-to` | Hide messages sent to a specific recipient. Supports partial matches. |
+| `--exclude-subject` | Hide messages with specific keywords in the subject. Supports partial matches. |
+| `--exclude-conference` | Hide messages from a specific conference. Supports partial matches. |
+| `--exclude-bbs` | Hide messages from a specific BBS. Supports partial matches. |
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--on-this-day` | Show messages from the same month and day. |
