@@ -503,6 +503,12 @@ class QwkGuiApp:
         if event.keysym == "bracketright" or event.char == "]":
             self._navigate_conference(1)
             return "break"
+        if event.keysym == "braceleft" or event.char == "{":
+            self._navigate_bbs(-1)
+            return "break"
+        if event.keysym == "braceright" or event.char == "}":
+            self._navigate_bbs(1)
+            return "break"
 
         # Allow text navigation keys and search controls
         if event.keysym in (
@@ -581,6 +587,7 @@ class QwkGuiApp:
                     ("Ctrl + G", "Go to Message Number"),
                     ("R", "Random Message"),
                     ("[ / ]", "Prev / Next Conference"),
+                    ("{ / }", "Prev / Next BBS"),
                 ],
             ),
         ]
@@ -729,6 +736,8 @@ class QwkGuiApp:
         self.root.bind("<Next>", self._on_space_pressed)
         self.root.bind("[", lambda e: self._navigate_conference(-1))
         self.root.bind("]", lambda e: self._navigate_conference(1))
+        self.root.bind("{", lambda e: self._navigate_bbs(-1))
+        self.root.bind("}", lambda e: self._navigate_bbs(1))
         self.root.bind("/", self._focus_search)
         self.root.bind("r", self._select_random_message)
 
@@ -800,6 +809,27 @@ class QwkGuiApp:
             new_idx = (current_idx + delta) % num_values
 
         self.conf_combo.current(new_idx)
+        self.reload_messages()
+
+    def _navigate_bbs(self, delta: int) -> None:
+        """Change the selected BBS in the combobox by a given offset."""
+        if not self.bbs_combo["values"]:
+            return
+
+        # Avoid changing BBSes while the user is typing in a search or exclude field
+        focused_widget = self.root.focus_get()
+        if focused_widget in (self.search_entry, self.exclude_entry):
+            return
+
+        current_idx = self.bbs_combo.current()
+        num_values = len(self.bbs_combo["values"])
+
+        if current_idx == -1:
+            new_idx = 0 if delta > 0 else num_values - 1
+        else:
+            new_idx = (current_idx + delta) % num_values
+
+        self.bbs_combo.current(new_idx)
         self.reload_messages()
 
     def _on_space_pressed(self, event: tk.Event) -> str | None:
@@ -1020,12 +1050,18 @@ class QwkGuiApp:
 
         archives_frame = ttk.Labelframe(row2, text="Archives", padding=(5, 5))
         archives_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            archives_frame, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
+        ).pack(side=tk.LEFT, padx=(2, 0))
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.pack(side=tk.LEFT, padx=2)
+        ttk.Button(
+            archives_frame, text="▶", width=2, command=lambda: self._navigate_bbs(1)
+        ).pack(side=tk.LEFT, padx=(0, 5))
 
         ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
-        ).pack(side=tk.LEFT, padx=(5, 0))
+        ).pack(side=tk.LEFT, padx=(2, 0))
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.conf_combo.pack(side=tk.LEFT, padx=2)
         ttk.Button(
