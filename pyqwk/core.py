@@ -339,7 +339,7 @@ def _is_binary_line(
     if in_uue_block:
         if stripped_line in ("end", "`"):
             return True, in_yenc_block, False, in_base64_block
-        if RE_UUE_LOOSE_PATTERN.match(stripped_line):
+        if not stripped_line or RE_UUE_LOOSE_PATTERN.match(stripped_line):
             return True, in_yenc_block, True, in_base64_block
         in_uue_block = False
 

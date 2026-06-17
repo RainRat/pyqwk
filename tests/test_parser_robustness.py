@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import parse_messages
+from pyqwk.core import parse_messages, process_message
 
 
 def build_header_bytes(**kwargs) -> bytes:
@@ -93,3 +93,23 @@ class TestParserRobustness:
         assert len(messages) == 2
         assert messages[0].header.msgsubject.strip() == "Valid 1"
         assert messages[1].header.msgsubject.strip() == "Valid 2"
+
+    def test_process_message_with_zero_length_uue_line(self):
+        """
+        Regression test: Verify that a UUE block with a zero-length line (a single space)
+        is correctly identified and removed, reaching the 'end' terminator.
+        """
+        text = (
+            "begin 644 test.txt\r\n"
+            "M123456789012345678901234567890123456789012345\r\n"
+            " \r\n"
+            "end\r\n"
+            "Keep this part"
+        )
+        # process_message arguments:
+        # truncate_signatures=False, cut_quoting=False, binaries_removal=True, redact_pii=False
+        processed = process_message(text, False, False, True, False)
+
+        assert "M12345" not in processed
+        assert "end" not in processed
+        assert "Keep this part" in processed
