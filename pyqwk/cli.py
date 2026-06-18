@@ -72,8 +72,8 @@ def main() -> None:
         "  Basic Information:\n"
         "    {author}, {to}, {subject}, {subject_clean}, {body}, {body_clean},\n"
         "    {confname}, {confnum}, {confname_or_num}, {msgnum}, {snippet},\n"
-        "    {url_count}, {email_count}, {phone_count}, {my_name},\n"
-        "    {urls}, {emails}, {phones}\n"
+        "    {url_count}, {email_count}, {phone_count}, {msg_link_count}, {my_name},\n"
+        "    {urls}, {emails}, {phones}, {msg_links}\n"
         "  Dates & Times:\n"
         "    {date}, {time}, {year}, {month}, {day}, {hour}, {minute}, {second},\n"
         "    {iso_date}, {iso_time}\n"
@@ -574,6 +574,11 @@ examples:
         help="Only show messages that contain ANSI color codes.",
         action="store_true",
     )
+    filter_group.add_argument(
+        "--has-msg-links",
+        help="Only show messages that contain references to other messages (e.g., 'msg #123').",
+        action="store_true",
+    )
 
     parser.add_argument(
         "-I",
@@ -750,6 +755,7 @@ examples:
         has_emails=getattr(args, "has_emails", False),
         has_phones=getattr(args, "has_phones", False),
         has_ansi=getattr(args, "has_ansi", False),
+        has_msg_links=getattr(args, "has_msg_links", False),
         body_search=args.body_search,
         exclude_search=args.exclude_search,
         exclude_authors=args.exclude_authors,
