@@ -9,9 +9,10 @@ from pyqwk.core import (
 )
 
 
-def test_jsonl_symmetry():
+def test_jsonl_symmetry(tmp_path):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("test")
+    test_jsonl = os.path.join(tmp_path, "test.jsonl")
 
     # Create a dummy message
     header = MessageHeader(
@@ -54,15 +55,15 @@ def test_jsonl_symmetry():
         format="jsonl",
         separator="none",
         output_mode="file",
-        output_path="test.jsonl",
+        output_path=test_jsonl,
         encoding="utf-8",
     )
 
-    print("Writing messages to test.jsonl...")
-    write_messages(messages, "test.jsonl", settings)
+    print(f"Writing messages to {test_jsonl}...")
+    write_messages(messages, test_jsonl, settings)
 
-    print("Loading messages from test.jsonl...")
-    loaded_messages, board_dict = load_data("test.jsonl", logger)
+    print(f"Loading messages from {test_jsonl}...")
+    loaded_messages, board_dict = load_data(test_jsonl, logger)
 
     print(f"Loaded {len(loaded_messages)} messages.")
     assert len(loaded_messages) == 1
