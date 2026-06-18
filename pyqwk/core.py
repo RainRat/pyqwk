@@ -6408,7 +6408,7 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
         f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)"
     )
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
-    parts.append(f"    Avg Words:     {stats['avg_word_count']}")
+    parts.append(f"    Avg Words:     {stats.get('avg_word_count', 0.0)}")
 
     if stats.get("conversation"):
         conv = stats["conversation"]

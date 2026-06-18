@@ -174,6 +174,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         exclude_subjects=None,
         exclude_conferences=None,
         exclude_bbs_names=None,
+        tail=None,
     )
     base.update(overrides)
     return argparse.Namespace(**base)

@@ -774,7 +774,7 @@ examples:
         exclude_bbs_names=args.exclude_bbs_names,
         filename_pattern=getattr(args, "filename_pattern", None),
         organize_pattern=getattr(args, "organize_pattern", None),
-        tail=args.tail,
+        tail=getattr(args, "tail", None),
         min_length=getattr(args, "min_length", None),
         max_length=getattr(args, "max_length", None),
     )
