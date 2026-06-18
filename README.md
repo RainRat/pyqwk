@@ -146,6 +146,7 @@ qwk-gui messages.db
 - **Ctrl + G**: Jump to a specific message number.
 - **r**: Select a random message.
 - **[** or **]**: Move to the previous or next conference.
+- **{** or **}**: Move to the previous or next BBS archive.
 
 ## Usage Examples
 
