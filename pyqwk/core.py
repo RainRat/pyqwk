@@ -597,6 +597,7 @@ class ProcessingSettings:
     exclude_conferences: list[str] | None = None
     exclude_bbs_names: list[str] | None = None
     organize_pattern: str | None = None
+    tail: int | None = None
 
 
 @dataclass
@@ -3062,6 +3063,7 @@ def _get_message_mapping(
         "parent_msgnum": message.parent_msgnum if message.parent_msgnum is not None else 0,
         "depth": message.depth,
         "length": len(message.text) if message.text else 0,
+        "word_count": len(message.text.split()) if message.text else 0,
         "size": format_size(len(message.text)) if message.text else "0 B",
         "flags": flags,
         "snippet": snippet,
@@ -3199,7 +3201,9 @@ def process_merged_files(
     processed_count = 0
     estimated_bytes = 0
     potential_files = 0
-    use_streaming = not (settings.sort or settings.reverse or settings.threaded)
+    use_streaming = not (
+        settings.sort or settings.reverse or settings.threaded or settings.tail
+    )
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
     collected_for_index: list[dict[str, Any]] = []
     bbs_info_to_use = None
@@ -3666,9 +3670,29 @@ def process_merged_files(
         if reversal_needed:
             sort_buffer.reverse()
 
-        for parsed_message, board_dict in sort_buffer:
-            if handle_output(parsed_message, board_dict):
-                break
+        # Apply skip, limit, and tail to the buffer
+        if settings.skip:
+            sort_buffer = sort_buffer[settings.skip :]
+
+        if settings.limit:
+            sort_buffer = sort_buffer[: settings.limit]
+
+        if settings.tail:
+            sort_buffer = sort_buffer[-settings.tail :]
+
+        # Temporarily clear skip/limit in settings to avoid redundant filtering in handle_output
+        original_skip = settings.skip
+        original_limit = settings.limit
+        settings.skip = None
+        settings.limit = None
+
+        try:
+            for parsed_message, board_dict in sort_buffer:
+                if handle_output(parsed_message, board_dict):
+                    break
+        finally:
+            settings.skip = original_skip
+            settings.limit = original_limit
 
     if settings.individual_files:
         if not settings.dry_run and collected_for_index:
@@ -4064,6 +4088,9 @@ def _render_stats_html(stats: dict[str, Any]) -> list[str]:
     parts.append(
         f"<div><strong>Avg Length:</strong> {int(stats.get('avg_message_length', 0))} characters</div>"
     )
+    parts.append(
+        f"<div><strong>Avg Words:</strong> {stats.get('avg_word_count', 0)}</div>"
+    )
 
     if stats.get("conversation"):
         conv = stats["conversation"]
@@ -4323,6 +4350,7 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
     parts.append(
         f"- **Avg Length:** {int(stats.get('avg_message_length', 0))} characters"
     )
+    parts.append(f"- **Avg Words:** {stats.get('avg_word_count', 0)}")
 
     if stats.get("conversation"):
         conv = stats["conversation"]
@@ -6018,6 +6046,7 @@ def _compute_stats_from_messages(
         "reply_count": 0,
         "reply_rate": 0.0,
         "avg_message_length": 0.0,
+        "avg_word_count": 0.0,
         "conversation": {
             "avg_response_time": 0,
             "min_response_time": 0,
@@ -6053,6 +6082,7 @@ def _compute_stats_from_messages(
     processed_count = 0
     reply_count = 0
     total_chars = 0
+    total_words = 0
 
     msg_timestamps = {}
     response_deltas = []
@@ -6116,6 +6146,7 @@ def _compute_stats_from_messages(
         # Check for attachments in the full message
         if message.text:
             total_chars += len(message.text)
+            total_words += len(message.text.split())
 
             # Use cached attachments if available to avoid re-scanning
             current_attachments = message.discover_attachments()
@@ -6161,6 +6192,9 @@ def _compute_stats_from_messages(
     )
     stats_entry["avg_message_length"] = (
         round(total_chars / processed_count, 1) if processed_count > 0 else 0.0
+    )
+    stats_entry["avg_word_count"] = (
+        round(total_words / processed_count, 1) if processed_count > 0 else 0.0
     )
 
     if earliest_dt:
@@ -6368,6 +6402,7 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
         f"    Reply Rate:    {stats['reply_rate']}% ({stats['reply_count']} replies)"
     )
     parts.append(f"    Avg Length:    {int(stats['avg_message_length'])} characters")
+    parts.append(f"    Avg Words:     {stats['avg_word_count']}")
 
     if stats.get("conversation"):
         conv = stats["conversation"]
