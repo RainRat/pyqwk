@@ -435,6 +435,7 @@ for msg in messages:
 | `--exclude-bbs` | Hide messages from a specific BBS. Supports partial matches. |
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
+| `--tail` | Show only the last specific number of matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
 | `-L, --limit` | Stop after a specific number of matching messages. |
@@ -510,6 +511,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{parent_msgnum}` | The message number of the post being replied to. |
 | `{depth}` | The depth of the message in the conversation (0 for original posts). |
 | `{length}` | The number of characters in the message. |
+| `{word_count}` | The number of words in the message text. |
 | `{size}` | The readable size of the message (e.g., `1.2 KB`). |
 | `{flags}` | Short indicators (e.g., `*` for private, `@` for attachments). |
 | `{indent}` | Spaces and symbols used for organizing conversations on the screen. |

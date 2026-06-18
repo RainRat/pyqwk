@@ -81,7 +81,8 @@ def main() -> None:
         "    {bbs_name}, {bbs_id}, {source_file}\n"
         "  Technical Details:\n"
         "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
-        "    {length}, {size}, {flags}, {indent}, {thread_id}, {parent_msgnum}, {depth}\n"
+        "    {length}, {word_count}, {size}, {flags}, {indent}, {thread_id},\n"
+        "    {parent_msgnum}, {depth}\n"
         "  Attachments:\n"
         "    {attachments}, {attachment_count}"
     )
@@ -472,6 +473,14 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--tail",
+        "--last",
+        metavar="NUM",
+        help="Show only the last NUM matching messages.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--max-length",
         help="Show messages with at most this many characters.",
         type=int,
@@ -765,6 +774,7 @@ examples:
         exclude_bbs_names=args.exclude_bbs_names,
         filename_pattern=getattr(args, "filename_pattern", None),
         organize_pattern=getattr(args, "organize_pattern", None),
+        tail=args.tail,
         min_length=getattr(args, "min_length", None),
         max_length=getattr(args, "max_length", None),
     )
