@@ -62,7 +62,7 @@ def test_cli_has_msg_links_flag(capsys, monkeypatch):
         pyqwk.cli.main()
 
         out, err = capsys.readouterr()
-        assert "Successfully processed 1 message." in out
+        assert "Successfully processed 1 of 2 messages." in out
 
         monkeypatch.setattr("sys.argv", ["qwk", test_file, "--oneline-pattern", "{msg_link_count} links: {msg_links}"])
         pyqwk.cli.main()
