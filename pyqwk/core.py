@@ -3196,6 +3196,7 @@ def process_merged_files(
         separator_str = "\r\n"
 
     total_matching = 0
+    total_encountered = 0
     processed_count = 0
     estimated_bytes = 0
     potential_files = 0
@@ -3557,6 +3558,7 @@ def process_merged_files(
                 )
 
             for parsed_message in messages_to_process:
+                total_encountered += 1
                 if is_structured and progress_bar is not None:
                     progress_bar.update(1)
 
@@ -3737,7 +3739,11 @@ def process_merged_files(
         GREEN = "32"
 
         count_label = "message" if processed_count == 1 else "messages"
-        msg = f"Successfully processed {processed_count} {count_label}"
+
+        if total_encountered > processed_count:
+            msg = f"Successfully processed {processed_count} of {total_encountered} messages"
+        else:
+            msg = f"Successfully processed {processed_count} {count_label}"
 
         if total_attachments > 0:
             attach_label = "attachment" if total_attachments == 1 else "attachments"
