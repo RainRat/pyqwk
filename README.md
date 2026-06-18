@@ -219,6 +219,11 @@ qwk archive.qwk --individual-files --organize-by-to -o output_folder/
 qwk archive.qwk --individual-files --organize-by-subject -o output_folder/
 ```
 
+**Use a custom folder structure:**
+```bash
+qwk archive.qwk --individual-files --organize-pattern "{year}/{month}/{author}" -o output_folder/
+```
+
 **Use custom filenames:**
 ```bash
 qwk archive.qwk --individual-files --filename-pattern "{date}_{author}_{subject}" -o output_folder/
