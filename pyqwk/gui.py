@@ -1052,62 +1052,70 @@ class QwkGuiApp:
         row2.pack(side=tk.TOP, fill=tk.X)
 
         archives_frame = ttk.Labelframe(row2, text="Archives", padding=(5, 5))
-        archives_frame.pack(side=tk.LEFT, padx=5)
+        archives_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+
+        # BBS Selector row
+        bbs_row = ttk.Frame(archives_frame)
+        bbs_row.pack(side=tk.TOP, fill=tk.X, pady=(0, 2))
         ttk.Button(
-            archives_frame, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
-        ).pack(side=tk.LEFT, padx=(2, 0))
-        self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
+            bbs_row, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
+        ).pack(side=tk.LEFT)
+        self.bbs_combo = ttk.Combobox(bbs_row, state="readonly", width=18)
         self.bbs_combo.pack(side=tk.LEFT, padx=2)
         ttk.Button(
-            archives_frame, text="▶", width=2, command=lambda: self._navigate_bbs(1)
-        ).pack(side=tk.LEFT, padx=(0, 5))
+            bbs_row, text="▶", width=2, command=lambda: self._navigate_bbs(1)
+        ).pack(side=tk.LEFT)
 
+        # Conference Selector row
+        conf_row = ttk.Frame(archives_frame)
+        conf_row.pack(side=tk.TOP, fill=tk.X)
         ttk.Button(
-            archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
-        ).pack(side=tk.LEFT, padx=(2, 0))
-        self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
+            conf_row, text="◀", width=2, command=lambda: self._navigate_conference(-1)
+        ).pack(side=tk.LEFT)
+        self.conf_combo = ttk.Combobox(conf_row, state="readonly", width=18)
         self.conf_combo.pack(side=tk.LEFT, padx=2)
         ttk.Button(
-            archives_frame, text="▶", width=2, command=lambda: self._navigate_conference(1)
-        ).pack(side=tk.LEFT, padx=(0, 2))
+            conf_row, text="▶", width=2, command=lambda: self._navigate_conference(1)
+        ).pack(side=tk.LEFT)
 
         filters_frame = ttk.Labelframe(row2, text="Filters", padding=(5, 5))
-        filters_frame.pack(side=tk.LEFT, padx=5)
-        for i, (text, var) in enumerate(
-            [
-                ("Attachments", self.has_attach_var),
-                ("My Messages", self.mine_var),
-                ("On This Day", self.on_this_day_var),
-                ("Links", self.has_links_var),
-                ("Emails", self.has_emails_var),
-                ("Phones", self.has_phones_var),
-                ("Colors", self.has_ansi_var),
-                ("Message Links", self.has_msg_links_var),
-            ]
-        ):
-            ttk.Checkbutton(
+        filters_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+
+        filter_list = [
+            ("Attachments", self.has_attach_var),
+            ("My Messages", self.mine_var),
+            ("On This Day", self.on_this_day_var),
+            ("Links", self.has_links_var),
+            ("Emails", self.has_emails_var),
+            ("Phones", self.has_phones_var),
+            ("Colors", self.has_ansi_var),
+            ("Message Links", self.has_msg_links_var),
+        ]
+        for i, (text, var) in enumerate(filter_list):
+            row, col = divmod(i, 4)
+            cb = ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).pack(side=tk.LEFT, padx=5)
+            )
+            cb.grid(row=row, column=col, sticky=tk.W, padx=5)
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
-        options_frame.pack(side=tk.LEFT, padx=5)
+        options_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
 
-        for i, (text, var, cmd) in enumerate(
-            [
-                ("Conversations", self.threaded_var, self.reload_messages),
-                ("Clean", self.clean_var, self.reload_messages),
-                ("Wrap", self.wrap_var, self._update_wrap),
-                ("Remove Colors", self.ansi_var, self.reload_messages),
-                ("Hide Personal Info", self.redact_pii_var, self.reload_messages),
-                ("Embed Attachments", self.embed_attach_var, self.reload_messages),
-            ]
-        ):
-            ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd).pack(
-                side=tk.LEFT, padx=5
-            )
+        option_list = [
+            ("Conversations", self.threaded_var, self.reload_messages),
+            ("Clean", self.clean_var, self.reload_messages),
+            ("Wrap", self.wrap_var, self._update_wrap),
+            ("Remove Colors", self.ansi_var, self.reload_messages),
+            ("Hide Personal Info", self.redact_pii_var, self.reload_messages),
+            ("Embed Attachments", self.embed_attach_var, self.reload_messages),
+        ]
+        for i, (text, var, cmd) in enumerate(option_list):
+            row, col = divmod(i, 3)
+            cb = ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd)
+            cb.grid(row=row, column=col, sticky=tk.W, padx=5)
 
         ttk.Button(row2, text="Reset All", width=10, command=self.clear_filters).pack(
-            side=tk.LEFT, padx=5, pady=5
+            side=tk.LEFT, padx=5, pady=5, fill=tk.Y
         )
 
         # Binds
