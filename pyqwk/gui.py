@@ -34,6 +34,7 @@ from pyqwk.core import (
     ConferenceMap,
     _normalize_subject,
     _discover_entities,
+    _get_message_mapping,
 )
 
 
@@ -101,6 +102,9 @@ class QwkGuiApp:
         self.has_phones_var = tk.BooleanVar(value=False)
         self.has_ansi_var = tk.BooleanVar(value=False)
         self.has_msg_links_var = tk.BooleanVar(value=False)
+        self.has_questions_var = tk.BooleanVar(value=False)
+        self.has_quotes_var = tk.BooleanVar(value=False)
+        self.replies_only_var = tk.BooleanVar(value=False)
         self.redact_pii_var = tk.BooleanVar(value=False)
         self.embed_attach_var = tk.BooleanVar(value=False)
 
@@ -642,6 +646,9 @@ class QwkGuiApp:
             ("Phones", self.has_phones_var),
             ("Colors", self.has_ansi_var),
             ("Message Links", self.has_msg_links_var),
+            ("Questions", self.has_questions_var),
+            ("Quotes", self.has_quotes_var),
+            ("Replies Only", self.replies_only_var),
         ]:
             if var.get():
                 active_bools.append(text)
@@ -913,6 +920,9 @@ class QwkGuiApp:
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
         self.has_msg_links_var.set(False)
+        self.has_questions_var.set(False)
+        self.has_quotes_var.set(False)
+        self.replies_only_var.set(False)
         self.redact_pii_var.set(False)
         self.wrap_var.set(True)
         self._update_wrap()
@@ -1073,21 +1083,24 @@ class QwkGuiApp:
 
         filters_frame = ttk.Labelframe(row2, text="Filters", padding=(5, 5))
         filters_frame.pack(side=tk.LEFT, padx=5)
-        for i, (text, var) in enumerate(
-            [
-                ("Attachments", self.has_attach_var),
-                ("My Messages", self.mine_var),
-                ("On This Day", self.on_this_day_var),
-                ("Links", self.has_links_var),
-                ("Emails", self.has_emails_var),
-                ("Phones", self.has_phones_var),
-                ("Colors", self.has_ansi_var),
-                ("Message Links", self.has_msg_links_var),
-            ]
-        ):
-            ttk.Checkbutton(
+        filters = [
+            ("Attachments", self.has_attach_var),
+            ("My Messages", self.mine_var),
+            ("On This Day", self.on_this_day_var),
+            ("Links", self.has_links_var),
+            ("Emails", self.has_emails_var),
+            ("Phones", self.has_phones_var),
+            ("Colors", self.has_ansi_var),
+            ("Message Links", self.has_msg_links_var),
+            ("Questions", self.has_questions_var),
+            ("Quotes", self.has_quotes_var),
+            ("Replies Only", self.replies_only_var),
+        ]
+        for i, (text, var) in enumerate(filters):
+            cb = ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).pack(side=tk.LEFT, padx=5)
+            )
+            cb.grid(row=i // 6, column=i % 6, padx=5, sticky=tk.W)
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
         options_frame.pack(side=tk.LEFT, padx=5)
@@ -1331,6 +1344,9 @@ class QwkGuiApp:
             has_phones=self.has_phones_var.get(),
             has_ansi=self.has_ansi_var.get(),
             has_msg_links=self.has_msg_links_var.get(),
+            has_questions=self.has_questions_var.get(),
+            has_quotes=self.has_quotes_var.get(),
+            replies_filter="only" if self.replies_only_var.get() else None,
             embed_attachments=self.embed_attach_var.get(),
         )
 
@@ -1472,6 +1488,19 @@ class QwkGuiApp:
 
         if row3_parts:
             self.detail_text.insert(tk.END, "\n")
+
+        # Row 4: Analytics
+        mapping = _get_message_mapping(
+            msg, 0, redact_pii=settings.redact_pii, user_name=user_name
+        )
+        self.detail_text.insert(tk.END, "Words: ", "header_meta_label")
+        self.detail_text.insert(tk.END, str(mapping["word_count"]), "header_meta")
+        self.detail_text.insert(tk.END, "  •  ", "header_separator")
+        self.detail_text.insert(tk.END, "Sentences: ", "header_meta_label")
+        self.detail_text.insert(tk.END, str(mapping["sentence_count"]), "header_meta")
+        self.detail_text.insert(tk.END, "  •  ", "header_separator")
+        self.detail_text.insert(tk.END, mapping["reading_time"], "header_meta")
+        self.detail_text.insert(tk.END, "\n")
 
         if msg.source_file:
             self.detail_text.insert(tk.END, "Source: ", "header_meta_label")

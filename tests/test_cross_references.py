@@ -63,6 +63,7 @@ def test_gui_entity_discovery():
     mock_msg.bbs_name = "TestBBS"
     mock_msg.source_file = "test.qwk"
     mock_msg.refnum = None
+    mock_msg.depth = 0
 
     app.messages = [mock_msg]
 

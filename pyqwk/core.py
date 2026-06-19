@@ -197,6 +197,9 @@ RE_ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 # Identify internal message references like "msg #123" or "message 456".
 RE_MSG_LINK_PATTERN = re.compile(r"(?i)\b(?:msg|message|msg#)\s*#?(\d+)\b")
 
+# Approximate sentence boundaries for content analytics.
+RE_SENTENCE_PATTERN = re.compile(r"[.!?]+(?:\s+|$)")
+
 # Exclude common words from keyword statistics to ensure the report highlights unique and meaningful terms.
 DEFAULT_STOP_WORDS = {
     "the",
@@ -598,6 +601,11 @@ class ProcessingSettings:
     exclude_bbs_names: list[str] | None = None
     organize_pattern: str | None = None
     tail: int | None = None
+    min_words: int | None = None
+    max_words: int | None = None
+    has_questions: bool = False
+    has_quotes: bool = False
+    replies_filter: str | None = None
 
 
 @dataclass
@@ -2835,12 +2843,43 @@ def matches_filters(
         if not (message.text and RE_MSG_LINK_PATTERN.search(message.text)):
             return False
 
+    # 9g. Questions Filter
+    if settings.has_questions:
+        if not (message.text and "?" in message.text):
+            return False
+
+    # 9h. Quotes Filter
+    if settings.has_quotes:
+        if not message.text:
+            return False
+        if not any(RE_QUOTE_PATTERN.match(line) for line in message.text.splitlines()):
+            return False
+
+    # 9i. Replies Filter
+    if settings.replies_filter:
+        is_reply = (
+            message.header.refnum is not None and message.header.refnum != 0
+        ) or RE_SUBJECT_PREFIX_PATTERN.match(message.header.msgsubject)
+
+        if settings.replies_filter == "only" and not is_reply:
+            return False
+        if settings.replies_filter == "exclude" and is_reply:
+            return False
+
     # 10. Length Filter
     msg_len = len(message.text) if message.text else 0
     if settings.min_length is not None and msg_len < settings.min_length:
         return False
     if settings.max_length is not None and msg_len > settings.max_length:
         return False
+
+    # 10b. Word Count Filter
+    if settings.min_words is not None or settings.max_words is not None:
+        word_count = len(message.text.split()) if message.text else 0
+        if settings.min_words is not None and word_count < settings.min_words:
+            return False
+        if settings.max_words is not None and word_count > settings.max_words:
+            return False
 
     return True
 
@@ -3014,6 +3053,15 @@ def _get_message_mapping(
     phone_count = len(phones_list)
     msg_link_count = len(msg_links_list)
 
+    # Calculate additional content analytics
+    body_text = message.text or ""
+    word_count = len(body_text.split())
+    sentence_count = len(RE_SENTENCE_PATTERN.findall(body_text))
+
+    # Average reading speed is 200-250 WPM
+    reading_mins = max(1, round(word_count / 200))
+    reading_time = f"{reading_mins} min read" if word_count > 0 else "0 min read"
+
     msgnum_val = header.msgnum if header.msgnum is not None else 0
     bbs_id_val = message.bbs_id or ""
     msgid = f"{header.confnum}.{msgnum_val}@{bbs_id_val}"
@@ -3063,7 +3111,10 @@ def _get_message_mapping(
         "parent_msgnum": message.parent_msgnum if message.parent_msgnum is not None else 0,
         "depth": message.depth,
         "length": len(message.text) if message.text else 0,
-        "word_count": len(message.text.split()) if message.text else 0,
+        "word_count": word_count,
+        "sentence_count": sentence_count,
+        "reading_time": reading_time,
+        "is_question": "true" if "?" in body_text else "false",
         "size": format_size(len(message.text)) if message.text else "0 B",
         "flags": flags,
         "snippet": snippet,
@@ -3662,6 +3713,7 @@ def process_merged_files(
                     ),
                     "length": lambda x: len(x[0].text) if x[0].text else 0,
                     "size": lambda x: len(x[0].text) if x[0].text else 0,
+                    "words": lambda x: len(x[0].text.split()) if x[0].text else 0,
                 }
                 if settings.sort in sort_keys:
                     sort_buffer.sort(

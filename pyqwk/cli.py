@@ -74,6 +74,8 @@ def main() -> None:
         "    {confname}, {confnum}, {confname_or_num}, {msgnum}, {snippet},\n"
         "    {url_count}, {email_count}, {phone_count}, {msg_link_count}, {my_name},\n"
         "    {urls}, {emails}, {phones}, {msg_links}\n"
+        "  Analytics & Content:\n"
+        "    {word_count}, {sentence_count}, {reading_time}, {is_question}\n"
         "  Dates & Times:\n"
         "    {date}, {time}, {year}, {month}, {day}, {hour}, {minute}, {second},\n"
         "    {iso_date}, {iso_time}\n"
@@ -81,7 +83,7 @@ def main() -> None:
         "    {bbs_name}, {bbs_id}, {source_file}\n"
         "  Technical Details:\n"
         "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
-        "    {length}, {word_count}, {size}, {flags}, {indent}, {thread_id},\n"
+        "    {length}, {size}, {flags}, {indent}, {thread_id},\n"
         "    {parent_msgnum}, {depth}\n"
         "  Attachments:\n"
         "    {attachments}, {attachment_count}"
@@ -481,6 +483,18 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--min-words",
+        help="Show messages with at least this many words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-words",
+        help="Show messages with at most this many words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--max-length",
         help="Show messages with at most this many characters.",
         type=int,
@@ -522,7 +536,7 @@ examples:
     filter_group.add_argument(
         "-O",
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, words, or random).",
         choices=[
             "date",
             "author",
@@ -533,6 +547,7 @@ examples:
             "bbs",
             "length",
             "size",
+            "words",
             "random",
         ],
         default=None,
@@ -587,6 +602,30 @@ examples:
         "--has-msg-links",
         help="Only show messages that contain references to other messages (e.g., 'msg #123').",
         action="store_true",
+    )
+    filter_group.add_argument(
+        "--has-questions",
+        help="Only show messages that contain question marks.",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--has-quotes",
+        help="Only show messages that contain quoted lines from previous posts.",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--replies",
+        dest="replies_filter",
+        action="store_const",
+        const="only",
+        help="Only show messages that are replies to other messages.",
+    )
+    filter_group.add_argument(
+        "--no-replies",
+        dest="replies_filter",
+        action="store_const",
+        const="exclude",
+        help="Hide all reply messages.",
     )
 
     parser.add_argument(
@@ -765,6 +804,11 @@ examples:
         has_phones=getattr(args, "has_phones", False),
         has_ansi=getattr(args, "has_ansi", False),
         has_msg_links=getattr(args, "has_msg_links", False),
+        has_questions=getattr(args, "has_questions", False),
+        has_quotes=getattr(args, "has_quotes", False),
+        replies_filter=getattr(args, "replies_filter", None),
+        min_words=getattr(args, "min_words", None),
+        max_words=getattr(args, "max_words", None),
         body_search=args.body_search,
         exclude_search=args.exclude_search,
         exclude_authors=args.exclude_authors,
