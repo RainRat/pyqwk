@@ -476,7 +476,7 @@ examples:
         "--tail",
         "--last",
         metavar="NUM",
-        help="Show only the last NUM matching messages.",
+        help="Show the final NUM messages from the matching set.",
         type=int,
         default=None,
     )
@@ -565,27 +565,27 @@ examples:
     )
     filter_group.add_argument(
         "--has-links",
-        help="Only show messages that contain web, gopher, ftp, or telnet links.",
+        help="Show messages that contain web, gopher, ftp, or telnet links.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-emails",
-        help="Only show messages that contain email addresses.",
+        help="Show messages that contain email addresses.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-phones",
-        help="Only show messages that contain phone numbers.",
+        help="Show messages that contain phone numbers.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-ansi",
-        help="Only show messages that contain ANSI color codes.",
+        help="Show messages that contain ANSI color codes.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-msg-links",
-        help="Only show messages that contain references to other messages (e.g., 'msg #123').",
+        help="Show messages that contain references to other messages (e.g., 'msg #123').",
         action="store_true",
     )
 
