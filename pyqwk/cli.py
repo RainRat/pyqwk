@@ -81,6 +81,7 @@ def main() -> None:
         "    {bbs_name}, {bbs_id}, {source_file}\n"
         "  Technical Details:\n"
         "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
+        "    {has_questions}, {has_quotes},\n"
         "    {length}, {word_count}, {size}, {flags}, {indent}, {thread_id},\n"
         "    {parent_msgnum}, {depth}\n"
         "  Attachments:\n"
@@ -588,6 +589,38 @@ examples:
         help="Only show messages that contain references to other messages (e.g., 'msg #123').",
         action="store_true",
     )
+    filter_group.add_argument(
+        "--has-questions",
+        help="Only show messages that contain a question mark.",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--has-quotes",
+        help="Only show messages that contain quoted text from earlier messages.",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--replies",
+        help="Only show messages that are replies to other messages.",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--no-replies",
+        help="Only show original posts (hide all replies).",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--min-words",
+        help="Show messages with at least this many words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-words",
+        help="Show messages with at most this many words.",
+        type=int,
+        default=None,
+    )
 
     parser.add_argument(
         "-I",
@@ -765,6 +798,12 @@ examples:
         has_phones=getattr(args, "has_phones", False),
         has_ansi=getattr(args, "has_ansi", False),
         has_msg_links=getattr(args, "has_msg_links", False),
+        has_questions=getattr(args, "has_questions", False),
+        has_quotes=getattr(args, "has_quotes", False),
+        replies=getattr(args, "replies", False),
+        no_replies=getattr(args, "no_replies", False),
+        min_words=getattr(args, "min_words", None),
+        max_words=getattr(args, "max_words", None),
         body_search=args.body_search,
         exclude_search=args.exclude_search,
         exclude_authors=args.exclude_authors,

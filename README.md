@@ -417,6 +417,12 @@ for msg in messages:
 | `--has-phones` | Only show messages that contain phone numbers. |
 | `--has-ansi` | Only show messages that contain color codes. |
 | `--has-msg-links` | Only show messages that contain references to other messages (e.g., 'msg #123'). |
+| `--has-questions` | Only show messages that contain a question mark. |
+| `--has-quotes` | Only show messages that contain quoted text. |
+| `--replies` | Only show messages that are replies. |
+| `--no-replies` | Only show original posts (hide replies). |
+| `--min-words` | Show messages with at least this many words. |
+| `--max-words` | Show messages with at most this many words. |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show only the message details (metadata). |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
@@ -502,6 +508,8 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{msgid}` | A unique identifier for the message (`conf.msg@bbs`). |
 | `{msg_links}` | A list of message numbers referenced in the text. |
 | `{msg_link_count}` | The number of message references found in the text. |
+| `{has_questions}` | Returns `true` if the message contains a question mark. |
+| `{has_quotes}` | Returns `true` if the message contains quoted text. |
 | `{refnum}` | The message number being replied to. |
 | `{status}` | The status code (e.g., `*` for private). |
 | `{msgflag}` | Technical flags from the message header. |

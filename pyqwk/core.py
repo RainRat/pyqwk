@@ -588,6 +588,12 @@ class ProcessingSettings:
     has_phones: bool = False
     has_ansi: bool = False
     has_msg_links: bool = False
+    has_questions: bool = False
+    has_quotes: bool = False
+    replies: bool = False
+    no_replies: bool = False
+    min_words: int | None = None
+    max_words: int | None = None
     my_name: str | None = None
     body_search: str | None = None
     exclude_search: str | None = None
@@ -2835,12 +2841,43 @@ def matches_filters(
         if not (message.text and RE_MSG_LINK_PATTERN.search(message.text)):
             return False
 
-    # 10. Length Filter
+    # 10. Behavioral Filters
+    if settings.has_questions:
+        if not (message.text and "?" in message.text):
+            return False
+
+    if settings.has_quotes:
+        if not (
+            message.text and any(RE_QUOTE_PATTERN.match(line) for line in message.text.splitlines())
+        ):
+            return False
+
+    # Determine if it's a reply (defensively for mocks)
+    header_refnum = getattr(message.header, "refnum", None)
+    header_subject = getattr(message.header, "msgsubject", "")
+    is_reply = (header_refnum is not None and header_refnum != 0) or bool(
+        RE_SUBJECT_PREFIX_PATTERN.match(header_subject)
+    )
+
+    if settings.replies and not is_reply:
+        return False
+
+    if settings.no_replies and is_reply:
+        return False
+
+    # 11. Length & Word Count Filters
     msg_len = len(message.text) if message.text else 0
     if settings.min_length is not None and msg_len < settings.min_length:
         return False
     if settings.max_length is not None and msg_len > settings.max_length:
         return False
+
+    if settings.min_words is not None or settings.max_words is not None:
+        word_count = len(message.text.split()) if message.text else 0
+        if settings.min_words is not None and word_count < settings.min_words:
+            return False
+        if settings.max_words is not None and word_count > settings.max_words:
+            return False
 
     return True
 
@@ -3018,6 +3055,14 @@ def _get_message_mapping(
     bbs_id_val = message.bbs_id or ""
     msgid = f"{header.confnum}.{msgnum_val}@{bbs_id_val}"
 
+    has_questions = "true" if message.text and "?" in message.text else "false"
+    has_quotes = (
+        "true"
+        if message.text
+        and any(RE_QUOTE_PATTERN.match(line) for line in message.text.splitlines())
+        else "false"
+    )
+
     return {
         "confnum": header.confnum,
         "confname": message.confname or "",
@@ -3048,6 +3093,8 @@ def _get_message_mapping(
         "msgflag": header.msgflag,
         "is_private": "true" if header.is_private else "false",
         "is_reply": "true" if is_reply else "false",
+        "has_questions": has_questions,
+        "has_quotes": has_quotes,
         "attachments": attachments_str,
         "attachment_count": len(attachments_list),
         "url_count": url_count,
