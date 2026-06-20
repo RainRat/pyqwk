@@ -2971,12 +2971,7 @@ def _get_message_mapping(
         else:
             my_name_val = author
 
-    subject_clean = subject
-    while True:
-        new_subject_clean = RE_SUBJECT_PREFIX_PATTERN.sub("", subject_clean)
-        if new_subject_clean == subject_clean:
-            break
-        subject_clean = new_subject_clean
+    subject_clean = _normalize_subject(subject, lowercase=False)
 
     if redact_pii:
         author = _redact_pii(author)
@@ -6658,7 +6653,7 @@ def process_multiple_files(
     return had_errors
 
 
-def _normalize_subject(subject: str) -> str:
+def _normalize_subject(subject: str, lowercase: bool = True) -> str:
     """Normalize subject line for conversation grouping by removing prefixes."""
     s = subject.strip()
     while True:
@@ -6666,7 +6661,8 @@ def _normalize_subject(subject: str) -> str:
         if new_s == s:
             break
         s = new_s
-    return s.strip().lower()
+    s = s.strip()
+    return s.lower() if lowercase else s
 
 
 def _order_messages_by_thread(
