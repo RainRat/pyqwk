@@ -83,6 +83,7 @@ class QwkGuiApp:
             "To": "To",
             "Date": "Date",
             "Size": "Size",
+            "Words": "Words",
             "Conference": "Conference",
             "BBS": "BBS",
         }
@@ -101,6 +102,8 @@ class QwkGuiApp:
         self.has_phones_var = tk.BooleanVar(value=False)
         self.has_ansi_var = tk.BooleanVar(value=False)
         self.has_msg_links_var = tk.BooleanVar(value=False)
+        self.has_questions_var = tk.BooleanVar(value=False)
+        self.has_quotes_var = tk.BooleanVar(value=False)
         self.redact_pii_var = tk.BooleanVar(value=False)
         self.embed_attach_var = tk.BooleanVar(value=False)
 
@@ -642,6 +645,8 @@ class QwkGuiApp:
             ("Phones", self.has_phones_var),
             ("Colors", self.has_ansi_var),
             ("Message Links", self.has_msg_links_var),
+            ("Questions", self.has_questions_var),
+            ("Quotes", self.has_quotes_var),
         ]:
             if var.get():
                 active_bools.append(text)
@@ -913,6 +918,8 @@ class QwkGuiApp:
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
         self.has_msg_links_var.set(False)
+        self.has_questions_var.set(False)
+        self.has_quotes_var.set(False)
         self.redact_pii_var.set(False)
         self.wrap_var.set(True)
         self._update_wrap()
@@ -1083,6 +1090,8 @@ class QwkGuiApp:
                 ("Phones", self.has_phones_var),
                 ("Colors", self.has_ansi_var),
                 ("Message Links", self.has_msg_links_var),
+                ("Questions", self.has_questions_var),
+                ("Quotes", self.has_quotes_var),
             ]
         ):
             ttk.Checkbutton(
@@ -1140,7 +1149,17 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Flags", "Num", "From", "To", "Date", "Size", "Conference", "BBS"),
+            columns=(
+                "Flags",
+                "Num",
+                "From",
+                "To",
+                "Date",
+                "Size",
+                "Words",
+                "Conference",
+                "BBS",
+            ),
             selectmode="browse",
         )
 
@@ -1158,6 +1177,9 @@ class QwkGuiApp:
         self.message_list.column("Date", minwidth=80, width=120)
         self.message_list.column(
             "Size", minwidth=70, width=70, stretch=False, anchor=tk.E
+        )
+        self.message_list.column(
+            "Words", minwidth=60, width=60, stretch=False, anchor=tk.E
         )
         self.message_list.column("Conference", minwidth=80, width=120)
         self.message_list.column("BBS", minwidth=80, width=120)
@@ -1331,6 +1353,8 @@ class QwkGuiApp:
             has_phones=self.has_phones_var.get(),
             has_ansi=self.has_ansi_var.get(),
             has_msg_links=self.has_msg_links_var.get(),
+            has_questions=self.has_questions_var.get(),
+            has_quotes=self.has_quotes_var.get(),
             embed_attachments=self.embed_attach_var.get(),
         )
 
@@ -2082,6 +2106,7 @@ class QwkGuiApp:
                     if is_from_me or is_to_me:
                         item_tags.append("mine")
 
+                msg_words = len(message.text.split()) if message.text else 0
                 self.message_list.insert(
                     parent_iid,
                     tk.END,
@@ -2094,6 +2119,7 @@ class QwkGuiApp:
                         msg_to,
                         f"{header.msgdate} {header.msgtime}",
                         format_size(len(message.text)) if message.text else "0 B",
+                        msg_words,
                         conf_name,
                         message.bbs_name or message.bbs_id or "",
                     ),
@@ -2868,6 +2894,8 @@ class QwkGuiApp:
                         return msg.header.msgnum or 0
                     elif col == "Size":
                         return len(msg.text) if msg.text else 0
+                    elif col == "Words":
+                        return len(msg.text.split()) if msg.text else 0
                     elif col == "Date":
                         return _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
                     elif col == "From":

@@ -406,7 +406,7 @@ for msg in messages:
 | `--organize-by-to` | Organize individual files into subfolders by recipient name. |
 | `--organize-by-subject` | Organize individual files into subfolders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
-| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random). |
+| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, words, or random). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
@@ -417,6 +417,8 @@ for msg in messages:
 | `--has-phones` | Only show messages that contain phone numbers. |
 | `--has-ansi` | Only show messages that contain color codes. |
 | `--has-msg-links` | Only show messages that contain references to other messages (e.g., 'msg #123'). |
+| `--has-questions` | Only show messages that contain a question mark. |
+| `--has-quotes` | Only show messages that contain quoted text. |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show only the message details (metadata). |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
@@ -444,6 +446,8 @@ for msg in messages:
 | `--reverse` | Reverse the sorting order. |
 | `--min-length` | Show messages with at least this many characters. |
 | `--max-length` | Show messages with at most this many characters. |
+| `--min-words` | Show messages with at least this many words. |
+| `--max-words` | Show messages with at most this many words. |
 | `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |

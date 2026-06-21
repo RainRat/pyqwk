@@ -547,6 +547,8 @@ class ProcessingSettings:
     oneline_pattern: str | None = None
     min_length: int | None = None
     max_length: int | None = None
+    min_words: int | None = None
+    max_words: int | None = None
     regex: bool = False
     dry_run: bool = False
     strip_ansi: bool = False
@@ -588,6 +590,8 @@ class ProcessingSettings:
     has_phones: bool = False
     has_ansi: bool = False
     has_msg_links: bool = False
+    has_questions: bool = False
+    has_quotes: bool = False
     my_name: str | None = None
     body_search: str | None = None
     exclude_search: str | None = None
@@ -2842,6 +2846,23 @@ def matches_filters(
     if settings.max_length is not None and msg_len > settings.max_length:
         return False
 
+    # 11. Word Count Filter
+    msg_words = len(message.text.split()) if message.text else 0
+    if settings.min_words is not None and msg_words < settings.min_words:
+        return False
+    if settings.max_words is not None and msg_words > settings.max_words:
+        return False
+
+    # 12. Question Filter
+    if settings.has_questions:
+        if not (message.text and "?" in message.text):
+            return False
+
+    # 13. Quote Filter
+    if settings.has_quotes:
+        if not (message.text and any(RE_QUOTE_PATTERN.match(line) for line in message.text.splitlines())):
+            return False
+
     return True
 
 
@@ -3662,6 +3683,7 @@ def process_merged_files(
                     ),
                     "length": lambda x: len(x[0].text) if x[0].text else 0,
                     "size": lambda x: len(x[0].text) if x[0].text else 0,
+                    "words": lambda x: len(x[0].text.split()) if x[0].text else 0,
                 }
                 if settings.sort in sort_keys:
                     sort_buffer.sort(

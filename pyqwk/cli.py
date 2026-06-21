@@ -473,6 +473,18 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--min-words",
+        help="Show messages with at least this many words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-words",
+        help="Show messages with at most this many words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--tail",
         "--last",
         metavar="NUM",
@@ -522,7 +534,7 @@ examples:
     filter_group.add_argument(
         "-O",
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, words, or random).",
         choices=[
             "date",
             "author",
@@ -533,6 +545,7 @@ examples:
             "bbs",
             "length",
             "size",
+            "words",
             "random",
         ],
         default=None,
@@ -586,6 +599,16 @@ examples:
     filter_group.add_argument(
         "--has-msg-links",
         help="Only show messages that contain references to other messages (e.g., 'msg #123').",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--has-questions",
+        help="Only show messages that contain a question mark.",
+        action="store_true",
+    )
+    filter_group.add_argument(
+        "--has-quotes",
+        help="Only show messages that contain quoted text.",
         action="store_true",
     )
 
@@ -765,6 +788,8 @@ examples:
         has_phones=getattr(args, "has_phones", False),
         has_ansi=getattr(args, "has_ansi", False),
         has_msg_links=getattr(args, "has_msg_links", False),
+        has_questions=getattr(args, "has_questions", False),
+        has_quotes=getattr(args, "has_quotes", False),
         body_search=args.body_search,
         exclude_search=args.exclude_search,
         exclude_authors=args.exclude_authors,
@@ -777,6 +802,8 @@ examples:
         tail=getattr(args, "tail", None),
         min_length=getattr(args, "min_length", None),
         max_length=getattr(args, "max_length", None),
+        min_words=getattr(args, "min_words", None),
+        max_words=getattr(args, "max_words", None),
     )
 
     if args.organize_by_bbs and not args.output_path:
