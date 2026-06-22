@@ -307,17 +307,20 @@ qwk archive.qwk --on-this-day
 
 **Find Content:**
 ```bash
-# Only messages with links
+# Show messages with web links
 qwk archive.qwk --has-links
 
-# Only messages with phone numbers
+# Show messages with phone numbers
 qwk archive.qwk --has-phones
 
-# Only messages with email addresses
+# Show messages with email addresses
 qwk archive.qwk --has-emails
 
-# Only messages with color codes
+# Show messages with color codes
 qwk archive.qwk --has-ansi
+
+# Show messages with internal message links
+qwk archive.qwk --has-msg-links
 ```
 
 **Filter by Person:**
@@ -410,13 +413,13 @@ for msg in messages:
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
-| `--my-name` | Set your name for the `--mine` filter and QWK exports. |
-| `--has-attachments` | Only show messages that have attachments. |
-| `--has-links` | Only show messages that contain web links. |
-| `--has-emails` | Only show messages that contain email addresses. |
-| `--has-phones` | Only show messages that contain phone numbers. |
-| `--has-ansi` | Only show messages that contain color codes. |
-| `--has-msg-links` | Only show messages that contain references to other messages (e.g., 'msg #123'). |
+| `--my-name` | Set your name to highlight messages sent to or from you. |
+| `--has-attachments` | Show messages that contain attachments (UUE, yEnc, Base64). |
+| `--has-links` | Show messages that contain web links. |
+| `--has-emails` | Show messages that contain email addresses. |
+| `--has-phones` | Show messages that contain phone numbers. |
+| `--has-ansi` | Show messages that contain color codes. |
+| `--has-msg-links` | Show messages that contain internal message links. |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show only the message details (metadata). |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
@@ -435,11 +438,11 @@ for msg in messages:
 | `--exclude-bbs` | Hide messages from a specific BBS. Supports partial matches. |
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
-| `--tail` | Show only the last specific number of matching messages. Alias: `--last`. |
+| `--tail` | Show the final NUM messages from the matching set. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
-| `-L, --limit` | Stop after a specific number of matching messages. |
-| `-K, --skip` | Skip a specific number of matching messages. |
+| `-L, --limit` | Show only the first NUM matching messages. |
+| `-K, --skip` | Skip the first NUM matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
 | `--reverse` | Reverse the sorting order. |
 | `--min-length` | Show messages with at least this many characters. |
