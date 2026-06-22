@@ -81,8 +81,8 @@ def main() -> None:
         "    {bbs_name}, {bbs_id}, {source_file}\n"
         "  Technical Details:\n"
         "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
-        "    {length}, {word_count}, {size}, {flags}, {indent}, {thread_id},\n"
-        "    {parent_msgnum}, {depth}\n"
+        "    {length}, {word_count}, {sentence_count}, {reading_time}, {size},\n"
+        "    {flags}, {indent}, {thread_id}, {parent_msgnum}, {depth}\n"
         "  Attachments:\n"
         "    {attachments}, {attachment_count}"
     )
@@ -522,7 +522,7 @@ examples:
     filter_group.add_argument(
         "-O",
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, words, or random).",
         choices=[
             "date",
             "author",
@@ -533,6 +533,7 @@ examples:
             "bbs",
             "length",
             "size",
+            "words",
             "random",
         ],
         default=None,

@@ -34,6 +34,7 @@ from pyqwk.core import (
     ConferenceMap,
     _normalize_subject,
     _discover_entities,
+    _get_message_mapping,
 )
 
 
@@ -82,6 +83,7 @@ class QwkGuiApp:
             "From": "From",
             "To": "To",
             "Date": "Date",
+            "Words": "Words",
             "Size": "Size",
             "Conference": "Conference",
             "BBS": "BBS",
@@ -1140,7 +1142,17 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Flags", "Num", "From", "To", "Date", "Size", "Conference", "BBS"),
+            columns=(
+                "Flags",
+                "Num",
+                "From",
+                "To",
+                "Date",
+                "Size",
+                "Conference",
+                "BBS",
+                "Words",
+            ),
             selectmode="browse",
         )
 
@@ -1161,6 +1173,9 @@ class QwkGuiApp:
         )
         self.message_list.column("Conference", minwidth=80, width=120)
         self.message_list.column("BBS", minwidth=80, width=120)
+        self.message_list.column(
+            "Words", minwidth=60, width=60, stretch=False, anchor=tk.E
+        )
 
         scrollbar = ttk.Scrollbar(
             list_frame, orient=tk.VERTICAL, command=self.message_list.yview
@@ -1472,6 +1487,25 @@ class QwkGuiApp:
 
         if row3_parts:
             self.detail_text.insert(tk.END, "\n")
+
+        # Row 4: Analytics
+        mapping = _get_message_mapping(msg, 0, redact_pii=settings.redact_pii)
+
+        self.detail_text.insert(tk.END, "Words: ", "header_meta_label")
+        self.detail_text.insert(tk.END, f"{mapping['word_count']}", "header_meta")
+
+        self.detail_text.insert(tk.END, "  •  ", "header_separator")
+
+        self.detail_text.insert(tk.END, "Sentences: ", "header_meta_label")
+        self.detail_text.insert(tk.END, f"{mapping['sentence_count']}", "header_meta")
+
+        self.detail_text.insert(tk.END, "  •  ", "header_separator")
+
+        self.detail_text.insert(tk.END, "Read Time: ", "header_meta_label")
+        self.detail_text.insert(
+            tk.END, f"{format_duration(mapping['reading_time'])}", "header_meta"
+        )
+        self.detail_text.insert(tk.END, "\n")
 
         if msg.source_file:
             self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
@@ -2096,6 +2130,7 @@ class QwkGuiApp:
                         format_size(len(message.text)) if message.text else "0 B",
                         conf_name,
                         message.bbs_name or message.bbs_id or "",
+                        len(message.text.split()) if message.text else 0,
                     ),
                     open=True,  # Expand by default
                     tags=tuple(item_tags),
@@ -2866,6 +2901,8 @@ class QwkGuiApp:
 
                     if col == "Num":
                         return msg.header.msgnum or 0
+                    elif col == "Words":
+                        return len(msg.text.split()) if msg.text else 0
                     elif col == "Size":
                         return len(msg.text) if msg.text else 0
                     elif col == "Date":

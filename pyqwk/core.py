@@ -2986,8 +2986,14 @@ def _get_message_mapping(
         snippet = _redact_pii(snippet)
 
     indent = ""
-    if message.depth > 0:
-        indent = "  " * (message.depth - 1) + "└ "
+    depth = getattr(message, "depth", 0)
+    try:
+        depth = int(depth)
+    except (ValueError, TypeError):
+        depth = 0
+
+    if depth > 0:
+        indent = "  " * (depth - 1) + "└ "
 
     is_reply = (
         header.refnum is not None and header.refnum != 0
@@ -3013,6 +3019,14 @@ def _get_message_mapping(
     email_count = len(emails_list)
     phone_count = len(phones_list)
     msg_link_count = len(msg_links_list)
+
+    # Analytics calculation
+    words_list = body.split()
+    word_count = len(words_list)
+    # Simple sentence heuristic: periods, exclamation, or question marks followed by space/end
+    sentence_count = len(re.findall(r"[.!?](?:\s|$)", body))
+    # Standard reading speed: 200 words per minute (approx 3.33 words per second)
+    reading_time = round(word_count * 0.3, 1)
 
     msgnum_val = header.msgnum if header.msgnum is not None else 0
     bbs_id_val = message.bbs_id or ""
@@ -3060,10 +3074,12 @@ def _get_message_mapping(
         "msg_links": ", ".join(msg_links_list),
         "my_name": my_name_val,
         "thread_id": message.thread_id or "",
-        "parent_msgnum": message.parent_msgnum if message.parent_msgnum is not None else 0,
-        "depth": message.depth,
+        "parent_msgnum": getattr(message, "parent_msgnum", 0) if getattr(message, "parent_msgnum", None) is not None else 0,
+        "depth": depth,
         "length": len(message.text) if message.text else 0,
-        "word_count": len(message.text.split()) if message.text else 0,
+        "word_count": word_count,
+        "sentence_count": sentence_count,
+        "reading_time": reading_time,
         "size": format_size(len(message.text)) if message.text else "0 B",
         "flags": flags,
         "snippet": snippet,
@@ -3662,6 +3678,7 @@ def process_merged_files(
                     ),
                     "length": lambda x: len(x[0].text) if x[0].text else 0,
                     "size": lambda x: len(x[0].text) if x[0].text else 0,
+                    "words": lambda x: len(x[0].text.split()) if x[0].text else 0,
                 }
                 if settings.sort in sort_keys:
                     sort_buffer.sort(
@@ -5163,6 +5180,9 @@ def _write_csv(
         "depth",
         "thread_id",
         "parent_msgnum",
+        "word_count",
+        "sentence_count",
+        "reading_time",
         "attachments",
     ]
 
@@ -5181,6 +5201,13 @@ def _write_csv(
         row["depth"] = message.depth
         row["thread_id"] = message.thread_id
         row["parent_msgnum"] = message.parent_msgnum
+
+        # Include analytics in CSV output
+        mapping = _get_message_mapping(message, 0, redact_pii=settings.redact_pii if settings else False)
+        row["word_count"] = mapping["word_count"]
+        row["sentence_count"] = mapping["sentence_count"]
+        row["reading_time"] = mapping["reading_time"]
+
         row["attachments"] = ";".join(message.attachments or [])
         writer.writerow(row)
 

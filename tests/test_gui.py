@@ -175,6 +175,7 @@ class TestQwkGui:
                     "14 B",
                     "General",
                     "Test BBS",
+                    2,
                 ),
                 open=True,
                 tags=(),

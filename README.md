@@ -406,7 +406,7 @@ for msg in messages:
 | `--organize-by-to` | Organize individual files into subfolders by recipient name. |
 | `--organize-by-subject` | Organize individual files into subfolders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
-| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random). |
+| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, words, or random). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
@@ -512,6 +512,8 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{depth}` | The depth of the message in the conversation (0 for original posts). |
 | `{length}` | The number of characters in the message. |
 | `{word_count}` | The number of words in the message text. |
+| `{sentence_count}` | The number of sentences in the message text. |
+| `{reading_time}` | The estimated reading time in seconds. |
 | `{size}` | The readable size of the message (e.g., `1.2 KB`). |
 | `{flags}` | Short indicators (e.g., `*` for private, `@` for attachments). |
 | `{indent}` | Spaces and symbols used for organizing conversations on the screen. |
