@@ -24,6 +24,7 @@ def mock_app():
             app.has_emails_var = MagicMock()
             app.has_phones_var = MagicMock()
             app.has_ansi_var = MagicMock()
+            app.has_msg_links_var = MagicMock()
             app.search_entry = MagicMock()
             app.exclude_entry = MagicMock()
             app.detail_text = MagicMock()
@@ -42,7 +43,7 @@ def test_is_any_filter_active_gaps(mock_app):
     app.conf_combo.get.return_value = "All Conferences"
     app.private_var.get.return_value = True
     for var in [app.has_attach_var, app.mine_var, app.on_this_day_var, app.has_links_var,
-                app.has_emails_var, app.has_phones_var, app.has_ansi_var]:
+                app.has_emails_var, app.has_phones_var, app.has_ansi_var, app.has_msg_links_var]:
         var.get.return_value = False
 
     # Initially False
