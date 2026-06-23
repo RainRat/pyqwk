@@ -1055,21 +1055,21 @@ class QwkGuiApp:
         archives_frame.pack(side=tk.LEFT, padx=5)
         ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
-        ).pack(side=tk.LEFT, padx=(2, 0))
+        ).grid(row=0, column=0, padx=(2, 0), pady=2)
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
-        self.bbs_combo.pack(side=tk.LEFT, padx=2)
+        self.bbs_combo.grid(row=0, column=1, padx=2, pady=2)
         ttk.Button(
             archives_frame, text="▶", width=2, command=lambda: self._navigate_bbs(1)
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        ).grid(row=0, column=2, padx=(0, 5), pady=2)
 
         ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
-        ).pack(side=tk.LEFT, padx=(2, 0))
+        ).grid(row=1, column=0, padx=(2, 0), pady=2)
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
-        self.conf_combo.pack(side=tk.LEFT, padx=2)
+        self.conf_combo.grid(row=1, column=1, padx=2, pady=2)
         ttk.Button(
             archives_frame, text="▶", width=2, command=lambda: self._navigate_conference(1)
-        ).pack(side=tk.LEFT, padx=(0, 2))
+        ).grid(row=1, column=2, padx=(0, 2), pady=2)
 
         filters_frame = ttk.Labelframe(row2, text="Filters", padding=(5, 5))
         filters_frame.pack(side=tk.LEFT, padx=5)
@@ -1087,7 +1087,7 @@ class QwkGuiApp:
         ):
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).pack(side=tk.LEFT, padx=5)
+            ).grid(row=i // 4, column=i % 4, padx=5, sticky=tk.W)
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
         options_frame.pack(side=tk.LEFT, padx=5)
@@ -1102,8 +1102,8 @@ class QwkGuiApp:
                 ("Embed Attachments", self.embed_attach_var, self.reload_messages),
             ]
         ):
-            ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd).pack(
-                side=tk.LEFT, padx=5
+            ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd).grid(
+                row=i // 3, column=i % 3, padx=5, sticky=tk.W
             )
 
         ttk.Button(row2, text="Reset All", width=10, command=self.clear_filters).pack(
