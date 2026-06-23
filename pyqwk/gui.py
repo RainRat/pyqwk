@@ -83,6 +83,7 @@ class QwkGuiApp:
             "To": "To",
             "Date": "Date",
             "Size": "Size",
+            "Words": "Words",
             "Conference": "Conference",
             "BBS": "BBS",
         }
@@ -101,6 +102,10 @@ class QwkGuiApp:
         self.has_phones_var = tk.BooleanVar(value=False)
         self.has_ansi_var = tk.BooleanVar(value=False)
         self.has_msg_links_var = tk.BooleanVar(value=False)
+        self.min_words_var = tk.StringVar()
+        self.min_words_var.trace_add("write", self._on_search_changed)
+        self.max_words_var = tk.StringVar()
+        self.max_words_var.trace_add("write", self._on_search_changed)
         self.redact_pii_var = tk.BooleanVar(value=False)
         self.embed_attach_var = tk.BooleanVar(value=False)
 
@@ -897,6 +902,8 @@ class QwkGuiApp:
         """Reset all filters and search to their default state."""
         self.search_var.set("")
         self.exclude_var.set("")
+        self.min_words_var.set("")
+        self.max_words_var.set("")
         try:
             self.bbs_combo.current(0)
         except Exception:
@@ -1089,6 +1096,21 @@ class QwkGuiApp:
                 filters_frame, text=text, variable=var, command=self.reload_messages
             ).pack(side=tk.LEFT, padx=5)
 
+        limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
+        limits_frame.pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(limits_frame, text="Min:").pack(side=tk.LEFT)
+        self.min_words_entry = ttk.Entry(
+            limits_frame, textvariable=self.min_words_var, width=5
+        )
+        self.min_words_entry.pack(side=tk.LEFT, padx=2)
+
+        ttk.Label(limits_frame, text="Max:").pack(side=tk.LEFT)
+        self.max_words_entry = ttk.Entry(
+            limits_frame, textvariable=self.max_words_var, width=5
+        )
+        self.max_words_entry.pack(side=tk.LEFT, padx=2)
+
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
         options_frame.pack(side=tk.LEFT, padx=5)
 
@@ -1140,7 +1162,17 @@ class QwkGuiApp:
         # Treeview setup
         self.message_list = ttk.Treeview(
             list_frame,
-            columns=("Flags", "Num", "From", "To", "Date", "Size", "Conference", "BBS"),
+            columns=(
+                "Flags",
+                "Num",
+                "From",
+                "To",
+                "Date",
+                "Size",
+                "Words",
+                "Conference",
+                "BBS",
+            ),
             selectmode="browse",
         )
 
@@ -1158,6 +1190,9 @@ class QwkGuiApp:
         self.message_list.column("Date", minwidth=80, width=120)
         self.message_list.column(
             "Size", minwidth=70, width=70, stretch=False, anchor=tk.E
+        )
+        self.message_list.column(
+            "Words", minwidth=70, width=70, stretch=False, anchor=tk.E
         )
         self.message_list.column("Conference", minwidth=80, width=120)
         self.message_list.column("BBS", minwidth=80, width=120)
@@ -1298,6 +1333,12 @@ class QwkGuiApp:
             if conf_id is not None:
                 conferences = [str(conf_id)]
 
+        def get_int(v):
+            try:
+                return int(v.get().strip())
+            except (ValueError, TypeError):
+                return None
+
         return ProcessingSettings(
             verbose=False,
             private=self.private_var.get(),
@@ -1331,6 +1372,8 @@ class QwkGuiApp:
             has_phones=self.has_phones_var.get(),
             has_ansi=self.has_ansi_var.get(),
             has_msg_links=self.has_msg_links_var.get(),
+            min_words=get_int(self.min_words_var),
+            max_words=get_int(self.max_words_var),
             embed_attachments=self.embed_attach_var.get(),
         )
 
@@ -2094,6 +2137,7 @@ class QwkGuiApp:
                         msg_to,
                         f"{header.msgdate} {header.msgtime}",
                         format_size(len(message.text)) if message.text else "0 B",
+                        len(message.text.split()) if message.text else 0,
                         conf_name,
                         message.bbs_name or message.bbs_id or "",
                     ),
@@ -2868,6 +2912,8 @@ class QwkGuiApp:
                         return msg.header.msgnum or 0
                     elif col == "Size":
                         return len(msg.text) if msg.text else 0
+                    elif col == "Words":
+                        return len(msg.text.split()) if msg.text else 0
                     elif col == "Date":
                         return _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
                     elif col == "From":
@@ -2900,6 +2946,11 @@ class QwkGuiApp:
                     try:
                         return float(val.split()[0])
                     except (ValueError, IndexError, AttributeError):
+                        return 0
+                elif col == "Words":
+                    try:
+                        return int(val)
+                    except (ValueError, TypeError):
                         return 0
                 elif col == "Date":
                     try:

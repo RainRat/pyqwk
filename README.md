@@ -335,6 +335,15 @@ qwk archive.qwk --mine
 qwk archive.qwk --min-length 1000
 ```
 
+**Filter by Length (Words):**
+```bash
+# At least 100 words
+qwk archive.qwk --min-words 100
+
+# Between 50 and 500 words
+qwk archive.qwk --min-words 50 --max-words 500
+```
+
 **Filter by Message Number:**
 ```bash
 qwk archive.qwk --msgnum 100-200
@@ -406,7 +415,7 @@ for msg in messages:
 | `--organize-by-to` | Organize individual files into subfolders by recipient name. |
 | `--organize-by-subject` | Organize individual files into subfolders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
-| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random). |
+| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, or words). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
@@ -444,6 +453,8 @@ for msg in messages:
 | `--reverse` | Reverse the sorting order. |
 | `--min-length` | Show messages with at least this many characters. |
 | `--max-length` | Show messages with at most this many characters. |
+| `--min-words` | Show messages with at least this many words. |
+| `--max-words` | Show messages with at most this many words. |
 | `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |

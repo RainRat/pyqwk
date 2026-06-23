@@ -473,10 +473,22 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--min-words",
+        help="Show messages with at least this many words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--tail",
         "--last",
         metavar="NUM",
         help="Show only the last NUM matching messages.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-words",
+        help="Show messages with at most this many words.",
         type=int,
         default=None,
     )
@@ -522,7 +534,7 @@ examples:
     filter_group.add_argument(
         "-O",
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, or random).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, or words).",
         choices=[
             "date",
             "author",
@@ -534,6 +546,7 @@ examples:
             "length",
             "size",
             "random",
+            "words",
         ],
         default=None,
     )
@@ -777,6 +790,8 @@ examples:
         tail=getattr(args, "tail", None),
         min_length=getattr(args, "min_length", None),
         max_length=getattr(args, "max_length", None),
+        min_words=getattr(args, "min_words", None),
+        max_words=getattr(args, "max_words", None),
     )
 
     if args.organize_by_bbs and not args.output_path:
