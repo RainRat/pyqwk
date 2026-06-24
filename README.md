@@ -307,16 +307,16 @@ qwk archive.qwk --on-this-day
 
 **Find Content:**
 ```bash
-# Only messages with links
+# Show messages with links
 qwk archive.qwk --has-links
 
-# Only messages with phone numbers
+# Show messages with phone numbers
 qwk archive.qwk --has-phones
 
-# Only messages with email addresses
+# Show messages with email addresses
 qwk archive.qwk --has-emails
 
-# Only messages with color codes
+# Show messages with color codes
 qwk archive.qwk --has-ansi
 ```
 
@@ -411,23 +411,23 @@ for msg in messages:
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
 | `--my-name` | Set your name for the `--mine` filter and QWK exports. |
-| `--has-attachments` | Only show messages that have attachments. |
-| `--has-links` | Only show messages that contain web links. |
-| `--has-emails` | Only show messages that contain email addresses. |
-| `--has-phones` | Only show messages that contain phone numbers. |
-| `--has-ansi` | Only show messages that contain color codes. |
-| `--has-msg-links` | Only show messages that contain references to other messages (e.g., 'msg #123'). |
+| `--has-attachments` | Show messages that have attachments. |
+| `--has-links` | Show messages that contain web links. |
+| `--has-emails` | Show messages that contain email addresses. |
+| `--has-phones` | Show messages that contain phone numbers. |
+| `--has-ansi` | Show messages that contain color codes. |
+| `--has-msg-links` | Show messages that contain internal message links (e.g., 'msg #123'). |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
-| `-H, --headers-only` | Show only the message details (metadata). |
+| `-H, --headers-only` | Show the message details (metadata) without the body. |
 | `-E, --encoding` | Set text encoding (default is `cp437`). |
-| `-S, --search` | Show messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. |
+| `-S, --search` | Show messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. Supports partial matches. |
 | `-C, --conference` | Show messages from a specific conference (name or number). Supports partial matches. |
 | `-B, --bbs` | Show messages from a specific BBS (name or ID). Supports partial matches. |
 | `-f, --from` | Show messages from a specific author. Supports partial matches. |
 | `--to` | Show messages to a specific recipient. Supports partial matches. |
 | `-s, --subject` | Show messages with specific keywords in the subject. Supports partial matches. |
 | `--body` | Show messages with specific keywords in the body. Supports partial matches. |
-| `-X, --exclude` | Hide messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. |
+| `-X, --exclude` | Hide messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. Supports partial matches. |
 | `--exclude-from` | Hide messages from a specific author. Supports partial matches. |
 | `--exclude-to` | Hide messages sent to a specific recipient. Supports partial matches. |
 | `--exclude-subject` | Hide messages with specific keywords in the subject. Supports partial matches. |
@@ -435,15 +435,15 @@ for msg in messages:
 | `--exclude-bbs` | Hide messages from a specific BBS. Supports partial matches. |
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
-| `--tail` | Show only the last specific number of matching messages. Alias: `--last`. |
+| `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
-| `-L, --limit` | Stop after a specific number of matching messages. |
-| `-K, --skip` | Skip a specific number of matching messages. |
+| `-L, --limit` | Stop after NUM matching messages. |
+| `-K, --skip` | Skip the first NUM matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
 | `--reverse` | Reverse the sorting order. |
-| `--min-length` | Show messages with at least this many characters. |
-| `--max-length` | Show messages with at most this many characters. |
+| `--min-length` | Show messages with at least NUM characters. |
+| `--max-length` | Show messages with at most NUM characters. |
 | `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
@@ -473,12 +473,14 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{msgnum}` | The unique message number. |
 | `{snippet}` | The first line of the message body. |
 | `{url_count}` | The number of web links found in the message. |
-| `{urls}` | A comma-separated list of web links found in the message. |
 | `{email_count}` | The number of email addresses found in the message. |
-| `{emails}` | A comma-separated list of email addresses found in the message. |
 | `{phone_count}` | The number of phone numbers found in the message. |
-| `{phones}` | A comma-separated list of phone numbers found in the message. |
+| `{msg_link_count}` | The number of message references found in the text. |
 | `{my_name}` | The user name (either from archive information or your override). |
+| `{urls}` | A comma-separated list of web links found in the message. |
+| `{emails}` | A comma-separated list of email addresses found in the message. |
+| `{phones}` | A comma-separated list of phone numbers found in the message. |
+| `{msg_links}` | A list of message numbers referenced in the text. |
 
 ### Dates & Times
 | Variable | Description |
@@ -500,8 +502,6 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | Variable | Description |
 | :--- | :--- |
 | `{msgid}` | A unique identifier for the message (`conf.msg@bbs`). |
-| `{msg_links}` | A list of message numbers referenced in the text. |
-| `{msg_link_count}` | The number of message references found in the text. |
 | `{refnum}` | The message number being replied to. |
 | `{status}` | The status code (e.g., `*` for private). |
 | `{msgflag}` | Technical flags from the message header. |
