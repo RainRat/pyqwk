@@ -886,6 +886,10 @@ class QwkGuiApp:
         else:
             self.clear_filters()
 
+    def clear_search(self, _event: object | None = None) -> None:
+        """Clear the search and exclude bars first, and if already empty, reset all filters."""
+        self._on_esc_pressed(_event)
+
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
         if hasattr(self, "root") and self.root.focus_get() in (

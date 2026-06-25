@@ -40,8 +40,8 @@ def test_clear_search_refocus(app):
     # capturing it during _build_toolbar, let's re-run _build_toolbar with a mock ttk.
 
     with patch('pyqwk.gui.ttk') as mock_ttk:
-        # Ensure ttk.Entry returns unique mocks for search and exclude
-        mock_ttk.Entry.side_effect = [MagicMock(name="search_entry"), MagicMock(name="exclude_entry")]
+        entries = [MagicMock(name="search_entry"), MagicMock(name="exclude_entry")]
+        mock_ttk.Entry.side_effect = lambda *args, **kwargs: entries.pop(0) if entries else MagicMock()
         app._build_toolbar()
 
         # Find the search clear button (it's the first '✕' button)
