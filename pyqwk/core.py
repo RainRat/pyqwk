@@ -3134,6 +3134,53 @@ def _generate_safe_filename(
     return f"{message.confnum:03d}-{msg_num:05d}-{slug}{ext}"
 
 
+def _render_message_oneline(
+    message: ParsedMessage,
+    settings: ProcessingSettings,
+    count: int,
+    use_colors: bool,
+    board_dict: dict[int, str] | None = None,
+    user_name: str | None = None,
+) -> str:
+    """Render a one-line summary for a message using patterns or standard format."""
+    if settings.oneline_pattern:
+        try:
+            mapping = _get_message_mapping(
+                message,
+                count,
+                redact_pii=settings.redact_pii,
+                user_name=user_name,
+            )
+            # Apply fallbacks for oneline display
+            if not mapping["confname"]:
+                mapping["confname"] = f"Conference {message.confnum}"
+
+            text = settings.oneline_pattern.format(**mapping) + "\r\n"
+            # Apply search highlighting to the resulting line
+            return _highlight_text(
+                text,
+                settings.search_term,
+                settings.regex,
+                use_colors=use_colors,
+            )
+        except (KeyError, ValueError):
+            # Fallback if pattern is invalid
+            pass
+
+    return message.header.format_oneline(
+        board_dict or {},
+        use_colors=use_colors,
+        highlight_term=settings.search_term,
+        is_regex=settings.regex,
+        verbose=settings.verbose,
+        depth=message.depth,
+        conf_name=message.confname,
+        is_private=message.header.is_private,
+        has_attachments=bool(message.attachments),
+        redact_pii=settings.redact_pii,
+    )
+
+
 def process_merged_files(
     input_paths: list[str],
     settings: ProcessingSettings,
@@ -3309,55 +3356,14 @@ def process_merged_files(
             )
 
         if settings.oneline:
-            if settings.oneline_pattern:
-                try:
-                    mapping = _get_message_mapping(
-                        parsed_message,
-                        processed_count,
-                        redact_pii=settings.redact_pii,
-                        user_name=user_name,
-                    )
-                    # Apply fallbacks for oneline display
-                    if not mapping["confname"]:
-                        mapping["confname"] = f"Conference {parsed_message.confnum}"
-
-                    processed_buffer = (
-                        settings.oneline_pattern.format(**mapping) + "\r\n"
-                    )
-                    # Apply search highlighting to the resulting line
-                    processed_buffer = _highlight_text(
-                        processed_buffer,
-                        settings.search_term,
-                        settings.regex,
-                        use_colors=use_colors,
-                    )
-                except (KeyError, ValueError):
-                    # Fallback if pattern is invalid
-                    processed_buffer = parsed_message.header.format_oneline(
-                        board_dict,
-                        use_colors=use_colors,
-                        highlight_term=settings.search_term,
-                        is_regex=settings.regex,
-                        verbose=settings.verbose,
-                        depth=parsed_message.depth,
-                        conf_name=parsed_message.confname,
-                        is_private=parsed_message.header.is_private,
-                        has_attachments=bool(parsed_message.attachments),
-                        redact_pii=settings.redact_pii,
-                    )
-            else:
-                processed_buffer = parsed_message.header.format_oneline(
-                    board_dict,
-                    use_colors=use_colors,
-                    highlight_term=settings.search_term,
-                    is_regex=settings.regex,
-                    verbose=settings.verbose,
-                    depth=parsed_message.depth,
-                    conf_name=parsed_message.confname,
-                    is_private=parsed_message.header.is_private,
-                    has_attachments=bool(parsed_message.attachments),
-                    redact_pii=settings.redact_pii,
-                )
+            processed_buffer = _render_message_oneline(
+                parsed_message,
+                settings,
+                processed_count,
+                use_colors,
+                board_dict,
+                user_name,
+            )
         else:
             processed_buffer = cleaned_body
 
@@ -5079,59 +5085,19 @@ def _write_text(
 
     for i, message in enumerate(messages):
         if settings and settings.oneline:
-            if settings.oneline_pattern:
-                try:
-                    user_name_to_pass = (
-                        settings.my_name
-                        if settings
-                        else (bbs_info.user_name if bbs_info else None)
-                    )
-                    mapping = _get_message_mapping(
-                        message,
-                        i + 1,
-                        redact_pii=settings.redact_pii if settings else False,
-                        user_name=user_name_to_pass,
-                    )
-                    # Apply fallbacks for oneline display
-                    if not mapping["confname"]:
-                        mapping["confname"] = f"Conference {message.confnum}"
-
-                    text = settings.oneline_pattern.format(**mapping) + "\r\n"
-                    # Apply search highlighting to the resulting line
-                    text = _highlight_text(
-                        text,
-                        settings.search_term,
-                        settings.regex,
-                        use_colors=use_colors,
-                    )
-                except (KeyError, ValueError):
-                    # Fallback if pattern is invalid
-                    text = message.header.format_oneline(
-                        {},
-                        use_colors=use_colors,
-                        highlight_term=settings.search_term,
-                        is_regex=settings.regex,
-                        verbose=settings.verbose,
-                        depth=message.depth,
-                        conf_name=message.confname,
-                        is_private=message.header.is_private,
-                        has_attachments=bool(message.attachments),
-                        redact_pii=settings.redact_pii,
-                    )
-            else:
-                # Re-format oneline summary to account for conversation depth
-                text = message.header.format_oneline(
-                    {},  # board_dict not needed when conf_name is provided
-                    use_colors=use_colors,
-                    highlight_term=settings.search_term,
-                    is_regex=settings.regex,
-                    verbose=settings.verbose,
-                    depth=message.depth,
-                    conf_name=message.confname,
-                    is_private=message.header.is_private,
-                    has_attachments=bool(message.attachments),
-                    redact_pii=settings.redact_pii,
-                )
+            user_name_to_pass = (
+                settings.my_name
+                if settings
+                else (bbs_info.user_name if bbs_info else None)
+            )
+            text = _render_message_oneline(
+                message,
+                settings,
+                i + 1,
+                use_colors,
+                {},
+                user_name_to_pass,
+            )
         else:
             text = message.text
 
