@@ -258,7 +258,7 @@ examples:
     content_group.add_argument(
         "-H",
         "--headers-only",
-        help="Show only the message details (metadata).",
+        help="Show the message details (metadata) without the body.",
         action="store_true",
     )
 
@@ -409,7 +409,8 @@ examples:
         dest="search_term",
         help=(
             "Show messages with specific keywords in any common field:\n"
-            "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments."
+            "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments.\n"
+            "Supports partial matches."
         ),
     )
     filter_group.add_argument(
@@ -423,7 +424,8 @@ examples:
         dest="exclude_search",
         help=(
             "Hide messages with specific keywords in any common field:\n"
-            "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments."
+            "Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments.\n"
+            "Supports partial matches."
         ),
     )
     filter_group.add_argument(
@@ -468,7 +470,8 @@ examples:
     )
     filter_group.add_argument(
         "--min-length",
-        help="Show messages with at least this many characters.",
+        metavar="NUM",
+        help="Show messages with at least NUM characters.",
         type=int,
         default=None,
     )
@@ -482,7 +485,7 @@ examples:
         "--tail",
         "--last",
         metavar="NUM",
-        help="Show only the last NUM matching messages.",
+        help="Show the last NUM matching messages.",
         type=int,
         default=None,
     )
@@ -494,7 +497,8 @@ examples:
     )
     filter_group.add_argument(
         "--max-length",
-        help="Show messages with at most this many characters.",
+        metavar="NUM",
+        help="Show messages with at most NUM characters.",
         type=int,
         default=None,
     )
@@ -502,7 +506,7 @@ examples:
         "-K",
         "--skip",
         metavar="NUM",
-        help="Skip the first set of matching messages.",
+        help="Skip the first NUM matching messages.",
         type=int,
         default=None,
     )
@@ -521,7 +525,7 @@ examples:
         "-L",
         "--limit",
         metavar="NUM",
-        help="Stop after this many matching messages.",
+        help="Stop after NUM matching messages.",
         type=int,
         default=None,
     )
@@ -578,27 +582,27 @@ examples:
     )
     filter_group.add_argument(
         "--has-links",
-        help="Only show messages that contain web, gopher, ftp, or telnet links.",
+        help="Show messages that contain web, gopher, ftp, or telnet links.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-emails",
-        help="Only show messages that contain email addresses.",
+        help="Show messages that contain email addresses.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-phones",
-        help="Only show messages that contain phone numbers.",
+        help="Show messages that contain phone numbers.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-ansi",
-        help="Only show messages that contain ANSI color codes.",
+        help="Show messages that contain ANSI color codes.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-msg-links",
-        help="Only show messages that contain references to other messages (e.g., 'msg #123').",
+        help="Show messages that contain internal message links (e.g., 'msg #123').",
         action="store_true",
     )
 
