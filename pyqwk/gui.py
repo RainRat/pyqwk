@@ -2663,7 +2663,7 @@ class QwkGuiApp:
                 if not data:
                     return
                 txt.insert(tk.END, f"\n{title}\n", "h2")
-                max_count = max(item[1] for item in data) if data else 0
+                max_count = max(item[1] for item in data)
                 for i, item in enumerate(data):
                     label = item[0]
                     count = item[1]
