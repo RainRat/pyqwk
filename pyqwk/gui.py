@@ -1125,6 +1125,13 @@ class QwkGuiApp:
         )
         self.max_words_entry.pack(side=tk.LEFT, padx=2)
 
+        ttk.Button(
+            limits_frame,
+            text="✕",
+            width=2,
+            command=lambda: [self.min_words_var.set(""), self.max_words_var.set("")],
+        ).pack(side=tk.LEFT, padx=(2, 0))
+
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
         options_frame.pack(side=tk.LEFT, padx=5)
 
