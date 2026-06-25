@@ -477,7 +477,8 @@ examples:
     )
     filter_group.add_argument(
         "--min-words",
-        help="Show messages with at least this many words.",
+        metavar="NUM",
+        help="Show messages with at least NUM words.",
         type=int,
         default=None,
     )
@@ -491,7 +492,8 @@ examples:
     )
     filter_group.add_argument(
         "--max-words",
-        help="Show messages with at most this many words.",
+        metavar="NUM",
+        help="Show messages with at most NUM words.",
         type=int,
         default=None,
     )
