@@ -600,6 +600,7 @@ class ProcessingSettings:
     tail: int | None = None
     min_words: int | None = None
     max_words: int | None = None
+    limit_per_conf: int | None = None
 
 
 @dataclass
@@ -3262,6 +3263,7 @@ def process_merged_files(
     bbs_info_to_use = None
     board_dict_to_use = None
     total_attachments = 0
+    conf_processed_counts: dict[int, int] = defaultdict(int)
 
     include_header = not settings.no_header and settings.format == "text"
     target_encoding = "utf-8"
@@ -3277,14 +3279,21 @@ def process_merged_files(
             processed_count, \
             estimated_bytes, \
             potential_files, \
-            collected_for_index
+            collected_for_index, \
+            conf_processed_counts
 
         total_matching += 1
         if settings.skip is not None and total_matching <= settings.skip:
             return False
 
+        if settings.limit_per_conf is not None:
+            if conf_processed_counts[parsed_message.confnum] >= settings.limit_per_conf:
+                return False
+
         if settings.limit is not None and processed_count >= settings.limit:
             return True
+
+        conf_processed_counts[parsed_message.confnum] += 1
         processed_count += 1
 
         if settings.extract_attachments and parsed_message.text:

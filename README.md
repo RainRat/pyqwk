@@ -305,6 +305,12 @@ qwk archive.qwk --after 2023-01-01 --before 2023-12-31
 qwk archive.qwk --on-this-day
 ```
 
+**Limit per Conference:**
+```bash
+# Show only the first 5 messages from each conference
+qwk archive.qwk --limit-per-conf 5
+```
+
 **Find Content:**
 ```bash
 # Show messages with links
@@ -444,6 +450,7 @@ for msg in messages:
 | `--exclude-bbs` | Hide messages from a specific BBS. Supports partial matches. |
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
+| `--limit-per-conf` | Limit the number of matching messages per conference. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |

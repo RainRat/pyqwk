@@ -476,6 +476,13 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--limit-per-conf",
+        metavar="NUM",
+        help="Limit the number of matching messages per conference.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--min-words",
         metavar="NUM",
         help="Show messages with at least NUM words.",
@@ -798,6 +805,7 @@ examples:
         max_length=getattr(args, "max_length", None),
         min_words=getattr(args, "min_words", None),
         max_words=getattr(args, "max_words", None),
+        limit_per_conf=getattr(args, "limit_per_conf", None),
     )
 
     if args.organize_by_bbs and not args.output_path:
