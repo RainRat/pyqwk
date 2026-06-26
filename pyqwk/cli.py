@@ -320,7 +320,7 @@ examples:
     format_group.add_argument(
         "-1",
         "--oneline",
-        help="Show a one-line summary (MsgNum, Conf, Date, From, To, Flags, Subject).",
+        help="Show a one-line summary (number, conference, date, author, recipient, flags, and subject).",
         action="store_true",
     )
     format_group.add_argument(
@@ -563,7 +563,7 @@ examples:
     )
     filter_group.add_argument(
         "--has-attachments",
-        help="Show messages that contain attachments (UUE, yEnc, Base64).",
+        help="Show messages that contain attachments.",
         action="store_true",
     )
     filter_group.add_argument(
@@ -579,12 +579,12 @@ examples:
     )
     filter_group.add_argument(
         "--on-this-day",
-        help="Show messages sent on this same month and day in any year.",
+        help="Show messages from the same month and day in any year.",
         action="store_true",
     )
     filter_group.add_argument(
         "--has-links",
-        help="Show messages that contain web, gopher, ftp, or telnet links.",
+        help="Show messages that contain web, Gopher, FTP, or Telnet links.",
         action="store_true",
     )
     filter_group.add_argument(
@@ -599,7 +599,7 @@ examples:
     )
     filter_group.add_argument(
         "--has-ansi",
-        help="Show messages that contain ANSI color codes.",
+        help="Show messages that contain color codes.",
         action="store_true",
     )
     filter_group.add_argument(

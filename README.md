@@ -199,6 +199,11 @@ qwk archive.qwk --individual-files -o output_folder/
 qwk archive.qwk --individual-files --organize -o output_folder/
 ```
 
+**Organize archives by BBS:**
+```bash
+qwk my_archives/ --organize-by-bbs
+```
+
 **Organize files by date:**
 ```bash
 qwk archive.qwk --individual-files --organize-by-date -o output_folder/
@@ -401,6 +406,8 @@ for msg in messages:
 | `-v, --verbose` | Show more details like conference names and message numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file. |
 | `-F, --format` | Set output format (html, json, markdown, etc.). |
+| `-j, --json` | A shortcut for --format json. |
+| `-J, --jsonl` | A shortcut for --format jsonl. |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into conversations. |
@@ -414,21 +421,22 @@ for msg in messages:
 | `--organize-by-author` | Organize individual files into subfolders by author name. |
 | `--organize-by-to` | Organize individual files into subfolders by recipient name. |
 | `--organize-by-subject` | Organize individual files into subfolders by message subject. |
-| `--organize-pattern` | Set a custom folder structure for individual files. |
+| `--organize-pattern` | Set a pattern for organizing individual files into folders (e.g., '{year}/{month}/{author}').<br>See template variables below. |
+| `--filename-pattern` | Set a pattern for naming individual files (e.g., '{date}_{author}_{subject}').<br>See template variables below. |
 | `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, or words). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
-| `--my-name` | Set your name for the `--mine` filter and QWK exports. |
-| `--has-attachments` | Show messages that have attachments. |
-| `--has-links` | Show messages that contain web links. |
+| `--my-name`, `--user` | Set your name for the `--mine` filter and QWK exports. |
+| `--has-attachments` | Show messages that contain attachments. |
+| `--has-links` | Show messages that contain web, Gopher, FTP, or Telnet links. |
 | `--has-emails` | Show messages that contain email addresses. |
 | `--has-phones` | Show messages that contain phone numbers. |
 | `--has-ansi` | Show messages that contain color codes. |
 | `--has-msg-links` | Show messages that contain internal message links (e.g., 'msg #123'). |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show the message details (metadata) without the body. |
-| `-E, --encoding` | Set text encoding (default is `cp437`). |
+| `-E, --encoding` | Set the text encoding (default is 'cp437'). Use this if text looks incorrect. |
 | `-S, --search` | Show messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. Supports partial matches. |
 | `-C, --conference` | Show messages from a specific conference (name or number). Supports partial matches. |
 | `-B, --bbs` | Show messages from a specific BBS (name or ID). Supports partial matches. |
@@ -445,7 +453,7 @@ for msg in messages:
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
-| `--on-this-day` | Show messages from the same month and day. |
+| `--on-this-day` | Show messages from the same month and day in any year. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
 | `-L, --limit` | Stop after NUM matching messages. |
 | `-K, --skip` | Skip the first NUM matching messages. |
@@ -455,9 +463,9 @@ for msg in messages:
 | `--max-length` | Show messages with at most NUM characters. |
 | `--min-words` | Show messages with at least NUM words. |
 | `--max-words` | Show messages with at most NUM words. |
-| `--toc` | Add a table of contents to the output. |
-| `-1, --oneline` | Show a one-line summary of each message. |
-| `--oneline-pattern` | Set a custom pattern for one-line summaries. |
+| `--toc` | Add a table of contents and archive summary to the output. |
+| `-1, --oneline` | Show a one-line summary (number, conference, date, author, recipient, flags, and subject). |
+| `--oneline-pattern` | Set a custom pattern for one-line summaries (e.g., '[{confnum}] {author}: {subject}').<br>See template variables below. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
