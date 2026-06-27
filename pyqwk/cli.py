@@ -563,7 +563,7 @@ examples:
     )
     filter_group.add_argument(
         "--has-attachments",
-        help="Show messages that contain attachments (UUE, yEnc, Base64).",
+        help="Show messages that contain attachments.",
         action="store_true",
     )
     filter_group.add_argument(
