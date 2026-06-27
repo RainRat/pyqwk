@@ -703,6 +703,11 @@ class QwkGuiApp:
             accelerator="Ctrl+F",
         )
         edit_menu.add_command(
+            label="Exclude",
+            command=self._focus_exclude,
+            accelerator="Ctrl+E",
+        )
+        edit_menu.add_command(
             label="Find Next",
             command=lambda: self._navigate_search_matches(1),
             accelerator="F3",
@@ -718,6 +723,11 @@ class QwkGuiApp:
             accelerator="Ctrl+G",
         )
         edit_menu.add_command(
+            label="Reset All Filters",
+            command=self.clear_filters,
+            accelerator="Ctrl+Shift+X",
+        )
+        edit_menu.add_command(
             label="Clear Search", command=self._on_esc_pressed, accelerator="Esc"
         )
         menubar.add_cascade(label="Edit", menu=edit_menu)
@@ -728,7 +738,9 @@ class QwkGuiApp:
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
+        self.root.bind("<Control-e>", self._focus_exclude)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
+        self.root.bind("<Control-X>", self.clear_filters)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Escape>", self._on_esc_pressed)
         self.root.bind("<F3>", lambda e: self._navigate_search_matches(1))
@@ -892,9 +904,9 @@ class QwkGuiApp:
 
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
-        if hasattr(self, "root") and self.root.focus_get() in (
-            getattr(self, "search_entry", None),
-            getattr(self, "exclude_entry", None),
+        if (
+            hasattr(self, "root")
+            and self.root.focus_get() == getattr(self, "search_entry", None)
         ):
             return
 
@@ -909,6 +921,17 @@ class QwkGuiApp:
 
         self.search_entry.focus_set()
         self.search_entry.selection_range(0, tk.END)
+
+    def _focus_exclude(self, _event: object | None = None) -> None:
+        """Focus the exclude bar and select all text for quick replacement."""
+        if (
+            hasattr(self, "root")
+            and self.root.focus_get() == getattr(self, "exclude_entry", None)
+        ):
+            return
+
+        self.exclude_entry.focus_set()
+        self.exclude_entry.selection_range(0, tk.END)
 
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters and search to their default state."""
@@ -1166,6 +1189,7 @@ class QwkGuiApp:
             "<Down>", lambda e: self._select_relative_message(1, force=True)
         )
         self.root.bind("<Control-f>", self._focus_search)
+        self.root.bind("<Control-e>", self._focus_exclude)
         self.bbs_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
         self.bbs_combo.bind("<Escape>", self._on_esc_pressed)
         self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())

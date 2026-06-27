@@ -41,10 +41,10 @@ def test_focus_search_respects_entry_focus(app):
     app._focus_search()
     app.search_entry.focus_set.assert_not_called()
 
-    # 3. Test when focus IS in exclude field
+    # 3. Test when focus IS in exclude field (should now move focus to search)
     app.root.focus_get.return_value = app.exclude_entry
     app._focus_search()
-    app.search_entry.focus_set.assert_not_called()
+    app.search_entry.focus_set.assert_called_once()
 
 def test_select_random_message_respects_entry_focus(app):
     app._get_all_tree_items = MagicMock(return_value=['item1'])
