@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 
 # Mock tkinter before importing QwkGuiApp
 import sys
@@ -10,6 +10,7 @@ sys.modules['tkinter.messagebox'] = MagicMock()
 sys.modules['tkinter.ttk'] = MagicMock()
 sys.modules['tkinter.simpledialog'] = MagicMock()
 
+import tkinter as tk
 from pyqwk.gui import QwkGuiApp
 
 @pytest.fixture
@@ -30,21 +31,44 @@ def app():
         return app
 
 def test_focus_search_respects_entry_focus(app):
-    # 1. Test when focus is NOT in search/exclude fields
+    # 1. Test when focus is NOT in search field
     app.root.focus_get.return_value = app.message_list
     app._focus_search()
     app.search_entry.focus_set.assert_called_once()
+    app.search_entry.selection_range.assert_called_with(0, ANY)
     app.search_entry.focus_set.reset_mock()
+    app.search_entry.selection_range.reset_mock()
 
     # 2. Test when focus IS in search field
     app.root.focus_get.return_value = app.search_entry
     app._focus_search()
     app.search_entry.focus_set.assert_not_called()
 
-    # 3. Test when focus IS in exclude field
+    # 3. Test when focus IS in exclude field (should now move to search)
     app.root.focus_get.return_value = app.exclude_entry
     app._focus_search()
-    app.search_entry.focus_set.assert_not_called()
+    app.search_entry.focus_set.assert_called_once()
+    app.search_entry.selection_range.assert_called_with(0, ANY)
+
+def test_focus_exclude(app):
+    # 1. Test when focus is NOT in exclude field
+    app.root.focus_get.return_value = app.message_list
+    app._focus_exclude()
+    app.exclude_entry.focus_set.assert_called_once()
+    app.exclude_entry.selection_range.assert_called_with(0, ANY)
+    app.exclude_entry.focus_set.reset_mock()
+    app.exclude_entry.selection_range.reset_mock()
+
+    # 2. Test when focus IS in exclude field
+    app.root.focus_get.return_value = app.exclude_entry
+    app._focus_exclude()
+    app.exclude_entry.focus_set.assert_not_called()
+
+    # 3. Test when focus IS in search field (should move to exclude)
+    app.root.focus_get.return_value = app.search_entry
+    app._focus_exclude()
+    app.exclude_entry.focus_set.assert_called_once()
+    app.exclude_entry.selection_range.assert_called_with(0, ANY)
 
 def test_select_random_message_respects_entry_focus(app):
     app._get_all_tree_items = MagicMock(return_value=['item1'])
