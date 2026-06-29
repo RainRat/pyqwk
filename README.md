@@ -420,8 +420,8 @@ for msg in messages:
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
 | `--my-name` | Set your name for the `--mine` filter and QWK exports. |
-| `--has-attachments` | Show messages that have attachments. |
-| `--has-links` | Show messages that contain web links. |
+| `--has-attachments` | Show messages that contain attachments. |
+| `--has-links` | Show messages that contain links. |
 | `--has-emails` | Show messages that contain email addresses. |
 | `--has-phones` | Show messages that contain phone numbers. |
 | `--has-ansi` | Show messages that contain color codes. |

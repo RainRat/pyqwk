@@ -563,7 +563,7 @@ examples:
     )
     filter_group.add_argument(
         "--has-attachments",
-        help="Show messages that contain attachments (UUE, yEnc, Base64).",
+        help="Show messages that contain attachments.",
         action="store_true",
     )
     filter_group.add_argument(
@@ -584,7 +584,7 @@ examples:
     )
     filter_group.add_argument(
         "--has-links",
-        help="Show messages that contain web, gopher, ftp, or telnet links.",
+        help="Show messages that contain links.",
         action="store_true",
     )
     filter_group.add_argument(
@@ -599,7 +599,7 @@ examples:
     )
     filter_group.add_argument(
         "--has-ansi",
-        help="Show messages that contain ANSI color codes.",
+        help="Show messages that contain color codes.",
         action="store_true",
     )
     filter_group.add_argument(
