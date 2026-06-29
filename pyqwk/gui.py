@@ -385,6 +385,9 @@ class QwkGuiApp:
         if conf_val and not conf_val.startswith("All Conferences"):
             return True
 
+        if self.min_words_var.get().strip() or self.max_words_var.get().strip():
+            return True
+
         for var in [
             self.has_attach_var,
             self.mine_var,
@@ -637,6 +640,16 @@ class QwkGuiApp:
         if conf_val and not conf_val.startswith("All Conferences"):
             self.detail_text.insert(tk.END, f"  {'Conference':<15}: ", "header_label")
             self.detail_text.insert(tk.END, f"{conf_val}\n", "body")
+
+        min_words = self.min_words_var.get().strip()
+        if min_words:
+            self.detail_text.insert(tk.END, f"  {'Min Words':<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"{min_words}\n", "body")
+
+        max_words = self.max_words_var.get().strip()
+        if max_words:
+            self.detail_text.insert(tk.END, f"  {'Max Words':<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"{max_words}\n", "body")
 
         active_bools = []
         for text, var in [
