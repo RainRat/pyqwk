@@ -1651,16 +1651,16 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
 
     messages = []
 
-    re_conf = re.compile(r"^(?:Conference|Area):\s*(.*?)(?:\s*\((\d+)\))?$", re.MULTILINE)
-    re_bbs = re.compile(r"^BBS:\s*(.*)$", re.MULTILINE)
-    re_status = re.compile(r"^Status:\s*(.*)$", re.MULTILINE)
-    re_msgnum_verbose = re.compile(r"^Message #:\s*(\d+)", re.MULTILINE)
-    re_date = re.compile(r"^Date:\s*(.*)$", re.MULTILINE)
-    re_from = re.compile(r"^From:\s*(.*)$", re.MULTILINE)
-    re_to = re.compile(r"^To:\s*(.*)$", re.MULTILINE)
-    re_subject = re.compile(r"^Subject:\s*(.*)$", re.MULTILINE)
-    re_refnum = re.compile(r"^Reference #:\s*(\d+)", re.MULTILINE)
-    re_attachments = re.compile(r"^Attachments:\s*(.*)$", re.MULTILINE)
+    re_conf = re.compile(r"^(?:Conference|Area):[ \t]*(.*?)(?:[ \t]*\((\d+)\))?$", re.MULTILINE)
+    re_bbs = re.compile(r"^BBS:[ \t]*(.*)$", re.MULTILINE)
+    re_status = re.compile(r"^Status:[ \t]*(.*)$", re.MULTILINE)
+    re_msgnum_verbose = re.compile(r"^Message #:[ \t]*(\d+)", re.MULTILINE)
+    re_date = re.compile(r"^Date:[ \t]*(.*)$", re.MULTILINE)
+    re_from = re.compile(r"^From:[ \t]*(.*)$", re.MULTILINE)
+    re_to = re.compile(r"^To:[ \t]*(.*)$", re.MULTILINE)
+    re_subject = re.compile(r"^Subject:[ \t]*(.*)$", re.MULTILINE)
+    re_refnum = re.compile(r"^Reference #:[ \t]*(\d+)", re.MULTILINE)
+    re_attachments = re.compile(r"^Attachments:[ \t]*(.*)$", re.MULTILINE)
     re_any_header = re.compile(
         r"^\s*(Conference|Area|BBS|Status|Message #|Date|From|To|Subject|Reference #|Attachments):"
     )
@@ -3702,8 +3702,7 @@ def process_merged_files(
 
         try:
             for parsed_message, board_dict in sort_buffer:
-                if handle_output(parsed_message, board_dict):
-                    break
+                handle_output(parsed_message, board_dict)
         finally:
             settings.skip = original_skip
             settings.limit = original_limit
