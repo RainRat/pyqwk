@@ -114,12 +114,12 @@ qwk-gui messages.db
 ```
 
 **Key Features:**
-- **Search:** Find messages by keyword or use "Regex" for advanced patterns. You can easily cycle through matches with **F3** or **Shift + F3**, and the reader will automatically move to the next or previous message when you reach the end of the current one. You can also right-click any highlighted text to search for it instantly.
+- **Search:** Find messages by keyword or use regular expressions for advanced patterns. Cycle through matches with **F3** or **Shift + F3**. The reader automatically moves to the next or previous message when you reach the end of the list. You can also right-click any text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
 - **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only ANSI color codes. Use "Embed Attachments" to include images directly in messages.
+- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Embed Attachments" to include images directly in messages.
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
@@ -399,7 +399,7 @@ for msg in messages:
 | :--- | :--- |
 | `-o`, `--output` | Save results to a file or folder. |
 | `-v, --verbose` | Show more details like conference names and message numbers. |
-| `-i`, `--individual-files` | Save each message as a separate file. |
+| `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set output format (html, json, markdown, etc.). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
@@ -420,8 +420,8 @@ for msg in messages:
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
 | `--my-name` | Set your name for the `--mine` filter and QWK exports. |
-| `--has-attachments` | Show messages that have attachments. |
-| `--has-links` | Show messages that contain web links. |
+| `--has-attachments` | Show messages that contain attachments. |
+| `--has-links` | Show messages that contain links. |
 | `--has-emails` | Show messages that contain email addresses. |
 | `--has-phones` | Show messages that contain phone numbers. |
 | `--has-ansi` | Show messages that contain color codes. |
