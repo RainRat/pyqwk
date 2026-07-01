@@ -83,9 +83,9 @@ def test_gui_renders_attachments(mock_gui_deps):
     # Trigger rendering of the message
     app._render_message(0)
 
-    # Check if "Attachments: " label was inserted
+    # Check if "Attach: " label was inserted
     app.detail_text.insert.assert_any_call(
-        mock_gui_deps["tk"].END, "Attach: ", "header_meta_label"
+        mock_gui_deps["tk"].END, f"{'Attach:':<8} ", "header_meta_label"
     )
     # Check if attachment names were inserted as links
     msg_id = id(message)
