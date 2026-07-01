@@ -58,7 +58,7 @@ def mock_gui_deps():
             "conf_combo": MagicMock(),
         }
 
-def test_on_esc_pressed_focused_clears_search(mock_gui_deps):
+def test_clear_search_focused_clears_search(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
@@ -72,13 +72,13 @@ def test_on_esc_pressed_focused_clears_search(mock_gui_deps):
     # Case 1: search_entry is focused
     root.focus_get.return_value = app.search_entry
     with patch.object(app, "reload_messages") as mock_reload:
-        app._on_esc_pressed()
+        app.clear_search()
         app.search_var.set.assert_called_with("")
         app.exclude_var.set.assert_called_with("")
         mock_reload.assert_called_once()
         app.message_list.focus_set.assert_called_once()
 
-def test_on_esc_pressed_unfocused_with_content_clears_search(mock_gui_deps):
+def test_clear_search_unfocused_with_content_clears_search(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
@@ -93,13 +93,13 @@ def test_on_esc_pressed_unfocused_with_content_clears_search(mock_gui_deps):
     app.search_var.get.return_value = "query"
 
     with patch.object(app, "reload_messages") as mock_reload:
-        app._on_esc_pressed()
+        app.clear_search()
         app.search_var.set.assert_called_with("")
         app.exclude_var.set.assert_called_with("")
         mock_reload.assert_called_once()
         app.message_list.focus_set.assert_called_once()
 
-def test_on_esc_pressed_no_content_resets_all_filters(mock_gui_deps):
+def test_clear_search_no_content_resets_all_filters(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
@@ -115,7 +115,7 @@ def test_on_esc_pressed_no_content_resets_all_filters(mock_gui_deps):
     app.exclude_var.get.return_value = ""
 
     with patch.object(app, "clear_filters") as mock_clear:
-        app._on_esc_pressed()
+        app.clear_search()
         mock_clear.assert_called_once()
 
 def test_is_any_filter_active_includes_msg_links(mock_gui_deps):
