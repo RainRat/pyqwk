@@ -600,6 +600,7 @@ class ProcessingSettings:
     tail: int | None = None
     min_words: int | None = None
     max_words: int | None = None
+    max_depth: int | None = None
 
 
 @dataclass
@@ -2850,6 +2851,12 @@ def matches_filters(
         if settings.min_words is not None and word_count < settings.min_words:
             return False
         if settings.max_words is not None and word_count > settings.max_words:
+            return False
+
+    # 12. Depth Filter
+    if settings.max_depth is not None:
+        depth = getattr(message, "depth", 0)
+        if depth > settings.max_depth:
             return False
 
     return True

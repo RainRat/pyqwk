@@ -476,6 +476,13 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--max-depth",
+        metavar="NUM",
+        help="Show messages up to a specific thread depth (0 for original posts).",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--min-words",
         metavar="NUM",
         help="Show messages with at least NUM words.",
@@ -798,6 +805,7 @@ examples:
         max_length=getattr(args, "max_length", None),
         min_words=getattr(args, "min_words", None),
         max_words=getattr(args, "max_words", None),
+        max_depth=getattr(args, "max_depth", None),
     )
 
     if args.organize_by_bbs and not args.output_path:

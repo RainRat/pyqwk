@@ -455,6 +455,7 @@ for msg in messages:
 | `--max-length` | Show messages with at most NUM characters. |
 | `--min-words` | Show messages with at least NUM words. |
 | `--max-words` | Show messages with at most NUM words. |
+| `--max-depth` | Show messages up to a specific thread depth (0 for original posts). |
 | `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
