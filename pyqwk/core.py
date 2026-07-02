@@ -601,6 +601,8 @@ class ProcessingSettings:
     min_words: int | None = None
     max_words: int | None = None
     limit_per_conf: int | None = None
+    min_attachments: int | None = None
+    max_attachments: int | None = None
 
 
 @dataclass
@@ -2853,6 +2855,15 @@ def matches_filters(
         if settings.max_words is not None and word_count > settings.max_words:
             return False
 
+    # 12. Attachment Count Filter
+    if settings.min_attachments is not None or settings.max_attachments is not None:
+        message.discover_attachments()
+        attach_count = len(message.attachments) if message.attachments else 0
+        if settings.min_attachments is not None and attach_count < settings.min_attachments:
+            return False
+        if settings.max_attachments is not None and attach_count > settings.max_attachments:
+            return False
+
     return True
 
 
@@ -3683,6 +3694,7 @@ def process_merged_files(
                     "length": lambda x: len(x[0].text) if x[0].text else 0,
                     "size": lambda x: len(x[0].text) if x[0].text else 0,
                     "words": lambda x: len(x[0].text.split()) if x[0].text else 0,
+                    "attachments": lambda x: len(x[0].discover_attachments() or []),
                 }
                 if settings.sort in sort_keys:
                     sort_buffer.sort(

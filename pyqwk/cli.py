@@ -483,9 +483,23 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--min-attachments",
+        metavar="NUM",
+        help="Show messages with at least NUM attachments.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--min-words",
         metavar="NUM",
         help="Show messages with at least NUM words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-attachments",
+        metavar="NUM",
+        help="Show messages with at most NUM attachments.",
         type=int,
         default=None,
     )
@@ -547,7 +561,7 @@ examples:
     filter_group.add_argument(
         "-O",
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, or words).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments).",
         choices=[
             "date",
             "author",
@@ -560,6 +574,7 @@ examples:
             "size",
             "random",
             "words",
+            "attachments",
         ],
         default=None,
     )
@@ -806,6 +821,8 @@ examples:
         min_words=getattr(args, "min_words", None),
         max_words=getattr(args, "max_words", None),
         limit_per_conf=getattr(args, "limit_per_conf", None),
+        min_attachments=getattr(args, "min_attachments", None),
+        max_attachments=getattr(args, "max_attachments", None),
     )
 
     if args.organize_by_bbs and not args.output_path:
