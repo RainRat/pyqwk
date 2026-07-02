@@ -1334,10 +1334,10 @@ class QwkGuiApp:
             "header_label", font=("TkDefaultFont", 10, "bold"), foreground="#444444"
         )
         self.detail_text.tag_configure(
-            "header_meta_label", font=("TkDefaultFont", 9, "bold"), foreground="#666666"
+            "header_meta_label", font=("TkDefaultFont", 9, "bold"), foreground="#888888"
         )
         self.detail_text.tag_configure(
-            "header_meta", font=("TkDefaultFont", 9), foreground="#666666"
+            "header_meta", font=("TkDefaultFont", 9), foreground="#333333"
         )
         self.detail_text.tag_configure(
             "header_hr", font=("TkDefaultFont", 1), background="#dddddd"
@@ -1500,103 +1500,77 @@ class QwkGuiApp:
         self._render_hr()
         self.detail_text.insert(tk.END, "\n")
 
-        # Metadata fields grouped for information density
-        # Row 1: From & To
-        self.detail_text.insert(tk.END, "From: ", "header_meta_label")
-        from_tag = f"from_link_{id(msg)}"
-        self.detail_text.insert(tk.END, msg_from, ("link", "header_meta", from_tag))
-        self.detail_text.tag_bind(
-            from_tag,
-            "<Button-1>",
-            lambda e, a=orig_from: self._pivot_filter(author=a),
-        )
+        # Metadata fields vertically stacked and aligned for better scannability
+        metadata = [
+            (
+                "From:",
+                msg_from,
+                f"from_link_{id(msg)}",
+                lambda e, a=orig_from: self._pivot_filter(author=a),
+            ),
+            (
+                "To:",
+                msg_to,
+                f"to_link_{id(msg)}",
+                lambda e, a=orig_to: self._pivot_filter(author=a),
+            ),
+            ("Date:", f"{header.msgdate} {header.msgtime}", None, None),
+            (
+                "Conf:",
+                conf_name,
+                f"conf_link_{id(msg)}",
+                lambda e, c=header.confnum: self._pivot_filter(conf_num=c),
+            ),
+        ]
 
-        self.detail_text.insert(tk.END, "  •  ", "header_separator")
-
-        self.detail_text.insert(tk.END, "To: ", "header_meta_label")
-        to_tag = f"to_link_{id(msg)}"
-        self.detail_text.insert(tk.END, msg_to, ("link", "header_meta", to_tag))
-        self.detail_text.tag_bind(
-            to_tag,
-            "<Button-1>",
-            lambda e, a=orig_to: self._pivot_filter(author=a),
-        )
-        self.detail_text.insert(tk.END, "\n")
-
-        # Row 2: Date & Conference
-        self.detail_text.insert(tk.END, "Date: ", "header_meta_label")
-        self.detail_text.insert(
-            tk.END, f"{header.msgdate} {header.msgtime}", "header_meta"
-        )
-
-        self.detail_text.insert(tk.END, "  •  ", "header_separator")
-
-        self.detail_text.insert(tk.END, "Conf: ", "header_meta_label")
-        conf_tag = f"conf_link_{id(msg)}"
-        self.detail_text.insert(tk.END, conf_name, ("link", "header_meta", conf_tag))
-        self.detail_text.tag_bind(
-            conf_tag,
-            "<Button-1>",
-            lambda e, c=header.confnum: self._pivot_filter(conf_num=c),
-        )
-        self.detail_text.insert(tk.END, "\n")
-
-        # Row 3: BBS, Msg, and Ref (conditional)
-        row3_parts = []
         if msg.bbs_name:
-            row3_parts.append("bbs")
-        if header.msgnum is not None:
-            row3_parts.append("msg")
-        if msg.refnum:
-            row3_parts.append("ref")
-
-        for i, part_type in enumerate(row3_parts):
-            if part_type == "bbs":
-                self.detail_text.insert(tk.END, "BBS: ", "header_meta_label")
-                bbs_tag = f"bbs_link_{id(msg)}"
-                self.detail_text.insert(
-                    tk.END, f"{msg.bbs_name}", ("link", "header_meta", bbs_tag)
-                )
-                self.detail_text.tag_bind(
-                    bbs_tag,
-                    "<Button-1>",
+            metadata.append(
+                (
+                    "BBS:",
+                    f"{msg.bbs_name}",
+                    f"bbs_link_{id(msg)}",
                     lambda e, b=msg.bbs_name: self._pivot_filter(bbs_name=b),
                 )
-            elif part_type == "msg":
-                self.detail_text.insert(tk.END, "Msg: ", "header_meta_label")
-                self.detail_text.insert(tk.END, f"{header.msgnum}", "header_meta")
-            elif part_type == "ref":
-                self.detail_text.insert(tk.END, "Ref: ", "header_meta_label")
-                ref_tag = f"ref_link_{id(msg)}"
-                self.detail_text.insert(tk.END, f"{msg.refnum}", ("link", "header_meta", ref_tag))
-                self.detail_text.tag_bind(
-                    ref_tag,
-                    "<Button-1>",
-                    lambda e, c=header.confnum, r=msg.refnum: self.jump_to_message(
-                        c, r
-                    ),
+            )
+
+        if header.msgnum is not None:
+            metadata.append(("Msg:", f"{header.msgnum}", None, None))
+
+        if msg.refnum:
+            metadata.append(
+                (
+                    "Ref:",
+                    f"{msg.refnum}",
+                    f"ref_link_{id(msg)}",
+                    lambda e, c=header.confnum, r=msg.refnum: self.jump_to_message(c, r),
                 )
-
-            if i < len(row3_parts) - 1:
-                self.detail_text.insert(tk.END, "  •  ", "header_separator")
-
-        if row3_parts:
-            self.detail_text.insert(tk.END, "\n")
+            )
 
         if msg.source_file:
-            self.detail_text.insert(tk.END, "Source: ", "header_meta_label")
-            source_tag = f"source_link_{id(msg)}"
-            self.detail_text.insert(
-                tk.END, f"{msg.source_file}\n", ("link", "header_meta", source_tag)
-            )
-            self.detail_text.tag_bind(
-                source_tag,
-                "<Button-1>",
-                lambda e, s=msg.source_file: [self.search_var.set(s), self.reload_messages()],
+            metadata.append(
+                (
+                    "Source:",
+                    f"{msg.source_file}",
+                    f"source_link_{id(msg)}",
+                    lambda e, s=msg.source_file: [
+                        self.search_var.set(s),
+                        self.reload_messages(),
+                    ],
+                )
             )
 
+        for label, value, tag, cmd in metadata:
+            self.detail_text.insert(tk.END, f"{label:<8}", "header_meta_label")
+            if tag:
+                self.detail_text.insert(tk.END, value, ("link", "header_meta", tag))
+                if cmd:
+                    self.detail_text.tag_bind(tag, "<Button-1>", cmd)
+            else:
+                self.detail_text.insert(tk.END, value, "header_meta")
+            self.detail_text.insert(tk.END, "\n")
+
         if msg.attachments:
-            self.detail_text.insert(tk.END, "Attach: ", "header_meta_label")
+            self.detail_text.insert(tk.END, f"{'Attach:':<8}", "header_meta_label")
             for i, filename in enumerate(msg.attachments):
                 tag = f"attach_link_{id(msg)}_{i}"
                 self.detail_text.insert(tk.END, filename, ("link", "header_meta", tag))
