@@ -25,6 +25,8 @@ def mock_app():
             app.has_phones_var = MagicMock()
             app.has_ansi_var = MagicMock()
             app.has_msg_links_var = MagicMock()
+            app.min_words_var = MagicMock()
+            app.max_words_var = MagicMock()
             app.search_entry = MagicMock()
             app.exclude_entry = MagicMock()
             app.detail_text = MagicMock()
@@ -41,6 +43,8 @@ def test_is_any_filter_active_gaps(mock_app):
     app.exclude_var.get.return_value = ""
     app.bbs_combo.get.return_value = "All BBSes"
     app.conf_combo.get.return_value = "All Conferences"
+    app.min_words_var.get.return_value = ""
+    app.max_words_var.get.return_value = ""
     app.private_var.get.return_value = True
     for var in [app.has_attach_var, app.mine_var, app.on_this_day_var, app.has_links_var,
                 app.has_emails_var, app.has_phones_var, app.has_ansi_var, app.has_msg_links_var]:
@@ -61,6 +65,14 @@ def test_is_any_filter_active_gaps(mock_app):
 
     # Line 393: Private toggle inactive (showing all)
     app.private_var.get.return_value = False
+    assert app._is_any_filter_active() is True
+    app.private_var.get.return_value = True
+
+    # Min/Max words filter active
+    app.min_words_var.get.return_value = "10"
+    assert app._is_any_filter_active() is True
+    app.min_words_var.get.return_value = ""
+    app.max_words_var.get.return_value = "100"
     assert app._is_any_filter_active() is True
 
 def test_navigate_conference_empty_values(mock_app):
