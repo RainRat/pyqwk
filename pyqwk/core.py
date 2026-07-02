@@ -3694,14 +3694,14 @@ def process_merged_files(
             sort_buffer.reverse()
 
         # Apply skip, limit, and tail to the buffer
-        if settings.skip:
+        if settings.skip is not None:
             sort_buffer = sort_buffer[settings.skip :]
 
-        if settings.limit:
+        if settings.limit is not None:
             sort_buffer = sort_buffer[: settings.limit]
 
-        if settings.tail:
-            sort_buffer = sort_buffer[-settings.tail :]
+        if settings.tail is not None:
+            sort_buffer = sort_buffer[-settings.tail :] if settings.tail > 0 else []
 
         # Temporarily clear skip/limit in settings to avoid redundant filtering in handle_output
         original_skip = settings.skip
