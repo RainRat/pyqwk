@@ -490,6 +490,13 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--min-depth",
+        metavar="NUM",
+        help="Show messages with a thread depth of at least NUM.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--min-words",
         metavar="NUM",
         help="Show messages with at least NUM words.",
@@ -500,6 +507,13 @@ examples:
         "--max-attachments",
         metavar="NUM",
         help="Show messages with at most NUM attachments.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-depth",
+        metavar="NUM",
+        help="Show messages with a thread depth of at most NUM.",
         type=int,
         default=None,
     )
@@ -823,6 +837,8 @@ examples:
         limit_per_conf=getattr(args, "limit_per_conf", None),
         min_attachments=getattr(args, "min_attachments", None),
         max_attachments=getattr(args, "max_attachments", None),
+        min_depth=getattr(args, "min_depth", None),
+        max_depth=getattr(args, "max_depth", None),
     )
 
     if args.organize_by_bbs and not args.output_path:

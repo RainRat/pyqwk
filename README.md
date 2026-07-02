@@ -353,6 +353,15 @@ qwk archive.qwk --min-words 100
 qwk archive.qwk --min-words 50 --max-words 500
 ```
 
+**Filter by Thread Depth:**
+```bash
+# Show only original posts (depth 0)
+qwk archive.qwk --threaded --max-depth 0
+
+# Show messages at depth 2 or deeper
+qwk archive.qwk --threaded --min-depth 2
+```
+
 **Filter by Message Number:**
 ```bash
 qwk archive.qwk --msgnum 100-200
@@ -467,6 +476,8 @@ for msg in messages:
 | `--min-attachments` | Show messages with at least NUM attachments. |
 | `--max-words` | Show messages with at most NUM words. |
 | `--max-attachments` | Show messages with at most NUM attachments. |
+| `--min-depth` | Show messages with a thread depth of at least NUM. |
+| `--max-depth` | Show messages with a thread depth of at most NUM. |
 | `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary of each message. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |

@@ -603,6 +603,8 @@ class ProcessingSettings:
     limit_per_conf: int | None = None
     min_attachments: int | None = None
     max_attachments: int | None = None
+    min_depth: int | None = None
+    max_depth: int | None = None
 
 
 @dataclass
@@ -2864,6 +2866,12 @@ def matches_filters(
         if settings.max_attachments is not None and attach_count > settings.max_attachments:
             return False
 
+    # 13. Thread Depth Filter
+    if settings.min_depth is not None and message.depth < settings.min_depth:
+        return False
+    if settings.max_depth is not None and message.depth > settings.max_depth:
+        return False
+
     return True
 
 
@@ -3269,6 +3277,11 @@ def process_merged_files(
     use_streaming = not (
         settings.sort or settings.reverse or settings.threaded or settings.tail
     )
+
+    initial_filtering_settings = settings
+    if settings.threaded:
+        initial_filtering_settings = replace(settings, min_depth=None, max_depth=None)
+
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
     collected_for_index: list[dict[str, Any]] = []
     bbs_info_to_use = None
@@ -3610,7 +3623,7 @@ def process_merged_files(
                 )
                 if not matches_filters(
                     parsed_message,
-                    settings,
+                    initial_filtering_settings,
                     allowed_conferences,
                     user_name,
                     allowed_exclude_conferences,
@@ -3660,6 +3673,15 @@ def process_merged_files(
             # Apply conversation threading to the buffered messages.
             msgs_only = [m for m, bd in sort_buffer]
             threaded_msgs = _order_messages_by_thread(msgs_only)
+
+            # Apply depth filtering now that depths are calculated.
+            if settings.min_depth is not None or settings.max_depth is not None:
+                threaded_msgs = [
+                    m
+                    for m in threaded_msgs
+                    if (settings.min_depth is None or m.depth >= settings.min_depth)
+                    and (settings.max_depth is None or m.depth <= settings.max_depth)
+                ]
 
             sort_buffer = []
             for m in threaded_msgs:
