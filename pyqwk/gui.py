@@ -920,7 +920,7 @@ class QwkGuiApp:
 
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
-        if self.root.focus_get() == self.search_entry:
+        if hasattr(self, "root") and self.root.focus_get() == getattr(self, "search_entry", None):
             return
 
         try:
