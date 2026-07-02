@@ -87,7 +87,7 @@ class TestQwkGui:
         assert hasattr(app, "message_list")
         app.root.bind.assert_any_call("<Control-o>", app.open_file)
         app.root.bind.assert_any_call("<Control-s>", app.export_messages)
-        app.root.bind.assert_any_call("<Escape>", app._on_esc_pressed)
+        app.root.bind.assert_any_call("<Escape>", app.clear_search)
 
         # Verify toolbar elements
         mock_gui_deps["ttk"].Labelframe.assert_any_call(

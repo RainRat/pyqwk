@@ -731,7 +731,7 @@ class QwkGuiApp:
             accelerator="Ctrl+G",
         )
         edit_menu.add_command(
-            label="Clear Search", command=self._on_esc_pressed, accelerator="Esc"
+            label="Clear Search", command=self.clear_search, accelerator="Esc"
         )
         menubar.add_cascade(label="Edit", menu=edit_menu)
 
@@ -743,7 +743,7 @@ class QwkGuiApp:
         self.root.bind("<Control-i>", self.show_stats_window)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
         self.root.bind("<Control-q>", self.quit_app)
-        self.root.bind("<Escape>", self._on_esc_pressed)
+        self.root.bind("<Escape>", self.clear_search)
         self.root.bind("<F3>", lambda e: self._navigate_search_matches(1))
         self.root.bind("<Shift-F3>", lambda e: self._navigate_search_matches(-1))
         self.root.bind("j", lambda e: self._select_relative_message(1))
@@ -882,14 +882,20 @@ class QwkGuiApp:
 
         return None
 
-    def _on_esc_pressed(self, _event: object | None = None) -> None:
-        """Handle Escape key to clear search fields or reset filters based on focus and content."""
+    def clear_search(self, _event: object | None = None) -> None:
+        """Clear search fields or reset filters based on focus and content.
+
+        Handles the Escape key to clear search/exclude fields first, and if already
+        empty or not focused, resets all active filters.
+        """
         focused_widget = self.root.focus_get()
         search_entry = getattr(self, "search_entry", None)
         exclude_entry = getattr(self, "exclude_entry", None)
 
         is_search_focused = focused_widget in (search_entry, exclude_entry)
-        has_search_content = bool(self.search_var.get().strip() or self.exclude_var.get().strip())
+        has_search_content = bool(
+            self.search_var.get().strip() or self.exclude_var.get().strip()
+        )
 
         if is_search_focused or has_search_content:
             self.search_var.set("")
@@ -898,10 +904,6 @@ class QwkGuiApp:
             self.message_list.focus_set()
         else:
             self.clear_filters()
-
-    def clear_search(self, _event: object | None = None) -> None:
-        """Clear the search and exclude bars first, and if already empty, reset all filters."""
-        self._on_esc_pressed(_event)
 
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
@@ -1027,7 +1029,7 @@ class QwkGuiApp:
             search_frame, textvariable=self.search_var, width=18
         )
         self.search_entry.pack(side=tk.LEFT, padx=(0, 0))
-        self.search_entry.bind("<Escape>", self._on_esc_pressed)
+        self.search_entry.bind("<Escape>", self.clear_search)
         ttk.Button(
             search_frame,
             text="✕",
@@ -1062,7 +1064,7 @@ class QwkGuiApp:
             search_frame, textvariable=self.exclude_var, width=18
         )
         self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
-        self.exclude_entry.bind("<Escape>", self._on_esc_pressed)
+        self.exclude_entry.bind("<Escape>", self.clear_search)
         ttk.Button(
             search_frame,
             text="✕",
@@ -1171,7 +1173,7 @@ class QwkGuiApp:
         self.search_entry.bind("<Shift-Return>", self._on_search_shift_enter)
         self.exclude_entry.bind("<Return>", self._on_search_enter)
         self.exclude_entry.bind("<Shift-Return>", self._on_search_shift_enter)
-        self.search_entry.bind("<Escape>", self._on_esc_pressed)
+        self.search_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind(
             "<Up>", lambda e: self._select_relative_message(-1, force=True)
         )
@@ -1180,9 +1182,9 @@ class QwkGuiApp:
         )
         self.root.bind("<Control-f>", self._focus_search)
         self.bbs_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
-        self.bbs_combo.bind("<Escape>", self._on_esc_pressed)
+        self.bbs_combo.bind("<Escape>", self.clear_search)
         self.conf_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
-        self.conf_combo.bind("<Escape>", self._on_esc_pressed)
+        self.conf_combo.bind("<Escape>", self.clear_search)
 
     def _build_layout(self) -> None:
         paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
