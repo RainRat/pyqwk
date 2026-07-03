@@ -41,8 +41,9 @@ def test_toolbar_consolidation():
             "Expected 'Discovery:' label to be removed"
         )
 
-        # Verify all 7 filter checkboxes exist
+        # Verify all 8+ filter checkboxes exist
         expected_filters = {
+            "Private",
             "Attachments",
             "My Messages",
             "On This Day",
@@ -50,6 +51,7 @@ def test_toolbar_consolidation():
             "Emails",
             "Phones",
             "Colors",
+            "Message Links",
         }
 
         checkbutton_calls = [

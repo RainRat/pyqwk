@@ -665,6 +665,9 @@ class QwkGuiApp:
             if var.get():
                 active_bools.append(text)
 
+        if not self.private_var.get():
+            active_bools.append("Private Hidden")
+
         if active_bools:
             self.detail_text.insert(tk.END, f"  {'Filters':<15}: ", "header_label")
             self.detail_text.insert(tk.END, f"{', '.join(active_bools)}\n", "body")
@@ -966,6 +969,7 @@ class QwkGuiApp:
             self.conf_combo.current(0)
         except Exception:
             self.conf_combo.set("All Conferences")
+        self.private_var.set(True)
         self.has_attach_var.set(False)
         self.mine_var.set(False)
         self.on_this_day_var.set(False)
@@ -1142,8 +1146,9 @@ class QwkGuiApp:
         filters_frame.pack(side=tk.LEFT, padx=5)
         for i, (text, var) in enumerate(
             [
-                ("Attachments", self.has_attach_var),
+                ("Private", self.private_var),
                 ("My Messages", self.mine_var),
+                ("Attachments", self.has_attach_var),
                 ("On This Day", self.on_this_day_var),
                 ("Links", self.has_links_var),
                 ("Emails", self.has_emails_var),
@@ -1154,7 +1159,7 @@ class QwkGuiApp:
         ):
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).grid(row=i // 4, column=i % 4, padx=5, sticky=tk.W)
+            ).grid(row=i // 3, column=i % 3, padx=5, sticky=tk.W)
 
         limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
         limits_frame.pack(side=tk.LEFT, padx=5)
