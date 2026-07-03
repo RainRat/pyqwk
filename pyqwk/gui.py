@@ -918,9 +918,13 @@ class QwkGuiApp:
         else:
             self.clear_filters()
 
-    def _focus_search(self, _event: object | None = None) -> None:
-        """Focus the search bar and select all text for quick replacement."""
-        if hasattr(self, "root") and self.root.focus_get() == getattr(self, "search_entry", None):
+    def _focus_entry_field(self, entry_attr: str, var_attr: str) -> None:
+        """Focus an entry field and optionally populate it with selected text."""
+        entry = getattr(self, entry_attr, None)
+        if not entry:
+            return
+
+        if hasattr(self, "root") and self.root.focus_get() == entry:
             return
 
         try:
@@ -928,29 +932,20 @@ class QwkGuiApp:
             if sel_range:
                 selected_text = self.detail_text.get(*sel_range).strip()
                 if selected_text:
-                    self.search_var.set(selected_text)
-        except tk.TclError:
+                    getattr(self, var_attr).set(selected_text)
+        except (tk.TclError, AttributeError):
             pass
 
-        self.search_entry.focus_set()
-        self.search_entry.selection_range(0, tk.END)
+        entry.focus_set()
+        entry.selection_range(0, tk.END)
+
+    def _focus_search(self, _event: object | None = None) -> None:
+        """Focus the search bar and select all text for quick replacement."""
+        self._focus_entry_field("search_entry", "search_var")
 
     def _focus_exclude(self, _event: object | None = None) -> None:
         """Focus the exclude bar and select all text for quick replacement."""
-        if hasattr(self, "root") and self.root.focus_get() == getattr(self, "exclude_entry", None):
-            return
-
-        try:
-            sel_range = self.detail_text.tag_ranges("sel")
-            if sel_range:
-                selected_text = self.detail_text.get(*sel_range).strip()
-                if selected_text:
-                    self.exclude_var.set(selected_text)
-        except tk.TclError:
-            pass
-
-        self.exclude_entry.focus_set()
-        self.exclude_entry.selection_range(0, tk.END)
+        self._focus_entry_field("exclude_entry", "exclude_var")
 
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters and search to their default state."""
