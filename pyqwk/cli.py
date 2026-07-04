@@ -559,6 +559,13 @@ examples:
         help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
     filter_group.add_argument(
+        "-R",
+        "--reply-to",
+        "--refnum",
+        dest="refnum_filter",
+        help="Show messages that are replies to specific message numbers or ranges.",
+    )
+    filter_group.add_argument(
         "-L",
         "--limit",
         metavar="NUM",
@@ -760,6 +767,7 @@ examples:
         after_date = _parse_cli_date(args.after)
         before_date = _parse_cli_date(args.before, end_of_day=True)
         msgnum_filters = _parse_msgnum_ranges(args.msgnum_filter)
+        refnum_filters = _parse_msgnum_ranges(args.refnum_filter)
     except ValueError as e:
         parser.error(str(e))
 
@@ -789,6 +797,7 @@ examples:
         embed_attachments=args.embed_attachments,
         organize_attachments=args.organize_attachments,
         msgnum_filters=msgnum_filters,
+        refnum_filters=refnum_filters,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,

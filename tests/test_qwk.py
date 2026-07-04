@@ -164,6 +164,7 @@ def _make_cli_namespace(**overrides: object) -> argparse.Namespace:
         embed_attachments=False,
         has_attachments=False,
         msgnum_filter=None,
+        refnum_filter=None,
         mine=False,
         on_this_day=False,
         merge_stats=False,

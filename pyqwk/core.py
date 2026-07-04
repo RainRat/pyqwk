@@ -565,6 +565,7 @@ class ProcessingSettings:
     embed_attachments: bool = False
     organize_attachments: bool = False
     msgnum_filters: set[int] | None = None
+    refnum_filters: set[int] | None = None
     conferences: list[str] | None = None
     bbs_names: list[str] | None = None
     authors: list[str] | None = None
@@ -1664,10 +1665,10 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
     re_from = re.compile(r"^From:[ \t]*(.*)$", re.MULTILINE)
     re_to = re.compile(r"^To:[ \t]*(.*)$", re.MULTILINE)
     re_subject = re.compile(r"^Subject:[ \t]*(.*)$", re.MULTILINE)
-    re_refnum = re.compile(r"^Reference #:[ \t]*(\d+)", re.MULTILINE)
+    re_refnum = re.compile(r"^(?:Reference|Ref) #:[ \t]*(\d+)", re.MULTILINE)
     re_attachments = re.compile(r"^Attachments:[ \t]*(.*)$", re.MULTILINE)
     re_any_header = re.compile(
-        r"^\s*(Conference|Area|BBS|Status|Message #|Date|From|To|Subject|Reference #|Attachments):"
+        r"^\s*(Conference|Area|BBS|Status|Message #|Date|From|To|Subject|Reference #|Ref #|Attachments):"
     )
 
     for section in sections:
@@ -2775,6 +2776,11 @@ def matches_filters(
     # 3. Message Number Filter
     if settings.msgnum_filters:
         if message.msgnum is None or message.msgnum not in settings.msgnum_filters:
+            return False
+
+    # 3b. Reference Number Filter
+    if settings.refnum_filters:
+        if message.refnum is None or message.refnum not in settings.refnum_filters:
             return False
 
     # 4. Author Filter
