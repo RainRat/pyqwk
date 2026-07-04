@@ -116,8 +116,8 @@ qwk-gui messages.db
 **Key Features:**
 - **Search:** Find messages by keyword or use regular expressions. Cycle through matches with **F3** or **Shift + F3**. The reader moves to the next or previous message when you reach the end of the current one. Right-click any highlighted text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
-- **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
-- **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
+- **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field (**Ctrl + E**) to hide messages matching specific keywords. You can also filter by word limits, private messages, or messages with attachments.
+- **Context Menus:** Right-click a message to copy its details, filter by author or conference, or exclude them from the view. You can also select and copy text directly from the message body.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Embed Attachments" to include images directly in messages.
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
@@ -132,11 +132,13 @@ qwk-gui messages.db
 
 **Search & Filters**
 - **Ctrl + F** or **/**: Jump to the search bar.
+- **Ctrl + E**: Jump to the exclude bar.
 - **F3**: Find the next search match.
 - **Shift + F3**: Find the previous search match.
 - **Enter**: Find the next match when the search bar is focused.
 - **Shift + Enter**: Find the previous match when the search bar is focused.
 - **Esc**: Clear the search on the first press and all filters on the second press.
+- **Ctrl + Shift + X**: Reset all filters instantly.
 
 **Navigation**
 - **j** or **n**: Move to the next message.
@@ -189,7 +191,7 @@ qwk archive.qwk --embed-attachments -o messages.html
 qwk archive.qwk --format mbox -o messages.mbox
 ```
 
-**Save each message as a separate file:**
+**Save each message as a separate file (creates a browsable index for HTML and Markdown):**
 ```bash
 qwk archive.qwk --individual-files -o output_folder/
 ```
@@ -417,7 +419,7 @@ for msg in messages:
 | :--- | :--- |
 | `-o`, `--output` | Save results to a file or folder. |
 | `-v, --verbose` | Show more details like conference names and message numbers. |
-| `-i`, `--individual-files` | Save each message as a separate file. |
+| `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set output format (html, json, markdown, etc.). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
