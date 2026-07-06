@@ -824,47 +824,34 @@ class QwkGuiApp:
         self.message_list.focus(new_item)
         return True
 
-    def _navigate_conference(self, delta: int) -> None:
-        """Change the selected conference in the combobox by a given offset."""
-        if not self.conf_combo["values"]:
+    def _navigate_combo(self, combo: ttk.Combobox, delta: int) -> None:
+        """Change the selected item in a combobox by a given offset."""
+        if not combo["values"]:
             return
 
-        # Avoid changing conferences while the user is typing in a search or exclude field
+        # Avoid changing selection while the user is typing in a search or exclude field
         focused_widget = self.root.focus_get()
         if focused_widget in (self.search_entry, self.exclude_entry):
             return
 
-        current_idx = self.conf_combo.current()
-        num_values = len(self.conf_combo["values"])
+        current_idx = combo.current()
+        num_values = len(combo["values"])
 
         if current_idx == -1:
             new_idx = 0 if delta > 0 else num_values - 1
         else:
             new_idx = (current_idx + delta) % num_values
 
-        self.conf_combo.current(new_idx)
+        combo.current(new_idx)
         self.reload_messages()
+
+    def _navigate_conference(self, delta: int) -> None:
+        """Change the selected conference in the combobox by a given offset."""
+        self._navigate_combo(self.conf_combo, delta)
 
     def _navigate_bbs(self, delta: int) -> None:
         """Change the selected BBS in the combobox by a given offset."""
-        if not self.bbs_combo["values"]:
-            return
-
-        # Avoid changing BBSes while the user is typing in a search or exclude field
-        focused_widget = self.root.focus_get()
-        if focused_widget in (self.search_entry, self.exclude_entry):
-            return
-
-        current_idx = self.bbs_combo.current()
-        num_values = len(self.bbs_combo["values"])
-
-        if current_idx == -1:
-            new_idx = 0 if delta > 0 else num_values - 1
-        else:
-            new_idx = (current_idx + delta) % num_values
-
-        self.bbs_combo.current(new_idx)
-        self.reload_messages()
+        self._navigate_combo(self.bbs_combo, delta)
 
     def _on_space_pressed(self, event: tk.Event) -> str | None:
         """Handle Space, PgDn, PgUp, and BackSpace for continuous reading."""
