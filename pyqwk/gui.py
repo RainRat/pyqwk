@@ -652,6 +652,9 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, f"{max_words}\n", "body")
 
         active_bools = []
+        if not self.private_var.get():
+            active_bools.append("Private Hidden")
+
         for text, var in [
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
@@ -974,6 +977,7 @@ class QwkGuiApp:
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
         self.has_msg_links_var.set(False)
+        self.private_var.set(True)
         self.redact_pii_var.set(False)
         self.wrap_var.set(True)
         self._update_wrap()
@@ -1142,6 +1146,7 @@ class QwkGuiApp:
         filters_frame.pack(side=tk.LEFT, padx=5)
         for i, (text, var) in enumerate(
             [
+                ("Private", self.private_var),
                 ("Attachments", self.has_attach_var),
                 ("My Messages", self.mine_var),
                 ("On This Day", self.on_this_day_var),
@@ -1154,7 +1159,7 @@ class QwkGuiApp:
         ):
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).grid(row=i // 4, column=i % 4, padx=5, sticky=tk.W)
+            ).grid(row=i // 3, column=i % 3, padx=5, sticky=tk.W)
 
         limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
         limits_frame.pack(side=tk.LEFT, padx=5)
