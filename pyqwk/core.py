@@ -600,6 +600,7 @@ class ProcessingSettings:
     tail: int | None = None
     min_words: int | None = None
     max_words: int | None = None
+    reply_to: set[int] | None = None
     limit_per_conf: int | None = None
     min_attachments: int | None = None
     max_attachments: int | None = None
@@ -2775,6 +2776,11 @@ def matches_filters(
     # 3. Message Number Filter
     if settings.msgnum_filters:
         if message.msgnum is None or message.msgnum not in settings.msgnum_filters:
+            return False
+
+    # 3b. Reply-To Filter
+    if settings.reply_to:
+        if message.header.refnum is None or message.header.refnum not in settings.reply_to:
             return False
 
     # 4. Author Filter

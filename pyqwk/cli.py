@@ -559,6 +559,13 @@ examples:
         help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
     filter_group.add_argument(
+        "-R",
+        "--reply-to",
+        "--refnum",
+        dest="reply_to_filter",
+        help="Show replies to specific message numbers or ranges.",
+    )
+    filter_group.add_argument(
         "-L",
         "--limit",
         metavar="NUM",
@@ -760,6 +767,7 @@ examples:
         after_date = _parse_cli_date(args.after)
         before_date = _parse_cli_date(args.before, end_of_day=True)
         msgnum_filters = _parse_msgnum_ranges(args.msgnum_filter)
+        reply_to_filters = _parse_msgnum_ranges(args.reply_to_filter)
     except ValueError as e:
         parser.error(str(e))
 
@@ -834,6 +842,7 @@ examples:
         max_length=getattr(args, "max_length", None),
         min_words=getattr(args, "min_words", None),
         max_words=getattr(args, "max_words", None),
+        reply_to=reply_to_filters,
         limit_per_conf=getattr(args, "limit_per_conf", None),
         min_attachments=getattr(args, "min_attachments", None),
         max_attachments=getattr(args, "max_attachments", None),
