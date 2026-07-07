@@ -652,6 +652,8 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, f"{max_words}\n", "body")
 
         active_bools = []
+        if not self.private_var.get():
+            active_bools.append("Private Hidden")
         for text, var in [
             ("Attachments", self.has_attach_var),
             ("My Messages", self.mine_var),
@@ -918,6 +920,22 @@ class QwkGuiApp:
         else:
             self.clear_filters()
 
+    def _reset_bbs_filter(self) -> None:
+        """Reset the BBS selection to the default state."""
+        try:
+            self.bbs_combo.current(0)
+        except Exception:
+            self.bbs_combo.set("All BBSes")
+        self.reload_messages()
+
+    def _reset_conf_filter(self) -> None:
+        """Reset the conference selection to the default state."""
+        try:
+            self.conf_combo.current(0)
+        except Exception:
+            self.conf_combo.set("All Conferences")
+        self.reload_messages()
+
     def _focus_search(self, _event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
         if hasattr(self, "root") and self.root.focus_get() == getattr(self, "search_entry", None):
@@ -966,6 +984,7 @@ class QwkGuiApp:
             self.conf_combo.current(0)
         except Exception:
             self.conf_combo.set("All Conferences")
+        self.private_var.set(True)
         self.has_attach_var.set(False)
         self.mine_var.set(False)
         self.on_this_day_var.set(False)
@@ -974,7 +993,15 @@ class QwkGuiApp:
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
         self.has_msg_links_var.set(False)
+
+        # Reset display options
+        self.clean_var.set(False)
+        self.ansi_var.set(False)
+        self.threaded_var.set(False)
         self.redact_pii_var.set(False)
+        self.embed_attach_var.set(False)
+        self.regex_var.set(False)
+
         self.wrap_var.set(True)
         self._update_wrap()
         self.reload_messages()
@@ -1126,8 +1153,14 @@ class QwkGuiApp:
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.grid(row=0, column=1, padx=2, pady=2)
         ttk.Button(
+            archives_frame,
+            text="✕",
+            width=2,
+            command=self._reset_bbs_filter,
+        ).grid(row=0, column=2, padx=0, pady=2)
+        ttk.Button(
             archives_frame, text="▶", width=2, command=lambda: self._navigate_bbs(1)
-        ).grid(row=0, column=2, padx=(0, 5), pady=2)
+        ).grid(row=0, column=3, padx=(0, 5), pady=2)
 
         ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
@@ -1135,13 +1168,20 @@ class QwkGuiApp:
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.conf_combo.grid(row=1, column=1, padx=2, pady=2)
         ttk.Button(
+            archives_frame,
+            text="✕",
+            width=2,
+            command=self._reset_conf_filter,
+        ).grid(row=1, column=2, padx=0, pady=2)
+        ttk.Button(
             archives_frame, text="▶", width=2, command=lambda: self._navigate_conference(1)
-        ).grid(row=1, column=2, padx=(0, 2), pady=2)
+        ).grid(row=1, column=3, padx=(0, 5), pady=2)
 
         filters_frame = ttk.Labelframe(row2, text="Filters", padding=(5, 5))
         filters_frame.pack(side=tk.LEFT, padx=5)
         for i, (text, var) in enumerate(
             [
+                ("Private", self.private_var),
                 ("Attachments", self.has_attach_var),
                 ("My Messages", self.mine_var),
                 ("On This Day", self.on_this_day_var),
@@ -1154,7 +1194,7 @@ class QwkGuiApp:
         ):
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
-            ).grid(row=i // 4, column=i % 4, padx=5, sticky=tk.W)
+            ).grid(row=i // 3, column=i % 3, padx=5, sticky=tk.W)
 
         limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
         limits_frame.pack(side=tk.LEFT, padx=5)
