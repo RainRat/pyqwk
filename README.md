@@ -132,11 +132,13 @@ qwk-gui messages.db
 
 **Search & Filters**
 - **Ctrl + F** or **/**: Jump to the search bar.
+- **Ctrl + E**: Jump to the exclude bar.
 - **F3**: Find the next search match.
 - **Shift + F3**: Find the previous search match.
 - **Enter**: Find the next match when the search bar is focused.
 - **Shift + Enter**: Find the previous match when the search bar is focused.
 - **Esc**: Clear the search on the first press and all filters on the second press.
+- **Ctrl + Shift + X**: Clear all filters instantly.
 
 **Navigation**
 - **j** or **n**: Move to the next message.
@@ -423,7 +425,7 @@ for msg in messages:
 | :--- | :--- |
 | `-o`, `--output` | Save results to a file or folder. |
 | `-v, --verbose` | Show more details like conference names and message numbers. |
-| `-i`, `--individual-files` | Save each message as a separate file. |
+| `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set output format (html, json, markdown, etc.). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
