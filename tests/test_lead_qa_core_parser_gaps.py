@@ -62,6 +62,9 @@ def test_gui_random_message_empty():
         root = MagicMock()
         with patch.object(QwkGuiApp, "__init__", return_value=None):
             app = QwkGuiApp(root)
+            app.root = root
+            app.search_entry = MagicMock()
+            app.exclude_entry = MagicMock()
             app.message_list = MagicMock()
             app._get_all_tree_items = MagicMock(return_value=[])
             app._select_random_message()

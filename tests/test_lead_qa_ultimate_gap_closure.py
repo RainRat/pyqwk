@@ -191,8 +191,10 @@ def test_gui_focus_search_no_selection():
         root = MagicMock()
         with patch.object(QwkGuiApp, "__init__", return_value=None):
             app = QwkGuiApp(root)
-            app.detail_text = MagicMock()
+            app.root = root
             app.search_entry = MagicMock()
+            app.exclude_entry = MagicMock()
+            app.detail_text = MagicMock()
             app.search_var = MagicMock()
 
             # Mock tag_ranges to return empty list (no selection)
