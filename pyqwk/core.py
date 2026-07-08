@@ -601,6 +601,7 @@ class ProcessingSettings:
     min_words: int | None = None
     max_words: int | None = None
     limit_per_conf: int | None = None
+    limit_per_author: int | None = None
     min_attachments: int | None = None
     max_attachments: int | None = None
     min_depth: int | None = None
@@ -3290,6 +3291,7 @@ def process_merged_files(
     board_dict_to_use = None
     total_attachments = 0
     conf_processed_counts: dict[int, int] = defaultdict(int)
+    author_processed_counts: dict[str, int] = defaultdict(int)
 
     include_header = not settings.no_header and settings.format == "text"
     target_encoding = "utf-8"
@@ -3306,7 +3308,8 @@ def process_merged_files(
             estimated_bytes, \
             potential_files, \
             collected_for_index, \
-            conf_processed_counts
+            conf_processed_counts, \
+            author_processed_counts
 
         total_matching += 1
         if settings.skip is not None and total_matching <= settings.skip:
@@ -3316,10 +3319,17 @@ def process_merged_files(
             if conf_processed_counts[parsed_message.confnum] >= settings.limit_per_conf:
                 return False
 
+        if settings.limit_per_author is not None:
+            author_key = parsed_message.header.msgfrom.strip().lower()
+            if author_processed_counts[author_key] >= settings.limit_per_author:
+                return False
+
         if settings.limit is not None and processed_count >= settings.limit:
             return True
 
         conf_processed_counts[parsed_message.confnum] += 1
+        author_key = parsed_message.header.msgfrom.strip().lower()
+        author_processed_counts[author_key] += 1
         processed_count += 1
 
         if settings.extract_attachments and parsed_message.text:

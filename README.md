@@ -311,6 +311,12 @@ qwk archive.qwk --on-this-day
 qwk archive.qwk --limit-per-conf 5
 ```
 
+**Limit per Author:**
+```bash
+# Show only the first 2 messages from each author
+qwk archive.qwk --limit-per-author 2
+```
+
 **Find Content:**
 ```bash
 # Show messages with links
@@ -463,6 +469,7 @@ for msg in messages:
 | `--after` | Show messages sent on or after a date (YYYY-MM-DD). |
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--limit-per-conf` | Limit the number of matching messages per conference. |
+| `--limit-per-author` | Limit the number of matching messages per author. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
