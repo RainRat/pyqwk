@@ -1,5 +1,17 @@
-import pytest
+import sys
 from unittest.mock import MagicMock, patch
+import pytest
+
+# Mock tkinter before any pyqwk.gui imports
+mock_tk = MagicMock()
+mock_ttk = MagicMock()
+sys.modules["tkinter"] = mock_tk
+sys.modules["tkinter.filedialog"] = MagicMock()
+sys.modules["tkinter.messagebox"] = MagicMock()
+sys.modules["tkinter.ttk"] = mock_ttk
+sys.modules["tkinter.simpledialog"] = MagicMock()
+sys.modules["tkinter.font"] = MagicMock()
+
 from pyqwk.core import ProcessingSettings, process_merged_files
 from pyqwk.gui import QwkGuiApp
 
@@ -50,11 +62,14 @@ def test_cli_random_sort(tmp_path, capsys):
 
 def test_gui_random_message():
     # Mocking Tk and root to avoid TclError
-    with patch("tkinter.Tk"), patch("tkinter.ttk.Style"), patch("tkinter.font.Font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         root = MagicMock()
         # Mocking QwkGuiApp's __init__ to avoid building the whole UI
         with patch.object(QwkGuiApp, "__init__", return_value=None):
             app = QwkGuiApp(root)
+            app.root = root
+            app.search_entry = MagicMock()
+            app.exclude_entry = MagicMock()
             app.message_list = MagicMock()
             app._get_all_tree_items = MagicMock(return_value=["0", "1", "2", "3", "4"])
 
@@ -67,11 +82,14 @@ def test_gui_random_message():
 
 def test_gui_random_message_empty():
     # Mocking Tk and root to avoid TclError
-    with patch("tkinter.Tk"), patch("tkinter.ttk.Style"), patch("tkinter.font.Font"):
+    with patch("pyqwk.gui.tk"), patch("pyqwk.gui.ttk"), patch("pyqwk.gui.font"):
         root = MagicMock()
         # Mocking QwkGuiApp's __init__ to avoid building the whole UI
         with patch.object(QwkGuiApp, "__init__", return_value=None):
             app = QwkGuiApp(root)
+            app.root = root
+            app.search_entry = MagicMock()
+            app.exclude_entry = MagicMock()
             app.message_list = MagicMock()
             app._get_all_tree_items = MagicMock(return_value=[])
 

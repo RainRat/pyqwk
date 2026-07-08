@@ -929,7 +929,7 @@ class QwkGuiApp:
         if not entry:
             return
 
-        if hasattr(self, "root") and self.root.focus_get() == entry:
+        if self.root.focus_get() == entry:
             return
 
         try:
@@ -2509,10 +2509,7 @@ class QwkGuiApp:
 
     def _select_random_message(self, _event: object | None = None) -> None:
         """Pick a random message from the currently visible list and select it."""
-        if hasattr(self, "root") and self.root.focus_get() in (
-            getattr(self, "search_entry", None),
-            getattr(self, "exclude_entry", None),
-        ):
+        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
             return
 
         all_items = self._get_all_tree_items()
