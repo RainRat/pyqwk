@@ -319,6 +319,12 @@ qwk archive.qwk --limit-per-conf 5
 qwk archive.qwk --limit-per-author 2
 ```
 
+**Limit per BBS:**
+```bash
+# Show only the first 3 messages from each BBS
+qwk my_archives/ --limit-per-bbs 3
+```
+
 **Find Content:**
 ```bash
 # Show messages with links
@@ -472,6 +478,7 @@ for msg in messages:
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--limit-per-conf` | Limit the number of matching messages per conference. |
 | `--limit-per-author` | Limit the number of matching messages per author. |
+| `--limit-per-bbs` | Limit the number of matching messages per BBS. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
