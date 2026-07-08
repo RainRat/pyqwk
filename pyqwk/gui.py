@@ -1896,7 +1896,7 @@ class QwkGuiApp:
                 # If we click a different column, it should start as ascending
                 next_reverse = False
 
-            if col in ("Num", "Size"):
+            if col in ("Num", "Size", "Words"):
                 header_anchor = tk.E
             elif col == "Flags":
                 header_anchor = tk.CENTER
