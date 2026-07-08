@@ -602,6 +602,7 @@ class ProcessingSettings:
     max_words: int | None = None
     limit_per_conf: int | None = None
     limit_per_author: int | None = None
+    limit_per_bbs: int | None = None
     min_attachments: int | None = None
     max_attachments: int | None = None
     min_depth: int | None = None
@@ -3292,6 +3293,7 @@ def process_merged_files(
     total_attachments = 0
     conf_processed_counts: dict[int, int] = defaultdict(int)
     author_processed_counts: dict[str, int] = defaultdict(int)
+    bbs_processed_counts: dict[str, int] = defaultdict(int)
 
     include_header = not settings.no_header and settings.format == "text"
     target_encoding = "utf-8"
@@ -3324,12 +3326,19 @@ def process_merged_files(
             if author_processed_counts[author_key] >= settings.limit_per_author:
                 return False
 
+        if settings.limit_per_bbs is not None:
+            bbs_key = (parsed_message.bbs_name or parsed_message.bbs_id or "").strip().lower()
+            if bbs_processed_counts[bbs_key] >= settings.limit_per_bbs:
+                return False
+
         if settings.limit is not None and processed_count >= settings.limit:
             return True
 
         conf_processed_counts[parsed_message.confnum] += 1
         author_key = parsed_message.header.msgfrom.strip().lower()
         author_processed_counts[author_key] += 1
+        bbs_key = (parsed_message.bbs_name or parsed_message.bbs_id or "").strip().lower()
+        bbs_processed_counts[bbs_key] += 1
         processed_count += 1
 
         if settings.extract_attachments and parsed_message.text:
@@ -6322,6 +6331,7 @@ def calculate_archive_stats(
     total_count = 0
     matching_count = 0
     processed_count = 0
+    bbs_processed_counts = defaultdict(int)
 
     def filtered_messages_gen():
         nonlocal total_count, matching_count, processed_count
@@ -6383,8 +6393,16 @@ def calculate_archive_stats(
                     if settings.skip is not None and matching_count <= settings.skip:
                         continue
 
+                    if settings.limit_per_bbs is not None:
+                        bbs_key = (message.bbs_name or message.bbs_id or "").strip().lower()
+                        if bbs_processed_counts[bbs_key] >= settings.limit_per_bbs:
+                            continue
+
                     if settings.limit is not None and processed_count >= settings.limit:
                         break
+
+                    bbs_key = (message.bbs_name or message.bbs_id or "").strip().lower()
+                    bbs_processed_counts[bbs_key] += 1
                     processed_count += 1
                     yield message
 
