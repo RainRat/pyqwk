@@ -1656,18 +1656,20 @@ def _parse_text_messages(path: str, encoding: str = "utf-8") -> list[ParsedMessa
 
     messages = []
 
-    re_conf = re.compile(r"^(?:Conference|Area):[ \t]*(.*?)(?:[ \t]*\((\d+)\))?$", re.MULTILINE)
-    re_bbs = re.compile(r"^BBS:[ \t]*(.*)$", re.MULTILINE)
-    re_status = re.compile(r"^Status:[ \t]*(.*)$", re.MULTILINE)
-    re_msgnum_verbose = re.compile(r"^Message #:[ \t]*(\d+)", re.MULTILINE)
-    re_date = re.compile(r"^Date:[ \t]*(.*)$", re.MULTILINE)
-    re_from = re.compile(r"^From:[ \t]*(.*)$", re.MULTILINE)
-    re_to = re.compile(r"^To:[ \t]*(.*)$", re.MULTILINE)
-    re_subject = re.compile(r"^Subject:[ \t]*(.*)$", re.MULTILINE)
-    re_refnum = re.compile(r"^Reference #:[ \t]*(\d+)", re.MULTILINE)
-    re_attachments = re.compile(r"^Attachments:[ \t]*(.*)$", re.MULTILINE)
+    re_conf = re.compile(
+        r"^\s*(?:Conference|Area):[ \t]*(.*?)(?:[ \t]*\((\d+)\))?$", re.MULTILINE
+    )
+    re_bbs = re.compile(r"^\s*BBS:[ \t]*(.*)$", re.MULTILINE)
+    re_status = re.compile(r"^\s*Status:[ \t]*(.*)$", re.MULTILINE)
+    re_msgnum_verbose = re.compile(r"^\s*Message #:[ \t]*(\d+)", re.MULTILINE)
+    re_date = re.compile(r"^\s*Date:[ \t]*(.*)$", re.MULTILINE)
+    re_from = re.compile(r"^\s*From:[ \t]*(.*)$", re.MULTILINE)
+    re_to = re.compile(r"^\s*To:[ \t]*(.*)$", re.MULTILINE)
+    re_subject = re.compile(r"^\s*Subject:[ \t]*(.*)$", re.MULTILINE)
+    re_refnum = re.compile(r"^\s*(?:Reference #|Ref #):[ \t]*(\d+)", re.MULTILINE)
+    re_attachments = re.compile(r"^\s*Attachments:[ \t]*(.*)$", re.MULTILINE)
     re_any_header = re.compile(
-        r"^\s*(Conference|Area|BBS|Status|Message #|Date|From|To|Subject|Reference #|Attachments):"
+        r"^\s*(Conference|Area|BBS|Status|Message #|Date|From|To|Subject|Reference #|Ref #|Attachments):"
     )
 
     for section in sections:
