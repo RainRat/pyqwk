@@ -4859,35 +4859,34 @@ def _serialize_rfc822(
     # We remove them from the text part so the email looks modern
     text_to_scan = message.original_text or message.text
     found_binaries = extract_binaries(text_to_scan) if text_to_scan else []
-    clean_body = message.text or ""
-    if found_binaries:
-        # Simple removal of lines that look like parts of UUE/Base64/yEnc blocks
-        # This is a bit coarse but effective for the goal of a "clean" MIME email.
-        body_lines = clean_body.splitlines()
-        new_body_lines = []
-        in_y = in_u = in_b = False
-        prev_line = None
-        for line in body_lines:
+
+    # Process body lines: remove binaries and escape "From " for mbox compatibility
+    body_lines = (message.text or "").splitlines()
+    new_body_lines = []
+    in_y = in_u = in_b = False
+    prev_line = None
+
+    for line in body_lines:
+        if found_binaries:
             # Re-use the logic from process_message for binaries removal
-            should_skip, in_y, in_u, in_b = _is_binary_line(line, prev_line, in_y, in_u, in_b)
+            should_skip, in_y, in_u, in_b = _is_binary_line(
+                line, prev_line, in_y, in_u, in_b
+            )
             if should_skip:
                 prev_line = line
                 continue
+
+        # Escape "From " lines in body for mbox compatibility
+        if line.startswith("From "):
+            new_body_lines.append(">" + line)
+        else:
             new_body_lines.append(line)
-            prev_line = line
-        clean_body = "\n".join(new_body_lines)
+        prev_line = line
+
+    clean_body = "\n".join(new_body_lines)
 
     # 2. Build the EmailMessage
     msg = EmailMessage()
-
-    # Escape "From " lines in body for mbox compatibility
-    escaped_body_lines = []
-    for line in clean_body.splitlines():
-        if line.startswith("From "):
-            escaped_body_lines.append(">" + line)
-        else:
-            escaped_body_lines.append(line)
-    clean_body = "\n".join(escaped_body_lines)
 
     msg["From"] = header.msgfrom
     msg["To"] = header.msgto
