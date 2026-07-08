@@ -226,7 +226,7 @@ examples:
     content_group.add_argument(
         "--embed-attachments",
         dest="embed_attachments",
-        help="Embed image attachments directly into HTML output as Base64 data URIs.",
+        help="Include image attachments directly in the HTML output.",
         action="store_true",
     )
     content_group.add_argument(
