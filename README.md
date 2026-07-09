@@ -4,21 +4,19 @@ pyqwk converts message archives into modern, readable formats like HTML, Markdow
 
 ## What are QWK and REP files?
 
-QWK files were created in the 1980s for Bulletin Board Systems (BBS). Users downloaded their messages in a single "packet," read them offline, and then uploaded their replies in a `.REP` packet.
+QWK files started in the 1980s for Bulletin Board Systems (BBS). Users downloaded messages in a single "packet," read them offline, and then uploaded replies in a `.REP` packet.
 
-Inside these packets, messages are organized into **Conferences**. You can think of a Conference as a modern forum, channel, or newsgroup dedicated to a specific topic.
-
-pyqwk helps you open these archives and convert them into modern, readable formats.
+Inside these packets, messages are organized into **Conferences**. A Conference is like a modern forum or channel dedicated to a specific topic.
 
 ## Features
 
-- **Supports many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, EML, Markdown, HTML, and Plain Text.
-- **Groups conversations:** Group replies into conversations to follow discussions easily.
-- **Cleans content:** Automatically remove signatures, old quotes, attachments, and color codes.
-- **Protects privacy:** Hide personal information or private messages.
-- **Processes many files:** Convert several archives at once or merge them into one file.
-- **Previews changes:** Use "Dry Run" mode to see results before writing any files.
-- **Reads messages:** Use the built-in graphical reader to browse archives without converting them.
+- **Support many formats:** Import and export between QWK, JSON, JSONL, CSV, XML, RSS, SQLite, mbox, EML, Markdown, HTML, and Plain Text.
+- **Group conversations:** Organize replies into threads to follow discussions easily.
+- **Clean content:** Automatically remove signatures, old quotes, attachments, and color codes.
+- **Protect privacy:** Hide personal information or private messages.
+- **Process many files:** Convert several archives at once or merge them into one file.
+- **Preview changes:** Use "Dry Run" mode to see results before writing any files.
+- **Read messages:** Use the built-in graphical reader to browse archives without converting them.
 
 ## Supported Formats
 
@@ -116,10 +114,10 @@ qwk-gui messages.db
 **Key Features:**
 - **Search:** Find messages by keyword or use regular expressions. Cycle through matches with **F3** or **Shift + F3**. The reader moves to the next or previous message when you reach the end of the current one. Right-click any highlighted text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
-- **Filtering:** Narrow your view by BBS, conference, author, or recipient. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
+- **Filtering:** Narrow your view by BBS, conference, author, recipient, or word count. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Embed Attachments" to include images directly in messages.
+- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Hide Personal Info" to redact emails and phone numbers. Use "Embed Attachments" to include images directly in messages.
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
@@ -432,20 +430,20 @@ for msg in messages:
 | `-o`, `--output` | Save results to a file or folder. |
 | `-v, --verbose` | Show more details like conference names and message numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
-| `-F, --format` | Set output format (html, json, markdown, etc.). |
+| `-F, --format` | Set the output format (html, json, markdown, etc.). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
-| `-T`, `--threaded` | Group replies into conversations. |
+| `-T`, `--threaded` | Group replies into threads. |
 | `--clean` | Remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
 | `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
-| `--organize` | Organize individual files into subfolders by conference. |
-| `--organize-by-date` | Organize individual files into subfolders by date (YYYY/MM). |
+| `--organize` | Organize files into folders by conference. |
+| `--organize-by-date` | Organize files into folders by date (YYYY/MM). |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead. |
-| `--organize-by-author` | Organize individual files into subfolders by author name. |
-| `--organize-by-to` | Organize individual files into subfolders by recipient name. |
-| `--organize-by-subject` | Organize individual files into subfolders by message subject. |
+| `--organize-by-author` | Organize files into folders by author name. |
+| `--organize-by-to` | Organize files into folders by recipient name. |
+| `--organize-by-subject` | Organize files into folders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
 | `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
@@ -460,7 +458,7 @@ for msg in messages:
 | `--has-msg-links` | Show messages that contain internal message links (e.g., 'msg #123'). |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show the message details (metadata) without the body. |
-| `-E, --encoding` | Set text encoding (default is `cp437`). |
+| `-E, --encoding` | Set the text encoding (default is `cp437`). |
 | `-S, --search` | Show messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. Supports partial matches. |
 | `-C, --conference` | Show messages from a specific conference (name or number). Supports partial matches. |
 | `-B, --bbs` | Show messages from a specific BBS (name or ID). Supports partial matches. |
