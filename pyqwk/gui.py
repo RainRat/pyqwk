@@ -952,6 +952,20 @@ class QwkGuiApp:
         """Focus the exclude bar and select all text for quick replacement."""
         self._focus_entry_field("exclude_entry", "exclude_var")
 
+    def _bind_filter_entry(self, entry: ttk.Entry) -> None:
+        """Apply unified keyboard shortcuts to a filter entry widget."""
+        entry.bind("<Return>", self._on_search_enter)
+        entry.bind("<Shift-Return>", self._on_search_shift_enter)
+        entry.bind("<Escape>", self.clear_search)
+        entry.bind(
+            "<Up>", lambda e: self._select_relative_message(-1, force=True)
+        )
+        entry.bind(
+            "<Down>", lambda e: self._select_relative_message(1, force=True)
+        )
+        entry.bind("<Control-f>", self._focus_search)
+        entry.bind("<Control-e>", self._focus_exclude)
+
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters and search to their default state."""
         self.search_var.set("")
@@ -1065,9 +1079,7 @@ class QwkGuiApp:
             search_frame, textvariable=self.search_var, width=18
         )
         self.search_entry.pack(side=tk.LEFT, padx=(0, 0))
-        self.search_entry.bind("<Escape>", self.clear_search)
-        self.search_entry.bind("<Control-f>", self._focus_search)
-        self.search_entry.bind("<Control-e>", self._focus_exclude)
+        self._bind_filter_entry(self.search_entry)
         ttk.Button(
             search_frame,
             text="✕",
@@ -1102,9 +1114,7 @@ class QwkGuiApp:
             search_frame, textvariable=self.exclude_var, width=18
         )
         self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
-        self.exclude_entry.bind("<Escape>", self.clear_search)
-        self.exclude_entry.bind("<Control-f>", self._focus_search)
-        self.exclude_entry.bind("<Control-e>", self._focus_exclude)
+        self._bind_filter_entry(self.exclude_entry)
         ttk.Button(
             search_frame,
             text="✕",
@@ -1186,12 +1196,14 @@ class QwkGuiApp:
             limits_frame, textvariable=self.min_words_var, width=5
         )
         self.min_words_entry.pack(side=tk.LEFT, padx=2)
+        self._bind_filter_entry(self.min_words_entry)
 
         ttk.Label(limits_frame, text="Max:").pack(side=tk.LEFT)
         self.max_words_entry = ttk.Entry(
             limits_frame, textvariable=self.max_words_var, width=5
         )
         self.max_words_entry.pack(side=tk.LEFT, padx=2)
+        self._bind_filter_entry(self.max_words_entry)
 
         ttk.Button(
             limits_frame,
@@ -1217,22 +1229,13 @@ class QwkGuiApp:
                 row=i // 3, column=i % 3, padx=5, sticky=tk.W
             )
 
-        ttk.Button(row2, text="Reset All", width=10, command=self.clear_filters).pack(
-            side=tk.LEFT, padx=5, pady=5
+        global_frame = ttk.Labelframe(row2, text="Global", padding=(5, 5))
+        global_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Button(global_frame, text="Reset All", width=10, command=self.clear_filters).pack(
+            side=tk.LEFT, padx=2
         )
 
         # Binds
-        self.search_entry.bind("<Return>", self._on_search_enter)
-        self.search_entry.bind("<Shift-Return>", self._on_search_shift_enter)
-        self.exclude_entry.bind("<Return>", self._on_search_enter)
-        self.exclude_entry.bind("<Shift-Return>", self._on_search_shift_enter)
-        self.search_entry.bind("<Escape>", self.clear_search)
-        self.search_entry.bind(
-            "<Up>", lambda e: self._select_relative_message(-1, force=True)
-        )
-        self.search_entry.bind(
-            "<Down>", lambda e: self._select_relative_message(1, force=True)
-        )
         self.root.bind("<Control-f>", self._focus_search)
         self.bbs_combo.bind("<<ComboboxSelected>>", lambda e: self.reload_messages())
         self.bbs_combo.bind("<Escape>", self.clear_search)
