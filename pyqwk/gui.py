@@ -1851,8 +1851,8 @@ class QwkGuiApp:
             self.root.after_cancel(self._search_timer)
         self._search_timer = self.root.after(250, self.reload_messages)
 
-    def _on_search_enter(self, _event: object) -> None:
-        """Run the search or move through matches when Enter is pressed."""
+    def _handle_search_navigation(self, delta: int) -> None:
+        """Process search navigation based on the direction (delta)."""
         # If a delayed search is pending, run it immediately and focus the list
         if self._search_timer is not None:
             self.reload_messages()
@@ -1861,19 +1861,18 @@ class QwkGuiApp:
 
         # Only navigate matches if the search entry is focused
         if self.root.focus_get() == self.search_entry and self._search_matches:
-            self._navigate_search_matches(1)
+            self._navigate_search_matches(delta)
         else:
             self.reload_messages()
             self.message_list.focus_set()
 
+    def _on_search_enter(self, _event: object) -> None:
+        """Run the search or move through matches when Enter is pressed."""
+        self._handle_search_navigation(1)
+
     def _on_search_shift_enter(self, _event: object) -> None:
         """Move back through matches when Shift+Enter is pressed."""
-        # Only navigate matches if the search entry is focused
-        if self.root.focus_get() == self.search_entry and self._search_matches:
-            self._navigate_search_matches(-1)
-        else:
-            self.reload_messages()
-            self.message_list.focus_set()
+        self._handle_search_navigation(-1)
 
     def reload_messages(self) -> None:
         if self._search_timer is not None:
