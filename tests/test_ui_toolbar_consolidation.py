@@ -31,6 +31,14 @@ def test_toolbar_consolidation():
         ]
         assert len(filter_frame_calls) == 1, "Expected one 'Filters' labelframe"
 
+        # Check that "Global" labelframe exists
+        global_frame_calls = [
+            call
+            for call in mock_ttk.Labelframe.call_args_list
+            if call[1].get("text") == "Global"
+        ]
+        assert len(global_frame_calls) == 1, "Expected one 'Global' labelframe"
+
         # Check that "Discovery:" label DOES NOT exist
         discovery_label_calls = [
             call
