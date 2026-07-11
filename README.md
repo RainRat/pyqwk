@@ -325,6 +325,12 @@ qwk archive.qwk --limit-per-author 2
 qwk my_archives/ --limit-per-bbs 3
 ```
 
+**Limit per Subject:**
+```bash
+# Show only the first 2 messages with the same subject
+qwk archive.qwk --limit-per-subject 2
+```
+
 **Find Content:**
 ```bash
 # Show messages with links
@@ -479,6 +485,7 @@ for msg in messages:
 | `--limit-per-conf` | Limit the number of matching messages per conference. |
 | `--limit-per-author` | Limit the number of matching messages per author. |
 | `--limit-per-bbs` | Limit the number of matching messages per BBS. |
+| `--limit-per-subject` | Limit the number of matching messages per subject. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
