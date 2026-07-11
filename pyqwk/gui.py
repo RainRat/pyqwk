@@ -1217,9 +1217,11 @@ class QwkGuiApp:
                 row=i // 3, column=i % 3, padx=5, sticky=tk.W
             )
 
-        ttk.Button(row2, text="Reset All", width=10, command=self.clear_filters).pack(
-            side=tk.LEFT, padx=5, pady=5
-        )
+        global_frame = ttk.Labelframe(row2, text="Global", padding=(5, 5))
+        global_frame.pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            global_frame, text="Reset All", width=10, command=self.clear_filters
+        ).pack(side=tk.LEFT, padx=5)
 
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
