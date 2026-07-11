@@ -320,7 +320,7 @@ examples:
     format_group.add_argument(
         "-1",
         "--oneline",
-        help="Show a one-line summary (MsgNum, Conf, Date, From, To, Flags, Subject).",
+        help="Show a one-line summary (Conf, Date, From, To, Subject).",
         action="store_true",
     )
     format_group.add_argument(
