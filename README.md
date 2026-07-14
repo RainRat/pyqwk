@@ -495,7 +495,7 @@ for msg in messages:
 | `--min-depth` | Show messages with a thread depth of at least NUM. |
 | `--max-depth` | Show messages with a thread depth of at most NUM. |
 | `--toc` | Add a table of contents to the output. |
-| `-1, --oneline` | Show a one-line summary of each message. |
+| `-1, --oneline` | Show a one-line summary (Conf, Date, From, To, Flags, Subject). Use with --verbose to include the message number. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
