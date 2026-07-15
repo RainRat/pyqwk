@@ -122,9 +122,9 @@ examples:
     parser.add_argument(
         "input_paths",
         help=(
-            "Path to archives, folders, or compressed files (ZIP/TAR).\n"
-            "Supports QWK, JSON, SQLite, EML, and many other formats.\n"
-            "Multiple archives are automatically merged."
+            "One or more paths to archives, folders, or ZIP/TAR files.\n"
+            "It works with many formats, including QWK, JSON, and SQLite.\n"
+            "If you provide several files, pyqwk will combine them for you."
         ),
         nargs="+",
     )
