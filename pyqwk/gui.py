@@ -1025,7 +1025,7 @@ class QwkGuiApp:
         row1.pack(side=tk.TOP, fill=tk.X, pady=(0, 10))
 
         actions_frame = ttk.Labelframe(row1, text="Archive", padding=(5, 5))
-        actions_frame.pack(side=tk.LEFT, padx=5)
+        actions_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
         ttk.Button(actions_frame, text="Open", width=8, command=self.open_file).pack(
             side=tk.LEFT, padx=2
         )
@@ -1040,7 +1040,7 @@ class QwkGuiApp:
         )
 
         nav_frame = ttk.Labelframe(row1, text="Navigation", padding=(5, 5))
-        nav_frame.pack(side=tk.LEFT, padx=5)
+        nav_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
         ttk.Button(
             nav_frame,
             text="Prev",
@@ -1061,7 +1061,7 @@ class QwkGuiApp:
         ).pack(side=tk.LEFT, padx=2)
 
         search_frame = ttk.Labelframe(row1, text="Search & Find", padding=(5, 5))
-        search_frame.pack(side=tk.LEFT, padx=5)
+        search_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
         ttk.Label(search_frame, text="Find: ").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(
             search_frame, textvariable=self.search_var, width=18
@@ -1130,7 +1130,7 @@ class QwkGuiApp:
         row2.pack(side=tk.TOP, fill=tk.X)
 
         archives_frame = ttk.Labelframe(row2, text="Archives", padding=(5, 5))
-        archives_frame.pack(side=tk.LEFT, padx=5)
+        archives_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
         ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
         ).grid(row=0, column=0, padx=(2, 0), pady=2)
@@ -1162,7 +1162,7 @@ class QwkGuiApp:
         ).grid(row=1, column=3, padx=(0, 5), pady=2)
 
         filters_frame = ttk.Labelframe(row2, text="Filters", padding=(5, 5))
-        filters_frame.pack(side=tk.LEFT, padx=5)
+        filters_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
         for i, (text, var) in enumerate(
             [
                 ("Private", self.private_var),
@@ -1181,7 +1181,7 @@ class QwkGuiApp:
             ).grid(row=i // 3, column=i % 3, padx=5, sticky=tk.W)
 
         limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
-        limits_frame.pack(side=tk.LEFT, padx=5)
+        limits_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
 
         ttk.Label(limits_frame, text="Min:").pack(side=tk.LEFT)
         self.min_words_entry = ttk.Entry(
@@ -1203,7 +1203,7 @@ class QwkGuiApp:
         ).pack(side=tk.LEFT, padx=(2, 0))
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
-        options_frame.pack(side=tk.LEFT, padx=5)
+        options_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
 
         for i, (text, var, cmd) in enumerate(
             [
@@ -1219,8 +1219,10 @@ class QwkGuiApp:
                 row=i // 3, column=i % 3, padx=5, sticky=tk.W
             )
 
-        ttk.Button(row2, text="Reset All", width=10, command=self.clear_filters).pack(
-            side=tk.LEFT, padx=5, pady=5
+        global_frame = ttk.Labelframe(row2, text="Global", padding=(5, 5))
+        global_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+        ttk.Button(global_frame, text="Reset All", width=10, command=self.clear_filters).pack(
+            side=tk.LEFT, padx=2
         )
 
         # Binds
