@@ -114,10 +114,10 @@ qwk-gui messages.db
 **Key Features:**
 - **Search:** Find messages by keyword or use regular expressions. Cycle through matches with **F3** or **Shift + F3**. The reader moves to the next or previous message when you reach the end of the current one. Right-click any highlighted text to search for it instantly.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
-- **Filtering:** Narrow your view by BBS, conference, author, recipient, or word count. Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments.
+- **Filtering:** Narrow your view by BBS, conference, author, recipient, word count, or messages sent "on this day." Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments. Quick toggles help you find messages with links, emails, phones, color codes, or specific word counts.
 - **Context Menus:** Right-click a message to copy its details or filter the view by its author or conference.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
-- **Viewing Options:** Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Hide Personal Info" to redact emails and phone numbers. Use "Embed Attachments" to include images directly in messages.
+- **Viewing Options:** Use "Conversations" to group replies into a threaded view. Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Hide Personal Info" to redact emails and phone numbers. Use "Embed Attachments" to include images directly in messages.
 - **Statistics:** View activity reports and charts. Click chart labels to filter the message list instantly.
 
 **Keyboard Shortcuts:**
