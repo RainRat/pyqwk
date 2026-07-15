@@ -428,6 +428,8 @@ class QwkGuiApp:
             for i, m in enumerate(self.messages):
                 if m.header.msgnum == msgnum and m.header.confnum == target_conf:
                     return i
+            if confnum is not None:
+                return None
 
         # 2. Search in any conference
         for i, m in enumerate(self.messages):
