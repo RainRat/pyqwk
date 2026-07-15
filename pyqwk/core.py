@@ -602,6 +602,7 @@ class ProcessingSettings:
     max_words: int | None = None
     limit_per_conf: int | None = None
     limit_per_author: int | None = None
+    limit_per_subject: int | None = None
     limit_per_bbs: int | None = None
     min_attachments: int | None = None
     max_attachments: int | None = None
@@ -3294,6 +3295,7 @@ def process_merged_files(
     total_attachments = 0
     conf_processed_counts: dict[int, int] = defaultdict(int)
     author_processed_counts: dict[str, int] = defaultdict(int)
+    subject_processed_counts: dict[str, int] = defaultdict(int)
     bbs_processed_counts: dict[str, int] = defaultdict(int)
 
     include_header = not settings.no_header and settings.format == "text"
@@ -3312,7 +3314,8 @@ def process_merged_files(
             potential_files, \
             collected_for_index, \
             conf_processed_counts, \
-            author_processed_counts
+            author_processed_counts, \
+            subject_processed_counts
 
         total_matching += 1
         if settings.skip is not None and total_matching <= settings.skip:
@@ -3327,6 +3330,11 @@ def process_merged_files(
             if author_processed_counts[author_key] >= settings.limit_per_author:
                 return False
 
+        if settings.limit_per_subject is not None:
+            subject_key = _normalize_subject(parsed_message.header.msgsubject)
+            if subject_processed_counts[subject_key] >= settings.limit_per_subject:
+                return False
+
         if settings.limit_per_bbs is not None:
             bbs_key = (parsed_message.bbs_name or parsed_message.bbs_id or "").strip().lower()
             if bbs_processed_counts[bbs_key] >= settings.limit_per_bbs:
@@ -3338,6 +3346,8 @@ def process_merged_files(
         conf_processed_counts[parsed_message.confnum] += 1
         author_key = parsed_message.header.msgfrom.strip().lower()
         author_processed_counts[author_key] += 1
+        subject_key = _normalize_subject(parsed_message.header.msgsubject)
+        subject_processed_counts[subject_key] += 1
         bbs_key = (parsed_message.bbs_name or parsed_message.bbs_id or "").strip().lower()
         bbs_processed_counts[bbs_key] += 1
         processed_count += 1
@@ -6332,6 +6342,9 @@ def calculate_archive_stats(
     total_count = 0
     matching_count = 0
     processed_count = 0
+    conf_processed_counts = defaultdict(int)
+    author_processed_counts = defaultdict(int)
+    subject_processed_counts = defaultdict(int)
     bbs_processed_counts = defaultdict(int)
 
     def filtered_messages_gen():
@@ -6394,6 +6407,20 @@ def calculate_archive_stats(
                     if settings.skip is not None and matching_count <= settings.skip:
                         continue
 
+                    if settings.limit_per_conf is not None:
+                        if conf_processed_counts[message.confnum] >= settings.limit_per_conf:
+                            continue
+
+                    if settings.limit_per_author is not None:
+                        author_key = message.header.msgfrom.strip().lower()
+                        if author_processed_counts[author_key] >= settings.limit_per_author:
+                            continue
+
+                    if settings.limit_per_subject is not None:
+                        subject_key = _normalize_subject(message.header.msgsubject)
+                        if subject_processed_counts[subject_key] >= settings.limit_per_subject:
+                            continue
+
                     if settings.limit_per_bbs is not None:
                         bbs_key = (message.bbs_name or message.bbs_id or "").strip().lower()
                         if bbs_processed_counts[bbs_key] >= settings.limit_per_bbs:
@@ -6402,6 +6429,11 @@ def calculate_archive_stats(
                     if settings.limit is not None and processed_count >= settings.limit:
                         break
 
+                    conf_processed_counts[message.confnum] += 1
+                    author_key = message.header.msgfrom.strip().lower()
+                    author_processed_counts[author_key] += 1
+                    subject_key = _normalize_subject(message.header.msgsubject)
+                    subject_processed_counts[subject_key] += 1
                     bbs_key = (message.bbs_name or message.bbs_id or "").strip().lower()
                     bbs_processed_counts[bbs_key] += 1
                     processed_count += 1

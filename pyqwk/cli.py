@@ -490,6 +490,13 @@ examples:
         default=None,
     )
     filter_group.add_argument(
+        "--limit-per-subject",
+        metavar="NUM",
+        help="Limit the number of matching messages per subject.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
         "--limit-per-conf",
         metavar="NUM",
         help="Limit the number of matching messages per conference.",
@@ -850,6 +857,7 @@ examples:
         max_words=getattr(args, "max_words", None),
         limit_per_conf=getattr(args, "limit_per_conf", None),
         limit_per_author=getattr(args, "limit_per_author", None),
+        limit_per_subject=getattr(args, "limit_per_subject", None),
         limit_per_bbs=getattr(args, "limit_per_bbs", None),
         min_attachments=getattr(args, "min_attachments", None),
         max_attachments=getattr(args, "max_attachments", None),
