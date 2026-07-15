@@ -103,6 +103,24 @@ def test_extended_variables_redact_pii():
     assert "[EMAIL]" in mapping["body_clean"]
     assert "[PHONE]" in mapping["body_clean"]
 
+def test_snippet_pii_truncation_leak():
+    """Verify that PII is redacted even if it would be cut off by snippet truncation."""
+    header = MessageHeader(
+        status=" ", msgnum=1, msgdate="01-01-24", msgtime="12:00",
+        msgto="To", msgfrom="From", msgsubject="Subj", msgpassword="",
+        refnum=None, numblocks=1, msgflag=" ", confnum=1, lognum=0, nettag=" "
+    )
+    # 45 chars followed by a phone number. Truncation at 50 would cut the phone number.
+    text = "A" * 45 + " 555-1212"
+    msg = ParsedMessage(text=text, msgnum=1, refnum=None, confnum=1, header=header)
+
+    mapping = _get_message_mapping(msg, 1, redact_pii=True)
+    snippet = mapping["snippet"]
+
+    # Should contain the start of the redacted placeholder, not the start of the phone number
+    assert "[PHO" in snippet
+    assert "555" not in snippet
+
 def test_confname_or_num_fallback():
     header = MessageHeader(
         status=" ",

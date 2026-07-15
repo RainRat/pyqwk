@@ -2989,6 +2989,8 @@ def _get_message_mapping(
         for line in message.text.splitlines():
             clean_line = line.strip()
             if clean_line:
+                if redact_pii:
+                    clean_line = _redact_pii(clean_line)
                 snippet = clean_line[:50]
                 break
 
@@ -3012,7 +3014,6 @@ def _get_message_mapping(
         to = _redact_pii(to)
         subject = _redact_pii(subject)
         subject_clean = _redact_pii(subject_clean)
-        snippet = _redact_pii(snippet)
 
     indent = ""
     if message.depth > 0:
