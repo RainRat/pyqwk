@@ -5550,20 +5550,16 @@ def _write_markdown_index(
     if stats:
         md_parts.extend(_render_stats_markdown(stats))
 
+    def esc_md(text: Any) -> str:
+        return (
+            str(text or "").replace("|", "\\|").replace("[", "\\[").replace("]", "\\]")
+        )
+
     for (conf_num, conf_name), messages in sorted(by_conf.items()):
         md_parts.append(f"## {conf_name} (Conference {conf_num})\n")
         md_parts.append("| # | Date | From | To | Subject | Attach |")
         md_parts.append("|---|---|---|---|---|---|")
         for msg in messages:
-
-            def esc_md(text: Any) -> str:
-                return (
-                    str(text or "")
-                    .replace("|", "\\|")
-                    .replace("[", "\\[")
-                    .replace("]", "\\]")
-                )
-
             subj = esc_md(msg["subject"] or "(no subject)")
             from_name = esc_md(msg["from"])
             to_name = esc_md(msg["to"])
