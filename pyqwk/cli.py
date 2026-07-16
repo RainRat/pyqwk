@@ -368,42 +368,42 @@ examples:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
 
-    filter_group = parser.add_argument_group("Filtering Options")
-    filter_group.add_argument(
+    search_group = parser.add_argument_group("Search & Field Filters")
+    search_group.add_argument(
         "-C",
         "--conference",
         dest="conferences",
         action="append",
         help="Show messages from a specific conference (name or number). Supports partial matches.",
     )
-    filter_group.add_argument(
+    search_group.add_argument(
         "-B",
         "--bbs",
         dest="bbs_names",
         action="append",
         help="Show messages from a specific BBS (name or ID). Supports partial matches.",
     )
-    filter_group.add_argument(
+    search_group.add_argument(
         "-f",
         "--from",
         dest="authors",
         action="append",
         help="Show messages from a specific author. Supports partial matches.",
     )
-    filter_group.add_argument(
+    search_group.add_argument(
         "--to",
         dest="recipients",
         action="append",
         help="Show messages to a specific recipient. Supports partial matches.",
     )
-    filter_group.add_argument(
+    search_group.add_argument(
         "-s",
         "--subject",
         dest="subjects",
         action="append",
         help="Show messages with specific keywords in the subject. Supports partial matches.",
     )
-    filter_group.add_argument(
+    search_group.add_argument(
         "-S",
         "--search",
         dest="search_term",
@@ -413,12 +413,14 @@ examples:
             "Supports partial matches."
         ),
     )
-    filter_group.add_argument(
+    search_group.add_argument(
         "--body",
         dest="body_search",
         help="Show messages with specific keywords in the body. Supports partial matches.",
     )
-    filter_group.add_argument(
+
+    exclude_group = parser.add_argument_group("Exclusion Filters")
+    exclude_group.add_argument(
         "-X",
         "--exclude",
         dest="exclude_search",
@@ -428,172 +430,188 @@ examples:
             "Supports partial matches."
         ),
     )
-    filter_group.add_argument(
+    exclude_group.add_argument(
         "--exclude-from",
         dest="exclude_authors",
         action="append",
         help="Hide messages from a specific author. Supports partial matches.",
     )
-    filter_group.add_argument(
+    exclude_group.add_argument(
         "--exclude-to",
         dest="exclude_recipients",
         action="append",
         help="Hide messages sent to a specific recipient. Supports partial matches.",
     )
-    filter_group.add_argument(
+    exclude_group.add_argument(
         "--exclude-subject",
         dest="exclude_subjects",
         action="append",
         help="Hide messages with specific keywords in the subject. Supports partial matches.",
     )
-    filter_group.add_argument(
+    exclude_group.add_argument(
         "--exclude-conference",
         dest="exclude_conferences",
         action="append",
         help="Hide messages from a specific conference. Supports partial matches.",
     )
-    filter_group.add_argument(
+    exclude_group.add_argument(
         "--exclude-bbs",
         dest="exclude_bbs_names",
         action="append",
         help="Hide messages from a specific BBS. Supports partial matches.",
     )
-    filter_group.add_argument(
-        "--regex",
-        action="store_true",
-        help="Use regular expressions (advanced patterns) for searching and filtering.",
-    )
-    filter_group.add_argument(
+
+    date_content_group = parser.add_argument_group("Date & Content Filters")
+    date_content_group.add_argument(
         "--after",
         help="Show messages sent on or after this date (YYYY-MM-DD).",
         default=None,
     )
-    filter_group.add_argument(
+    date_content_group.add_argument(
+        "--before",
+        help="Show messages sent on or before this date (YYYY-MM-DD).",
+        default=None,
+    )
+    date_content_group.add_argument(
+        "--on-this-day",
+        help="Show messages sent on this same month and day in any year.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--mine",
+        help="Show messages sent to or from your user name.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--my-name",
+        "--user",
+        dest="my_name",
+        help="Set your name for the --mine filter and QWK exports.",
+    )
+    date_content_group.add_argument(
+        "--has-attachments",
+        help="Show messages that contain attachments.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--has-links",
+        help="Show messages that contain links.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--has-emails",
+        help="Show messages that contain email addresses.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--has-phones",
+        help="Show messages that contain phone numbers.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--has-ansi",
+        help="Show messages that contain color codes.",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--has-msg-links",
+        help="Show messages that contain internal message links (e.g., 'msg #123').",
+        action="store_true",
+    )
+    date_content_group.add_argument(
+        "--regex",
+        action="store_true",
+        help="Use regular expressions (advanced patterns) for searching and filtering.",
+    )
+
+    quality_group = parser.add_argument_group("Size & Quality Filters")
+    quality_group.add_argument(
         "--min-length",
         metavar="NUM",
         help="Show messages with at least NUM characters.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
-        "--limit-per-bbs",
-        metavar="NUM",
-        help="Limit the number of matching messages per BBS.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--limit-per-author",
-        metavar="NUM",
-        help="Limit the number of matching messages per author.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--limit-per-subject",
-        metavar="NUM",
-        help="Limit the number of matching messages per subject.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--limit-per-conf",
-        metavar="NUM",
-        help="Limit the number of matching messages per conference.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--min-attachments",
-        metavar="NUM",
-        help="Show messages with at least NUM attachments.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--min-depth",
-        metavar="NUM",
-        help="Show messages with a thread depth of at least NUM.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--min-words",
-        metavar="NUM",
-        help="Show messages with at least NUM words.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--max-attachments",
-        metavar="NUM",
-        help="Show messages with at most NUM attachments.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--max-depth",
-        metavar="NUM",
-        help="Show messages with a thread depth of at most NUM.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--tail",
-        "--last",
-        metavar="NUM",
-        help="Show the last NUM matching messages.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--max-words",
-        metavar="NUM",
-        help="Show messages with at most NUM words.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--max-length",
         metavar="NUM",
         help="Show messages with at most NUM characters.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
-        "-K",
-        "--skip",
+    quality_group.add_argument(
+        "--min-words",
         metavar="NUM",
-        help="Skip the first NUM matching messages.",
+        help="Show messages with at least NUM words.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
-        "--before",
-        help="Show messages sent on or before this date (YYYY-MM-DD).",
-        default=None,
-    )
-    filter_group.add_argument(
-        "-N",
-        "--msgnum",
-        dest="msgnum_filter",
-        help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
-    )
-    filter_group.add_argument(
-        "-L",
-        "--limit",
+    quality_group.add_argument(
+        "--max-words",
         metavar="NUM",
-        help="Stop after NUM matching messages.",
+        help="Show messages with at most NUM words.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
-        "-u",
-        "--unique",
-        help="Remove duplicate messages during a merge.",
-        action="store_true",
+    quality_group.add_argument(
+        "--min-attachments",
+        metavar="NUM",
+        help="Show messages with at least NUM attachments.",
+        type=int,
+        default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
+        "--max-attachments",
+        metavar="NUM",
+        help="Show messages with at most NUM attachments.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--min-depth",
+        metavar="NUM",
+        help="Show messages with a thread depth of at least NUM.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--max-depth",
+        metavar="NUM",
+        help="Show messages with a thread depth of at most NUM.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--limit-per-bbs",
+        metavar="NUM",
+        help="Limit the number of matching messages per BBS.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--limit-per-author",
+        metavar="NUM",
+        help="Limit the number of matching messages per author.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--limit-per-subject",
+        metavar="NUM",
+        help="Limit the number of matching messages per subject.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--limit-per-conf",
+        metavar="NUM",
+        help="Limit the number of matching messages per conference.",
+        type=int,
+        default=None,
+    )
+
+    sorting_limit_group = parser.add_argument_group("Sorting & Result Limits")
+    sorting_limit_group.add_argument(
         "-O",
         "--sort",
         help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments).",
@@ -613,56 +631,46 @@ examples:
         ],
         default=None,
     )
-    filter_group.add_argument(
+    sorting_limit_group.add_argument(
         "--reverse",
         help="Reverse the order of the results.",
         action="store_true",
     )
-    filter_group.add_argument(
-        "--has-attachments",
-        help="Show messages that contain attachments.",
+    sorting_limit_group.add_argument(
+        "-L",
+        "--limit",
+        metavar="NUM",
+        help="Stop after NUM matching messages.",
+        type=int,
+        default=None,
+    )
+    sorting_limit_group.add_argument(
+        "--tail",
+        "--last",
+        metavar="NUM",
+        help="Show the last NUM matching messages.",
+        type=int,
+        default=None,
+    )
+    sorting_limit_group.add_argument(
+        "-K",
+        "--skip",
+        metavar="NUM",
+        help="Skip the first NUM matching messages.",
+        type=int,
+        default=None,
+    )
+    sorting_limit_group.add_argument(
+        "-u",
+        "--unique",
+        help="Remove duplicate messages during a merge.",
         action="store_true",
     )
-    filter_group.add_argument(
-        "--mine",
-        help="Show messages sent to or from your user name.",
-        action="store_true",
-    )
-    filter_group.add_argument(
-        "--my-name",
-        "--user",
-        dest="my_name",
-        help="Set your name for the --mine filter and QWK exports.",
-    )
-    filter_group.add_argument(
-        "--on-this-day",
-        help="Show messages sent on this same month and day in any year.",
-        action="store_true",
-    )
-    filter_group.add_argument(
-        "--has-links",
-        help="Show messages that contain links.",
-        action="store_true",
-    )
-    filter_group.add_argument(
-        "--has-emails",
-        help="Show messages that contain email addresses.",
-        action="store_true",
-    )
-    filter_group.add_argument(
-        "--has-phones",
-        help="Show messages that contain phone numbers.",
-        action="store_true",
-    )
-    filter_group.add_argument(
-        "--has-ansi",
-        help="Show messages that contain color codes.",
-        action="store_true",
-    )
-    filter_group.add_argument(
-        "--has-msg-links",
-        help="Show messages that contain internal message links (e.g., 'msg #123').",
-        action="store_true",
+    sorting_limit_group.add_argument(
+        "-N",
+        "--msgnum",
+        dest="msgnum_filter",
+        help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
 
     parser.add_argument(
