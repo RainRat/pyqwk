@@ -608,6 +608,10 @@ class ProcessingSettings:
     max_attachments: int | None = None
     min_depth: int | None = None
     max_depth: int | None = None
+    min_replies: int | None = None
+    max_replies: int | None = None
+    min_thread_size: int | None = None
+    max_thread_size: int | None = None
 
 
 @dataclass
@@ -660,6 +664,8 @@ class ParsedMessage:
     source_file: str | None = None
     attachments: list[str] | None = None
     original_text: str | None = None
+    reply_count: int = 0
+    thread_size: int = 1
 
     def discover_attachments(self) -> list[str] | None:
         """Lazily discover and cache attachment filenames from the message text."""
@@ -1490,6 +1496,8 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
         bbs_id=bbs_id or None,
         source_file=source_file or None,
         attachments=attachments,
+        reply_count=_safe_to_int(get_hdr("X-QWK-Reply-Count") or 0) or 0,
+        thread_size=_safe_to_int(get_hdr("X-QWK-Thread-Size") or 1) or 1,
     )
 
 
@@ -2877,6 +2885,18 @@ def matches_filters(
     if settings.max_depth is not None and message.depth > settings.max_depth:
         return False
 
+    # 14. Reply Count Filter
+    if settings.min_replies is not None and message.reply_count < settings.min_replies:
+        return False
+    if settings.max_replies is not None and message.reply_count > settings.max_replies:
+        return False
+
+    # 15. Thread Size Filter
+    if settings.min_thread_size is not None and message.thread_size < settings.min_thread_size:
+        return False
+    if settings.max_thread_size is not None and message.thread_size > settings.max_thread_size:
+        return False
+
     return True
 
 
@@ -3099,6 +3119,8 @@ def _get_message_mapping(
         "flags": flags,
         "snippet": snippet,
         "indent": indent,
+        "reply_count": message.reply_count,
+        "thread_size": message.thread_size,
     }
 
 
@@ -3281,12 +3303,35 @@ def process_merged_files(
     estimated_bytes = 0
     potential_files = 0
     use_streaming = not (
-        settings.sort or settings.reverse or settings.threaded or settings.tail
+        settings.sort
+        or settings.reverse
+        or settings.threaded
+        or settings.tail
+        or settings.min_replies is not None
+        or settings.max_replies is not None
+        or settings.min_thread_size is not None
+        or settings.max_thread_size is not None
     )
 
     initial_filtering_settings = settings
-    if settings.threaded:
-        initial_filtering_settings = replace(settings, min_depth=None, max_depth=None)
+    if settings.threaded or any(
+        v is not None
+        for v in (
+            settings.min_replies,
+            settings.max_replies,
+            settings.min_thread_size,
+            settings.max_thread_size,
+        )
+    ):
+        initial_filtering_settings = replace(
+            settings,
+            min_depth=None,
+            max_depth=None,
+            min_replies=None,
+            max_replies=None,
+            min_thread_size=None,
+            max_thread_size=None,
+        )
 
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
     collected_for_index: list[dict[str, Any]] = []
@@ -3701,18 +3746,52 @@ def process_merged_files(
 
     if not use_streaming:
         reversal_needed = settings.reverse
-        if settings.threaded:
-            # Apply conversation threading to the buffered messages.
+        if settings.threaded or any(
+            v is not None
+            for v in (
+                settings.min_replies,
+                settings.max_replies,
+                settings.min_thread_size,
+                settings.max_thread_size,
+            )
+        ):
+            # Apply conversation threading to calculate metrics and/or order by thread.
             msgs_only = [m for m, bd in sort_buffer]
             threaded_msgs = _order_messages_by_thread(msgs_only)
 
-            # Apply depth filtering now that depths are calculated.
-            if settings.min_depth is not None or settings.max_depth is not None:
+            # Apply depth and engagement filtering now that metrics are calculated.
+            if any(
+                v is not None
+                for v in (
+                    settings.min_depth,
+                    settings.max_depth,
+                    settings.min_replies,
+                    settings.max_replies,
+                    settings.min_thread_size,
+                    settings.max_thread_size,
+                )
+            ):
                 threaded_msgs = [
                     m
                     for m in threaded_msgs
                     if (settings.min_depth is None or m.depth >= settings.min_depth)
                     and (settings.max_depth is None or m.depth <= settings.max_depth)
+                    and (
+                        settings.min_replies is None
+                        or m.reply_count >= settings.min_replies
+                    )
+                    and (
+                        settings.max_replies is None
+                        or m.reply_count <= settings.max_replies
+                    )
+                    and (
+                        settings.min_thread_size is None
+                        or m.thread_size >= settings.min_thread_size
+                    )
+                    and (
+                        settings.max_thread_size is None
+                        or m.thread_size <= settings.max_thread_size
+                    )
                 ]
 
             sort_buffer = []
@@ -3749,6 +3828,8 @@ def process_merged_files(
                     "size": lambda x: len(x[0].text) if x[0].text else 0,
                     "words": lambda x: len(x[0].text.split()) if x[0].text else 0,
                     "attachments": lambda x: len(x[0].discover_attachments() or []),
+                    "replies": lambda x: x[0].reply_count,
+                    "thread_size": lambda x: x[0].thread_size,
                 }
                 if settings.sort in sort_keys:
                     sort_buffer.sort(
@@ -3900,6 +3981,8 @@ def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
         "thread_id": message.thread_id,
         "parent_msgnum": message.parent_msgnum,
         "attachments": message.attachments or [],
+        "reply_count": message.reply_count,
+        "thread_size": message.thread_size,
     }
 
 
@@ -6347,8 +6430,22 @@ def calculate_archive_stats(
     subject_processed_counts = defaultdict(int)
     bbs_processed_counts = defaultdict(int)
 
+    # If engagement filters are active, we must non-streamingly process all messages
+    # to calculate threading metrics before calculating statistics.
+    use_deferred_stats = any(
+        v is not None
+        for v in (
+            settings.min_replies,
+            settings.max_replies,
+            settings.min_thread_size,
+            settings.max_thread_size,
+        )
+    )
+
     def filtered_messages_gen():
         nonlocal total_count, matching_count, processed_count
+        all_candidate_messages = []
+
         for input_path in input_paths:
             if settings.limit is not None and processed_count >= settings.limit:
                 break
@@ -6436,6 +6533,33 @@ def calculate_archive_stats(
                     subject_processed_counts[subject_key] += 1
                     bbs_key = (message.bbs_name or message.bbs_id or "").strip().lower()
                     bbs_processed_counts[bbs_key] += 1
+                    if use_deferred_stats:
+                        all_candidate_messages.append(message)
+                    else:
+                        processed_count += 1
+                        yield message
+
+        if use_deferred_stats:
+            threaded_msgs = _order_messages_by_thread(all_candidate_messages)
+            for message in threaded_msgs:
+                if (
+                    (
+                        settings.min_replies is None
+                        or message.reply_count >= settings.min_replies
+                    )
+                    and (
+                        settings.max_replies is None
+                        or message.reply_count <= settings.max_replies
+                    )
+                    and (
+                        settings.min_thread_size is None
+                        or message.thread_size >= settings.min_thread_size
+                    )
+                    and (
+                        settings.max_thread_size is None
+                        or message.thread_size <= settings.max_thread_size
+                    )
+                ):
                     processed_count += 1
                     yield message
 
@@ -6826,6 +6950,33 @@ def _order_messages_by_thread(
         else:
             roots.append(index)
 
+    # Calculate thread sizes
+    thread_sizes = {}
+    for i in range(len(messages)):
+        if i in thread_sizes:
+            continue
+        # Find root of this component
+        root = i
+        path = {root}
+        while root in parent_map:
+            p = parent_map[root]
+            if p in path:
+                break
+            root = p
+            path.add(root)
+        # Traverse to find all nodes in this thread
+        nodes = set()
+        stack = [root]
+        while stack:
+            curr = stack.pop()
+            if curr in nodes:
+                continue
+            nodes.add(curr)
+            stack.extend(replies.get(curr, []))
+        size = len(nodes)
+        for n in nodes:
+            thread_sizes[n] = size
+
     # Group messages into conversations while handling loops and deep nests
     ordered_messages: list[ProcessedMessage] = []
     visited: set[int] = set()
@@ -6862,6 +7013,8 @@ def _order_messages_by_thread(
                 depth=depth,
                 thread_id=thread_id,
                 parent_msgnum=parent_msgnum,
+                reply_count=len(replies.get(idx, [])),
+                thread_size=thread_sizes.get(idx, 1),
             )
             ordered_messages.append(new_msg)
             stack.append((idx, depth, thread_id, iter(replies.get(idx, []))))
