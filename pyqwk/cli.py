@@ -104,6 +104,9 @@ examples:
   # Search for a keyword and show headers
   qwk archive.qwk --search "vintage computing" --headers-only
 
+  # Show replies to message #42
+  qwk archive.qwk --reply-to 42
+
   # Extract attachments
   qwk archive.qwk --extract-attachments
 
@@ -580,6 +583,13 @@ examples:
         help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
     filter_group.add_argument(
+        "-R",
+        "--reply-to",
+        "--refnum",
+        dest="refnum_filter",
+        help="Show messages that are a reply to specific reference/message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
+    )
+    filter_group.add_argument(
         "-L",
         "--limit",
         metavar="NUM",
@@ -781,6 +791,7 @@ examples:
         after_date = _parse_cli_date(args.after)
         before_date = _parse_cli_date(args.before, end_of_day=True)
         msgnum_filters = _parse_msgnum_ranges(args.msgnum_filter)
+        refnum_filters = _parse_msgnum_ranges(getattr(args, "refnum_filter", None))
     except ValueError as e:
         parser.error(str(e))
 
@@ -810,6 +821,7 @@ examples:
         embed_attachments=args.embed_attachments,
         organize_attachments=args.organize_attachments,
         msgnum_filters=msgnum_filters,
+        refnum_filters=refnum_filters,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,

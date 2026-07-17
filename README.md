@@ -385,6 +385,11 @@ qwk archive.qwk --threaded --min-depth 2
 qwk archive.qwk --msgnum 100-200
 ```
 
+**Filter by Referenced Message Number (Reply-To):**
+```bash
+qwk archive.qwk --reply-to 100-200
+```
+
 **Dry Run:**
 Preview your changes without writing files:
 ```bash
@@ -487,6 +492,7 @@ for msg in messages:
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
+| `-R, --reply-to`, `--refnum` | Show messages that are a reply to specific reference/message numbers or ranges. |
 | `-L, --limit` | Stop after NUM matching messages. |
 | `-K, --skip` | Skip the first NUM matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
