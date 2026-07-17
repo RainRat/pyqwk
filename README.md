@@ -585,13 +585,21 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 ## Contributing
 
-We welcome your contributions!
+We welcome your contributions! Follow these simple steps to set up your project and run the test suite.
 
-1. Install development tools:
-   ```bash
-   pip install -e . pytest pytest-mock pytest-cov
-   ```
-2. Run tests:
-   ```bash
-   python -m pytest
-   ```
+### 1. Set Up Your Environment
+First, install the package in editable mode along with the necessary testing and coverage tools:
+```bash
+pip install -e . pytest pytest-mock pytest-cov tqdm
+```
+
+### 2. Run the Test Suite
+Next, run all the tests from the root of the repository:
+```bash
+python -m pytest
+```
+
+If you are running the tests on a server without a display (a headless Linux system), use a virtual framebuffer like `xvfb` to avoid Tkinter errors:
+```bash
+xvfb-run -a python3 -m pytest
+```
