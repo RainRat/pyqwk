@@ -2071,6 +2071,8 @@ def load_data(
             board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
+    messages = None
+
     if _is_maildir(input_path) or input_path.lower().endswith((".maildir", ".mdir")):
         try:
             messages = []
@@ -2081,19 +2083,13 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load Maildir: {e}")
 
-        board_dict = _reconstruct_archive_information(messages)
-        return messages, board_dict
-
-    if input_path.lower().endswith((".html", ".htm")):
+    elif input_path.lower().endswith((".html", ".htm")):
         try:
             messages = _parse_html_messages(input_path)
         except Exception as e:
             raise ValueError(f"Failed to load HTML archive: {e}")
 
-        board_dict = _reconstruct_archive_information(messages)
-        return messages, board_dict
-
-    if input_path.lower().endswith(".mbox"):
+    elif input_path.lower().endswith(".mbox"):
         try:
             messages = []
             mbox = mailbox.mbox(input_path)
@@ -2103,19 +2099,13 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load mbox archive: {e}")
 
-        board_dict = _reconstruct_archive_information(messages)
-        return messages, board_dict
-
-    if input_path.lower().endswith((".md", ".markdown")):
+    elif input_path.lower().endswith((".md", ".markdown")):
         try:
             messages = _parse_markdown_messages(input_path)
         except Exception as e:
             raise ValueError(f"Failed to load Markdown archive: {e}")
 
-        board_dict = _reconstruct_archive_information(messages)
-        return messages, board_dict
-
-    if input_path.lower().endswith(".eml"):
+    elif input_path.lower().endswith(".eml"):
         try:
             with open(input_path, "rb") as f:
                 msg_obj = email.message_from_binary_file(f)
@@ -2123,10 +2113,7 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load EML file: {e}")
 
-        board_dict = _reconstruct_archive_information(messages)
-        return messages, board_dict
-
-    if input_path.lower().endswith((".xml", ".rss")):
+    elif input_path.lower().endswith((".xml", ".rss")):
         try:
             tree = ET.parse(input_path)
             root = tree.getroot()
@@ -2137,23 +2124,18 @@ def load_data(
         except Exception as e:
             raise ValueError(f"Failed to load XML archive: {e}")
 
-        board_dict = _reconstruct_archive_information(messages)
-        return messages, board_dict
-
-    if input_path.lower().endswith(".csv"):
+    elif input_path.lower().endswith(".csv"):
         with open(input_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             messages = _parse_csv_messages(reader)
 
-            board_dict = _reconstruct_archive_information(messages)
-            return messages, board_dict
-
-    if input_path.lower().endswith(".txt"):
+    elif input_path.lower().endswith(".txt"):
         try:
             messages = _parse_text_messages(input_path, encoding)
         except Exception as e:
             raise ValueError(f"Failed to load text archive: {e}")
 
+    if messages is not None:
         board_dict = _reconstruct_archive_information(messages)
         return messages, board_dict
 
