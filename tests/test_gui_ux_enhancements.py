@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 
 # Mock tkinter before any pyqwk.gui imports
 mock_tk = MagicMock()
@@ -111,6 +111,61 @@ def test_show_list_context_menu(app):
 
         app.message_list.selection_set.assert_called_with("0")
         mock_menu_instance.post.assert_called_once_with(100, 100)
+
+
+def test_show_list_context_menu_copy_full_message(app):
+    """Verify that the "Copy Full Message" command is added to the list context menu and behaves correctly."""
+    event = MagicMock(x_root=100, y_root=100, y=50)
+    app.message_list.identify_row.return_value = "0"
+
+    header = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="Alice",
+        msgfrom="Bob",
+        msgsubject="Test",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
+    app.messages = [
+        ParsedMessage(text="Hello", msgnum=1, refnum=None, confnum=1, header=header)
+    ]
+    app.board_dict = {1: "General"}
+
+    # Mock detail_text.get to return custom rendered content
+    app.detail_text.get.return_value = "Rendered Full Message Text"
+
+    with patch("pyqwk.gui.tk.Menu") as mock_menu_class:
+        mock_menu_instance = mock_menu_class.return_value
+        app._show_list_context_menu(event)
+
+        # Retrieve all command labels added to the menu
+        calls = [c[1]["label"] for c in mock_menu_instance.add_command.call_args_list]
+        assert "Copy Full Message" in calls
+
+        # Find the specific add_command call for 'Copy Full Message' and run its command callback
+        copy_command = None
+        for call in mock_menu_instance.add_command.call_args_list:
+            if call[1].get("label") == "Copy Full Message":
+                copy_command = call[1].get("command")
+                break
+
+        assert copy_command is not None
+
+        # Call the lambda
+        app._copy_to_clipboard = MagicMock()
+        copy_command()
+
+        # Verify that the correct content (retrieved from detail_text) was copied
+        app.detail_text.get.assert_called_with("1.0", ANY)
+        app._copy_to_clipboard.assert_called_once_with("Rendered Full Message Text")
 
 
 def test_show_text_context_menu(app):

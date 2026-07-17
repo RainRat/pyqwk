@@ -168,6 +168,12 @@ class QwkGuiApp:
             label="Copy Num",
             command=lambda n=orig_num: self._copy_to_clipboard(n),
         )
+        menu.add_command(
+            label="Copy Full Message",
+            command=lambda: self._copy_to_clipboard(
+                self.detail_text.get("1.0", tk.END).strip()
+            ),
+        )
         menu.add_separator()
 
         # Filter pivoting
