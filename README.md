@@ -595,3 +595,16 @@ We welcome your contributions!
    ```bash
    python -m pytest
    ```
+
+### Headless Testing
+
+If you are running the test suite on a headless Linux system (such as in a CI/CD environment or a remote server without an active display), you must run tests using `xvfb-run`.
+
+1. Install the headless dependencies:
+   ```bash
+   pip install mss Pillow
+   ```
+2. Run the tests:
+   ```bash
+   xvfb-run -a python3 -m pytest
+   ```
