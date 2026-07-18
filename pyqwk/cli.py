@@ -66,6 +66,88 @@ def _parse_cli_date(
         )
 
 
+def _apply_preset(args: argparse.Namespace) -> None:
+    """Apply default settings of selected preset to arguments namespace,
+    respecting explicit CLI overrides.
+    """
+    if not getattr(args, "preset", None):
+        return
+
+    explicit_flags = {
+        "format": ["-F", "--format", "-j", "--json", "-J", "--jsonl"],
+        "threaded": ["-T", "--threaded"],
+        "truncatesignatures": ["-t", "--truncate-signatures", "--clean"],
+        "cutquoting": ["-c", "--cut-quoting", "--clean"],
+        "binariesremoval": ["-b", "--binaries-removal", "--clean"],
+        "embed_attachments": ["--embed-attachments"],
+        "individualfiles": ["-i", "--individual-files"],
+        "extractattachments": ["-x", "--extract-attachments"],
+        "private": ["-p", "--private"],
+        "oneline": ["-1", "--oneline", "--oneline-pattern"],
+        "sort": ["-O", "--sort"],
+        "separator": ["--separator"],
+        "noheader": ["-n", "--noheader"],
+    }
+
+    def is_explicit(key: str) -> bool:
+        try:
+            return any(flag in sys.argv for flag in explicit_flags[key])
+        except (AttributeError, NameError):
+            return False
+
+    preset = args.preset
+
+    if preset == "blog":
+        if not is_explicit("format"):
+            args.format = "html"
+        if not is_explicit("threaded"):
+            args.threaded = True
+        if not is_explicit("truncatesignatures"):
+            args.truncatesignatures = True
+        if not is_explicit("cutquoting"):
+            args.cutquoting = True
+        if not is_explicit("binariesremoval"):
+            args.binariesremoval = True
+        if not is_explicit("embed_attachments"):
+            args.embed_attachments = True
+
+    elif preset == "email":
+        if not is_explicit("format"):
+            args.format = "eml"
+        if not is_explicit("individualfiles"):
+            args.individualfiles = True
+        if not is_explicit("extractattachments"):
+            args.extractattachments = True
+
+    elif preset == "backup":
+        if not is_explicit("format"):
+            args.format = "sqlite"
+        if not is_explicit("private"):
+            args.private = True
+
+    elif preset == "digest":
+        if not is_explicit("oneline"):
+            args.oneline = True
+        if not is_explicit("threaded"):
+            args.threaded = True
+        if not is_explicit("sort"):
+            args.sort = "date"
+
+    elif preset == "text-archive":
+        if not is_explicit("format"):
+            args.format = "text"
+        if not is_explicit("separator"):
+            args.separator = "dashes"
+        if not is_explicit("noheader"):
+            args.noheader = False
+        if not is_explicit("truncatesignatures"):
+            args.truncatesignatures = True
+        if not is_explicit("cutquoting"):
+            args.cutquoting = True
+        if not is_explicit("binariesremoval"):
+            args.binariesremoval = True
+
+
 def main() -> None:
     template_variables = (
         "template variables:\n"
@@ -665,6 +747,21 @@ examples:
         action="store_true",
     )
 
+    preset_group = parser.add_argument_group("Workflow Presets")
+    preset_group.add_argument(
+        "-P",
+        "--preset",
+        choices=["blog", "email", "backup", "digest", "text-archive"],
+        help=(
+            "Apply a predefined combination of options for common workflows:\n"
+            "  blog:         Format for blog posting (HTML, threaded, clean body, embed images)\n"
+            "  email:        Export for email clients (EML individual files, with attachments)\n"
+            "  backup:       Robust relational backup (SQLite format, including private msgs)\n"
+            "  digest:       A concise threaded summary view (oneline summary, threaded, sorted by date)\n"
+            "  text-archive: Classic text backup (dashes separator, headers, clean body)"
+        ),
+    )
+
     parser.add_argument(
         "-I",
         "--info",
@@ -689,6 +786,8 @@ examples:
         help="Show the version number and exit.",
     )
     args = parser.parse_args()
+
+    _apply_preset(args)
 
     if args.oneline and args.individualfiles:
         parser.error(
