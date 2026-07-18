@@ -155,3 +155,43 @@ Body
 
     assert len(messages) == 1
     assert messages[0].attachments == ["file1.zip", "file2.jpg"]
+
+
+def test_text_import_single_part_date(tmp_path):
+    text_content = """Conference: General (1)
+From: Alice
+To: Bob
+Subject: Hello
+Date: 01-23-24
+
+Body
+"""
+    path = tmp_path / "test_single_date.txt"
+    path.write_text(text_content)
+
+    logger = logging.getLogger("test")
+    messages, board_dict = load_data(str(path), logger)
+
+    assert len(messages) == 1
+    assert messages[0].header.msgdate == "01-23-24"
+    assert messages[0].header.msgtime == "00:00"
+
+
+def test_text_import_whitespace_only_date(tmp_path):
+    text_content = """Conference: General (1)
+From: Alice
+To: Bob
+Subject: Hello
+Date: \v
+
+Body
+"""
+    path = tmp_path / "test_ws_date.txt"
+    path.write_text(text_content)
+
+    logger = logging.getLogger("test")
+    messages, board_dict = load_data(str(path), logger)
+
+    assert len(messages) == 1
+    assert messages[0].header.msgdate == "01-01-70"
+    assert messages[0].header.msgtime == "00:00"
