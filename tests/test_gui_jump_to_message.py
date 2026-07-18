@@ -123,6 +123,25 @@ def test_prompt_jump_to_message_not_found(app_with_messages):
     assert "999" in mock_info.call_args[0][1]
 
 
+def test_prompt_jump_to_message_no_archive():
+    root = MagicMock()
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.simpledialog"),
+        patch("pyqwk.gui.messagebox.showwarning") as mock_warning,
+    ):
+        app = QwkGuiApp(root)
+        app.messages = []
+        app.current_paths = []
+
+        app.prompt_jump_to_message()
+
+        mock_warning.assert_called_once_with(
+            "Jump to Message", "Please open an archive first."
+        )
+
+
 def test_prompt_jump_to_message_cancel(app_with_messages):
     app = app_with_messages
 
