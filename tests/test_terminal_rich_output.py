@@ -1,27 +1,27 @@
-from pyqwk.core import _highlight_text, MessageHeader
+from pyqwk.core import _linkify_text, MessageHeader
 
 
 def test_highlight_text_no_colors():
     text = "Hello world"
     # Should return original text if use_colors is False
-    assert _highlight_text(text, "world", use_colors=False) == text
+    assert _linkify_text(text, "ansi", search_term="world", use_colors=False) == text
 
 
 def test_highlight_text_basic():
     text = "Hello world"
-    highlighted = _highlight_text(text, "world", use_colors=True)
+    highlighted = _linkify_text(text, "ansi", search_term="world", use_colors=True)
     assert highlighted == "Hello \x1b[7mworld\x1b[0m"
 
 
 def test_highlight_text_case_insensitive():
     text = "Hello World"
-    highlighted = _highlight_text(text, "world", use_colors=True)
+    highlighted = _linkify_text(text, "ansi", search_term="world", use_colors=True)
     assert highlighted == "Hello \x1b[7mWorld\x1b[0m"
 
 
 def test_highlight_text_regex():
     text = "The price is $100"
-    highlighted = _highlight_text(text, r"\$\d+", is_regex=True, use_colors=True)
+    highlighted = _linkify_text(text, "ansi", search_term=r"\$\d+", is_regex=True, use_colors=True)
     assert highlighted == "The price is \x1b[7m$100\x1b[0m"
 
 
@@ -59,11 +59,11 @@ def test_header_format_text_colors():
 
 def test_highlight_text_no_term():
     text = "Hello world"
-    assert _highlight_text(text, None, use_colors=True) == text
-    assert _highlight_text(text, "", use_colors=True) == text
+    assert _linkify_text(text, "ansi", search_term=None, use_colors=True) == text
+    assert _linkify_text(text, "ansi", search_term="", use_colors=True) == text
 
 
 def test_highlight_text_invalid_regex():
     text = "Hello world"
     # Invalid regex should return original text
-    assert _highlight_text(text, "[", is_regex=True, use_colors=True) == text
+    assert _linkify_text(text, "ansi", search_term="[", is_regex=True, use_colors=True) == text
