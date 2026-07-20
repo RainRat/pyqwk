@@ -317,12 +317,6 @@ qwk archive.qwk --limit-per-conf 5
 qwk archive.qwk --limit-per-author 2
 ```
 
-**Limit per Recipient:**
-```bash
-# Show only the first 2 messages for each recipient
-qwk archive.qwk --limit-per-to 2
-```
-
 **Limit per Subject:**
 ```bash
 # Show only the first 3 messages from each subject
@@ -488,7 +482,6 @@ for msg in messages:
 | `--before` | Show messages sent on or before a date (YYYY-MM-DD). |
 | `--limit-per-conf` | Limit the number of matching messages per conference. |
 | `--limit-per-author` | Limit the number of matching messages per author. |
-| `--limit-per-to` | Limit the number of matching messages per recipient. |
 | `--limit-per-subject` | Limit the number of matching messages per subject. |
 | `--limit-per-bbs` | Limit the number of matching messages per BBS. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
@@ -592,21 +585,26 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 ## Contributing
 
-We welcome your contributions! Follow these simple steps to set up your project and run the test suite.
+We welcome your contributions!
 
-### 1. Set Up Your Environment
-First, install the package in editable mode along with the necessary testing and coverage tools:
-```bash
-pip install -e . pytest pytest-mock pytest-cov tqdm
-```
+1. Install development tools:
+   ```bash
+   pip install -e . pytest pytest-mock pytest-cov
+   ```
+2. Run tests:
+   ```bash
+   python -m pytest
+   ```
 
-### 2. Run the Test Suite
-Next, run all the tests from the root of the repository:
-```bash
-python -m pytest
-```
+### Headless Testing
 
-If you are running the tests on a server without a display (a headless Linux system), use a virtual framebuffer like `xvfb` to avoid Tkinter errors:
-```bash
-xvfb-run -a python3 -m pytest
-```
+If you are running the test suite on a headless Linux system (such as in a CI/CD environment or a remote server without an active display), you must run tests using `xvfb-run`.
+
+1. Install the headless dependencies:
+   ```bash
+   pip install mss Pillow
+   ```
+2. Run the tests:
+   ```bash
+   xvfb-run -a python3 -m pytest
+   ```
