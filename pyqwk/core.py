@@ -4433,6 +4433,16 @@ def _serialize_message_html(
     return "\n".join(html_parts)
 
 
+def _escape_markdown(text: Any) -> str:
+    """Escape special characters for Markdown tables and links."""
+    return (
+        str(text or "")
+        .replace("|", "\\|")
+        .replace("[", "\\[")
+        .replace("]", "\\]")
+    )
+
+
 def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
     """Render a statistics summary as a Markdown fragment."""
     parts = []
@@ -4476,7 +4486,7 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
         for item in items[:5]:
             bar_len = int(item[count_key] * 20 / max_count) if max_count > 0 else 0
             bar = "#" * bar_len
-            label = str(item[label_key]).replace("|", "\\|")
+            label = _escape_markdown(item[label_key])
             parts.append(f"| {label} | {item[count_key]} | `{bar}` |")
         parts.append("")
 
@@ -4509,7 +4519,7 @@ def _render_stats_markdown(stats: dict[str, Any]) -> list[str]:
         for item in items[:5]:
             bar_len = int(item["count"] * 20 / max_count) if max_count > 0 else 0
             bar = "#" * bar_len
-            name = str(item["name"]).replace("|", "\\|")
+            name = _escape_markdown(item["name"])
             speed = format_duration(item["avg_speed"])
             parts.append(f"| {name} | {item['count']} | {speed} | `{bar}` |")
         parts.append("")
@@ -5566,18 +5576,9 @@ def _write_markdown_index(
         md_parts.append("| # | Date | From | To | Subject | Attach |")
         md_parts.append("|---|---|---|---|---|---|")
         for msg in messages:
-
-            def esc_md(text: Any) -> str:
-                return (
-                    str(text or "")
-                    .replace("|", "\\|")
-                    .replace("[", "\\[")
-                    .replace("]", "\\]")
-                )
-
-            subj = esc_md(msg["subject"] or "(no subject)")
-            from_name = esc_md(msg["from"])
-            to_name = esc_md(msg["to"])
+            subj = _escape_markdown(msg["subject"] or "(no subject)")
+            from_name = _escape_markdown(msg["from"])
+            to_name = _escape_markdown(msg["to"])
 
             indent = ""
             depth = msg.get("depth", 0)
