@@ -102,3 +102,27 @@ def test_rendering_smoke():
     md = "\n".join(_render_stats_markdown(stats))
     assert "Conversation:" in md
     assert "Fastest Responders" in md
+
+
+def test_conversation_stats_empty_deltas_branch(monkeypatch):
+    from collections import defaultdict
+    from pyqwk.core import _compute_stats_from_messages
+
+    class MockDefaultDict(defaultdict):
+        def items(self):
+            res = list(super().items())
+            # Only append for the one containing strings as keys (author_deltas has strings, parent_to_children has tuples)
+            if any(isinstance(k, str) for k in self.keys()):
+                res.append(("Ghost", []))
+            return res
+
+    monkeypatch.setattr("pyqwk.core.defaultdict", MockDefaultDict)
+
+    # Let's run a simple stats compute
+    msgs = [
+        _make_msg(1, 1, 0, "01-01-23", "10:00:00", author="A"),
+        _make_msg(1, 2, 1, "01-01-23", "10:00:10", author="B"),
+    ]
+    stats = _compute_stats_from_messages(iter(msgs))
+    # It should compute successfully, and "Ghost" should be ignored because if deltas evaluates to False.
+    assert "Ghost" not in [r["name"] for r in stats["conversation"]["top_responders"]]

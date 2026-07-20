@@ -178,13 +178,19 @@ Body
 
 
 def test_text_import_whitespace_only_date(tmp_path):
-    # Use non-breaking space (\xa0) which is not in [ \t] but is in split()
-    text_content = "Conference: General (1)\nFrom: Alice\nTo: Bob\nSubject: Hello\nDate: \xa0\n\nBody"
-    path = tmp_path / "test_whitespace_date.txt"
-    path.write_text(text_content, encoding="utf-8")
+    text_content = """Conference: General (1)
+From: Alice
+To: Bob
+Subject: Hello
+Date: \v
+
+Body
+"""
+    path = tmp_path / "test_ws_date.txt"
+    path.write_text(text_content)
 
     logger = logging.getLogger("test")
-    messages, board_dict = load_data(str(path), logger, encoding="utf-8")
+    messages, board_dict = load_data(str(path), logger)
 
     assert len(messages) == 1
     assert messages[0].header.msgdate == "01-01-70"
