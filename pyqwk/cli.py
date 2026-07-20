@@ -88,7 +88,7 @@ def main() -> None:
     )
 
     parser = argparse.ArgumentParser(
-        description="Save BBS message archives in modern formats like HTML, Markdown, and SQLite.",
+        description="Convert BBS message archives into modern formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=f"""
 examples:
@@ -124,7 +124,7 @@ examples:
         help=(
             "Path to archives, folders, or compressed files (ZIP/TAR).\n"
             "Supports QWK, JSON, SQLite, EML, and many other formats.\n"
-            "Multiple archives are automatically merged."
+            "If you provide multiple archives, pyqwk will combine them for you."
         ),
         nargs="+",
     )
@@ -140,7 +140,7 @@ examples:
         "-i",
         "--individual-files",
         dest="individualfiles",
-        help="Save each message as a separate file. This also creates a browsable index for HTML and Markdown.",
+        help="Save each message as its own file. pyqwk will also create an index page for HTML and Markdown outputs.",
         action="store_true",
     )
     io_group.add_argument(
