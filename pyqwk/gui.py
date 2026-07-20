@@ -2389,6 +2389,8 @@ class QwkGuiApp:
             ("CSV files", "*.csv"),
             ("SQLite database", "*.db"),
             ("XML files", "*.xml"),
+            ("QWK archives", "*.qwk"),
+            ("REP archives", "*.rep"),
             ("All files", "*.*"),
         ]
 
