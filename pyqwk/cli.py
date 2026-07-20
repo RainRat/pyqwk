@@ -680,6 +680,21 @@ examples:
         help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
 
+    preset_group = parser.add_argument_group("Workflow Presets")
+    preset_group.add_argument(
+        "-P",
+        "--preset",
+        choices=["blog", "email", "backup", "digest", "text-archive"],
+        help=(
+            "Apply predefined parameter combinations for common workflows:\n"
+            "  blog: Save messages as clean, threaded individual Markdown files.\n"
+            "  email: Save messages as individual EML files.\n"
+            "  backup: Create a complete SQLite backup with private and unique messages.\n"
+            "  digest: Save a single clean, threaded HTML file with a table of contents.\n"
+            "  text-archive: Save clean text without headers."
+        ),
+    )
+
     parser.add_argument(
         "-I",
         "--info",
@@ -704,6 +719,64 @@ examples:
         help="Show the version number and exit.",
     )
     args = parser.parse_args()
+
+    # Apply presets if specified
+    if getattr(args, "preset", None):
+        presets = {
+            "blog": {
+                "format": "markdown",
+                "clean": True,
+                "threaded": True,
+                "individualfiles": True,
+            },
+            "email": {
+                "format": "eml",
+                "individualfiles": True,
+            },
+            "backup": {
+                "format": "sqlite",
+                "private": True,
+                "unique": True,
+            },
+            "digest": {
+                "format": "html",
+                "threaded": True,
+                "clean": True,
+                "include_toc": True,
+            },
+            "text-archive": {
+                "format": "text",
+                "clean": True,
+                "noheader": True,
+            },
+        }
+
+        # Determine which arguments were explicitly passed on the command line
+        explicit_keys = set()
+        for action in parser._actions:
+            for opt in action.option_strings:
+                if opt.startswith("--"):
+                    if any(arg == opt or arg.startswith(opt + "=") for arg in sys.argv):
+                        explicit_keys.add(action.dest)
+                        break
+                elif opt.startswith("-"):
+                    # Short option, e.g., '-F' or '-t'
+                    char = opt[1:]
+                    for arg in sys.argv:
+                        if arg.startswith("-") and not arg.startswith("--"):
+                            if arg == opt or arg.startswith(opt + "="):
+                                explicit_keys.add(action.dest)
+                                break
+                            elif char in arg[1:] and not arg[1:].isdigit():
+                                explicit_keys.add(action.dest)
+                                break
+                    if action.dest in explicit_keys:
+                        break
+
+        preset_config = presets.get(args.preset, {})
+        for key, val in preset_config.items():
+            if key not in explicit_keys:
+                setattr(args, key, val)
 
     if args.oneline and args.individualfiles:
         parser.error(
