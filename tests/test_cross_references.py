@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, patch
-from pyqwk.core import _highlight_text, RE_MSG_LINK_PATTERN
+from pyqwk.core import _linkify_text, RE_MSG_LINK_PATTERN
 
 def test_msg_link_pattern():
     """Verify that the message link pattern matches various formats."""
@@ -11,10 +11,10 @@ def test_highlight_entities_ansi():
     text = "Visit http://example.com or email test@example.com or see msg #123"
 
     # No colors
-    assert _highlight_text(text, None, use_colors=False) == text
+    assert _linkify_text(text, "ansi", search_term=None, use_colors=False) == text
 
     # With colors
-    highlighted = _highlight_text(text, None, use_colors=True)
+    highlighted = _linkify_text(text, "ansi", search_term=None, use_colors=True)
 
     # URL: Underline (4) and Dim (90)
     assert "\x1b[4;90mhttp://example.com\x1b[0m" in highlighted

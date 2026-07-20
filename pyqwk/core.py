@@ -886,7 +886,9 @@ class MessageHeader:
         def fmt_val(val: str) -> str:
             if redact_pii:
                 val = _redact_pii(val)
-            return _highlight_text(val, highlight_term, is_regex, use_colors)
+            return _linkify_text(
+                val, "ansi", search_term=highlight_term, is_regex=is_regex, use_colors=use_colors
+            )
 
         def fmt_line(
             label: str, value: str, newline: bool = True, pad: int = 16
@@ -973,7 +975,9 @@ class MessageHeader:
         def prepare_field(text: str, width: int, dim: bool = False) -> str:
             truncated = text[:width]
             display_len = len(truncated)
-            truncated = _highlight_text(truncated, highlight_term, is_regex, use_colors)
+            truncated = _linkify_text(
+                truncated, "ansi", search_term=highlight_term, is_regex=is_regex, use_colors=use_colors
+            )
             res = truncated + (" " * (width - display_len))
             return _colorize(res, "90", enabled=use_colors and dim)
 
@@ -996,7 +1000,9 @@ class MessageHeader:
         flags_display = flags.ljust(3)
         flags_display = _colorize(flags_display, "90", enabled=use_colors)
         subject = f"{flags_display} {subject}"
-        subject_part = _highlight_text(subject, highlight_term, is_regex, use_colors)
+        subject_part = _linkify_text(
+            subject, "ansi", search_term=highlight_term, is_regex=is_regex, use_colors=use_colors
+        )
 
         msgnum_part = ""
         if verbose:
@@ -3166,10 +3172,11 @@ def _render_message_oneline(
 
             text = settings.oneline_pattern.format(**mapping) + "\r\n"
             # Apply search highlighting to the resulting line
-            return _highlight_text(
+            return _linkify_text(
                 text,
-                settings.search_term,
-                settings.regex,
+                "ansi",
+                search_term=settings.search_term,
+                is_regex=settings.regex,
                 use_colors=use_colors,
             )
         except (KeyError, ValueError):
@@ -3406,10 +3413,11 @@ def process_merged_files(
             cleaned_body = _highlight_quotes(cleaned_body, use_colors)
 
             # Apply search highlighting to body for terminal output
-            cleaned_body = _highlight_text(
+            cleaned_body = _linkify_text(
                 cleaned_body,
-                settings.search_term,
-                settings.regex,
+                "ansi",
+                search_term=settings.search_term,
+                is_regex=settings.regex,
                 use_colors=use_colors,
             )
 
@@ -5776,16 +5784,6 @@ def _linkify_text(
     return "".join(result)
 
 
-def _highlight_text(
-    text: str,
-    term: str | None,
-    is_regex: bool = False,
-    use_colors: bool = False,
-) -> str:
-    """Apply inverted colors highlighting to matching terms in text for terminal output."""
-    return _linkify_text(
-        text, "ansi", search_term=term, is_regex=is_regex, use_colors=use_colors
-    )
 
 
 def _render_stats_bar_chart(
