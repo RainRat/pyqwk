@@ -279,6 +279,35 @@ qwk messages.mbox --format eml -o ./emails/
 qwk archive.qwk --format maildir -o ./my_maildir/
 ```
 
+## Workflow Presets
+
+You can use presets to quickly apply options for common workflows. Presets save you from typing long, complicated commands.
+
+To use a preset, pass the `-P` or `--preset` flag followed by the preset name:
+
+```bash
+# Save messages as clean, threaded individual Markdown files (blog preset)
+qwk archive.qwk --preset blog -o output_folder/
+
+# Export messages as individual EML files (email preset)
+qwk archive.qwk --preset email -o emails_folder/
+
+# Create a complete SQLite backup with private and unique messages (backup preset)
+qwk archive.qwk --preset backup -o backup.db
+
+# Save a single clean, threaded HTML file with a table of contents (digest preset)
+qwk archive.qwk --preset digest -o digest.html
+
+# Save clean text without headers (text-archive preset)
+qwk archive.qwk --preset text-archive -o clean.txt
+```
+
+You can also override preset options by passing other flags at the same time:
+```bash
+# Use the blog preset, but change the output format to HTML
+qwk archive.qwk --preset blog --format html -o output_folder/
+```
+
 ## Filtering & Searching
 
 **Filter by Conference:**
@@ -437,6 +466,8 @@ for msg in messages:
 | `-v, --verbose` | Show more details like conference names and message numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
+| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, text-archive). |
+| `--separator` | Set how to separate messages in the output text (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into threads. |
@@ -451,6 +482,7 @@ for msg in messages:
 | `--organize-by-to` | Organize files into folders by recipient name. |
 | `--organize-by-subject` | Organize files into folders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
+| `--filename-pattern` | Set a custom pattern for naming individual files. |
 | `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
@@ -484,6 +516,7 @@ for msg in messages:
 | `--limit-per-author` | Limit the number of matching messages per author. |
 | `--limit-per-subject` | Limit the number of matching messages per subject. |
 | `--limit-per-bbs` | Limit the number of matching messages per BBS. |
+| `--limit-per-to` | Limit the number of matching messages per recipient. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
