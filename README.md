@@ -148,6 +148,41 @@ qwk-gui messages.db
 - **[** or **]**: Move to the previous or next conference.
 - **{** or **}**: Move to the previous or next BBS archive.
 
+## Workflow Presets
+
+`pyqwk` includes presets for common tasks. Presets apply several settings at once to save you time.
+
+Use the `-P` or `--preset` option followed by the preset name:
+
+```bash
+# Save messages as clean, threaded Markdown files (perfect for blogs)
+qwk archive.qwk --preset blog -o my_blog/
+
+# Save messages as individual EML files (for email clients)
+qwk archive.qwk --preset email -o ./emails/
+
+# Back up your archive into a single SQLite database with duplicates removed
+qwk archive.qwk --preset backup -o backup.db
+
+# Create a single threaded HTML digest with a table of contents
+qwk archive.qwk --preset digest -o digest.html
+
+# Save a simple clean text archive with no headers
+qwk archive.qwk --preset text-archive -o archive.txt
+```
+
+### Available Presets
+
+| Preset | Action | Equivalent Options |
+| :--- | :--- | :--- |
+| `blog` | Saves clean, threaded Markdown files. | `--format markdown --clean --threaded --individual-files` |
+| `email` | Saves messages as individual EML files. | `--format eml --individual-files` |
+| `backup` | Creates a SQLite backup with private and unique messages. | `--format sqlite --private --unique` |
+| `digest` | Saves a single clean, threaded HTML file with a table of contents. | `--format html --threaded --clean --toc` |
+| `text-archive` | Saves clean text without headers. | `--format text --clean --noheader` |
+
+*Note: You can override any preset setting by adding its command-line option.*
+
 ## Usage Examples
 
 **Read an archive:**
@@ -437,6 +472,8 @@ for msg in messages:
 | `-v, --verbose` | Show more details like conference names and message numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
+| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, text-archive). |
+| `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into threads. |
@@ -451,6 +488,7 @@ for msg in messages:
 | `--organize-by-to` | Organize files into folders by recipient name. |
 | `--organize-by-subject` | Organize files into folders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
+| `--filename-pattern` | Set a custom filename pattern for individual files (e.g., `{date}_{author}_{subject}`). |
 | `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
@@ -483,6 +521,7 @@ for msg in messages:
 | `--limit-per-conf` | Limit the number of matching messages per conference. |
 | `--limit-per-author` | Limit the number of matching messages per author. |
 | `--limit-per-subject` | Limit the number of matching messages per subject. |
+| `--limit-per-to` | Limit the number of matching messages per recipient. |
 | `--limit-per-bbs` | Limit the number of matching messages per BBS. |
 | `--tail` | Show the last NUM matching messages. Alias: `--last`. |
 | `--on-this-day` | Show messages from the same month and day. |
