@@ -925,6 +925,19 @@ class QwkGuiApp:
             self.conf_combo.set("All Conferences")
         self.reload_messages()
 
+    def _reset_visibility_filters(self) -> None:
+        """Reset all nine visibility checkboxes to their default values."""
+        self.private_var.set(True)
+        self.has_attach_var.set(False)
+        self.mine_var.set(False)
+        self.on_this_day_var.set(False)
+        self.has_links_var.set(False)
+        self.has_emails_var.set(False)
+        self.has_phones_var.set(False)
+        self.has_ansi_var.set(False)
+        self.has_msg_links_var.set(False)
+        self.reload_messages()
+
     def _focus_entry_field(self, entry_attr: str, var_attr: str) -> None:
         """Focus an entry field and optionally populate it with selected text."""
         entry = getattr(self, entry_attr, None)
@@ -1179,6 +1192,13 @@ class QwkGuiApp:
             ttk.Checkbutton(
                 filters_frame, text=text, variable=var, command=self.reload_messages
             ).grid(row=i // 3, column=i % 3, padx=5, sticky=tk.W)
+
+        ttk.Button(
+            filters_frame,
+            text="✕",
+            width=2,
+            command=self._reset_visibility_filters,
+        ).grid(row=0, column=3, rowspan=3, padx=(5, 2), sticky=tk.NS)
 
         limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
         limits_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
