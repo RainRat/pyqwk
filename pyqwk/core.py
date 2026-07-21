@@ -3197,6 +3197,34 @@ def _render_message_oneline(
     )
 
 
+def _pack_directory_to_archive(src_dir: str, archive_path: str, logger: logging.Logger) -> None:
+    """Pack a directory's contents into a ZIP or TAR archive."""
+    logger.info("Packing exported files into archive: %s", archive_path)
+    ext = archive_path.lower()
+    parent_dir = os.path.dirname(archive_path)
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
+    if ext.endswith(".zip"):
+        with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(src_dir):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, src_dir)
+                    zf.write(full_path, rel_path)
+    elif ext.endswith((".tar", ".tar.gz", ".tar.bz2", ".tgz")):
+        mode = "w"
+        if ext.endswith(".tar.gz") or ext.endswith(".tgz"):
+            mode = "w:gz"
+        elif ext.endswith(".tar.bz2"):
+            mode = "w:bz2"
+        with tarfile.open(archive_path, mode) as tf:
+            for root, dirs, files in os.walk(src_dir):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, src_dir)
+                    tf.add(full_path, rel_path)
+
+
 def process_merged_files(
     input_paths: list[str],
     settings: ProcessingSettings,
@@ -3220,16 +3248,27 @@ def process_merged_files(
         raise ValueError("An output path is required when output mode is file.")
 
     output_dir: str | None = None
+    temp_dir_obj = None
+    is_archive_export = False
     if settings.individual_files:
         if resolved_output_path is None:
             raise ValueError("An output path is required when using individual files.")
-        output_dir = resolved_output_path
-        if os.path.exists(output_dir) and not os.path.isdir(output_dir):
-            raise ValueError(
-                "The output path must be a folder when using individual files."
-            )
-        if not settings.dry_run:
-            os.makedirs(output_dir, exist_ok=True)
+
+        is_archive_export = resolved_output_path.lower().endswith((".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz"))
+        if is_archive_export:
+            if not settings.dry_run:
+                temp_dir_obj = tempfile.TemporaryDirectory()
+                output_dir = temp_dir_obj.name
+            else:
+                output_dir = "dry_run_temp_dir"
+        else:
+            output_dir = resolved_output_path
+            if os.path.exists(output_dir) and not os.path.isdir(output_dir):
+                raise ValueError(
+                    "The output path must be a folder when using individual files."
+                )
+            if not settings.dry_run:
+                os.makedirs(output_dir, exist_ok=True)
 
     collected_messages: list[ParsedMessage] = []
     seen_ids: set[tuple[str, int, int | str]] = set()
@@ -3823,7 +3862,7 @@ def process_merged_files(
             export_stats = _compute_stats_from_messages(gen_dummy_messages())
             _write_index(
                 collected_for_index,
-                resolved_output_path,
+                output_dir,
                 settings,
                 bbs_info_to_use,
                 stats=export_stats,
@@ -3886,6 +3925,13 @@ def process_merged_files(
         size_str = format_size(estimated_bytes)
         print(f"Estimated size:     {size_str}")
         print(f"{_colorize('No changes were made to the disk.', BOLD, enabled=use_colors)}")
+
+    if temp_dir_obj:
+        try:
+            if not settings.dry_run:
+                _pack_directory_to_archive(output_dir, resolved_output_path, logger)
+        finally:
+            temp_dir_obj.cleanup()
 
 
 def _message_to_dict(message: ProcessedMessage) -> dict[str, Any]:
