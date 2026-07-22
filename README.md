@@ -68,23 +68,52 @@ python qwk.py messages.tar.gz
 
 ## Installation
 
-Install `pyqwk` to use it from any folder.
+We recommend installing `pyqwk` inside a Python virtual environment. This keeps your installation clean and avoids conflicts with other Python packages on your computer.
 
-1. Open your terminal in the `pyqwk` folder.
-2. Install the package:
-   ```bash
-   python -m pip install .
-   ```
-3. Use the `qwk` command:
-   ```bash
-   qwk archive.qwk
-   ```
-4. Launch the graphical reader:
-   ```bash
-   qwk-gui
-   ```
+### 1. Set up a virtual environment (Recommended)
 
-*Note: You can also run the reader without installing:*
+Run these commands in your terminal:
+
+**On Linux and macOS:**
+```bash
+# Create a virtual environment named 'venv'
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+```
+
+**On Windows:**
+```bash
+# Create a virtual environment named 'venv'
+python -m venv venv
+
+# Activate the virtual environment
+venv\Scripts\activate
+```
+
+### 2. Install the package
+
+Install `pyqwk` in your active virtual environment:
+
+```bash
+python -m pip install .
+```
+
+### 3. Run the tool
+
+Now you can run the commands from any folder:
+
+- Run the command-line tool:
+  ```bash
+  qwk archive.qwk
+  ```
+- Open the graphical reader:
+  ```bash
+  qwk-gui
+  ```
+
+*Note: If you do not want to install the package, you can still run the graphical reader directly:*
 ```bash
 python -m pyqwk.gui
 ```
