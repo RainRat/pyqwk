@@ -5258,35 +5258,27 @@ def _write_qwk(
     is_rep = output_path.lower().endswith(".rep")
 
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        content = bytearray()
         if is_rep:
-            # REPLY.DAT
-            content = bytearray()
             # First block is BBS ID
             bbs_id = (bbs_info.bbs_id if bbs_info else "") or "QWK"
-            content.extend(bbs_id.ljust(BLOCK_SIZE).encode(encoding)[:BLOCK_SIZE])
-
-            for msg in messages:
-                body_blocks = _text_to_qwk_blocks(msg.text, encoding)
-                num_blocks = (len(body_blocks) // BLOCK_SIZE) + 1
-                header = replace(msg.header, numblocks=num_blocks)
-                content.extend(header.to_bytes(encoding))
-                content.extend(body_blocks)
-
-            zf.writestr(REPLY_FILENAME, content)
+            header_block = bbs_id.ljust(BLOCK_SIZE)
         else:
-            # MESSAGES.DAT
-            content = bytearray()
             # First block is "Produced by pyqwk"
             header_block = "Produced by pyqwk".ljust(BLOCK_SIZE)
-            content.extend(header_block.encode(encoding)[:BLOCK_SIZE])
 
-            for msg in messages:
-                body_blocks = _text_to_qwk_blocks(msg.text, encoding)
-                num_blocks = (len(body_blocks) // BLOCK_SIZE) + 1
-                header = replace(msg.header, numblocks=num_blocks)
-                content.extend(header.to_bytes(encoding))
-                content.extend(body_blocks)
+        content.extend(header_block.encode(encoding)[:BLOCK_SIZE])
 
+        for msg in messages:
+            body_blocks = _text_to_qwk_blocks(msg.text, encoding)
+            num_blocks = (len(body_blocks) // BLOCK_SIZE) + 1
+            header = replace(msg.header, numblocks=num_blocks)
+            content.extend(header.to_bytes(encoding))
+            content.extend(body_blocks)
+
+        if is_rep:
+            zf.writestr(REPLY_FILENAME, content)
+        else:
             zf.writestr(MESSAGES_FILENAME, content)
 
             # CONTROL.DAT
