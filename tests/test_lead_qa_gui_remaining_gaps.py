@@ -81,3 +81,19 @@ def test_focus_entry_field_missing_attribute(mock_app):
     app._focus_entry_field("non_existent_entry", "some_var")
     # Should return early without doing anything
     app.detail_text.tag_ranges.assert_not_called()
+
+def test_reset_visibility_filters(mock_app):
+    """Test that _reset_visibility_filters resets all nine variables and calls reload."""
+    app = mock_app
+    app._reset_visibility_filters()
+
+    app.private_var.set.assert_called_with(True)
+    app.has_attach_var.set.assert_called_with(False)
+    app.mine_var.set.assert_called_with(False)
+    app.on_this_day_var.set.assert_called_with(False)
+    app.has_links_var.set.assert_called_with(False)
+    app.has_emails_var.set.assert_called_with(False)
+    app.has_phones_var.set.assert_called_with(False)
+    app.has_ansi_var.set.assert_called_with(False)
+    app.has_msg_links_var.set.assert_called_with(False)
+    app.reload_messages.assert_called_once()
