@@ -418,6 +418,11 @@ examples:
         dest="body_search",
         help="Show messages with specific keywords in the body. Supports partial matches.",
     )
+    search_group.add_argument(
+        "--attachment-pattern",
+        dest="attachment_pattern",
+        help="Show only messages with attachments matching a wildcard pattern (e.g., '*.zip', 'image.gif', or 'png').",
+    )
 
     exclude_group = parser.add_argument_group("Exclusion Filters")
     exclude_group.add_argument(
@@ -952,6 +957,7 @@ examples:
         max_attachments=getattr(args, "max_attachments", None),
         min_depth=getattr(args, "min_depth", None),
         max_depth=getattr(args, "max_depth", None),
+        attachment_pattern=getattr(args, "attachment_pattern", None),
     )
 
     if args.organize_by_bbs and not args.output_path:
