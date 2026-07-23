@@ -6976,3 +6976,192 @@ def organize_by_bbs(
                 logger.warning("Could not find BBS information in %s", input_path)
         except Exception as e:
             logger.error("Error organizing %s: %s", input_path, e)
+
+
+class _LogCaptureHandler(logging.Handler):
+    """Temporary log handler to collect warning and error logs during parsing."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+import contextlib
+
+@contextlib.contextmanager
+def _capture_logs():
+    """Context manager to capture warnings and errors from root and package loggers."""
+    handler = _LogCaptureHandler()
+    root_logger = logging.getLogger()
+    pkg_logger = logging.getLogger("pyqwk")
+
+    root_logger.addHandler(handler)
+    pkg_logger.addHandler(handler)
+
+    old_root_level = root_logger.level
+    old_pkg_level = pkg_logger.level
+    root_logger.setLevel(logging.WARNING)
+    pkg_logger.setLevel(logging.WARNING)
+
+    try:
+        yield handler.records
+    finally:
+        root_logger.removeHandler(handler)
+        pkg_logger.removeHandler(handler)
+        root_logger.setLevel(old_root_level)
+        pkg_logger.setLevel(old_pkg_level)
+
+
+def validate_archive(
+    input_path: str,
+    logger: logging.Logger | None = None,
+    encoding: str = "cp437",
+) -> dict[str, Any]:
+    """Perform structural integrity, format-specific, and message validation on an archive.
+
+    This function checks files or directories for truncation, alignment errors,
+    missing header fields, invalid block counts, and other issues.
+
+    Args:
+        input_path: Path to the archive file or directory to validate.
+        logger: Optional logger for reporting information.
+        encoding: Text encoding to use for legacy QWK parsing.
+
+    Returns:
+        A dictionary containing:
+        - "path": The validated path.
+        - "status": "PASSED", "WARNING", or "FAILED".
+        - "errors": A list of critical error strings.
+        - "warnings": A list of non-critical warning strings.
+        - "format": The resolved format name of the archive.
+        - "message_count": The number of successfully parsed messages.
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    result = {
+        "path": input_path,
+        "status": "PASSED",
+        "errors": [],
+        "warnings": [],
+        "format": "unknown",
+        "message_count": 0,
+    }
+
+    if not os.path.exists(input_path):
+        result["errors"].append(f"File/Directory does not exist: {input_path}")
+        result["status"] = "FAILED"
+        return result
+
+    # Resolve format
+    fmt = resolve_output_format(None, input_path, "file")
+    result["format"] = fmt
+
+    if os.path.isfile(input_path):
+        try:
+            size = os.path.getsize(input_path)
+            if size == 0:
+                result["errors"].append("File is completely empty.")
+                result["status"] = "FAILED"
+                return result
+
+            # Special block check for raw MESSAGES.DAT or REPLY.DAT files
+            base_name = os.path.basename(input_path).lower()
+            if base_name in (MESSAGES_FILENAME, REPLY_FILENAME) or (
+                fmt in ("qwk", "rep") and not zipfile.is_zipfile(input_path)
+            ):
+                if size % BLOCK_SIZE != 0:
+                    result["warnings"].append(
+                        f"File size ({size} bytes) is not a multiple of {BLOCK_SIZE} bytes (BLOCK_SIZE). "
+                        f"It has {size % BLOCK_SIZE} trailing bytes which may indicate padding or corruption."
+                    )
+                    result["status"] = "WARNING"
+        except Exception as e:
+            result["errors"].append(f"Failed to inspect file properties: {e}")
+            result["status"] = "FAILED"
+            return result
+
+    # Run parsing under log capture
+    with _capture_logs() as captured:
+        try:
+            file_data, board_dict = load_data(input_path, logger, encoding)
+
+            if isinstance(file_data, list):
+                messages = file_data
+            else:
+                messages = list(parse_messages(file_data, None, encoding))
+
+            result["message_count"] = len(messages)
+
+            # Analyze individual parsed messages
+            for i, msg in enumerate(messages):
+                msg_id = getattr(msg, "msgnum", None) or (i + 1)
+
+                if msg.text and isinstance(msg.text, str):
+                    if "\x00" in msg.text:
+                        result["warnings"].append(
+                            f"Message {msg_id}: Body contains null bytes (potential binary corruption)."
+                        )
+                    if "\ufffd" in msg.text:
+                        result["warnings"].append(
+                            f"Message {msg_id}: Body contains unicode replacement characters (potential encoding mismatch)."
+                        )
+
+                h = getattr(msg, "header", None)
+                if h is None:
+                    result["warnings"].append(
+                        f"Message {msg_id} is missing a structured header."
+                    )
+                else:
+                    msgfrom = getattr(h, "msgfrom", None)
+                    msgto = getattr(h, "msgto", None)
+                    msgsubject = getattr(h, "msgsubject", None)
+                    msgdate = getattr(h, "msgdate", None)
+
+                    if not msgfrom or not msgfrom.strip():
+                        result["warnings"].append(
+                            f"Message {msg_id}: Author field (msgfrom) is empty."
+                        )
+                    if not msgto or not msgto.strip():
+                        result["warnings"].append(
+                            f"Message {msg_id}: Recipient field (msgto) is empty."
+                        )
+                    if not msgsubject or not msgsubject.strip():
+                        result["warnings"].append(
+                            f"Message {msg_id}: Subject field (msgsubject) is empty."
+                        )
+                    if not msgdate or not msgdate.strip():
+                        result["warnings"].append(
+                            f"Message {msg_id}: Date field (msgdate) is empty."
+                        )
+
+            # Check CONTROL.DAT info if available
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            if fmt in ("qwk", "rep") and bbs_info:
+                if not getattr(bbs_info, "name", None) or not bbs_info.name.strip():
+                    result["warnings"].append("CONTROL.DAT: BBS name is empty.")
+
+        except Exception as e:
+            result["errors"].append(f"Parsing/Loading failed: {str(e)}")
+            result["status"] = "FAILED"
+
+    # Incorporate captured warning/error logs
+    for r in captured:
+        msg = r.getMessage()
+        if r.levelno >= logging.ERROR:
+            result["errors"].append(msg)
+            result["status"] = "FAILED"
+        elif r.levelno >= logging.WARNING:
+            result["warnings"].append(msg)
+            if result["status"] == "PASSED":
+                result["status"] = "WARNING"
+
+    if result["errors"]:
+        result["status"] = "FAILED"
+    elif result["warnings"] and result["status"] == "PASSED":
+        result["status"] = "WARNING"
+
+    return result

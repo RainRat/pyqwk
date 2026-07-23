@@ -712,6 +712,11 @@ examples:
         help="Show a single merged report when analyzing multiple archives.",
     )
     parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Perform structural integrity and message validation on the archives and exit.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -957,6 +962,43 @@ examples:
     if args.organize_by_bbs and not args.output_path:
         organize_by_bbs(input_paths, settings, logger)
         sys.exit(0)
+
+    if getattr(args, "validate", False):
+        from pyqwk.core import validate_archive
+
+        failed = False
+        print("=" * 80)
+        print(" ARCHIVE VALIDATION REPORT")
+        print("=" * 80)
+        for path in input_paths:
+            res = validate_archive(path, logger, settings.encoding)
+            status = res["status"]
+            if status == "FAILED":
+                failed = True
+
+            print(f"File:   {res['path']}")
+            print(f"Format: {res['format'].upper()}")
+            print(f"Messages: {res['message_count']}")
+            print(f"Status: {status}")
+
+            if res["errors"]:
+                print("Errors:")
+                for err in res["errors"]:
+                    print(f"  - ERROR: {err}")
+            if res["warnings"]:
+                print("Warnings:")
+                for warn in res["warnings"]:
+                    print(f"  - WARNING: {warn}")
+            if not res["errors"] and not res["warnings"]:
+                print("No errors or warnings found.")
+            print("-" * 80)
+
+        if failed:
+            logger.error("Validation failed for one or more files.")
+            sys.exit(1)
+        else:
+            logger.info("Validation passed successfully.")
+            sys.exit(0)
 
     if args.info:
         show_info(input_paths, settings, logger)
