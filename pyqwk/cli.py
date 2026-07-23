@@ -780,7 +780,8 @@ examples:
 
     if args.oneline and args.individualfiles:
         parser.error(
-            "You cannot use --oneline and --individual-files at the same time."
+            "You cannot use --oneline and --individual-files at the same time. "
+            "Please choose --oneline for a quick summary, or --individual-files to save each message separately."
         )
 
     numeric_level = getattr(logging, args.loglevel)
@@ -817,11 +818,12 @@ examples:
                 )
             else:
                 parser.error(
-                    "You must provide an output folder when saving messages as individual files."
+                    "Please specify an output folder using the -o or --output option when saving messages as individual files."
                 )
         if os.path.exists(output_path) and not os.path.isdir(output_path):
             parser.error(
-                "The output path must be a folder when saving messages as individual files."
+                f"The output path '{output_path}' must be a folder when saving messages as individual files. "
+                "Please provide a path to a folder."
             )
         output_mode = "file"
         resolved_output_path = output_path
@@ -845,7 +847,11 @@ examples:
     output_format = resolve_output_format(args.format, output_path, output_mode)
 
     if args.threaded and output_format in ("eml", "maildir"):
-        parser.error(f"You cannot use --threaded with {output_format.upper()} format.")
+        parser.error(
+            f"You cannot use --threaded with {output_format.upper()} format. "
+            f"These formats save messages as individual files, which do not support conversational threading. "
+            "Please remove the --threaded option."
+        )
 
     # Default to individual files for EML format if an output path is provided
     if output_format in ("eml", "maildir") and not args.individualfiles and output_path:
@@ -859,7 +865,8 @@ examples:
             and not os.path.isdir(output_path)
         ):
             parser.error(
-                f"The output path must be a folder when saving messages in {output_format.upper()} format."
+                f"The output path '{output_path}' must be a folder when saving messages in {output_format.upper()} format. "
+                "Please provide a path to a folder."
             )
 
         output_mode = "file"
