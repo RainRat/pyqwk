@@ -141,3 +141,18 @@ def test_preset_overrides_complex(mock_expand_paths, mock_process_merged_files):
     mock_process_merged_files.assert_called_once()
     settings = mock_process_merged_files.call_args[0][1]
     assert settings.format == "html"
+
+
+@patch("pyqwk.cli.process_merged_files")
+@patch("pyqwk.cli.expand_paths")
+def test_preset_override_combined_short_options(mock_expand_paths, mock_process_merged_files):
+    """Verify that combined short-flag options (e.g. -pi) are correctly recognized and override preset values."""
+    mock_expand_paths.return_value = ["dummy.qwk"]
+
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "-P", "blog", "-pi", "-o", "out_dir"]):
+        main()
+
+    mock_process_merged_files.assert_called_once()
+    settings = mock_process_merged_files.call_args[0][1]
+    assert settings.individual_files is True
+    assert settings.private is True
