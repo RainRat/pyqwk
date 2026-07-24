@@ -81,3 +81,33 @@ def test_focus_entry_field_missing_attribute(mock_app):
     app._focus_entry_field("non_existent_entry", "some_var")
     # Should return early without doing anything
     app.detail_text.tag_ranges.assert_not_called()
+
+def test_reset_visibility_filters(mock_app):
+    """Test that _reset_visibility_filters resets visibility variables and reloads messages."""
+    app = mock_app
+
+    # Set initial non-default values
+    app.private_var = MagicMock()
+    app.has_attach_var = MagicMock()
+    app.mine_var = MagicMock()
+    app.on_this_day_var = MagicMock()
+    app.has_links_var = MagicMock()
+    app.has_emails_var = MagicMock()
+    app.has_phones_var = MagicMock()
+    app.has_ansi_var = MagicMock()
+    app.has_msg_links_var = MagicMock()
+
+    app._reset_visibility_filters()
+
+    # Assert set() is called on variables to set defaults
+    app.private_var.set.assert_called_once_with(True)
+    app.has_attach_var.set.assert_called_once_with(False)
+    app.mine_var.set.assert_called_once_with(False)
+    app.on_this_day_var.set.assert_called_once_with(False)
+    app.has_links_var.set.assert_called_once_with(False)
+    app.has_emails_var.set.assert_called_once_with(False)
+    app.has_phones_var.set.assert_called_once_with(False)
+    app.has_ansi_var.set.assert_called_once_with(False)
+    app.has_msg_links_var.set.assert_called_once_with(False)
+
+    app.reload_messages.assert_called_once()
