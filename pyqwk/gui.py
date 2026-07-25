@@ -170,6 +170,18 @@ class QwkGuiApp:
         )
         menu.add_separator()
 
+        # Go to Referenced Message
+        if msg.refnum:
+            try:
+                refnum_int = int(msg.refnum)
+                menu.add_command(
+                    label=f"Go to Referenced Message (#{msg.refnum})",
+                    command=lambda c=msg.header.confnum, r=refnum_int: self.jump_to_message(c, r),
+                )
+                menu.add_separator()
+            except ValueError:
+                pass
+
         # Filter pivoting
         author_label = (orig_from[:20] + "...") if len(orig_from) > 20 else orig_from
         menu.add_command(
@@ -274,6 +286,18 @@ class QwkGuiApp:
         if msg:
             try:
                 menu.add_separator()
+                # Go to Referenced Message
+                if msg.refnum:
+                    try:
+                        refnum_int = int(msg.refnum)
+                        menu.add_command(
+                            label=f"Go to Referenced Message (#{msg.refnum})",
+                            command=lambda c=msg.header.confnum, r=refnum_int: self.jump_to_message(c, r),
+                        )
+                        menu.add_separator()
+                    except ValueError:
+                        pass
+
                 author_text = msg.header.msgfrom.strip()
                 author_label = (
                     (author_text[:20] + "...") if len(author_text) > 20 else author_text
@@ -740,6 +764,11 @@ class QwkGuiApp:
             accelerator="Ctrl+G",
         )
         edit_menu.add_command(
+            label="Go to Referenced Message",
+            command=self.jump_to_referenced_message,
+            accelerator="Ctrl+U",
+        )
+        edit_menu.add_command(
             label="Clear Search/Find", command=self.clear_search, accelerator="Esc"
         )
         edit_menu.add_command(
@@ -758,6 +787,8 @@ class QwkGuiApp:
         self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
+        self.root.bind("<Control-u>", self.jump_to_referenced_message)
+        self.root.bind("<Control-U>", self.jump_to_referenced_message)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Control-X>", self.clear_filters)
         self.root.bind("<Escape>", self.clear_search)
@@ -2471,6 +2502,36 @@ class QwkGuiApp:
         except Exception as exc:
             self.progress.pack_forget()
             messagebox.showerror("Export Failed", str(exc))
+
+    def jump_to_referenced_message(self, _event: object | None = None) -> None:
+        """Jump to the referenced message of the currently selected message."""
+        if not self.messages and not self.current_paths:
+            messagebox.showwarning(
+                "Go to Referenced Message", "Please open an archive first."
+            )
+            return
+
+        current_selection = self.message_list.selection()
+        if not current_selection:
+            return
+
+        try:
+            idx = int(current_selection[0])
+            msg = self.messages[idx]
+        except (ValueError, IndexError):
+            return
+
+        if msg.refnum:
+            try:
+                refnum_int = int(msg.refnum)
+                self.jump_to_message(msg.header.confnum, refnum_int)
+            except ValueError:
+                pass
+        else:
+            messagebox.showinfo(
+                "Go to Referenced Message",
+                "The selected message does not reference any other message.",
+            )
 
     def prompt_jump_to_message(self, _event: object | None = None) -> None:
         """Prompt the user for a message number and jump to it."""
