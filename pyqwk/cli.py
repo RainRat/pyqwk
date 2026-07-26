@@ -88,7 +88,7 @@ def main() -> None:
     )
 
     parser = argparse.ArgumentParser(
-        description="Save BBS message archives in modern formats like HTML, Markdown, and SQLite.",
+        description="Convert BBS message archives into modern formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=f"""
 examples:
