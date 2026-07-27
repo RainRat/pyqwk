@@ -144,6 +144,7 @@ qwk-gui messages.db
 - **Space** or **PgDn**: Scroll down or move to the next message.
 - **Shift + Space**, **BackSpace**, or **PgUp**: Scroll up or move to the previous message.
 - **Ctrl + G**: Jump to a specific message number.
+- **Ctrl + U**: Go to the referenced parent message.
 - **r**: Select a random message.
 - **[** or **]**: Move to the previous or next conference.
 - **{** or **}**: Move to the previous or next BBS archive.

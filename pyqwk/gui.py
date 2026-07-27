@@ -168,6 +168,11 @@ class QwkGuiApp:
             label="Copy Num",
             command=lambda n=orig_num: self._copy_to_clipboard(n),
         )
+        if msg.refnum:
+            menu.add_command(
+                label=f"Go to Referenced Message #{msg.refnum}",
+                command=self.jump_to_referenced_message,
+            )
         menu.add_separator()
 
         # Filter pivoting
@@ -270,6 +275,12 @@ class QwkGuiApp:
                 self.detail_text.get("1.0", tk.END).strip()
             ),
         )
+
+        if msg and msg.refnum:
+            menu.add_command(
+                label=f"Go to Referenced Message #{msg.refnum}",
+                command=self.jump_to_referenced_message,
+            )
 
         if msg:
             try:
@@ -740,6 +751,11 @@ class QwkGuiApp:
             accelerator="Ctrl+G",
         )
         edit_menu.add_command(
+            label="Go to Referenced Message",
+            command=self.jump_to_referenced_message,
+            accelerator="Ctrl+U",
+        )
+        edit_menu.add_command(
             label="Clear Search/Find", command=self.clear_search, accelerator="Esc"
         )
         edit_menu.add_command(
@@ -758,6 +774,8 @@ class QwkGuiApp:
         self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
+        self.root.bind("<Control-u>", self.jump_to_referenced_message)
+        self.root.bind("<Control-U>", self.jump_to_referenced_message)
         self.root.bind("<Control-q>", self.quit_app)
         self.root.bind("<Control-X>", self.clear_filters)
         self.root.bind("<Escape>", self.clear_search)
@@ -2524,6 +2542,32 @@ class QwkGuiApp:
         self.message_list.selection_set(target_iid)
         self.message_list.see(target_iid)
         self.message_list.focus(target_iid)
+
+    def jump_to_referenced_message(self, _event: object | None = None) -> None:
+        """Jump to the referenced parent message (refnum) of the currently selected message."""
+        if not self.messages and not self.current_paths:
+            messagebox.showwarning("Go to Referenced Message", "Please open an archive first.")
+            return
+
+        current_selection = self.message_list.selection()
+        if not current_selection:
+            messagebox.showwarning("Go to Referenced Message", "Please select a message first.")
+            return
+
+        try:
+            idx = int(current_selection[0])
+            msg = self.messages[idx]
+        except (ValueError, IndexError):
+            return
+
+        if not msg.refnum:
+            messagebox.showinfo(
+                "Go to Referenced Message",
+                "The selected message does not reference another message (no Reply-To/RefNum)."
+            )
+            return
+
+        self.jump_to_message(msg.confnum, msg.refnum)
 
     def jump_to_message(self, confnum: int, msgnum: int) -> None:
         """Find and select a message by conference and message number."""
