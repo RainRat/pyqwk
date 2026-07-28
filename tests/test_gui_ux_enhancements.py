@@ -112,6 +112,23 @@ def test_show_list_context_menu(app):
         app.message_list.selection_set.assert_called_with("0")
         mock_menu_instance.post.assert_called_once_with(100, 100)
 
+        # Check for expected commands including "Copy Full Message"
+        calls = [c[1]["label"] for c in mock_menu_instance.add_command.call_args_list]
+        assert "Copy Subject" in calls
+        assert "Copy From" in calls
+        assert "Copy To" in calls
+        assert "Copy Num" in calls
+        assert "Copy Full Message" in calls
+
+        # Find the command callback for "Copy Full Message" and run it to verify behavior
+        copy_full_call = [c for c in mock_menu_instance.add_command.call_args_list if c[1]["label"] == "Copy Full Message"][0]
+        cmd_cb = copy_full_call[1]["command"]
+
+        app.detail_text.get.return_value = "Full Formatted Message Content"
+        app._copy_to_clipboard = MagicMock()
+        cmd_cb()
+        app._copy_to_clipboard.assert_called_once_with("Full Formatted Message Content")
+
 
 def test_show_text_context_menu(app):
     """Verify that right-clicking the text triggers menu posting with metadata filters."""

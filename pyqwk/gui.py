@@ -169,6 +169,12 @@ class QwkGuiApp:
             label="Copy Num",
             command=lambda n=orig_num: self._copy_to_clipboard(n),
         )
+        menu.add_command(
+            label="Copy Full Message",
+            command=lambda: self._copy_to_clipboard(
+                self.detail_text.get("1.0", tk.END).strip()
+            ),
+        )
         if msg.refnum:
             menu.add_command(
                 label=f"Go to Referenced Message #{msg.refnum}",
