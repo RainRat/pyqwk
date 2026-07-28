@@ -543,6 +543,7 @@ class ProcessingSettings:
     output_mode: str
     output_path: str | None
     encoding: str
+    count_only: bool = False
     filename_pattern: str | None = None
     oneline_pattern: str | None = None
     min_length: int | None = None
@@ -3288,14 +3289,15 @@ def process_merged_files(
     output_mode = settings.output_mode
     resolved_output_path = settings.output_path
 
-    if output_mode == "stdout" and resolved_output_path is not None:
-        raise ValueError("You cannot provide an output path when printing to the screen.")
-    if (
-        not settings.individual_files
-        and output_mode == "file"
-        and resolved_output_path is None
-    ):
-        raise ValueError("An output path is required when output mode is file.")
+    if not settings.count_only:
+        if output_mode == "stdout" and resolved_output_path is not None:
+            raise ValueError("You cannot provide an output path when printing to the screen.")
+        if (
+            not settings.individual_files
+            and output_mode == "file"
+            and resolved_output_path is None
+        ):
+            raise ValueError("An output path is required when output mode is file.")
 
     output_dir: str | None = None
     temp_dir_obj = None
@@ -3463,6 +3465,9 @@ def process_merged_files(
         bbs_key = (parsed_message.bbs_name or parsed_message.bbs_id or "").strip().lower()
         bbs_processed_counts[bbs_key] += 1
         processed_count += 1
+
+        if settings.count_only:
+            return False
 
         if settings.extract_attachments and parsed_message.text:
             # Re-scan to get binary data for extraction
@@ -3945,6 +3950,10 @@ def process_merged_files(
         finally:
             settings.skip = original_skip
             settings.limit = original_limit
+
+    if settings.count_only:
+        print(processed_count)
+        return
 
     if settings.individual_files:
         if not settings.dry_run and collected_for_index:

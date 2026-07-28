@@ -353,6 +353,11 @@ examples:
         help="Validate the structural integrity and metadata completeness of the archives and exit.",
     )
     control_group.add_argument(
+        "--count-only",
+        action="store_true",
+        help="Print only the total number of matching messages and exit.",
+    )
+    control_group.add_argument(
         "-v",
         "--verbose",
         help="Show more details like conference names and message numbers.",
@@ -822,6 +827,9 @@ examples:
             "Please choose --oneline for a quick summary, or --individual-files to save each message separately."
         )
 
+    if getattr(args, "count_only", False):
+        args.quiet = True
+
     numeric_level = getattr(logging, args.loglevel)
 
     use_colors = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
@@ -874,9 +882,10 @@ examples:
     ):
         if not args.merge:
             args.merge = True
-            logger.info(
-                "Multiple archives provided without an output path. Merging results to the screen."
-            )
+            if not getattr(args, "count_only", False):
+                logger.info(
+                    "Multiple archives provided without an output path. Merging results to the screen."
+                )
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
     elif len(input_paths) > 1 or has_directory_input:
@@ -961,6 +970,7 @@ examples:
         output_mode=output_mode,
         output_path=resolved_output_path,
         encoding=args.encoding,
+        count_only=getattr(args, "count_only", False),
         regex=args.regex,
         conferences=args.conferences,
         bbs_names=args.bbs_names,
