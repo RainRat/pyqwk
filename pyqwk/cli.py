@@ -281,6 +281,8 @@ examples:
             "eml",
             "maildir",
             "sqlite",
+            "qwk",
+            "rep",
         ],
     )
     format_group.add_argument(
@@ -937,6 +939,12 @@ examples:
         resolved_output_path = output_path
 
     output_format = resolve_output_format(args.format, output_path, output_mode)
+
+    if output_format in ("qwk", "rep") and args.individualfiles:
+        parser.error(f"You cannot use --individual-files with {output_format.upper()} format.")
+
+    if output_format in ("sqlite", "qwk", "rep") and not output_path:
+        parser.error(f"You cannot export to {output_format.upper()} format without providing an output path.")
 
     if args.threaded and output_format in ("eml", "maildir"):
         parser.error(f"You cannot use --threaded with {output_format.upper()} format.")
