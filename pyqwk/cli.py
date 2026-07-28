@@ -16,6 +16,7 @@ from pyqwk.core import (
     resolve_output_format,
     show_info,
     show_stats,
+    validate_archive,
 )
 
 
@@ -343,6 +344,11 @@ examples:
     )
 
     control_group = parser.add_argument_group("Output Control")
+    control_group.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate the structural integrity and metadata completeness of the archives and exit.",
+    )
     control_group.add_argument(
         "-v",
         "--verbose",
@@ -1071,6 +1077,33 @@ examples:
         min_thread_size=getattr(args, "min_thread_size", None),
         max_thread_size=getattr(args, "max_thread_size", None),
     )
+
+    if getattr(args, "validate", False):
+        valid_all = True
+        for input_path in input_paths:
+            res = validate_archive(input_path, logger, args.encoding)
+
+            # Print a neat summary for each file
+            # Format: File: <path> (<format>, <count> messages) - [VALID | INVALID]
+            status_str = "VALID" if res["valid"] else "INVALID"
+            # Colorize status_str if stdout is a terminal
+            use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+            color_code = "32" if res["valid"] else "31" # Green or Red
+            bold_status = f"\033[1;{color_code}m{status_str}\033[0m" if use_colors else status_str
+
+            logger.info("File: %s (%s, %d messages) - [%s]", input_path, res["format"], res["messages_count"], bold_status)
+
+            if res["errors"]:
+                for err in res["errors"]:
+                    logger.error("  - [Error] %s", err)
+            if res["warnings"]:
+                for warn in res["warnings"]:
+                    logger.warning("  - [Warning] %s", warn)
+
+            if not res["valid"]:
+                valid_all = False
+
+        sys.exit(0 if valid_all else 1)
 
     if args.organize_by_bbs and not args.output_path:
         organize_by_bbs(input_paths, settings, logger)

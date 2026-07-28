@@ -7167,3 +7167,471 @@ def organize_by_bbs(
                 logger.warning("Could not find BBS information in %s", input_path)
         except Exception as e:
             logger.error("Error organizing %s: %s", input_path, e)
+
+
+def validate_archive(
+    input_path: str, logger: logging.Logger, encoding: str = "cp437"
+) -> dict[str, Any]:
+    """Validate the structural integrity and metadata completeness of an archive.
+
+    This function checks if the file exists, checks block alignment for QWK/REP,
+    checks schema completeness for modern formats, and scans for missing metadata.
+
+    Args:
+        input_path: Path to the archive file to validate.
+        logger: Logger for warnings and information.
+        encoding: Text encoding for parsing (default is 'cp437').
+
+    Returns:
+        A dictionary with validation results:
+        {
+            "valid": bool,
+            "format": str,
+            "messages_count": int,
+            "errors": list[str],
+            "warnings": list[str]
+        }
+    """
+    result = {
+        "valid": True,
+        "format": "unknown",
+        "messages_count": 0,
+        "errors": [],
+        "warnings": []
+    }
+
+    if not os.path.exists(input_path):
+        result["valid"] = False
+        result["errors"].append(f"File not found: {input_path}")
+        return result
+
+    if os.path.isdir(input_path):
+        if not _is_maildir(input_path):
+            result["valid"] = False
+            result["errors"].append(f"Path is a directory but not a valid Maildir: {input_path}")
+            return result
+        result["format"] = "maildir"
+    else:
+        # Check if file is empty
+        if os.path.getsize(input_path) == 0:
+            result["valid"] = False
+            result["errors"].append(f"File is empty: {input_path}")
+            return result
+
+    # Determine format
+    ext = os.path.splitext(input_path)[1].lower()
+    base_name = os.path.basename(input_path).lower()
+
+    if ext == ".qwk" or ext == ".rep" or base_name == MESSAGES_FILENAME or base_name == REPLY_FILENAME:
+        result["format"] = "qwk" if ext != ".rep" and base_name != REPLY_FILENAME else "rep"
+    elif ext in (".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz"):
+        result["format"] = "compressed_archive"
+    elif ext == ".json":
+        result["format"] = "json"
+    elif ext == ".jsonl":
+        result["format"] = "jsonl"
+    elif ext in (".db", ".sqlite"):
+        result["format"] = "sqlite"
+    elif ext == ".csv":
+        result["format"] = "csv"
+    elif ext in (".xml", ".rss"):
+        result["format"] = "xml"
+    elif ext == ".mbox":
+        result["format"] = "mbox"
+    elif ext == ".eml":
+        result["format"] = "eml"
+    elif ext in (".md", ".markdown"):
+        result["format"] = "markdown"
+    elif ext in (".html", ".htm"):
+        result["format"] = "html"
+    elif ext == ".txt":
+        result["format"] = "text"
+    elif _is_maildir(input_path):
+        result["format"] = "maildir"
+
+    # Now let's do format-specific validations
+    fmt = result["format"]
+
+    # 1. QWK/REP and standalone message files validation
+    if fmt in ("qwk", "rep") and not os.path.isdir(input_path):
+        size = os.path.getsize(input_path)
+        if size < BLOCK_SIZE:
+            result["valid"] = False
+            result["errors"].append(f"File size ({size} bytes) is too small to contain a valid QWK/REP block (128 bytes).")
+            return result
+        if size % BLOCK_SIZE != 0:
+            result["valid"] = False
+            result["errors"].append(f"File size ({size} bytes) is not a multiple of 128 bytes. Block misalignment detected.")
+            # Note: we still try to parse as much as possible
+
+        # Read file_data and parse
+        try:
+            with open(input_path, "rb") as f:
+                file_data = bytearray(f.read())
+            # Parse messages
+            messages = list(parse_messages(file_data, None, encoding, headers_only=True))
+            result["messages_count"] = len(messages)
+            _validate_messages_metadata(messages, result)
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"Binary corruption or format error during QWK parsing: {str(e)}")
+
+    # 2. Compressed Archives (ZIP / TAR)
+    elif fmt == "compressed_archive":
+        if ext == ".zip" and zipfile.is_zipfile(input_path):
+            try:
+                with zipfile.ZipFile(input_path) as myzip:
+                    # Test zip archive integrity
+                    bad_file = myzip.testzip()
+                    if bad_file:
+                        result["valid"] = False
+                        result["errors"].append(f"ZIP file CRC check failed for: {bad_file}")
+
+                    file_list = myzip.namelist()
+
+                    messages_dat = next((n for n in file_list if n.lower() == MESSAGES_FILENAME), None)
+                    reply_dat = next((n for n in file_list if n.lower() == REPLY_FILENAME), None)
+                    control_dat = next((n for n in file_list if n.lower() == CONTROL_FILENAME), None)
+
+                    if messages_dat or reply_dat:
+                        # Standard QWK/REP archive
+                        target_dat = messages_dat or reply_dat
+                        # Check block alignment inside zip
+                        info = myzip.getinfo(target_dat)
+                        if info.file_size % BLOCK_SIZE != 0:
+                            result["valid"] = False
+                            result["errors"].append(f"Internal file '{target_dat}' size ({info.file_size} bytes) is not a multiple of 128 bytes.")
+
+                        if messages_dat and not control_dat:
+                            result["warnings"].append("CONTROL.DAT is missing from the QWK archive.")
+
+                        # Try to load/parse
+                        try:
+                            with myzip.open(target_dat) as f:
+                                file_data = bytearray(f.read())
+                            messages = list(parse_messages(file_data, None, encoding, headers_only=True))
+                            result["messages_count"] = len(messages)
+                            _validate_messages_metadata(messages, result)
+                        except Exception as e:
+                            result["valid"] = False
+                            result["errors"].append(f"Failed to parse messages from '{target_dat}': {str(e)}")
+                    else:
+                        # Multi-format batch loading zip
+                        result["warnings"].append("Zip archive does not contain standard MESSAGES.DAT or REPLY.DAT. Validating internal files...")
+                        _validate_batch_files(input_path, file_list, "ZIP", result, logger, encoding)
+            except Exception as e:
+                result["valid"] = False
+                result["errors"].append(f"ZIP archive read error: {str(e)}")
+        elif tarfile.is_tarfile(input_path):
+            try:
+                with tarfile.open(input_path) as mytar:
+                    members = mytar.getmembers()
+                    file_list = [m.name for m in members]
+
+                    messages_dat = next((n for n in file_list if n.lower() == MESSAGES_FILENAME), None)
+                    reply_dat = next((n for n in file_list if n.lower() == REPLY_FILENAME), None)
+                    control_dat = next((n for n in file_list if n.lower() == CONTROL_FILENAME), None)
+
+                    if messages_dat or reply_dat:
+                        target_dat = messages_dat or reply_dat
+                        member = mytar.getmember(target_dat)
+                        if member.size % BLOCK_SIZE != 0:
+                            result["valid"] = False
+                            result["errors"].append(f"Internal file '{target_dat}' size ({member.size} bytes) is not a multiple of 128 bytes.")
+
+                        if messages_dat and not control_dat:
+                            result["warnings"].append("CONTROL.DAT is missing from the QWK archive.")
+
+                        try:
+                            f = mytar.extractfile(target_dat)
+                            if f:
+                                file_data = bytearray(f.read())
+                                messages = list(parse_messages(file_data, None, encoding, headers_only=True))
+                                result["messages_count"] = len(messages)
+                                _validate_messages_metadata(messages, result)
+                        except Exception as e:
+                            result["valid"] = False
+                            result["errors"].append(f"Failed to parse messages from '{target_dat}': {str(e)}")
+                    else:
+                        result["warnings"].append("TAR archive does not contain standard MESSAGES.DAT or REPLY.DAT. Validating internal files...")
+                        _validate_batch_files(input_path, file_list, "TAR", result, logger, encoding)
+            except Exception as e:
+                result["valid"] = False
+                result["errors"].append(f"TAR archive read error: {str(e)}")
+        else:
+            result["valid"] = False
+            result["errors"].append("Unsupported or corrupted compressed archive format.")
+
+    # 3. JSON Validation
+    elif fmt == "json":
+        try:
+            with open(input_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Verify structured JSON schema
+            if isinstance(data, dict):
+                if data.get("type") == "qwk_archive":
+                    if "messages" not in data:
+                        result["valid"] = False
+                        result["errors"].append("JSON dictionary format lacks 'messages' field.")
+                        return result
+                    messages_list = data["messages"]
+                else:
+                    messages_list = [data]
+            elif isinstance(data, list):
+                messages_list = data
+            else:
+                result["valid"] = False
+                result["errors"].append("JSON data must be a list of messages or a structured dictionary.")
+                return result
+
+            result["messages_count"] = len(messages_list)
+            for i, msg_data in enumerate(messages_list):
+                if not isinstance(msg_data, dict):
+                    result["valid"] = False
+                    result["errors"].append(f"Message at index {i} is not a valid JSON object.")
+                    continue
+                if "header" not in msg_data:
+                    result["warnings"].append(f"Message at index {i} is missing 'header' metadata.")
+                else:
+                    hdr = msg_data["header"]
+                    if not isinstance(hdr, dict):
+                        result["valid"] = False
+                        result["errors"].append(f"Message at index {i} has invalid 'header' type (expected dictionary).")
+                    else:
+                        _validate_header_dict(hdr, f"index {i}", result)
+        except json.JSONDecodeError as e:
+            result["valid"] = False
+            result["errors"].append(f"JSON syntax error: {str(e)}")
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"JSON schema validation failed: {str(e)}")
+
+    # 4. JSONL Validation
+    elif fmt == "jsonl":
+        try:
+            count = 0
+            with open(input_path, "r", encoding="utf-8") as f:
+                for line_idx, line in enumerate(f, 1):
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                    try:
+                        msg_data = json.loads(stripped)
+                        if isinstance(msg_data, dict) and msg_data.get("type") == "metadata":
+                            continue
+                        count += 1
+                        if not isinstance(msg_data, dict):
+                            result["valid"] = False
+                            result["errors"].append(f"JSONL line {line_idx} is not a valid object.")
+                            continue
+                        if "header" not in msg_data:
+                            result["warnings"].append(f"JSONL line {line_idx} is missing 'header' metadata.")
+                        else:
+                            hdr = msg_data["header"]
+                            _validate_header_dict(hdr, f"line {line_idx}", result)
+                    except json.JSONDecodeError as e:
+                        result["valid"] = False
+                        result["errors"].append(f"JSONL syntax error on line {line_idx}: {str(e)}")
+            result["messages_count"] = count
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"JSONL validation failed: {str(e)}")
+
+    # 5. CSV Validation
+    elif fmt == "csv":
+        try:
+            with open(input_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                headers = reader.fieldnames or []
+                required_cols = {"msgfrom", "msgto", "msgsubject", "text"}
+                # Convert to lower to be flexible
+                lower_headers = {h.lower() for h in headers}
+                missing_cols = required_cols - lower_headers
+                if missing_cols:
+                    result["warnings"].append(f"CSV is missing recommended standard headers: {', '.join(missing_cols)}")
+
+                count = 0
+                for row_idx, row in enumerate(reader, 2):
+                    count += 1
+                    # Basic checks on row contents
+                    from_val = row.get("msgfrom", row.get("msgfrom".upper(), "")).strip()
+                    to_val = row.get("msgto", row.get("msgto".upper(), "")).strip()
+                    subj_val = row.get("msgsubject", row.get("msgsubject".upper(), "")).strip()
+                    if not from_val:
+                        result["warnings"].append(f"CSV row {row_idx} is missing sender (msgfrom) field.")
+                    if not to_val:
+                        result["warnings"].append(f"CSV row {row_idx} is missing recipient (msgto) field.")
+                    if not subj_val:
+                        result["warnings"].append(f"CSV row {row_idx} is missing subject (msgsubject) field.")
+                result["messages_count"] = count
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"CSV validation failed: {str(e)}")
+
+    # 6. XML / RSS Validation
+    elif fmt == "xml":
+        try:
+            tree = ET.parse(input_path)
+            root = tree.getroot()
+            if root.tag == "rss":
+                # Validate as RSS
+                channel = root.find("channel")
+                if channel is None:
+                    result["valid"] = False
+                    result["errors"].append("RSS XML is missing the '<channel>' element.")
+                else:
+                    items = channel.findall("item")
+                    result["messages_count"] = len(items)
+                    for i, item in enumerate(items, 1):
+                        title = item.findtext("title")
+                        author = item.findtext("author")
+                        if not title:
+                            result["warnings"].append(f"RSS item {i} is missing '<title>' (subject).")
+                        if not author:
+                            result["warnings"].append(f"RSS item {i} is missing '<author>'.")
+            else:
+                # Standard XML
+                entries = [root] if root.tag == "message" else root.findall("message")
+                result["messages_count"] = len(entries)
+                for i, entry in enumerate(entries, 1):
+                    header_el = entry.find("header")
+                    if header_el is None:
+                        result["warnings"].append(f"XML message {i} is missing '<header>' metadata.")
+                    else:
+                        hdr_dict = {el.tag: (el.text or "").strip() for el in header_el}
+                        _validate_header_dict(hdr_dict, f"message {i}", result)
+        except ET.ParseError as e:
+            result["valid"] = False
+            result["errors"].append(f"XML parsing failed: {str(e)}")
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"XML schema validation error: {str(e)}")
+
+    # 7. SQLite Validation
+    elif fmt == "sqlite":
+        try:
+            conn = sqlite3.connect(input_path)
+            cursor = conn.cursor()
+            # Check for required tables
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = {row[0] for row in cursor.fetchall()}
+            if "messages" not in tables:
+                result["valid"] = False
+                result["errors"].append("SQLite database is missing the required 'messages' table.")
+            else:
+                # Check columns in 'messages' table
+                cursor.execute("PRAGMA table_info(messages)")
+                cols = {row[1].lower() for row in cursor.fetchall()}
+                required_cols = {"author", "recipient", "subject", "text", "conference_number"}
+                missing_cols = required_cols - cols
+                if missing_cols:
+                    result["valid"] = False
+                    result["errors"].append(f"SQLite 'messages' table is missing required columns: {', '.join(missing_cols)}")
+                else:
+                    cursor.execute("SELECT COUNT(*) FROM messages")
+                    result["messages_count"] = cursor.fetchone()[0]
+            conn.close()
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"SQLite validation failed: {str(e)}")
+
+    # 8. Others (mbox, EML, HTML, Maildir, Markdown, Text)
+    elif fmt in ("mbox", "eml", "maildir", "html", "markdown", "text"):
+        try:
+            messages, _ = load_data(input_path, logger, encoding)
+            if isinstance(messages, list):
+                result["messages_count"] = len(messages)
+                _validate_messages_metadata(messages, result)
+            else:
+                result["warnings"].append("Load returned byte stream instead of parsed messages; metadata validation skipped.")
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"Format validation failed for {fmt}: {str(e)}")
+
+    else:
+        result["warnings"].append(f"Unrecognized archive format for file '{input_path}'. Integrity checks were skipped.")
+
+    if result["errors"]:
+        result["valid"] = False
+
+    return result
+
+
+def _validate_messages_metadata(messages: list[ParsedMessage], result: dict[str, Any]) -> None:
+    """Validate parsed MessageHeader objects for missing required metadata."""
+    for i, msg in enumerate(messages):
+        header = msg.header
+        msg_id_str = f"#{header.msgnum}" if header.msgnum is not None else f"at index {i}"
+
+        # Check standard metadata fields
+        if not getattr(header, "msgfrom", "").strip():
+            result["warnings"].append(f"Message {msg_id_str} is missing sender (msgfrom) field.")
+        if not getattr(header, "msgto", "").strip():
+            result["warnings"].append(f"Message {msg_id_str} is missing recipient (msgto) field.")
+        if not getattr(header, "msgsubject", "").strip():
+            result["warnings"].append(f"Message {msg_id_str} is missing subject field.")
+        if getattr(header, "msgnum", None) is None:
+            result["warnings"].append(f"Message {msg_id_str} is missing message number.")
+        elif header.msgnum <= 0:
+            result["warnings"].append(f"Message {msg_id_str} has invalid/non-positive message number: {header.msgnum}")
+
+
+def _validate_header_dict(hdr: dict[str, Any], label: str, result: dict[str, Any]) -> None:
+    """Validate a raw header dictionary from JSON or XML structures."""
+    msgfrom = str(hdr.get("msgfrom", hdr.get("msgfrom".upper(), ""))).strip()
+    msgto = str(hdr.get("msgto", hdr.get("msgto".upper(), ""))).strip()
+    msgsubject = str(hdr.get("msgsubject", hdr.get("msgsubject".upper(), ""))).strip()
+    msgnum = hdr.get("msgnum", hdr.get("msgnum".upper(), None))
+
+    if not msgfrom:
+        result["warnings"].append(f"Message at {label} is missing sender (msgfrom) field.")
+    if not msgto:
+        result["warnings"].append(f"Message at {label} is missing recipient (msgto) field.")
+    if not msgsubject:
+        result["warnings"].append(f"Message at {label} is missing subject field.")
+    if msgnum is None:
+        result["warnings"].append(f"Message at {label} is missing message number.")
+
+
+def _validate_batch_files(
+    archive_path: str,
+    file_list: list[str],
+    archive_type: str,
+    result: dict[str, Any],
+    logger: logging.Logger,
+    encoding: str,
+) -> None:
+    """Helper to run validate_archive recursively for internal files extracted to a temp dir."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as temp_dir:
+        try:
+            if archive_type == "ZIP":
+                with zipfile.ZipFile(archive_path) as myzip:
+                    myzip.extractall(temp_dir)
+            else:
+                with tarfile.open(archive_path) as mytar:
+                    if hasattr(tarfile, "data_filter"):
+                        mytar.extractall(temp_dir, filter="data")
+                    else:
+                        mytar.extractall(temp_dir)
+
+            # Find and validate all expanded paths
+            candidate_paths = expand_paths([temp_dir])
+            messages_count = 0
+            for p in candidate_paths:
+                sub_res = validate_archive(p, logger, encoding)
+                messages_count += sub_res["messages_count"]
+                if not sub_res["valid"]:
+                    result["valid"] = False
+                    for err in sub_res["errors"]:
+                        # Reword path to represent the archive structure
+                        rel_p = os.path.relpath(p, temp_dir)
+                        result["errors"].append(f"[{rel_p}] {err}")
+                for warn in sub_res["warnings"]:
+                    rel_p = os.path.relpath(p, temp_dir)
+                    result["warnings"].append(f"[{rel_p}] {warn}")
+            result["messages_count"] = messages_count
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"Failed to validate internal batch files in {archive_type}: {str(e)}")
