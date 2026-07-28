@@ -350,6 +350,16 @@ qwk messages.mbox --format eml -o ./emails/
 qwk archive.qwk --format maildir -o ./my_maildir/
 ```
 
+**Check archive integrity (validate file):**
+```bash
+qwk archive.qwk --validate
+```
+
+**Export messages to a classic QWK packet:**
+```bash
+qwk messages.mbox --format qwk -o output.qwk
+```
+
 ## Filtering & Searching
 
 **Filter by Conference:**
