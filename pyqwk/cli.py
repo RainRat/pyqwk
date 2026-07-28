@@ -429,6 +429,11 @@ examples:
         dest="body_search",
         help="Show messages with specific keywords in the body. Supports partial matches.",
     )
+    search_group.add_argument(
+        "--attachment-pattern",
+        dest="attachment_pattern",
+        help="Show only messages with attachments matching a wildcard pattern (e.g., '*.zip', 'image.gif', or 'png').",
+    )
 
     exclude_group = parser.add_argument_group("Exclusion Filters")
     exclude_group.add_argument(
@@ -550,97 +555,96 @@ examples:
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--min-replies",
         metavar="NUM",
         help="Show messages with at least NUM direct replies.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--min-thread-size",
         metavar="NUM",
         help="Show messages belonging to a conversation with at least NUM messages.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--limit-per-bbs",
         metavar="NUM",
         help="Limit the number of matching messages per BBS.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--max-replies",
         metavar="NUM",
         help="Show messages with at most NUM direct replies.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--max-thread-size",
         metavar="NUM",
         help="Show messages belonging to a conversation with at most NUM messages.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--limit-per-author",
         metavar="NUM",
         help="Limit the number of matching messages per author.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--limit-per-subject",
         metavar="NUM",
         help="Limit the number of matching messages per subject.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--limit-per-conf",
         metavar="NUM",
         help="Limit the number of matching messages per conference.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--min-attachments",
         metavar="NUM",
         help="Show messages with at least NUM attachments.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--min-words",
         metavar="NUM",
         help="Show messages with at least NUM words.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--max-attachments",
         metavar="NUM",
         help="Show messages with at most NUM attachments.",
         type=int,
         default=None,
     )
-    filter_group.add_argument(
-        "--tail",
-        "--last",
-        metavar="NUM",
-        help="Show the last NUM matching messages.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
+    quality_group.add_argument(
         "--max-words",
         metavar="NUM",
         help="Show messages with at most NUM words.",
         type=int,
         default=None,
+    )
+    quality_group.add_argument(
+        "-R",
+        "--reply-to",
+        "--refnum",
+        dest="refnum_filter",
+        help="Show messages that are a reply to specific reference/message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
     quality_group.add_argument(
         "--max-length",
@@ -649,95 +653,6 @@ examples:
         type=int,
         default=None,
     )
-    quality_group.add_argument(
-        "--min-words",
-        metavar="NUM",
-        help="Show messages with at least NUM words.",
-        type=int,
-        default=None,
-    )
-    filter_group.add_argument(
-        "--before",
-        help="Show messages sent on or before this date (YYYY-MM-DD).",
-        default=None,
-    )
-    filter_group.add_argument(
-        "-N",
-        "--msgnum",
-        dest="msgnum_filter",
-        help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
-    )
-    filter_group.add_argument(
-        "-R",
-        "--reply-to",
-        "--refnum",
-        dest="refnum_filter",
-        help="Show messages that are a reply to specific reference/message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
-    )
-    quality_group.add_argument(
-        "--max-words",
-        metavar="NUM",
-        help="Show messages with at most NUM words.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--min-attachments",
-        metavar="NUM",
-        help="Show messages with at least NUM attachments.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--max-attachments",
-        metavar="NUM",
-        help="Show messages with at most NUM attachments.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--min-depth",
-        metavar="NUM",
-        help="Show messages with a thread depth of at least NUM.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--max-depth",
-        metavar="NUM",
-        help="Show messages with a thread depth of at most NUM.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--limit-per-bbs",
-        metavar="NUM",
-        help="Limit the number of matching messages per BBS.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--limit-per-author",
-        metavar="NUM",
-        help="Limit the number of matching messages per author.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--limit-per-subject",
-        metavar="NUM",
-        help="Limit the number of matching messages per subject.",
-        type=int,
-        default=None,
-    )
-    quality_group.add_argument(
-        "--limit-per-conf",
-        metavar="NUM",
-        help="Limit the number of matching messages per conference.",
-        type=int,
-        default=None,
-    )
-
     sorting_limit_group = parser.add_argument_group("Sorting & Result Limits")
     sorting_limit_group.add_argument(
         "-O",
@@ -1099,6 +1014,7 @@ examples:
         max_replies=getattr(args, "max_replies", None),
         min_thread_size=getattr(args, "min_thread_size", None),
         max_thread_size=getattr(args, "max_thread_size", None),
+        attachment_pattern=getattr(args, "attachment_pattern", None),
     )
 
     if getattr(args, "validate", False):

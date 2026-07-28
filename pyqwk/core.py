@@ -614,6 +614,7 @@ class ProcessingSettings:
     min_thread_size: int | None = None
     max_thread_size: int | None = None
     refnum_filters: set[int] | None = None
+    attachment_pattern: str | None = None
 
 
 @dataclass
@@ -2819,11 +2820,32 @@ def matches_filters(
                 return False
 
     # 9. Attachment Filter
-    if settings.has_attachments or settings.extract_attachments:
+    if settings.has_attachments or settings.extract_attachments or settings.attachment_pattern:
         message.discover_attachments()
 
-        if settings.has_attachments and not message.attachments:
+        if (settings.has_attachments or settings.attachment_pattern) and not message.attachments:
             return False
+
+        if settings.attachment_pattern and message.attachments:
+            import fnmatch
+            pattern = settings.attachment_pattern.lower()
+            any_match = False
+            for filename in message.attachments:
+                fname = filename.lower()
+                # 1. Direct glob match
+                if fnmatch.fnmatch(fname, pattern):
+                    any_match = True
+                    break
+                # 2. Glob match with wildcards added if not present (e.g. "zip" -> "*zip*")
+                if fnmatch.fnmatch(fname, f"*{pattern}*"):
+                    any_match = True
+                    break
+                # 3. Simple substring fallback
+                if pattern in fname:
+                    any_match = True
+                    break
+            if not any_match:
+                return False
 
     # 9b. Links Filter
     if settings.has_links:
@@ -3445,6 +3467,21 @@ def process_merged_files(
         if settings.extract_attachments and parsed_message.text:
             # Re-scan to get binary data for extraction
             found_attachments = extract_binaries(parsed_message.text)
+
+            if settings.attachment_pattern and found_attachments:
+                import fnmatch
+                pattern = settings.attachment_pattern.lower()
+                filtered = []
+                for fname, fdata in found_attachments:
+                    fn_low = fname.lower()
+                    matched = (
+                        fnmatch.fnmatch(fn_low, pattern)
+                        or fnmatch.fnmatch(fn_low, f"*{pattern}*")
+                        or pattern in fn_low
+                    )
+                    if matched:
+                        filtered.append((fname, fdata))
+                found_attachments = filtered
 
             if found_attachments:
                 nonlocal total_attachments
