@@ -82,6 +82,7 @@ class QwkGuiApp:
             "From": "From",
             "To": "To",
             "Date": "Date",
+            "Replies": "Replies",
             "Size": "Size",
             "Words": "Words",
             "Conference": "Conference",
@@ -1279,6 +1280,7 @@ class QwkGuiApp:
                 "From",
                 "To",
                 "Date",
+                "Replies",
                 "Size",
                 "Words",
                 "Conference",
@@ -1299,6 +1301,9 @@ class QwkGuiApp:
         self.message_list.column("From", minwidth=80, width=150)
         self.message_list.column("To", minwidth=80, width=150)
         self.message_list.column("Date", minwidth=80, width=120)
+        self.message_list.column(
+            "Replies", minwidth=60, width=60, stretch=False, anchor=tk.E
+        )
         self.message_list.column(
             "Size", minwidth=70, width=70, stretch=False, anchor=tk.E
         )
@@ -2220,6 +2225,7 @@ class QwkGuiApp:
                         msg_from,
                         msg_to,
                         f"{header.msgdate} {header.msgtime}",
+                        message.reply_count if message.reply_count > 0 else "",
                         format_size(len(message.text)) if message.text else "0 B",
                         len(message.text.split()) if message.text else 0,
                         conf_name,
@@ -3024,6 +3030,8 @@ class QwkGuiApp:
                         return len(msg.text.split()) if msg.text else 0
                     elif col == "Date":
                         return _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+                    elif col == "Replies":
+                        return msg.reply_count
                     elif col == "From":
                         return msg.header.msgfrom.lower()
                     elif col == "To":
@@ -3048,7 +3056,7 @@ class QwkGuiApp:
                     if col != "#0"
                     else self.message_list.item(iid, "text")
                 )
-                if col == "Num":
+                if col == "Num" or col == "Replies":
                     return int(val) if val and str(val).isdigit() else 0
                 elif col == "Size":
                     try:

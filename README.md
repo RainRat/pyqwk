@@ -381,6 +381,15 @@ qwk archive.qwk --threaded --max-depth 0
 qwk archive.qwk --threaded --min-depth 2
 ```
 
+**Filter by Engagement:**
+```bash
+# Show messages with at least 5 direct replies
+qwk archive.qwk --min-replies 5
+
+# Show messages from large conversations (at least 20 messages)
+qwk archive.qwk --min-thread-size 20
+```
+
 **Filter by Message Number:**
 ```bash
 qwk archive.qwk --msgnum 100-200
@@ -500,6 +509,10 @@ for msg in messages:
 | `--max-attachments` | Show messages with at most NUM attachments. |
 | `--min-depth` | Show messages with a thread depth of at least NUM. |
 | `--max-depth` | Show messages with a thread depth of at most NUM. |
+| `--min-replies` | Show messages with at least NUM direct replies. |
+| `--max-replies` | Show messages with at most NUM direct replies. |
+| `--min-thread-size` | Show messages belonging to a conversation with at least NUM messages. |
+| `--max-thread-size` | Show messages belonging to a conversation with at most NUM messages. |
 | `--toc` | Add a table of contents to the output. |
 | `-1, --oneline` | Show a one-line summary (Conf, Date, From, To, Flags, Subject). Use with --verbose to include the message number. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
@@ -571,6 +584,8 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 | `{size}` | The readable size of the message (e.g., `1.2 KB`). |
 | `{flags}` | Short indicators (e.g., `*` for private, `@` for attachments). |
 | `{indent}` | Spaces and symbols used for organizing conversations on the screen. |
+| `{reply_count}` | The number of direct replies to this message. |
+| `{thread_size}` | The total number of messages in this conversation. |
 
 ### Attachments
 | Variable | Description |

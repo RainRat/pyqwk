@@ -82,7 +82,7 @@ def main() -> None:
         "  Technical Details:\n"
         "    {msgid}, {refnum}, {status}, {msgflag}, {is_private}, {is_reply},\n"
         "    {length}, {word_count}, {size}, {flags}, {indent}, {thread_id},\n"
-        "    {parent_msgnum}, {depth}\n"
+        "    {parent_msgnum}, {depth}, {reply_count}, {thread_size}\n"
         "  Attachments:\n"
         "    {attachments}, {attachment_count}"
     )
@@ -539,6 +539,98 @@ examples:
         type=int,
         default=None,
     )
+    filter_group.add_argument(
+        "--min-replies",
+        metavar="NUM",
+        help="Show messages with at least NUM direct replies.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--min-thread-size",
+        metavar="NUM",
+        help="Show messages belonging to a conversation with at least NUM messages.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--limit-per-bbs",
+        metavar="NUM",
+        help="Limit the number of matching messages per BBS.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-replies",
+        metavar="NUM",
+        help="Show messages with at most NUM direct replies.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-thread-size",
+        metavar="NUM",
+        help="Show messages belonging to a conversation with at most NUM messages.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--limit-per-author",
+        metavar="NUM",
+        help="Limit the number of matching messages per author.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--limit-per-subject",
+        metavar="NUM",
+        help="Limit the number of matching messages per subject.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--limit-per-conf",
+        metavar="NUM",
+        help="Limit the number of matching messages per conference.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--min-attachments",
+        metavar="NUM",
+        help="Show messages with at least NUM attachments.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--min-words",
+        metavar="NUM",
+        help="Show messages with at least NUM words.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-attachments",
+        metavar="NUM",
+        help="Show messages with at most NUM attachments.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--tail",
+        "--last",
+        metavar="NUM",
+        help="Show the last NUM matching messages.",
+        type=int,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--max-words",
+        metavar="NUM",
+        help="Show messages with at most NUM words.",
+        type=int,
+        default=None,
+    )
     quality_group.add_argument(
         "--max-length",
         metavar="NUM",
@@ -621,7 +713,7 @@ examples:
     sorting_limit_group.add_argument(
         "-O",
         "--sort",
-        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments).",
+        help="Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, attachments, replies, or thread_size).",
         choices=[
             "date",
             "author",
@@ -635,6 +727,8 @@ examples:
             "random",
             "words",
             "attachments",
+            "replies",
+            "thread_size",
         ],
         default=None,
     )
@@ -952,6 +1046,10 @@ examples:
         max_attachments=getattr(args, "max_attachments", None),
         min_depth=getattr(args, "min_depth", None),
         max_depth=getattr(args, "max_depth", None),
+        min_replies=getattr(args, "min_replies", None),
+        max_replies=getattr(args, "max_replies", None),
+        min_thread_size=getattr(args, "min_thread_size", None),
+        max_thread_size=getattr(args, "max_thread_size", None),
     )
 
     if args.organize_by_bbs and not args.output_path:
