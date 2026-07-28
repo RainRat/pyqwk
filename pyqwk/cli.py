@@ -898,6 +898,10 @@ examples:
         )
         sys.exit(1)
 
+    is_archive_out = False
+    if output_path:
+        is_archive_out = output_path.lower().endswith((".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz"))
+
     if args.organize_by_bbs:
         output_mode = "file"
         resolved_output_path = None
@@ -915,7 +919,7 @@ examples:
                 parser.error(
                     "You must provide an output folder when saving messages as individual files."
                 )
-        if os.path.exists(output_path) and not os.path.isdir(output_path):
+        if os.path.exists(output_path) and not os.path.isdir(output_path) and not is_archive_out:
             parser.error(
                 "The output path must be a folder when saving messages as individual files."
             )
@@ -959,6 +963,7 @@ examples:
             output_path
             and os.path.exists(output_path)
             and not os.path.isdir(output_path)
+            and not is_archive_out
         ):
             parser.error(
                 f"The output path must be a folder when saving messages in {output_format.upper()} format."
