@@ -1268,7 +1268,7 @@ def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
                 msg_date = dt.strftime("%m-%d-%y")
                 msg_time = dt.strftime("%H:%M")
             except (ValueError, TypeError):
-                pass
+                logging.getLogger("pyqwk.core").warning("Failed to parse RSS pubDate: %r", pub_date_str)
 
         # Parse GUID: {confnum}.{msgnum}@qwk
         confnum = 0
