@@ -613,6 +613,7 @@ class ProcessingSettings:
     max_replies: int | None = None
     min_thread_size: int | None = None
     max_thread_size: int | None = None
+    refnum_filters: set[int] | None = None
 
 
 @dataclass
@@ -2777,6 +2778,11 @@ def matches_filters(
     # 3. Message Number Filter
     if settings.msgnum_filters:
         if message.msgnum is None or message.msgnum not in settings.msgnum_filters:
+            return False
+
+    # 3b. Reference Number Filter (Reply-to / Refnum)
+    if settings.refnum_filters:
+        if message.refnum is None or message.refnum not in settings.refnum_filters:
             return False
 
     # 4. Author Filter
