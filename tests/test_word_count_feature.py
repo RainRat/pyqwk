@@ -134,7 +134,7 @@ def test_gui_word_count_display():
             _, kwargs = call
             values = kwargs.get('values', [])
             # index of Words is 6
-            if len(values) > 6 and values[6] == 3:
+            if len(values) > 7 and values[7] == 3:
                 found_words = True
                 break
 

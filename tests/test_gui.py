@@ -172,6 +172,7 @@ class TestQwkGui:
                     "User",
                     "All",
                     "01-01-90 12:00",
+                    "",
                     "14 B",
                     2,
                     "General",

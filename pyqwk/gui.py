@@ -2251,7 +2251,7 @@ class QwkGuiApp:
                         msg_from,
                         msg_to,
                         f"{header.msgdate} {header.msgtime}",
-                        message.reply_count if message.reply_count > 0 else "",
+                        getattr(message, "reply_count", 0) if getattr(message, "reply_count", 0) > 0 else "",
                         format_size(len(message.text)) if message.text else "0 B",
                         len(message.text.split()) if message.text else 0,
                         conf_name,
