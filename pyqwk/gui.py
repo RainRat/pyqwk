@@ -69,6 +69,7 @@ class QwkGuiApp:
         self.board_dict: dict[int, str] = {}
         self.current_paths: list[str] = []
         self._cache = {}
+        self._history_stack: list[tuple[int, int]] = []
         self.conf_mapping = {}
         self.bbs_mapping = {}
         self._search_matches = []
@@ -733,6 +734,12 @@ class QwkGuiApp:
 
         edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(
+            label="Go Back",
+            command=self.go_back,
+            accelerator="Alt+Left",
+        )
+        edit_menu.add_separator()
+        edit_menu.add_command(
             label="Find...",
             command=self._focus_search,
             accelerator="Ctrl+F",
@@ -777,6 +784,7 @@ class QwkGuiApp:
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-f>", self._focus_search)
+        self.root.bind("<Alt-Left>", self.go_back)
         self.root.bind("<Control-e>", self._focus_exclude)
         self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
@@ -1079,6 +1087,14 @@ class QwkGuiApp:
 
         nav_frame = ttk.Labelframe(row1, text="Navigation", padding=(5, 5))
         nav_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+        self.back_btn = ttk.Button(
+            nav_frame,
+            text="Back",
+            width=8,
+            command=self.go_back,
+            state=tk.DISABLED,
+        )
+        self.back_btn.pack(side=tk.LEFT, padx=2)
         ttk.Button(
             nav_frame,
             text="Prev",
@@ -1989,10 +2005,14 @@ class QwkGuiApp:
                 if self._cache.get("path") != path:
                     self.conf_mapping = {}
                     self.conf_combo.set("All Conferences")
+                    self._history_stack = []
+                    self._update_back_button_state()
             else:
                 self.conf_mapping = {}
                 self.conf_combo.set("All Conferences")
                 self._cache = {}
+                self._history_stack = []
+                self._update_back_button_state()
 
             settings = self._current_settings()
 
@@ -2536,6 +2556,7 @@ class QwkGuiApp:
 
         idx = self._find_message_index(msgnum)
         if idx is not None:
+            self._push_current_to_history()
             self._select_by_index(idx)
             return
 
@@ -2548,6 +2569,7 @@ class QwkGuiApp:
                 self.clear_filters()
                 idx = self._find_message_index(msgnum)
                 if idx is not None:
+                    self._push_current_to_history()
                     self._select_by_index(idx)
                     return
 
@@ -2603,10 +2625,63 @@ class QwkGuiApp:
 
         self.jump_to_message(msg.confnum, msg.refnum)
 
+    def _push_current_to_history(self) -> None:
+        """Push the currently selected message's (confnum, msgnum) onto the history stack."""
+        current_selection = self.message_list.selection()
+        if current_selection:
+            try:
+                idx = int(current_selection[0])
+                msg = self.messages[idx]
+                if msg.header.msgnum is not None:
+                    self._history_stack.append((msg.header.confnum, msg.header.msgnum))
+                    self._update_back_button_state()
+            except (ValueError, IndexError):
+                pass
+
+    def _update_back_button_state(self) -> None:
+        """Update the state of the back button based on whether the history stack is empty."""
+        if hasattr(self, "back_btn"):
+            if self._history_stack:
+                self.back_btn.config(state=tk.NORMAL)
+            else:
+                self.back_btn.config(state=tk.DISABLED)
+
+    def go_back(self, _event: object | None = None) -> None:
+        """Go back to the previous message in the history stack."""
+        if not self._history_stack:
+            return
+
+        confnum, msgnum = self._history_stack.pop()
+        self._update_back_button_state()
+
+        # Find the message index
+        idx = self._find_message_index(msgnum, confnum)
+        if idx is not None:
+            self._select_by_index(idx)
+            return
+
+        if self._is_any_filter_active():
+            if messagebox.askyesno(
+                "Not Found",
+                f"Historical message #{msgnum} was not found in the current view. "
+                "Would you like to reset all filters to find it?",
+            ):
+                self.clear_filters()
+                idx = self._find_message_index(msgnum, confnum)
+                if idx is not None:
+                    self._select_by_index(idx)
+                    return
+
+        messagebox.showinfo(
+            "Not Found",
+            f"Historical message #{msgnum} was not found in the current view.",
+        )
+
     def jump_to_message(self, confnum: int, msgnum: int) -> None:
         """Find and select a message by conference and message number."""
         idx = self._find_message_index(msgnum, confnum)
         if idx is not None:
+            self._push_current_to_history()
             self._select_by_index(idx)
             return
 
@@ -2619,6 +2694,7 @@ class QwkGuiApp:
                 self.clear_filters()
                 idx = self._find_message_index(msgnum, confnum)
                 if idx is not None:
+                    self._push_current_to_history()
                     self._select_by_index(idx)
                     return
 
