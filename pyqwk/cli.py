@@ -3,12 +3,15 @@ import logging
 import os
 import sys
 import datetime
+import tempfile
 
 from pyqwk.core import (
+    FORMAT_EXTENSIONS,
     LogFormatter,
     PROCESSING_EXCEPTIONS,
     ProcessingSettings,
     __version__,
+    detect_extension,
     expand_paths,
     process_merged_files,
     process_multiple_files,
@@ -830,6 +833,30 @@ examples:
     logging.basicConfig(level=numeric_level, handlers=[handler])
 
     logger = logging.getLogger(__name__)
+
+    temp_files_to_clean = []
+    if "-" in args.input_paths:
+        try:
+            stdin_bytes = sys.stdin.buffer.read()
+        except Exception as e:
+            parser.error(f"Failed to read from standard input: {e}")
+
+        detected_ext = detect_extension(stdin_bytes, getattr(args, "format", None))
+        with tempfile.NamedTemporaryFile(suffix=detected_ext, delete=False) as tmp_file:
+            tmp_file.write(stdin_bytes)
+            temp_filename = tmp_file.name
+
+        temp_files_to_clean.append(temp_filename)
+        import atexit
+        def cleanup_temp_files():
+            for f in temp_files_to_clean:
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+        atexit.register(cleanup_temp_files)
+
+        args.input_paths = [temp_filename if p == "-" else p for p in args.input_paths]
 
     has_directory_input = any(os.path.isdir(p) for p in args.input_paths)
     input_paths = expand_paths(args.input_paths)

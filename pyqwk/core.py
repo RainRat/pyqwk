@@ -115,6 +115,79 @@ FORMAT_EXTENSIONS = {
 }
 
 
+def detect_extension(stdin_bytes: bytes, format_arg: str | None = None) -> str:
+    """Detect the appropriate file extension for standard input bytes.
+
+    Args:
+        stdin_bytes: The bytes read from standard input.
+        format_arg: The explicitly specified format argument (if any).
+
+    Returns:
+        The matched extension (including the dot, e.g., '.json').
+    """
+    if format_arg:
+        return FORMAT_EXTENSIONS.get(format_arg.lower(), ".txt")
+
+    stripped = stdin_bytes.lstrip()
+    if not stripped:
+        return ".txt"
+
+    if stripped.startswith(b"PK\x03\x04"):
+        return ".zip"
+
+    if stripped.startswith(b"\x1f\x8b\x08") or stripped.startswith(b"BZh"):
+        return ".tar.gz" if stripped.startswith(b"\x1f\x8b\x08") else ".tar.bz2"
+
+    if len(stripped) >= 262 and stripped[257:262] == b"ustar":
+        return ".tar"
+
+    if stripped.startswith(b"{"):
+        try:
+            import json
+            json.loads(stripped.decode("utf-8", errors="ignore"))
+            return ".json"
+        except Exception:
+            first_line = stripped.split(b"\n", 1)[0].strip()
+            try:
+                import json
+                json.loads(first_line.decode("utf-8", errors="ignore"))
+                return ".jsonl"
+            except Exception:
+                pass
+            return ".jsonl" if b"\n" in stripped else ".json"
+
+    if stripped.startswith(b"["):
+        return ".json"
+
+    if stripped.startswith(b"<"):
+        lower_strip = stripped[:1000].lower()
+        if b"<rss" in lower_strip or b"<feed" in lower_strip:
+            return ".rss"
+        elif b"html" in lower_strip or b"<!doctype" in lower_strip:
+            return ".html"
+        else:
+            return ".xml"
+
+    if stripped.startswith(b"From "):
+        return ".mbox"
+
+    lines_to_check = [line.strip().lower() for line in stripped[:1000].split(b"\n") if line.strip()]
+    has_eml_header = any(
+        line.startswith((b"subject:", b"date:", b"from:", b"to:", b"message-id:"))
+        for line in lines_to_check
+    )
+    if has_eml_header:
+        return ".eml"
+
+    if b"," in stripped.split(b"\n", 1)[0]:
+        return ".csv"
+
+    if stripped.startswith(b"# ") or b"](" in stripped[:500]:
+        return ".md"
+
+    return ".txt"
+
+
 def resolve_output_format(
     output_format: str | None,
     output_path: str | None,

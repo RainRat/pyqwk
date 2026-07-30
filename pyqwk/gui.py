@@ -1,4 +1,6 @@
 import argparse
+import sys
+import tempfile
 import datetime
 import random
 import hashlib
@@ -31,6 +33,7 @@ from pyqwk.core import (
     render_stats_as_text,  # noqa: F401
     __version__,
     expand_paths,
+    detect_extension,
     ConferenceMap,
     _normalize_subject,
     _discover_entities,
@@ -3168,6 +3171,30 @@ examples:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+
+    temp_files_to_clean = []
+    if "-" in args.paths:
+        try:
+            stdin_bytes = sys.stdin.buffer.read()
+        except Exception as e:
+            parser.error(f"Failed to read from standard input: {e}")
+
+        detected_ext = detect_extension(stdin_bytes)
+        with tempfile.NamedTemporaryFile(suffix=detected_ext, delete=False) as tmp_file:
+            tmp_file.write(stdin_bytes)
+            temp_filename = tmp_file.name
+
+        temp_files_to_clean.append(temp_filename)
+        import atexit
+        def cleanup_temp_files():
+            for f in temp_files_to_clean:
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+        atexit.register(cleanup_temp_files)
+
+        args.paths = [temp_filename if p == "-" else p for p in args.paths]
 
     input_paths = expand_paths(args.paths)
 
