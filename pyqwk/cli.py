@@ -128,6 +128,7 @@ examples:
         help=(
             "Path to archives, folders, or compressed files (ZIP/TAR).\n"
             "Supports QWK, JSON, SQLite, EML, and many other formats.\n"
+            "Use '-' to read from standard input (piped bytes).\n"
             "Multiple archives are automatically merged."
         ),
         nargs="+",
@@ -853,7 +854,11 @@ examples:
         resolved_output_path = None
     elif args.individualfiles:
         if output_path is None:
-            if len(args.input_paths) == 1 and not has_directory_input:
+            if len(args.input_paths) == 1 and args.input_paths[0] == "-":
+                parser.error(
+                    "Please specify an output folder using the -o or --output option when saving messages as individual files from standard input."
+                )
+            elif len(args.input_paths) == 1 and not has_directory_input:
                 output_path = os.path.splitext(os.path.basename(args.input_paths[0]))[0]
                 logger.info(
                     "No output path provided. Using default folder: %s/", output_path

@@ -1,4 +1,5 @@
 import sys
+import atexit
 import zipfile
 import tarfile
 import subprocess
@@ -36,6 +37,104 @@ MESSAGES_FILENAME = "messages.dat"
 REPLY_FILENAME = "reply.dat"
 CONTROL_FILENAME = "control.dat"
 
+_temp_files = []
+
+
+def _cleanup_temp_files():
+    for p in _temp_files:
+        try:
+            if os.path.exists(p):
+                if os.path.isdir(p):
+                    shutil.rmtree(p)
+                else:
+                    os.remove(p)
+        except Exception:
+            pass
+
+
+atexit.register(_cleanup_temp_files)
+
+
+def detect_extension(data: bytes) -> str:
+    """Auto-detect the format of piped standard input bytes and return its extension."""
+    if not data:
+        return ".txt"
+
+    # 1. Binary Formats
+    if data.startswith(b"PK\x03\x04"):
+        return ".zip"
+    if data.startswith(b"SQLite format 3\x00"):
+        return ".db"
+    if len(data) >= 262 and data[257:262] == b"ustar":
+        return ".tar"
+
+    # Check if QWK/REP raw messages.dat (starts with "Produced ")
+    if data.startswith(b"Produced "):
+        return ".dat"
+
+    # 2. Text Formats (decode first to inspect)
+    try:
+        text = data.decode("utf-8", errors="ignore").strip()
+    except Exception:
+        text = ""
+
+    if not text:
+        return ".txt"
+
+    # Check JSON / JSONL
+    if (text.startswith("{") and text.endswith("}")) or (text.startswith("[") and text.endswith("]")):
+        try:
+            json.loads(text)
+            return ".json"
+        except Exception:
+            pass
+
+    # Check JSONL
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    if lines:
+        is_jsonl = True
+        for line in lines[:5]:
+            if not (line.startswith("{") and line.endswith("}")):
+                is_jsonl = False
+                break
+            try:
+                json.loads(line)
+            except Exception:
+                is_jsonl = False
+                break
+        if is_jsonl:
+            return ".jsonl"
+
+    # Check XML / RSS
+    if text.startswith("<?xml") or "<rss" in text.lower() or "<message" in text.lower():
+        return ".xml"
+
+    # Check HTML
+    if text.startswith("<!DOCTYPE html") or "<html" in text.lower() or '<div class="message"' in text.lower():
+        return ".html"
+
+    # Check mbox
+    if text.startswith("From ") or "\nFrom " in text:
+        return ".mbox"
+
+    # Check EML
+    has_eml_headers = False
+    lower_lines = [l.lower() for l in text.splitlines()[:10]]
+    if any(l.startswith("from:") for l in lower_lines) and any(l.startswith("to:") for l in lower_lines) and any(l.startswith("subject:") for l in lower_lines):
+        return ".eml"
+
+    # Check CSV
+    if "," in lines[0]:
+        headers = [h.strip().lower() for h in lines[0].split(",")]
+        if any(h in headers for h in ("msgfrom", "msgto", "msgsubject", "author", "recipient", "subject", "conference_number")):
+            return ".csv"
+
+    # Check Markdown
+    if text.startswith("# ") or text.startswith("## ") or "\n## " in text or "\n- **Date:**" in text:
+        return ".md"
+
+    return ".txt"
+
 
 def _is_maildir(path: str) -> bool:
     """Check if a directory is a valid Maildir."""
@@ -53,6 +152,9 @@ def expand_paths(paths: list[str]) -> list[str]:
     """Recursively find supported QWK files in directories."""
     expanded_paths = []
     for path in paths:
+        if path == "-":
+            expanded_paths.append("-")
+            continue
         if os.path.isdir(path):
             if _is_maildir(path):
                 expanded_paths.append(path)
@@ -2041,6 +2143,34 @@ def load_data(
         for a corresponding 'CONTROL.DAT' in the same folder to load conference names.
     """
     board_dict = ConferenceMap()
+
+    if input_path == "-":
+        if sys.stdin.isatty():
+            raise ValueError("Standard input is an interactive terminal (no piped data).")
+        try:
+            data = sys.stdin.buffer.read()
+        except Exception as e:
+            raise ValueError(f"Failed to read from standard input: {e}")
+
+        if not data:
+            raise ValueError("Standard input is empty.")
+
+        ext = detect_extension(data)
+
+        if ext == ".dat":
+            temp_dir = tempfile.mkdtemp()
+            _temp_files.append(temp_dir)
+            temp_file_path = os.path.join(temp_dir, MESSAGES_FILENAME)
+        else:
+            fd, temp_file_path = tempfile.mkstemp(suffix=ext)
+            os.close(fd)
+
+        _temp_files.append(temp_file_path)
+
+        with open(temp_file_path, "wb") as f:
+            f.write(data)
+
+        return load_data(temp_file_path, logger, encoding)
 
     if input_path.lower().endswith((".db", ".sqlite")) or input_path == ":memory:":
         try:
@@ -7242,6 +7372,39 @@ def validate_archive(
         "errors": [],
         "warnings": []
     }
+
+    if input_path == "-":
+        if sys.stdin.isatty():
+            result["valid"] = False
+            result["errors"].append("Standard input is an interactive terminal (no piped data).")
+            return result
+        try:
+            data = sys.stdin.buffer.read()
+        except Exception as e:
+            result["valid"] = False
+            result["errors"].append(f"Failed to read from standard input: {e}")
+            return result
+
+        if not data:
+            result["valid"] = False
+            result["errors"].append("Standard input is empty.")
+            return result
+
+        ext = detect_extension(data)
+        if ext == ".dat":
+            temp_dir = tempfile.mkdtemp()
+            _temp_files.append(temp_dir)
+            temp_file_path = os.path.join(temp_dir, MESSAGES_FILENAME)
+        else:
+            fd, temp_file_path = tempfile.mkstemp(suffix=ext)
+            os.close(fd)
+
+        _temp_files.append(temp_file_path)
+
+        with open(temp_file_path, "wb") as f:
+            f.write(data)
+
+        return validate_archive(temp_file_path, logger, encoding)
 
     if not os.path.exists(input_path):
         result["valid"] = False
