@@ -14,6 +14,7 @@ from pyqwk.core import (
     process_merged_files,
     calculate_archive_stats,
     _get_message_mapping,
+    matches_filters,
 )
 from pyqwk.gui import QwkGuiApp
 
@@ -186,3 +187,63 @@ def test_gui_replies_column(mock_load, mock_open, tmp_path):
         pass
     finally:
         root.destroy()
+
+
+def test_engagement_filters_max_limits(tmp_path):
+    m1 = create_msg(1, 0)
+    m2 = create_msg(2, 1)
+    m3 = create_msg(3, 2)
+    m4 = create_msg(4, 1)
+    m5 = create_msg(5, 0)
+
+    archive = tmp_path / "test_max.json"
+    data = [
+        {"header": m.header.as_dict, "text": m.text, "confnum": m.confnum}
+        for m in [m1, m2, m3, m4, m5]
+    ]
+    archive.write_text(json.dumps(data))
+
+    logger = logging.getLogger("test")
+
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="json", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", max_replies=1, quiet=True
+    )
+
+    with patch("sys.stdout", new=io.StringIO()) as fake_out:
+        process_merged_files([str(archive)], settings, logger)
+        result = json.loads(fake_out.getvalue())
+        assert len(result) == 4
+        nums = {r["header"]["msgnum"] for r in result}
+        assert nums == {2, 3, 4, 5}
+
+    settings = replace(settings, max_replies=None, max_thread_size=2)
+    with patch("sys.stdout", new=io.StringIO()) as fake_out:
+        process_merged_files([str(archive)], settings, logger)
+        result = json.loads(fake_out.getvalue())
+        assert len(result) == 1
+        assert result[0]["header"]["msgnum"] == 5
+
+
+def test_matches_filters_max_replies_and_thread_size():
+    m = create_msg(1, 0)
+    m.reply_count = 5
+    m.thread_size = 10
+
+    settings_max_replies = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", max_replies=4, quiet=True
+    )
+    assert not matches_filters(m, settings_max_replies, {1})
+
+    settings_max_thread_size = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="text", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", max_thread_size=9, quiet=True
+    )
+    assert not matches_filters(m, settings_max_thread_size, {1})
