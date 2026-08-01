@@ -729,7 +729,7 @@ class QwkGuiApp:
         )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
-        menubar.add_cascade(label="File", menu=file_menu)
+        menubar.add_cascade(label="File", menu=file_menu, underline=0)
 
         edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(
@@ -770,7 +770,43 @@ class QwkGuiApp:
             command=self.clear_filters,
             accelerator="Ctrl+Shift+X",
         )
-        menubar.add_cascade(label="Edit", menu=edit_menu)
+        menubar.add_cascade(label="Edit", menu=edit_menu, underline=0)
+
+        view_menu = tk.Menu(menubar, tearoff=0)
+        view_menu.add_checkbutton(
+            label="Conversations (Threaded)",
+            variable=self.threaded_var,
+            command=self.reload_messages,
+            accelerator="Ctrl+T",
+        )
+        view_menu.add_checkbutton(
+            label="Clean View",
+            variable=self.clean_var,
+            command=self.reload_messages,
+            accelerator="C",
+        )
+        view_menu.add_checkbutton(
+            label="Wrap Text",
+            variable=self.wrap_var,
+            command=self._update_wrap,
+            accelerator="Ctrl+W",
+        )
+        view_menu.add_checkbutton(
+            label="Remove Colors",
+            variable=self.ansi_var,
+            command=self.reload_messages,
+        )
+        view_menu.add_checkbutton(
+            label="Hide Personal Info",
+            variable=self.redact_pii_var,
+            command=self.reload_messages,
+        )
+        view_menu.add_checkbutton(
+            label="Embed Attachments",
+            variable=self.embed_attach_var,
+            command=self.reload_messages,
+        )
+        menubar.add_cascade(label="View", menu=view_menu, underline=0)
 
         self.root.config(menu=menubar)
 
@@ -803,6 +839,12 @@ class QwkGuiApp:
         self.root.bind("}", lambda e: self._navigate_bbs(1))
         self.root.bind("/", self._focus_search)
         self.root.bind("r", self._select_random_message)
+        self.root.bind("<Control-t>", self._toggle_threaded)
+        self.root.bind("<Control-T>", self._toggle_threaded)
+        self.root.bind("<Control-w>", self._toggle_wrap)
+        self.root.bind("<Control-W>", self._toggle_wrap)
+        self.root.bind("c", self._toggle_clean)
+        self.root.bind("C", self._toggle_clean)
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -1040,6 +1082,48 @@ class QwkGuiApp:
         else:
             self.detail_text.config(wrap=tk.NONE)
             self.detail_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+    def _toggle_threaded(self, _event: object = None) -> str | None:
+        """Toggle conversations view if a text entry or text area is not focused."""
+        focus = self.root.focus_get()
+        if focus is not None:
+            try:
+                cls_name = focus.winfo_class()
+            except Exception:
+                cls_name = type(focus).__name__
+            if cls_name in ("Entry", "TEntry", "Text"):
+                return None
+        self.threaded_var.set(not self.threaded_var.get())
+        self.reload_messages()
+        return "break"
+
+    def _toggle_wrap(self, _event: object = None) -> str | None:
+        """Toggle text wrapping if a text entry or text area is not focused."""
+        focus = self.root.focus_get()
+        if focus is not None:
+            try:
+                cls_name = focus.winfo_class()
+            except Exception:
+                cls_name = type(focus).__name__
+            if cls_name in ("Entry", "TEntry", "Text"):
+                return None
+        self.wrap_var.set(not self.wrap_var.get())
+        self._update_wrap()
+        return "break"
+
+    def _toggle_clean(self, _event: object = None) -> str | None:
+        """Toggle clean view if a text entry or text area is not focused."""
+        focus = self.root.focus_get()
+        if focus is not None:
+            try:
+                cls_name = focus.winfo_class()
+            except Exception:
+                cls_name = type(focus).__name__
+            if cls_name in ("Entry", "TEntry", "Text"):
+                return None
+        self.clean_var.set(not self.clean_var.get())
+        self.reload_messages()
+        return "break"
 
     def _build_status_bar(self) -> None:
         status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
