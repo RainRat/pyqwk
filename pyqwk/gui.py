@@ -510,7 +510,7 @@ class QwkGuiApp:
 
         # Allow common Control key shortcuts to propagate to root bindings
         if event.state & 0x4:  # Control mask
-            if event.keysym.lower() in ("c", "a", "f", "g", "o", "s", "i", "q"):
+            if event.keysym.lower() in ("c", "a", "f", "g", "o", "s", "i", "q", "w", "t"):
                 return None
 
         # Handle message navigation shortcuts
@@ -523,6 +523,15 @@ class QwkGuiApp:
             return "break"
         if key == "r":
             self._select_random_message()
+            return "break"
+        if key == "w":
+            self._toggle_wrap()
+            return "break"
+        if key == "t":
+            self._toggle_conversations()
+            return "break"
+        if key == "c":
+            self._toggle_clean_view()
             return "break"
         if key == "slash" or event.char == "/":
             self._focus_search()
@@ -618,6 +627,14 @@ class QwkGuiApp:
                     ("R", "Random Message"),
                     ("[ / ]", "Prev / Next Conference"),
                     ("{ / }", "Prev / Next BBS"),
+                ],
+            ),
+            (
+                "Display & Layout",
+                [
+                    ("Ctrl + W / W", "Toggle Text Wrapping"),
+                    ("Ctrl + T / T", "Toggle Threaded Conversations"),
+                    ("C", "Toggle Clean View"),
                 ],
             ),
         ]
@@ -729,7 +746,7 @@ class QwkGuiApp:
         )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
-        menubar.add_cascade(label="File", menu=file_menu)
+        menubar.add_cascade(label="File", menu=file_menu, underline=0)
 
         edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(
@@ -770,7 +787,43 @@ class QwkGuiApp:
             command=self.clear_filters,
             accelerator="Ctrl+Shift+X",
         )
-        menubar.add_cascade(label="Edit", menu=edit_menu)
+        menubar.add_cascade(label="Edit", menu=edit_menu, underline=0)
+
+        view_menu = tk.Menu(menubar, tearoff=0)
+        view_menu.add_checkbutton(
+            label="Conversations",
+            variable=self.threaded_var,
+            command=self.reload_messages,
+            accelerator="Ctrl+T / T",
+        )
+        view_menu.add_checkbutton(
+            label="Clean View",
+            variable=self.clean_var,
+            command=self.reload_messages,
+            accelerator="C",
+        )
+        view_menu.add_checkbutton(
+            label="Wrap Text",
+            variable=self.wrap_var,
+            command=self._update_wrap,
+            accelerator="Ctrl+W / W",
+        )
+        view_menu.add_checkbutton(
+            label="Remove Colors",
+            variable=self.ansi_var,
+            command=self.reload_messages,
+        )
+        view_menu.add_checkbutton(
+            label="Hide Personal Info",
+            variable=self.redact_pii_var,
+            command=self.reload_messages,
+        )
+        view_menu.add_checkbutton(
+            label="Embed Attachments",
+            variable=self.embed_attach_var,
+            command=self.reload_messages,
+        )
+        menubar.add_cascade(label="View", menu=view_menu, underline=0)
 
         self.root.config(menu=menubar)
 
@@ -803,6 +856,20 @@ class QwkGuiApp:
         self.root.bind("}", lambda e: self._navigate_bbs(1))
         self.root.bind("/", self._focus_search)
         self.root.bind("r", self._select_random_message)
+
+        # Display Toggles (with focus check)
+        self.root.bind("<Control-w>", self._toggle_wrap)
+        self.root.bind("<Control-W>", self._toggle_wrap)
+        self.root.bind("w", self._toggle_wrap)
+        self.root.bind("W", self._toggle_wrap)
+
+        self.root.bind("<Control-t>", self._toggle_conversations)
+        self.root.bind("<Control-T>", self._toggle_conversations)
+        self.root.bind("t", self._toggle_conversations)
+        self.root.bind("T", self._toggle_conversations)
+
+        self.root.bind("c", self._toggle_clean_view)
+        self.root.bind("C", self._toggle_clean_view)
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -991,6 +1058,49 @@ class QwkGuiApp:
     def _focus_exclude(self, _event: object | None = None) -> None:
         """Focus the exclude bar and select all text for quick replacement."""
         self._focus_entry_field("exclude_entry", "exclude_var")
+
+    def _is_focus_in_entry(self) -> bool:
+        """Check if current focus is inside any Entry widget to prevent key hijacking."""
+        focused = self.root.focus_get()
+        # Direct check for search/exclude/limits entries
+        if hasattr(self, "search_entry") and focused == self.search_entry:
+            return True
+        if hasattr(self, "exclude_entry") and focused == self.exclude_entry:
+            return True
+        if hasattr(self, "min_words_entry") and focused == self.min_words_entry:
+            return True
+        if hasattr(self, "max_words_entry") and focused == self.max_words_entry:
+            return True
+        # General type check, protecting against mocks that are not actual types
+        entry_types = []
+        if hasattr(tk, "Entry") and isinstance(tk.Entry, type):
+            entry_types.append(tk.Entry)
+        if hasattr(ttk, "Entry") and isinstance(ttk.Entry, type):
+            entry_types.append(ttk.Entry)
+        if entry_types and isinstance(focused, tuple(entry_types)):
+            return True
+        return False
+
+    def _toggle_wrap(self, _event: object | None = None) -> None:
+        """Toggle text wrapping in detail view unless focus is in an input entry."""
+        if self._is_focus_in_entry():
+            return
+        self.wrap_var.set(not self.wrap_var.get())
+        self._update_wrap()
+
+    def _toggle_conversations(self, _event: object | None = None) -> None:
+        """Toggle threaded conversations unless focus is in an input entry."""
+        if self._is_focus_in_entry():
+            return
+        self.threaded_var.set(not self.threaded_var.get())
+        self.reload_messages()
+
+    def _toggle_clean_view(self, _event: object | None = None) -> None:
+        """Toggle clean view unless focus is in an input entry."""
+        if self._is_focus_in_entry():
+            return
+        self.clean_var.set(not self.clean_var.get())
+        self.reload_messages()
 
     def clear_filters(self, _event: object | None = None) -> None:
         """Reset all filters and search to their default state."""
