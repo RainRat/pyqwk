@@ -688,7 +688,7 @@ We welcome your contributions!
 
 1. Install development tools:
    ```bash
-   pip install -e . pytest pytest-mock pytest-cov
+   python -m pip install -e . pytest pytest-mock pytest-cov
    ```
 2. Run tests:
    ```bash
@@ -701,7 +701,7 @@ If you are running the test suite on a headless Linux system (such as in a CI/CD
 
 1. Install the headless dependencies:
    ```bash
-   pip install mss Pillow
+   python -m pip install mss Pillow
    ```
 2. Run the tests:
    ```bash
