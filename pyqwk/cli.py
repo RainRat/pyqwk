@@ -434,6 +434,11 @@ examples:
         dest="attachment_pattern",
         help="Show only messages with attachments matching a wildcard pattern (e.g., '*.zip', 'image.gif', or 'png').",
     )
+    search_group.add_argument(
+        "--thread-id",
+        dest="thread_id_filter",
+        help="Show only messages belonging to specific conversation thread IDs (the root message number of the thread, e.g., '42', '100-150', or '10,20').",
+    )
 
     exclude_group = parser.add_argument_group("Exclusion Filters")
     exclude_group.add_argument(
@@ -926,6 +931,7 @@ examples:
         before_date = _parse_cli_date(args.before, end_of_day=True)
         msgnum_filters = _parse_msgnum_ranges(args.msgnum_filter)
         refnum_filters = _parse_msgnum_ranges(getattr(args, "refnum_filter", None))
+        thread_id_filters = _parse_msgnum_ranges(getattr(args, "thread_id_filter", None))
     except ValueError as e:
         parser.error(str(e))
 
@@ -956,6 +962,7 @@ examples:
         organize_attachments=args.organize_attachments,
         msgnum_filters=msgnum_filters,
         refnum_filters=refnum_filters,
+        thread_id_filters=thread_id_filters,
         format=output_format,
         separator=args.separator,
         output_mode=output_mode,

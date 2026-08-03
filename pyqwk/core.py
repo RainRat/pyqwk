@@ -614,6 +614,7 @@ class ProcessingSettings:
     min_thread_size: int | None = None
     max_thread_size: int | None = None
     refnum_filters: set[int] | None = None
+    thread_id_filters: set[int] | None = None
     attachment_pattern: str | None = None
 
 
@@ -2914,6 +2915,18 @@ def matches_filters(
     if settings.max_thread_size is not None and message.thread_size > settings.max_thread_size:
         return False
 
+    # 16. Thread ID Filter
+    if settings.thread_id_filters:
+        if message.thread_id is None:
+            return False
+        try:
+            tid_val = int(message.thread_id)
+            if tid_val not in settings.thread_id_filters:
+                return False
+        except (ValueError, TypeError):
+            if message.thread_id not in {str(f) for f in settings.thread_id_filters}:
+                return False
+
     return True
 
 
@@ -3364,6 +3377,7 @@ def process_merged_files(
         or settings.reverse
         or settings.threaded
         or settings.tail
+        or settings.thread_id_filters
         or settings.min_replies is not None
         or settings.max_replies is not None
         or settings.min_thread_size is not None
@@ -3371,7 +3385,7 @@ def process_merged_files(
     )
 
     initial_filtering_settings = settings
-    if settings.threaded or any(
+    if settings.threaded or settings.thread_id_filters or any(
         v is not None
         for v in (
             settings.min_replies,
@@ -3388,6 +3402,7 @@ def process_merged_files(
             max_replies=None,
             min_thread_size=None,
             max_thread_size=None,
+            thread_id_filters=None,
         )
 
     sort_buffer: list[tuple[ParsedMessage, dict[int, str]]] = []
@@ -3853,7 +3868,7 @@ def process_merged_files(
                     settings.min_thread_size,
                     settings.max_thread_size,
                 )
-            ):
+            ) or settings.thread_id_filters:
                 threaded_msgs = [
                     m
                     for m in threaded_msgs
@@ -3874,6 +3889,17 @@ def process_merged_files(
                     and (
                         settings.max_thread_size is None
                         or m.thread_size <= settings.max_thread_size
+                    )
+                    and (
+                        settings.thread_id_filters is None
+                        or (
+                            m.thread_id is not None
+                            and (
+                                _safe_to_int(m.thread_id) in settings.thread_id_filters
+                                if _safe_to_int(m.thread_id) is not None
+                                else m.thread_id in {str(f) for f in settings.thread_id_filters}
+                            )
+                        )
                     )
                 ]
 
@@ -6514,7 +6540,28 @@ def calculate_archive_stats(
             settings.min_thread_size,
             settings.max_thread_size,
         )
-    )
+    ) or bool(settings.thread_id_filters)
+
+    initial_filtering_settings = settings
+    if settings.threaded or settings.thread_id_filters or any(
+        v is not None
+        for v in (
+            settings.min_replies,
+            settings.max_replies,
+            settings.min_thread_size,
+            settings.max_thread_size,
+        )
+    ):
+        initial_filtering_settings = replace(
+            settings,
+            min_depth=None,
+            max_depth=None,
+            min_replies=None,
+            max_replies=None,
+            min_thread_size=None,
+            max_thread_size=None,
+            thread_id_filters=None,
+        )
 
     def filtered_messages_gen():
         nonlocal total_count, matching_count, processed_count
@@ -6567,7 +6614,7 @@ def calculate_archive_stats(
 
                     if not matches_filters(
                         message,
-                        settings,
+                        initial_filtering_settings,
                         allowed_conferences,
                         user_name,
                         allowed_exclude_conferences,
@@ -6639,6 +6686,17 @@ def calculate_archive_stats(
                     and (
                         settings.max_thread_size is None
                         or message.thread_size <= settings.max_thread_size
+                    )
+                    and (
+                        settings.thread_id_filters is None
+                        or (
+                            message.thread_id is not None
+                            and (
+                                _safe_to_int(message.thread_id) in settings.thread_id_filters
+                                if _safe_to_int(message.thread_id) is not None
+                                else message.thread_id in {str(f) for f in settings.thread_id_filters}
+                            )
+                        )
                     )
                 ):
                     processed_count += 1
