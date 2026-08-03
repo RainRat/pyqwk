@@ -7267,7 +7267,7 @@ def validate_archive(
 
     if ext == ".qwk" or ext == ".rep" or base_name == MESSAGES_FILENAME or base_name == REPLY_FILENAME:
         result["format"] = "qwk" if ext != ".rep" and base_name != REPLY_FILENAME else "rep"
-    elif ext in (".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz"):
+    elif input_path.lower().endswith((".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz")):
         result["format"] = "compressed_archive"
     elif ext == ".json":
         result["format"] = "json"
