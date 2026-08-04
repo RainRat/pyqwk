@@ -71,6 +71,7 @@ class QwkGuiApp:
         self._cache = {}
         self.conf_mapping = {}
         self.bbs_mapping = {}
+        self._history_stack: list[tuple[int, int]] = []
         self._search_matches = []
         self._current_match_idx = -1
         self._pending_match_idx: int | None = None
@@ -468,6 +469,7 @@ class QwkGuiApp:
         exclude_subject: str | None = None,
     ) -> None:
         """Update filters based on the selected author, conference, BBS, or subject."""
+        self._push_current_to_history()
         if author:
             self.search_var.set(author)
 
@@ -504,6 +506,11 @@ class QwkGuiApp:
 
     def _block_text_input(self, event: tk.Event) -> str | None:
         """Block keyboard input in the detail view while allowing common shortcuts."""
+        # Allow Alt-Left navigation
+        if event.keysym == "Left" and (event.state & 0x8 or event.state & 0x20000 or "alt" in str(event.state).lower()):
+            self.go_back()
+            return "break"
+
         # Delegate continuous reading keys (Space, BackSpace, PgDn, PgUp)
         if event.keysym in ("space", "BackSpace", "Prior", "Next"):
             return self._on_space_pressed(event)
@@ -731,7 +738,7 @@ class QwkGuiApp:
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
         menubar.add_cascade(label="File", menu=file_menu)
 
-        edit_menu = tk.Menu(menubar, tearoff=0)
+        self.edit_menu = edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(
             label="Find...",
             command=self._focus_search,
@@ -761,6 +768,12 @@ class QwkGuiApp:
             label="Go to Referenced Message",
             command=self.jump_to_referenced_message,
             accelerator="Ctrl+U",
+        )
+        edit_menu.add_command(
+            label="Go Back",
+            command=self.go_back,
+            accelerator="Alt+Left",
+            state=tk.DISABLED,
         )
         edit_menu.add_command(
             label="Clear Search/Find", command=self.clear_search, accelerator="Esc"
@@ -803,6 +816,7 @@ class QwkGuiApp:
         self.root.bind("}", lambda e: self._navigate_bbs(1))
         self.root.bind("/", self._focus_search)
         self.root.bind("r", self._select_random_message)
+        self.root.bind("<Alt-Left>", self.go_back)
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
@@ -963,6 +977,45 @@ class QwkGuiApp:
         self.has_msg_links_var.set(False)
         self.reload_messages()
 
+    def _push_current_to_history(self) -> None:
+        """Push the currently selected message's conference and number to history."""
+        if not hasattr(self, "_history_stack") or not hasattr(self, "messages"):
+            return
+        current_selection = self.message_list.selection()
+        if current_selection:
+            try:
+                idx = int(current_selection[0])
+                curr_msg = self.messages[idx]
+                item = (curr_msg.header.confnum, curr_msg.header.msgnum)
+                if not self._history_stack or self._history_stack[-1] != item:
+                    self._history_stack.append(item)
+                    self._update_history_ui()
+            except (ValueError, IndexError):
+                pass
+
+    def _update_history_ui(self) -> None:
+        """Update the state of the Back button and menu items based on history."""
+        if hasattr(self, "back_button"):
+            state = tk.NORMAL if self._history_stack else tk.DISABLED
+            self.back_button.config(state=state)
+        if hasattr(self, "edit_menu"):
+            try:
+                state = tk.NORMAL if self._history_stack else tk.DISABLED
+                self.edit_menu.entryconfig("Go Back", state=state)
+            except Exception:
+                pass
+
+    def go_back(self, _event: object | None = None) -> str | None:
+        """Go back to the previously viewed message in the navigation history."""
+        if not self._history_stack:
+            self.status_label.config(text="No previous message in history")
+            return "break"
+
+        confnum, msgnum = self._history_stack.pop()
+        self._update_history_ui()
+        self.jump_to_message(confnum, msgnum, push_history=False)
+        return "break"
+
     def _focus_entry_field(self, entry_attr: str, var_attr: str) -> None:
         """Focus an entry field and optionally populate it with selected text."""
         entry = getattr(self, entry_attr, None)
@@ -1079,6 +1132,10 @@ class QwkGuiApp:
 
         nav_frame = ttk.Labelframe(row1, text="Navigation", padding=(5, 5))
         nav_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+        self.back_button = ttk.Button(
+            nav_frame, text="Back", width=8, command=self.go_back, state=tk.DISABLED
+        )
+        self.back_button.pack(side=tk.LEFT, padx=2)
         ttk.Button(
             nav_frame,
             text="Prev",
@@ -1399,6 +1456,7 @@ class QwkGuiApp:
 
         # Intercept key events to allow selection/copy but block editing
         self.detail_text.bind("<Key>", self._block_text_input)
+        self.detail_text.bind("<Alt-Left>", self.go_back)
 
         # Context menu for text
         self.detail_text.bind("<Button-3>", self._show_text_context_menu)
@@ -1965,6 +2023,11 @@ class QwkGuiApp:
     def load_messages(self, paths: str | list[str]) -> None:
         if isinstance(paths, str):
             paths = [paths]
+
+        # Clear history if loading a different archive/paths
+        if paths != self.current_paths:
+            self._history_stack = []
+            self._update_history_ui()
 
         # Save current state for potential restoration on failure
         old_messages = self.messages
@@ -2536,6 +2599,7 @@ class QwkGuiApp:
 
         idx = self._find_message_index(msgnum)
         if idx is not None:
+            self._push_current_to_history()
             self._select_by_index(idx)
             return
 
@@ -2548,6 +2612,7 @@ class QwkGuiApp:
                 self.clear_filters()
                 idx = self._find_message_index(msgnum)
                 if idx is not None:
+                    self._push_current_to_history()
                     self._select_by_index(idx)
                     return
 
@@ -2573,6 +2638,7 @@ class QwkGuiApp:
             return
 
         target_iid = random.choice(all_items)
+        self._push_current_to_history()
         self.message_list.selection_set(target_iid)
         self.message_list.see(target_iid)
         self.message_list.focus(target_iid)
@@ -2603,10 +2669,12 @@ class QwkGuiApp:
 
         self.jump_to_message(msg.confnum, msg.refnum)
 
-    def jump_to_message(self, confnum: int, msgnum: int) -> None:
+    def jump_to_message(self, confnum: int, msgnum: int, push_history: bool = True) -> None:
         """Find and select a message by conference and message number."""
         idx = self._find_message_index(msgnum, confnum)
         if idx is not None:
+            if push_history:
+                self._push_current_to_history()
             self._select_by_index(idx)
             return
 
@@ -2616,6 +2684,8 @@ class QwkGuiApp:
                 f"Referenced message #{msgnum} was not found in the current view. "
                 "Would you like to reset all filters to find it?",
             ):
+                if push_history:
+                    self._push_current_to_history()
                 self.clear_filters()
                 idx = self._find_message_index(msgnum, confnum)
                 if idx is not None:
@@ -2815,6 +2885,7 @@ class QwkGuiApp:
                         def make_callback(ft, fv):
                             def callback(e):
                                 stats_win.destroy()
+                                self._push_current_to_history()
                                 if ft == "author":
                                     self._pivot_filter(author=fv)
                                 elif ft == "conf":
