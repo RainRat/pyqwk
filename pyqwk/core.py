@@ -615,6 +615,7 @@ class ProcessingSettings:
     max_thread_size: int | None = None
     refnum_filters: set[int] | None = None
     attachment_pattern: str | None = None
+    count_only: bool = False
 
 
 @dataclass
@@ -3285,6 +3286,9 @@ def process_merged_files(
     This function handles the main workflow of finding messages, applying filters,
     cleaning the text, and writing the output to files or the screen.
     """
+    if settings.count_only:
+        settings = replace(settings, quiet=True)
+
     output_mode = settings.output_mode
     resolved_output_path = settings.output_path
 
@@ -3463,6 +3467,9 @@ def process_merged_files(
         bbs_key = (parsed_message.bbs_name or parsed_message.bbs_id or "").strip().lower()
         bbs_processed_counts[bbs_key] += 1
         processed_count += 1
+
+        if settings.count_only:
+            return False
 
         if settings.extract_attachments and parsed_message.text:
             # Re-scan to get binary data for extraction
@@ -3945,6 +3952,10 @@ def process_merged_files(
         finally:
             settings.skip = original_skip
             settings.limit = original_limit
+
+    if settings.count_only:
+        print(processed_count)
+        return
 
     if settings.individual_files:
         if not settings.dry_run and collected_for_index:

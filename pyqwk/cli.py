@@ -717,6 +717,11 @@ examples:
         dest="msgnum_filter",
         help="Show specific message numbers or ranges (e.g., '100', '200-300', or '10,20,50-100').",
     )
+    sorting_limit_group.add_argument(
+        "--count-only",
+        action="store_true",
+        help="Output only the integer count of matching messages to stdout and exit.",
+    )
 
     preset_group = parser.add_argument_group("Workflow Presets")
     preset_group.add_argument(
@@ -1015,7 +1020,16 @@ examples:
         min_thread_size=getattr(args, "min_thread_size", None),
         max_thread_size=getattr(args, "max_thread_size", None),
         attachment_pattern=getattr(args, "attachment_pattern", None),
+        count_only=getattr(args, "count_only", False),
     )
+
+    if getattr(args, "count_only", False):
+        try:
+            process_merged_files(input_paths, settings, logger)
+            sys.exit(0)
+        except PROCESSING_EXCEPTIONS as error:
+            logger.error(error)
+            sys.exit(1)
 
     if getattr(args, "validate", False):
         valid_all = True
