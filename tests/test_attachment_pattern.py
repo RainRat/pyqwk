@@ -276,3 +276,53 @@ def test_attachment_pattern_cli_integration(monkeypatch, capsys):
     # file.zip should be printed, file.txt should be filtered out
     assert "begin 644 file.zip" in captured.out
     assert "begin 644 file.txt" not in captured.out
+
+
+def test_attachment_pattern_substring_fallback():
+    header = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="Author",
+        msgsubject="Test",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag="",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
+
+    msg = ParsedMessage(
+        text="begin 644 file[abc].zip\n#0V%T\n`\nend\n",
+        msgnum=1,
+        refnum=None,
+        confnum=1,
+        header=header,
+    )
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        attachment_pattern="file[abc]",
+    )
+
+    assert fnmatch.fnmatch("file[abc].zip", "file[abc]") is False
+    assert fnmatch.fnmatch("file[abc].zip", "*file[abc]*") is False
+
+    assert matches_filters(msg, settings, set()) is True

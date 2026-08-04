@@ -219,3 +219,57 @@ def test_merge_mode_error(monkeypatch, testdata_dir, caplog):
                 main()
             assert exc.value.code == 1
             assert "Merge failure" in caplog.text
+
+
+def test_cli_validate_option_success(monkeypatch, testdata_dir, caplog):
+    input_file = testdata_dir / "messages.dat"
+    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--validate"])
+
+    import pyqwk.cli as cli
+
+    dummy_validate_result = {
+        "valid": True,
+        "format": "qwk",
+        "messages_count": 5,
+        "errors": [],
+        "warnings": ["An informative warning"]
+    }
+
+    with monkeypatch.context() as m:
+        m.setattr(cli, "validate_archive", lambda *args, **kwargs: dummy_validate_result)
+        m.setattr(sys.stdout, "isatty", lambda: True)
+
+        with caplog.at_level(logging.INFO):
+            with pytest.raises(SystemExit) as exc:
+                main()
+            assert exc.value.code == 0
+            assert "File:" in caplog.text
+            assert "VALID" in caplog.text
+            assert "[Warning]" in caplog.text
+
+
+def test_cli_validate_option_failure(monkeypatch, testdata_dir, caplog):
+    input_file = testdata_dir / "messages.dat"
+    monkeypatch.setattr(sys, "argv", ["qwk", str(input_file), "--validate"])
+
+    import pyqwk.cli as cli
+
+    dummy_validate_result = {
+        "valid": False,
+        "format": "qwk",
+        "messages_count": 0,
+        "errors": ["Binary corruption detected"],
+        "warnings": []
+    }
+
+    with monkeypatch.context() as m:
+        m.setattr(cli, "validate_archive", lambda *args, **kwargs: dummy_validate_result)
+        m.setattr(sys.stdout, "isatty", lambda: False)
+
+        with caplog.at_level(logging.INFO):
+            with pytest.raises(SystemExit) as exc:
+                main()
+            assert exc.value.code == 1
+            assert "File:" in caplog.text
+            assert "INVALID" in caplog.text
+            assert "[Error]" in caplog.text
