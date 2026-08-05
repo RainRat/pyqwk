@@ -207,6 +207,12 @@ qwk archive.qwk --preset digest -o digest.html
 qwk archive.qwk --preset text-archive -o archive.txt
 ```
 
+To list all available presets and their equivalent options directly in your terminal, use:
+
+```bash
+qwk --list-presets
+```
+
 ### Available Presets
 
 | Preset | Action | Equivalent Options |
@@ -523,6 +529,7 @@ for msg in messages:
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, text-archive). |
+| `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
