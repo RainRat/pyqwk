@@ -39,7 +39,9 @@ Inside these packets, messages are organized into **Conferences**. A Conference 
 - **Python 3.10** or newer.
 
 ### Optional
-- **Tkinter:** Needed for the graphical reader. Most Python installations already have it. Linux users may need to install it:
+- **Tkinter:** Needed for the graphical reader. Most Python installations already have it.
+  - **macOS:** Install using Homebrew: `brew install python-tk`
+  - **Windows:** Included in the standard installer from python.org. If you used a custom setup and get an error, reinstall Python and check the "tcl/tk and IDLE" box.
   - **Ubuntu/Debian:** `sudo apt install python3-tk`
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
@@ -688,7 +690,7 @@ We welcome your contributions!
 
 1. Install development tools:
    ```bash
-   pip install -e . pytest pytest-mock pytest-cov
+   python -m pip install -e . pytest pytest-mock pytest-cov
    ```
 2. Run tests:
    ```bash
@@ -701,7 +703,7 @@ If you are running the test suite on a headless Linux system (such as in a CI/CD
 
 1. Install the headless dependencies:
    ```bash
-   pip install mss Pillow
+   python -m pip install mss Pillow
    ```
 2. Run the tests:
    ```bash
