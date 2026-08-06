@@ -729,7 +729,7 @@ class QwkGuiApp:
         )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
-        menubar.add_cascade(label="File", menu=file_menu)
+        menubar.add_cascade(label="File", menu=file_menu, underline=0)
 
         edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(
@@ -770,12 +770,54 @@ class QwkGuiApp:
             command=self.clear_filters,
             accelerator="Ctrl+Shift+X",
         )
-        menubar.add_cascade(label="Edit", menu=edit_menu)
+        menubar.add_cascade(label="Edit", menu=edit_menu, underline=0)
+
+        view_menu = tk.Menu(menubar, tearoff=0)
+        view_menu.add_checkbutton(
+            label="Conversations",
+            variable=self.threaded_var,
+            command=self.reload_messages,
+            accelerator="Ctrl+T",
+        )
+        view_menu.add_checkbutton(
+            label="Clean View",
+            variable=self.clean_var,
+            command=self.reload_messages,
+            accelerator="Ctrl+Shift+C",
+        )
+        view_menu.add_checkbutton(
+            label="Wrap Text",
+            variable=self.wrap_var,
+            command=self._update_wrap,
+            accelerator="Ctrl+W",
+        )
+        view_menu.add_checkbutton(
+            label="Remove Colors",
+            variable=self.ansi_var,
+            command=self.reload_messages,
+        )
+        view_menu.add_checkbutton(
+            label="Hide Personal Info",
+            variable=self.redact_pii_var,
+            command=self.reload_messages,
+        )
+        view_menu.add_checkbutton(
+            label="Embed Attachments",
+            variable=self.embed_attach_var,
+            command=self.reload_messages,
+        )
+        menubar.add_cascade(label="View", menu=view_menu, underline=0)
 
         self.root.config(menu=menubar)
 
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
+        self.root.bind("<Control-t>", self._toggle_threaded_shortcut)
+        self.root.bind("<Control-T>", self._toggle_threaded_shortcut)
+        self.root.bind("<Control-w>", self._toggle_wrap_shortcut)
+        self.root.bind("<Control-W>", self._toggle_wrap_shortcut)
+        self.root.bind("<Control-Shift-C>", self._toggle_clean_shortcut)
+        self.root.bind("<Control-Shift-c>", self._toggle_clean_shortcut)
         self.root.bind("<Control-f>", self._focus_search)
         self.root.bind("<Control-e>", self._focus_exclude)
         self.root.bind("<Control-s>", self.export_messages)
@@ -803,6 +845,27 @@ class QwkGuiApp:
         self.root.bind("}", lambda e: self._navigate_bbs(1))
         self.root.bind("/", self._focus_search)
         self.root.bind("r", self._select_random_message)
+
+    def _toggle_threaded_shortcut(self, _event: object | None = None) -> str | None:
+        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
+            return None
+        self.threaded_var.set(not self.threaded_var.get())
+        self.reload_messages()
+        return "break"
+
+    def _toggle_wrap_shortcut(self, _event: object | None = None) -> str | None:
+        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
+            return None
+        self.wrap_var.set(not self.wrap_var.get())
+        self._update_wrap()
+        return "break"
+
+    def _toggle_clean_shortcut(self, _event: object | None = None) -> str | None:
+        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
+            return None
+        self.clean_var.set(not self.clean_var.get())
+        self.reload_messages()
+        return "break"
 
     def _get_all_tree_items(self) -> list[str]:
         """Return a flattened list of all item IDs currently visible in the treeview."""
