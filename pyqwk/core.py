@@ -7814,13 +7814,13 @@ def _validate_messages_metadata(messages: list[ParsedMessage], result: dict[str,
         msg_id_str = f"#{header.msgnum}" if header.msgnum is not None else f"at index {i}"
 
         # Check standard metadata fields
-        if not getattr(header, "msgfrom", "").strip():
+        if not header.msgfrom.strip():
             result["warnings"].append(f"Message {msg_id_str} is missing sender (msgfrom) field.")
-        if not getattr(header, "msgto", "").strip():
+        if not header.msgto.strip():
             result["warnings"].append(f"Message {msg_id_str} is missing recipient (msgto) field.")
-        if not getattr(header, "msgsubject", "").strip():
+        if not header.msgsubject.strip():
             result["warnings"].append(f"Message {msg_id_str} is missing subject field.")
-        if getattr(header, "msgnum", None) is None:
+        if header.msgnum is None:
             result["warnings"].append(f"Message {msg_id_str} is missing message number.")
         elif header.msgnum <= 0:
             result["warnings"].append(f"Message {msg_id_str} has invalid/non-positive message number: {header.msgnum}")
