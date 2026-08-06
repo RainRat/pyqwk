@@ -1112,7 +1112,7 @@ examples:
             sys.exit(1)
 
     if getattr(args, "validate", False):
-        valid_all = show_validation_report(input_paths, settings, logger)
+        valid_all = show_validation_report(input_paths, settings, logger, validator=validate_archive)
         sys.exit(0 if valid_all else 1)
 
     if args.organize_by_bbs and not args.output_path:

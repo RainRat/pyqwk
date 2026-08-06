@@ -7814,11 +7814,11 @@ def _validate_messages_metadata(messages: list[ParsedMessage], result: dict[str,
         msg_id_str = f"#{header.msgnum}" if header.msgnum is not None else f"at index {i}"
 
         # Check standard metadata fields
-        if not header.msgfrom.strip():
+        if not (header.msgfrom or "").strip():
             result["warnings"].append(f"Message {msg_id_str} is missing sender (msgfrom) field.")
-        if not header.msgto.strip():
+        if not (header.msgto or "").strip():
             result["warnings"].append(f"Message {msg_id_str} is missing recipient (msgto) field.")
-        if not header.msgsubject.strip():
+        if not (header.msgsubject or "").strip():
             result["warnings"].append(f"Message {msg_id_str} is missing subject field.")
         if header.msgnum is None:
             result["warnings"].append(f"Message {msg_id_str} is missing message number.")
@@ -7841,6 +7841,8 @@ def _validate_header_dict(hdr: dict[str, Any], label: str, result: dict[str, Any
         result["warnings"].append(f"Message at {label} is missing subject field.")
     if msgnum is None:
         result["warnings"].append(f"Message at {label} is missing message number.")
+    elif isinstance(msgnum, int) and msgnum <= 0:
+        result["warnings"].append(f"Message at {label} has invalid/non-positive message number: {msgnum}")
 
 
 def _validate_batch_files(
@@ -7971,19 +7973,25 @@ def render_validation_as_text(all_results: list[dict[str, Any]], use_colors: boo
 
 
 def show_validation_report(
-    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+    input_paths: list[str],
+    settings: ProcessingSettings,
+    logger: logging.Logger,
+    validator: Any = None,
 ) -> bool:
     """Validate archives, format the results, and export/print the validation report.
 
     Returns:
         True if all validated archives are structurally valid, False otherwise.
     """
+    if validator is None:
+        validator = validate_archive
+
     all_results = []
     valid_all = True
 
     for input_path in input_paths:
         try:
-            res = validate_archive(input_path, logger, settings.encoding)
+            res = validator(input_path, logger, settings.encoding)
             res_entry = dict(res)
             res_entry["file"] = input_path
             all_results.append(res_entry)
