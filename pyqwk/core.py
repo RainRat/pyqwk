@@ -7815,3 +7815,148 @@ def _validate_batch_files(
         except Exception as e:
             result["valid"] = False
             result["errors"].append(f"Failed to validate internal batch files in {archive_type}: {str(e)}")
+
+
+def _render_validation_html(all_results: list[dict[str, Any]]) -> list[str]:
+    """Render archive validation information as an HTML fragment."""
+    parts = []
+    for res in all_results:
+        parts.append('<div class="stats-container">')
+        status_str = "VALID" if res["valid"] else "INVALID"
+        status_color = "#4e9a06" if res["valid"] else "#cc0000"
+
+        parts.append(f"<h2>File: {html.escape(res['file'])}</h2>")
+        parts.append('<div class="stats-summary-info">')
+        parts.append(
+            f'<div><strong>Status:</strong> <span style="color: {status_color}; font-weight: bold;">{status_str}</span></div>'
+        )
+        parts.append(f"<div><strong>Format:</strong> {html.escape(res['format'])}</div>")
+        parts.append(f"<div><strong>Messages:</strong> {res['messages_count']}</div>")
+        parts.append("</div>")
+
+        if res.get("errors"):
+            parts.append('<h3>Errors</h3>')
+            parts.append('<ul style="color: #cc0000;">')
+            for err in res["errors"]:
+                parts.append(f"<li>{html.escape(err)}</li>")
+            parts.append("</ul>")
+
+        if res.get("warnings"):
+            parts.append('<h3>Warnings</h3>')
+            parts.append('<ul style="color: #c4a000;">')
+            for warn in res["warnings"]:
+                parts.append(f"<li>{html.escape(warn)}</li>")
+            parts.append("</ul>")
+
+        parts.append("</div>")
+    return parts
+
+
+def _render_validation_markdown(all_results: list[dict[str, Any]]) -> list[str]:
+    """Render archive validation information as a Markdown fragment."""
+    parts = []
+    for res in all_results:
+        status_str = "VALID" if res["valid"] else "INVALID"
+        emoji = "✅" if res["valid"] else "❌"
+        parts.append(f"## File: {res['file']}\n")
+        parts.append(f"- **Status:** {emoji} {status_str}")
+        parts.append(f"- **Format:** {res['format']}")
+        parts.append(f"- **Messages:** {res['messages_count']}")
+
+        if res.get("errors"):
+            parts.append("\n### Errors\n")
+            for err in res["errors"]:
+                parts.append(f"- {err}")
+        if res.get("warnings"):
+            parts.append("\n### Warnings\n")
+            for warn in res["warnings"]:
+                parts.append(f"- {warn}")
+        parts.append("\n---\n")
+    return parts
+
+
+def render_validation_as_text(all_results: list[dict[str, Any]], use_colors: bool = False) -> str:
+    """Render archive validation information into a human-readable text report."""
+    BOLD = "1"
+    CYAN = "36"
+    RED = "31"
+    GREEN = "32"
+    YELLOW = "33"
+
+    parts = []
+    for res in all_results:
+        status_str = "VALID" if res["valid"] else "INVALID"
+        color_code = GREEN if res["valid"] else RED
+        bold_status = _colorize(status_str, BOLD, color_code, enabled=use_colors)
+
+        parts.append(
+            f"File: {_colorize(res['file'], CYAN, enabled=use_colors)} "
+            f"({res['format']}, {res['messages_count']} messages) - [{bold_status}]"
+        )
+        for err in res.get("errors", []):
+            parts.append(f"  - [{_colorize('Error', BOLD, RED, enabled=use_colors)}] {err}")
+        for warn in res.get("warnings", []):
+            parts.append(f"  - [{_colorize('Warning', BOLD, YELLOW, enabled=use_colors)}] {warn}")
+        parts.append("")
+    return "\n".join(parts)
+
+
+def show_validation_report(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> bool:
+    """Validate archives, format the results, and export/print the validation report.
+
+    Returns:
+        True if all validated archives are structurally valid, False otherwise.
+    """
+    all_results = []
+    valid_all = True
+
+    for input_path in input_paths:
+        try:
+            res = validate_archive(input_path, logger, settings.encoding)
+            res_entry = dict(res)
+            res_entry["file"] = input_path
+            all_results.append(res_entry)
+            if not res["valid"]:
+                valid_all = False
+        except Exception as e:
+            logger.error(f"Error validating {input_path}: {e}")
+            all_results.append({
+                "file": input_path,
+                "valid": False,
+                "format": "unknown",
+                "messages_count": 0,
+                "errors": [f"Validation failed: {str(e)}"],
+                "warnings": []
+            })
+            valid_all = False
+
+    if not all_results:
+        return valid_all
+
+    output = ""
+    if settings.format == "json":
+        output = json.dumps(all_results, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        title = "Archive Validation Report"
+        html_parts = _get_html_header(title)
+        html_parts.append(f"<h1>{title}</h1>")
+        html_parts.extend(_render_validation_html(all_results))
+        html_parts.extend(_get_html_footer())
+        output = "\n".join(html_parts)
+    elif settings.format == "markdown":
+        title = "Archive Validation Report"
+        md_parts = [f"# {title}\n"]
+        md_parts.extend(_render_validation_markdown(all_results))
+        output = "\n".join(md_parts)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_validation_as_text(all_results, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
+    return valid_all
