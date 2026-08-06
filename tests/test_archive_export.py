@@ -80,6 +80,41 @@ def test_archive_export_tar_gz(tmp_path):
         assert len(md_files) > 1
 
 
+def test_archive_export_tar_bz2(tmp_path):
+    input_archive = "testdata/test1_qwk.zip"
+    output_tar = os.path.join(tmp_path, "export.tar.bz2")
+
+    logger = logging.getLogger("test")
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=True,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="markdown",
+        separator="auto",
+        output_mode="file",
+        output_path=output_tar,
+        encoding="cp437",
+    )
+
+    process_merged_files([input_archive], settings, logger)
+
+    assert os.path.exists(output_tar)
+    assert tarfile.is_tarfile(output_tar)
+
+    with tarfile.open(output_tar, "r:bz2") as tf:
+        names = tf.getnames()
+        assert "README.md" in names
+        md_files = [n for n in names if n.endswith(".md")]
+        assert len(md_files) > 1
+
+
 def test_archive_export_dry_run(tmp_path):
     input_archive = "testdata/test1_qwk.zip"
     output_zip = os.path.join(tmp_path, "export_dry.zip")

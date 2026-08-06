@@ -117,6 +117,51 @@ def test_engagement_filters_core(tmp_path):
         nums = {r["header"]["msgnum"] for r in result}
         assert nums == {1, 2, 3, 4}
 
+
+def test_engagement_max_filters(tmp_path):
+    m1 = create_msg(1, 0)
+    m2 = create_msg(2, 1)
+    m3 = create_msg(3, 2)
+    m4 = create_msg(4, 1)
+    m5 = create_msg(5, 0)
+
+    archive = tmp_path / "test.json"
+    data = [
+        {"header": m.header.as_dict, "text": m.text, "confnum": m.confnum}
+        for m in [m1, m2, m3, m4, m5]
+    ]
+    archive.write_text(json.dumps(data))
+
+    logger = logging.getLogger("test")
+
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="json", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", max_replies=1, quiet=True
+    )
+
+    with patch("sys.stdout", new=io.StringIO()) as fake_out:
+        process_merged_files([str(archive)], settings, logger)
+        result = json.loads(fake_out.getvalue())
+        assert len(result) == 4
+        nums = {r["header"]["msgnum"] for r in result}
+        assert nums == {2, 3, 4, 5}
+
+    settings = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="json", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", max_thread_size=3, quiet=True
+    )
+
+    with patch("sys.stdout", new=io.StringIO()) as fake_out:
+        process_merged_files([str(archive)], settings, logger)
+        result = json.loads(fake_out.getvalue())
+        assert len(result) == 1
+        assert result[0]["header"]["msgnum"] == 5
+
+
 def test_engagement_sorting(tmp_path):
     m1 = create_msg(1, 0) # root, 2 replies
     m2 = create_msg(2, 1) # 1 reply
@@ -186,3 +231,62 @@ def test_gui_replies_column(mock_load, mock_open, tmp_path):
         pass
     finally:
         root.destroy()
+
+
+def test_matches_filters_engagement_max():
+    from pyqwk.core import matches_filters
+
+    header = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-23",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="User",
+        msgsubject="Test",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=0,
+        nettag=" ",
+    )
+    msg = ParsedMessage(
+        text="body",
+        msgnum=1,
+        refnum=None,
+        confnum=1,
+        header=header,
+    )
+    msg.reply_count = 5
+    msg.thread_size = 10
+
+    settings_max_replies_pass = ProcessingSettings(
+        verbose=False, private=True, no_header=True, truncate_signatures=False,
+        cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+        redact_pii=False, format="json", separator="none", output_mode="stdout",
+        output_path=None, encoding="cp437", max_replies=6, quiet=True
+    )
+    assert matches_filters(msg, settings_max_replies_pass, set()) is True
+
+    settings_max_replies_fail = replace(settings_max_replies_pass, max_replies=4)
+    assert matches_filters(msg, settings_max_replies_fail, set()) is False
+
+    settings_max_thread_pass = replace(settings_max_replies_pass, max_replies=None, max_thread_size=12)
+    assert matches_filters(msg, settings_max_thread_pass, set()) is True
+
+    settings_max_thread_fail = replace(settings_max_replies_pass, max_replies=None, max_thread_size=8)
+    assert matches_filters(msg, settings_max_thread_fail, set()) is False
+
+    settings_min_replies_pass = replace(settings_max_replies_pass, max_replies=None, min_replies=4)
+    assert matches_filters(msg, settings_min_replies_pass, set()) is True
+
+    settings_min_replies_fail = replace(settings_max_replies_pass, max_replies=None, min_replies=6)
+    assert matches_filters(msg, settings_min_replies_fail, set()) is False
+
+    settings_min_thread_pass = replace(settings_max_replies_pass, max_replies=None, min_thread_size=8)
+    assert matches_filters(msg, settings_min_thread_pass, set()) is True
+
+    settings_min_thread_fail = replace(settings_max_replies_pass, max_replies=None, min_thread_size=12)
+    assert matches_filters(msg, settings_min_thread_fail, set()) is False

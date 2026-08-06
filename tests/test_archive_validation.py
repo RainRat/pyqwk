@@ -594,3 +594,45 @@ def test_validate_archive_load_data_returns_bytes(tmp_path, logger, monkeypatch)
     res = validate_archive(str(p), logger)
     assert res["valid"] is True
     assert any("Load returned byte stream instead of parsed messages" in w for w in res["warnings"])
+
+
+def test_validate_batch_files(tmp_path, logger):
+    import zipfile
+    import tarfile
+    from unittest.mock import patch
+
+    zip_path = tmp_path / "batch.zip"
+    with zipfile.ZipFile(zip_path, "w") as myzip:
+        myzip.writestr("subfolder/msg.txt", "From: Bob\nTo: Alice\nSubject: Hi\n\nBody text")
+
+    res_zip = validate_archive(str(zip_path), logger)
+    assert res_zip["valid"] is True
+    assert res_zip["format"] == "compressed_archive"
+    assert res_zip["messages_count"] == 1
+    assert any("does not contain standard MESSAGES.DAT or REPLY.DAT" in w or "Zip archive does not contain" in w for w in res_zip["warnings"])
+
+    tar_path = tmp_path / "batch.tar"
+    with tarfile.open(tar_path, "w") as mytar:
+        txt_path = tmp_path / "msg.txt"
+        txt_path.write_text("From: Bob\nTo: Alice\nSubject: Hi\n\nBody text")
+        mytar.add(txt_path, arcname="subfolder/msg.txt")
+
+    res_tar = validate_archive(str(tar_path), logger)
+    assert res_tar["valid"] is True
+    assert res_tar["format"] == "compressed_archive"
+    assert res_tar["messages_count"] == 1
+    assert any("does not contain standard MESSAGES.DAT or REPLY.DAT" in w or "TAR archive does not contain" in w for w in res_tar["warnings"])
+
+    zip_err_path = tmp_path / "batch_err.zip"
+    with zipfile.ZipFile(zip_err_path, "w") as myzip:
+        myzip.writestr("subfolder/corrupt.json", "{ malformed json }")
+
+    res_zip_err = validate_archive(str(zip_err_path), logger)
+    assert res_zip_err["valid"] is False
+    assert any("subfolder/corrupt.json" in e for e in res_zip_err["errors"])
+
+    with patch("zipfile.ZipFile.extractall", side_effect=ValueError("Mock extract error")):
+        res_exc = validate_archive(str(zip_path), logger)
+        assert res_exc["valid"] is False
+        assert any("Failed to validate internal batch files in ZIP" in e or "Failed to validate internal batch files in compressed_archive" in e for e in res_exc["errors"])
+
