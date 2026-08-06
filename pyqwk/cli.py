@@ -68,6 +68,69 @@ def _parse_cli_date(
         )
 
 
+class ListPresetsAction(argparse.Action):
+    def __init__(self, option_strings, dest, default=None, required=False, help=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            default=default,
+            required=required,
+            help=help,
+        )
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        presets = {
+            "blog": {
+                "desc": "Save messages as clean, threaded individual Markdown files.",
+                "equiv": "--format markdown --clean --threaded --individual-files"
+            },
+            "email": {
+                "desc": "Save messages as individual EML files.",
+                "equiv": "--format eml --individual-files"
+            },
+            "backup": {
+                "desc": "Create a complete SQLite backup with private and unique messages.",
+                "equiv": "--format sqlite --private --unique"
+            },
+            "digest": {
+                "desc": "Save a single clean, threaded HTML file with a table of contents.",
+                "equiv": "--format html --threaded --clean --toc"
+            },
+            "text-archive": {
+                "desc": "Save clean text without headers.",
+                "equiv": "--format text --clean --noheader"
+            }
+        }
+
+        use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+        bold_cyan = "\033[1;36m"
+        bold_green = "\033[1;32m"
+        dim_gray = "\033[2m"
+        reset = "\033[0m"
+
+        header = "Available Workflow Presets:"
+        if use_colors:
+            header = f"{bold_cyan}{header}{reset}"
+
+        print(header + "\n")
+        for name, details in presets.items():
+            preset_name = name
+            desc = details["desc"]
+            equiv = details["equiv"]
+
+            if use_colors:
+                preset_name = f"{bold_green}{preset_name}{reset}"
+                equiv = f"{dim_gray}{equiv}{reset}"
+
+            print(f"  {preset_name}")
+            print(f"    Description: {desc}")
+            print(f"    Equivalent:  {equiv}\n")
+
+        parser.exit(0)
+
+
 def main() -> None:
     template_variables = (
         "template variables:\n"
@@ -742,6 +805,11 @@ examples:
             "  digest: Save a single clean, threaded HTML file with a table of contents.\n"
             "  text-archive: Save clean text without headers."
         ),
+    )
+    preset_group.add_argument(
+        "--list-presets",
+        action=ListPresetsAction,
+        help="List all available workflow presets, their descriptions, and equivalent command-line options, then exit.",
     )
 
     parser.add_argument(
