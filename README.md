@@ -39,10 +39,11 @@ Inside these packets, messages are organized into **Conferences**. A Conference 
 - **Python 3.10** or newer.
 
 ### Optional
-- **Tkinter:** Needed for the graphical reader. Most Python installations already have it. Linux users may need to install it:
+- **Tkinter:** Needed for the graphical reader. Most Python installations already have it. Linux and macOS users may need to install it:
   - **Ubuntu/Debian:** `sudo apt install python3-tk`
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
+  - **macOS (Homebrew):** `brew install python-tk`
 - **tqdm:** Adds a progress bar. Install with: `python -m pip install tqdm`
 - **unzip:** Helps open older ZIP archives. Install it if `pyqwk` cannot open your file:
   - **Ubuntu/Debian:** `sudo apt install unzip`
@@ -688,7 +689,7 @@ We welcome your contributions!
 
 1. Install development tools:
    ```bash
-   pip install -e . pytest pytest-mock pytest-cov
+   python -m pip install -e . pytest pytest-mock pytest-cov
    ```
 2. Run tests:
    ```bash
@@ -701,7 +702,7 @@ If you are running the test suite on a headless Linux system (such as in a CI/CD
 
 1. Install the headless dependencies:
    ```bash
-   pip install mss Pillow
+   python -m pip install mss Pillow
    ```
 2. Run the tests:
    ```bash
