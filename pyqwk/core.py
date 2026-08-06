@@ -7961,7 +7961,7 @@ def render_validation_as_text(all_results: list[dict[str, Any]], use_colors: boo
         bold_status = _colorize(status_str, BOLD, color_code, enabled=use_colors)
 
         parts.append(
-            f"File: {_colorize(res['file'], CYAN, enabled=use_colors)} "
+            f"File: {res['file']} "
             f"({res['format']}, {res['messages_count']} messages) - [{bold_status}]"
         )
         for err in res.get("errors", []):
