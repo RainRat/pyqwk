@@ -817,6 +817,35 @@ class QwkGuiApp:
             traverse(root_item)
         return items
 
+    def _is_entry_widget(self, widget: object) -> bool:
+        """Check if a widget is a text entry/input widget."""
+        if widget is None:
+            return False
+        try:
+            if isinstance(tk.Entry, type) and isinstance(widget, tk.Entry):
+                return True
+            if isinstance(ttk.Entry, type) and isinstance(widget, ttk.Entry):
+                return True
+        except TypeError:
+            pass
+
+        try:
+            if hasattr(widget, "winfo_class"):
+                cls = widget.winfo_class()
+                if cls in ("Entry", "TEntry"):
+                    return True
+        except Exception:
+            pass
+
+        search_entry = getattr(self, "search_entry", None)
+        exclude_entry = getattr(self, "exclude_entry", None)
+        min_words_entry = getattr(self, "min_words_entry", None)
+        max_words_entry = getattr(self, "max_words_entry", None)
+        if widget in (search_entry, exclude_entry, min_words_entry, max_words_entry):
+            return True
+
+        return False
+
     def _select_relative_message(self, delta: int, force: bool = False) -> bool:
         """Move the selection up or down in the treeview display order.
 
@@ -826,8 +855,8 @@ class QwkGuiApp:
         if not self.messages:
             return False
 
-        # If a search or exclude entry has focus, don't hijack keyboard navigation unless forced
-        if not force and self.root.focus_get() in (self.search_entry, self.exclude_entry):
+        # If any entry field has focus, don't hijack keyboard navigation unless forced
+        if not force and self._is_entry_widget(self.root.focus_get()):
             return False
 
         all_items = self._get_all_tree_items()
@@ -858,9 +887,9 @@ class QwkGuiApp:
         if not combo["values"]:
             return
 
-        # Avoid changing selection while the user is typing in a search or exclude field
+        # Avoid changing selection while the user is typing in an entry field
         focused_widget = self.root.focus_get()
-        if focused_widget in (self.search_entry, self.exclude_entry):
+        if self._is_entry_widget(focused_widget):
             return
 
         current_idx = combo.current()
@@ -884,8 +913,8 @@ class QwkGuiApp:
 
     def _on_space_pressed(self, event: tk.Event) -> str | None:
         """Handle Space, PgDn, PgUp, and BackSpace for continuous reading."""
-        # If a search or exclude entry has focus, let it handle the keys
-        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
+        # If any entry field has focus, let it handle the keys
+        if self._is_entry_widget(self.root.focus_get()):
             return None
 
         # Check scroll position: (top, bottom) as fractions of the whole
@@ -984,8 +1013,11 @@ class QwkGuiApp:
         entry.focus_set()
         entry.selection_range(0, tk.END)
 
-    def _focus_search(self, _event: object | None = None) -> None:
+    def _focus_search(self, event: object | None = None) -> None:
         """Focus the search bar and select all text for quick replacement."""
+        if event and (getattr(event, "keysym", None) == "slash" or getattr(event, "char", None) == "/"):
+            if self._is_entry_widget(self.root.focus_get()):
+                return
         self._focus_entry_field("search_entry", "search_var")
 
     def _focus_exclude(self, _event: object | None = None) -> None:
@@ -2565,7 +2597,7 @@ class QwkGuiApp:
 
     def _select_random_message(self, _event: object | None = None) -> None:
         """Pick a random message from the currently visible list and select it."""
-        if self.root.focus_get() in (self.search_entry, self.exclude_entry):
+        if self._is_entry_widget(self.root.focus_get()):
             return
 
         all_items = self._get_all_tree_items()
