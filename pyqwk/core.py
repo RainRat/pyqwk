@@ -8035,5 +8035,10 @@ def show_validation_report(
         )
         output = render_validation_as_text(all_results, use_colors=use_colors)
 
-    _write_text_output(output, settings.output_path, encoding="utf-8")
+    if settings.output_path:
+        _write_text_output(output, settings.output_path, encoding="utf-8")
+    else:
+        for line in output.splitlines():
+            logger.info(line)
+
     return valid_all
