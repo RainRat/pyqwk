@@ -3168,6 +3168,11 @@ examples:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("pyqwk.gui")
+
+    # Preprocess standard input '-'
+    from pyqwk.core import check_and_handle_stdin
+    args.paths = check_and_handle_stdin(args.paths, logger)
 
     input_paths = expand_paths(args.paths)
 

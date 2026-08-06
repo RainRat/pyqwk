@@ -1,4 +1,5 @@
 import sys
+import atexit
 import zipfile
 import tarfile
 import subprocess
@@ -157,6 +158,142 @@ def resolve_output_format(
             return mapping[ext]
 
     return "text"
+
+
+def detect_extension(data: bytes) -> str:
+    """Auto-detect the file extension/format based on the leading bytes of piped data."""
+    if not data:
+        return ".txt"
+
+    # SQLite
+    if data.startswith(b"SQLite format 3\x00"):
+        return ".db"
+
+    # ZIP
+    if data.startswith(b"PK\x03\x04"):
+        return ".zip"
+
+    # GZIP (often TAR)
+    if data.startswith(b"\x1f\x8b"):
+        return ".tar.gz"
+
+    # BZIP2 (often TAR)
+    if data.startswith(b"BZh"):
+        return ".tar.bz2"
+
+    # Check for TAR signature (ustar at offset 257)
+    if len(data) > 262 and data[257:262] == b"ustar":
+        return ".tar"
+
+    # Decode a chunk of data as utf-8 (or latin1 fallback) to inspect text
+    try:
+        sample = data[:2048].decode("utf-8", errors="replace").strip()
+    except Exception:
+        sample = data[:2048].decode("latin-1", errors="replace").strip()
+
+    sample_lower = sample.lower()
+
+    # JSON or JSONL
+    if sample.startswith("{") or sample.startswith("["):
+        try:
+            json.loads(data.decode("utf-8", errors="replace"))
+            return ".json"
+        except Exception:
+            return ".jsonl"
+
+    # XML or RSS
+    if sample.startswith("<?xml") or sample.startswith("<rss") or "<channel" in sample_lower:
+        if "<rss" in sample_lower or "<channel" in sample_lower:
+            return ".rss"
+        return ".xml"
+
+    # HTML
+    if sample_lower.startswith("<!doctype html") or sample_lower.startswith("<html") or "<body" in sample_lower:
+        return ".html"
+
+    # mbox
+    if sample.startswith("From "):
+        return ".mbox"
+
+    # EML / Email headers
+    has_headers = (
+        "date:" in sample_lower and
+        "from:" in sample_lower and
+        "to:" in sample_lower and
+        "subject:" in sample_lower
+    )
+    if has_headers:
+        return ".eml"
+
+    # Markdown
+    if (
+        sample.startswith("# ") or
+        "\n# " in sample or
+        "## " in sample or
+        "- **" in sample or
+        "\n- **" in sample
+    ) and "---" in sample:
+        return ".md"
+
+    # CSV
+    lines = sample.splitlines()
+    if lines:
+        first_line = lines[0].lower()
+        if "," in first_line and any(h in first_line for h in ("msgfrom", "msgto", "msgsubject", "text", "author", "recipient")):
+            return ".csv"
+
+    # Default to text
+    return ".txt"
+
+
+_temp_files_to_clean: list[str] = []
+
+
+def _cleanup_temp_files():
+    for path in _temp_files_to_clean:
+        try:
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+        except Exception:
+            pass
+
+
+atexit.register(_cleanup_temp_files)
+
+
+def check_and_handle_stdin(paths: list[str], logger: logging.Logger) -> list[str]:
+    """Check for standard input ('-') in paths, read it, and save to a temporary file."""
+    if not paths:
+        return paths
+
+    new_paths = []
+    for path in paths:
+        if path == "-":
+            try:
+                logger.info("Reading from standard input...")
+                data = sys.stdin.buffer.read()
+                ext = detect_extension(data)
+
+                # Write to a temporary file with the auto-detected extension
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+                temp_file.write(data)
+                temp_file.close()
+
+                logger.info("Auto-detected piped format as %s", ext.lstrip("."))
+
+                # Register for cleanup
+                _temp_files_to_clean.append(temp_file.name)
+                new_paths.append(temp_file.name)
+            except Exception as e:
+                logger.error("Failed to read from standard input: %s", e)
+                sys.exit(1)
+        else:
+            new_paths.append(path)
+
+    return new_paths
 
 
 RE_QUOTE_PATTERN = re.compile(r"^\s*[A-Za-z\-\=]{0,4}\s?(>|\xb3|\||\}|│)")

@@ -831,6 +831,10 @@ examples:
 
     logger = logging.getLogger(__name__)
 
+    # Preprocess standard input '-'
+    from pyqwk.core import check_and_handle_stdin
+    args.input_paths = check_and_handle_stdin(args.input_paths, logger)
+
     has_directory_input = any(os.path.isdir(p) for p in args.input_paths)
     input_paths = expand_paths(args.input_paths)
     output_path = args.output_path
