@@ -155,3 +155,46 @@ def test_preset_override_combined_short_options(mock_expand_paths, mock_process_
     settings = mock_process_merged_files.call_args[0][1]
     assert settings.individual_files is True
     assert settings.truncate_signatures is True
+
+
+@patch("pyqwk.cli.process_merged_files")
+@patch("pyqwk.cli.expand_paths")
+def test_preset_forum(mock_expand_paths, mock_process_merged_files):
+    """Verify the 'forum' preset defaults."""
+    mock_expand_paths.return_value = ["dummy.qwk"]
+
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "-P", "forum", "-o", "out_dir"]):
+        main()
+
+    mock_process_merged_files.assert_called_once()
+    settings = mock_process_merged_files.call_args[0][1]
+
+    assert settings.format == "html"
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is True
+    assert settings.binaries_removal is True
+    assert settings.strip_ansi is True
+    assert settings.threaded is True
+    assert settings.individual_files is True
+    assert settings.include_toc is True
+
+
+@patch("pyqwk.cli.process_merged_files")
+@patch("pyqwk.cli.expand_paths")
+def test_preset_feed(mock_expand_paths, mock_process_merged_files):
+    """Verify the 'feed' preset defaults."""
+    mock_expand_paths.return_value = ["dummy.qwk"]
+
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "-P", "feed", "-o", "out.rss"]):
+        main()
+
+    mock_process_merged_files.assert_called_once()
+    settings = mock_process_merged_files.call_args[0][1]
+
+    assert settings.format == "rss"
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is True
+    assert settings.binaries_removal is True
+    assert settings.strip_ansi is True
+    assert settings.sort == "date"
+    assert settings.reverse is True

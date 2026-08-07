@@ -204,6 +204,12 @@ qwk archive.qwk --preset backup -o backup.db
 # Create a single threaded HTML digest with a table of contents
 qwk archive.qwk --preset digest -o digest.html
 
+# Save messages as clean, threaded individual HTML files with an index (static discussion board)
+qwk archive.qwk --preset forum -o my_forum_dir/
+
+# Save messages as a clean, chronological RSS feed sorted from newest to oldest
+qwk archive.qwk --preset feed -o feed.xml
+
 # Save a simple clean text archive with no headers
 qwk archive.qwk --preset text-archive -o archive.txt
 ```
@@ -222,6 +228,8 @@ qwk --list-presets
 | `email` | Saves messages as individual EML files. | `--format eml --individual-files` |
 | `backup` | Creates a SQLite backup with private and unique messages. | `--format sqlite --private --unique` |
 | `digest` | Saves a single clean, threaded HTML file with a table of contents. | `--format html --threaded --clean --toc` |
+| `forum` | Saves clean, threaded individual HTML files with an index. | `--format html --clean --threaded --individual-files --toc` |
+| `feed` | Saves a clean chronological RSS feed. | `--format rss --clean --sort date --reverse` |
 | `text-archive` | Saves clean text without headers. | `--format text --clean --noheader` |
 
 *Note: You can override any preset setting by adding its command-line option.*
@@ -539,7 +547,7 @@ for msg in messages:
 | `-v, --verbose` | Show more details like conference names and message numbers. |
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
-| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, text-archive). |
+| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
