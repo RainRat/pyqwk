@@ -97,6 +97,14 @@ class ListPresetsAction(argparse.Action):
                 "desc": "Save a single clean, threaded HTML file with a table of contents.",
                 "equiv": "--format html --threaded --clean --toc"
             },
+            "forum": {
+                "desc": "Save messages as clean, threaded individual HTML files with an index discussion board.",
+                "equiv": "--format html --clean --threaded --individual-files --toc"
+            },
+            "feed": {
+                "desc": "Save messages as a clean, chronological RSS feed sorted from newest to oldest.",
+                "equiv": "--format rss --clean --sort date --reverse"
+            },
             "text-archive": {
                 "desc": "Save clean text without headers.",
                 "equiv": "--format text --clean --noheader"
@@ -796,13 +804,15 @@ examples:
     preset_group.add_argument(
         "-P",
         "--preset",
-        choices=["blog", "email", "backup", "digest", "text-archive"],
+        choices=["blog", "email", "backup", "digest", "forum", "feed", "text-archive"],
         help=(
             "Apply predefined parameter combinations for common workflows:\n"
             "  blog: Save messages as clean, threaded individual Markdown files.\n"
             "  email: Save messages as individual EML files.\n"
             "  backup: Create a complete SQLite backup with private and unique messages.\n"
             "  digest: Save a single clean, threaded HTML file with a table of contents.\n"
+            "  forum: Save messages as clean, threaded individual HTML files with an index discussion board.\n"
+            "  feed: Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
             "  text-archive: Save clean text without headers."
         ),
     )
@@ -860,6 +870,19 @@ examples:
                 "threaded": True,
                 "clean": True,
                 "include_toc": True,
+            },
+            "forum": {
+                "format": "html",
+                "clean": True,
+                "threaded": True,
+                "individualfiles": True,
+                "include_toc": True,
+            },
+            "feed": {
+                "format": "rss",
+                "clean": True,
+                "sort": "date",
+                "reverse": True,
             },
             "text-archive": {
                 "format": "text",
