@@ -272,6 +272,12 @@ qwk archive.qwk --format mbox -o messages.mbox
 qwk archive.qwk --individual-files -o output_folder/
 ```
 
+**Save separate files directly inside a compressed archive:**
+You can save messages as individual files directly into a compressed archive like a ZIP or TAR file:
+```bash
+qwk archive.qwk --individual-files -o output.zip
+```
+
 **Organize files by conference:**
 ```bash
 qwk archive.qwk --individual-files --organize -o output_folder/
@@ -698,7 +704,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 - **If options do not work together:** Some options cannot be used together:
   - You cannot use `--oneline` and `--individual-files` at the same time.
   - You cannot use `--threaded` with `eml` or `maildir` formats.
-- **If you get folder errors:** When you save messages as individual files, or when you use the `eml` or `maildir` formats, the output path (`-o` or `--output`) must be a folder, not a file.
+- **If you get folder errors:** When you save messages as individual files, or when you use the `eml` or `maildir` formats, the output path (`-o` or `--output`) must be a folder or a compressed archive (such as `.zip`, `.tar.gz`, `.tar.bz2`, or `.tgz`). If you provide a regular file path (like `.txt` or `.html`) for these multi-file formats, the tool will show an error.
 
 ## Contributing
 
