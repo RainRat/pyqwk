@@ -185,12 +185,8 @@ def detect_extension(data: bytes) -> str:
     if len(data) > 262 and data[257:262] == b"ustar":
         return ".tar"
 
-    # Decode a chunk of data as utf-8 (or latin1 fallback) to inspect text
-    try:
-        sample = data[:2048].decode("utf-8", errors="replace").strip()
-    except Exception:
-        sample = data[:2048].decode("latin-1", errors="replace").strip()
-
+    # Decode a chunk of data as utf-8 to inspect text
+    sample = data[:2048].decode("utf-8", errors="replace").strip()
     sample_lower = sample.lower()
 
     # JSON or JSONL
