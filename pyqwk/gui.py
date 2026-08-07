@@ -110,6 +110,11 @@ class QwkGuiApp:
         self.max_words_var.trace_add("write", self._on_search_changed)
         self.redact_pii_var = tk.BooleanVar(value=False)
         self.embed_attach_var = tk.BooleanVar(value=False)
+        self.column_vars = {
+            col: tk.BooleanVar(value=True)
+            for col in self.column_labels
+            if col != "#0"
+        }
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search_changed)
@@ -133,6 +138,19 @@ class QwkGuiApp:
 
     def _show_list_context_menu(self, event: tk.Event) -> None:
         """Display a context menu for the message list."""
+        region = self.message_list.identify_region(event.x, event.y)
+        if region == "heading":
+            menu = tk.Menu(self.root, tearoff=0)
+            for col, label in self.column_labels.items():
+                if col != "#0":
+                    menu.add_checkbutton(
+                        label=label,
+                        variable=self.column_vars[col],
+                        command=self._update_visible_columns,
+                    )
+            menu.post(event.x_root, event.y_root)
+            return
+
         iid = self.message_list.identify_row(event.y)
         if not iid:
             return
@@ -819,6 +837,16 @@ class QwkGuiApp:
             variable=self.embed_attach_var,
             command=self.reload_messages,
         )
+        view_menu.add_separator()
+        columns_menu = tk.Menu(view_menu, tearoff=0)
+        for col, label in self.column_labels.items():
+            if col != "#0":
+                columns_menu.add_checkbutton(
+                    label=label,
+                    variable=self.column_vars[col],
+                    command=self._update_visible_columns,
+                )
+        view_menu.add_cascade(label="Columns", menu=columns_menu)
         menubar.add_cascade(label="View", menu=view_menu, underline=0)
 
         self.root.config(menu=menubar)
@@ -1188,6 +1216,15 @@ class QwkGuiApp:
         else:
             self.detail_text.config(wrap=tk.NONE)
             self.detail_h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+    def _update_visible_columns(self) -> None:
+        """Update the displayed columns of the treeview based on the column variables."""
+        visible = []
+        for col in self.column_labels:
+            if col != "#0":
+                if self.column_vars[col].get():
+                    visible.append(col)
+        self.message_list["displaycolumns"] = visible
 
     def _build_status_bar(self) -> None:
         status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
