@@ -3253,7 +3253,7 @@ class QwkGuiApp:
                     idx = int(iid)
                     msg = self.messages[idx]
 
-                    if col == "Num" or col == "Replies":
+                    if col == "Num":
                         return msg.header.msgnum or 0
                     elif col == "Size":
                         return len(msg.text) if msg.text else 0
