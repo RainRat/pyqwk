@@ -125,6 +125,24 @@ If you prefer not to use a virtual environment, you can install the tool directl
 python -m pyqwk.gui
 ```
 
+### Option 3: Install with Poetry (Recommended for Developers)
+
+If you use Poetry to manage your Python projects, you can install and run the tool easily.
+
+1. Open your terminal in the `pyqwk` folder.
+2. Install the package and its dependencies:
+   ```bash
+   poetry install
+   ```
+3. Run the tool:
+   ```bash
+   poetry run qwk archive.qwk
+   ```
+4. Or start the graphical reader:
+   ```bash
+   poetry run qwk-gui
+   ```
+
 ## Graphical Reader
 
 Use the built-in reader to browse conferences, search messages, and follow conversations.
@@ -718,6 +736,10 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 We welcome your contributions!
 
+You can set up your development environment and run tests using standard Python tools or Poetry.
+
+### Using Standard Python Tools
+
 1. Install development tools:
    ```bash
    python -m pip install -e . pytest pytest-mock pytest-cov
@@ -725,6 +747,17 @@ We welcome your contributions!
 2. Run tests:
    ```bash
    python -m pytest
+   ```
+
+### Using Poetry (Alternative)
+
+1. Install dependencies and development tools:
+   ```bash
+   poetry install
+   ```
+2. Run tests:
+   ```bash
+   poetry run pytest
    ```
 
 ### Headless Testing
