@@ -6,10 +6,20 @@ import datetime
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import _parse_qwk_date
+from pyqwk.core import _parse_qwk_date, _parse_rfc_date_string
 
 
 class TestDateParsing:
+    def test_parse_rfc_date_string_valid(self):
+        # Test parsing a valid RFC date string
+        res = _parse_rfc_date_string("Fri, 09 Jun 2023 15:30:00 +0000")
+        assert res == ("06-09-23", "15:30")
+
+    def test_parse_rfc_date_string_invalid(self):
+        # Test parsing invalid strings or None
+        assert _parse_rfc_date_string("invalid-date") is None
+        assert _parse_rfc_date_string(None) is None
+
     """Test suite for _parse_qwk_date function."""
 
     def test_parse_standard_1900s_date(self):

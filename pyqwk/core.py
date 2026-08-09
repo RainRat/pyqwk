@@ -1368,6 +1368,17 @@ def _safe_to_int(v: Any) -> int | None:
         return None
 
 
+def _parse_rfc_date_string(date_str: str | None) -> tuple[str, str] | None:
+    """Safely parse an RFC date string into a (msg_date, msg_time) tuple, or None on failure."""
+    if date_str:
+        try:
+            dt = email.utils.parsedate_to_datetime(date_str)
+            return dt.strftime("%m-%d-%y"), dt.strftime("%H:%M")
+        except (ValueError, TypeError):
+            pass
+    return None
+
+
 def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
     """Convert an RSS XML tree into ParsedMessage objects."""
     messages = []
@@ -1395,14 +1406,12 @@ def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
         category = item.findtext("category") or ""
 
         # Parse date
-        msg_date = "01-01-70"
-        msg_time = "00:00"
-        if pub_date_str:
-            try:
-                dt = email.utils.parsedate_to_datetime(pub_date_str)
-                msg_date = dt.strftime("%m-%d-%y")
-                msg_time = dt.strftime("%H:%M")
-            except (ValueError, TypeError):
+        parsed_date = _parse_rfc_date_string(pub_date_str)
+        if parsed_date:
+            msg_date, msg_time = parsed_date
+        else:
+            msg_date, msg_time = "01-01-70", "00:00"
+            if pub_date_str:
                 logging.getLogger("pyqwk.core").warning("Failed to parse RSS pubDate: %r", pub_date_str)
 
         # Parse GUID: {confnum}.{msgnum}@qwk
@@ -1569,16 +1578,8 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
     msg_subject = get_hdr("Subject")
 
     # Date/Time
-    msg_date = "01-01-70"
-    msg_time = "00:00"
-    date_hdr = get_hdr("Date")
-    if date_hdr:
-        try:
-            dt = email.utils.parsedate_to_datetime(date_hdr)
-            msg_date = dt.strftime("%m-%d-%y")
-            msg_time = dt.strftime("%H:%M")
-        except (ValueError, TypeError):
-            pass
+    parsed_date = _parse_rfc_date_string(get_hdr("Date"))
+    msg_date, msg_time = parsed_date if parsed_date else ("01-01-70", "00:00")
 
     # Message body and MIME attachments
     body = ""
