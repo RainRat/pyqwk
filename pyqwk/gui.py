@@ -1097,6 +1097,17 @@ class QwkGuiApp:
         self.has_msg_links_var.set(False)
         self.reload_messages()
 
+    def _reset_display_options(self) -> None:
+        """Reset all six display checkboxes/options to their default values."""
+        self.threaded_var.set(False)
+        self.clean_var.set(False)
+        self.wrap_var.set(True)
+        self.ansi_var.set(False)
+        self.redact_pii_var.set(False)
+        self.embed_attach_var.set(False)
+        self._update_wrap()
+        self.reload_messages()
+
     def _push_current_to_history(self) -> None:
         """Push the currently selected message's conference and number to history."""
         if not hasattr(self, "_history_stack") or not hasattr(self, "messages"):
@@ -1452,6 +1463,13 @@ class QwkGuiApp:
             ttk.Checkbutton(options_frame, text=text, variable=var, command=cmd).grid(
                 row=i // 3, column=i % 3, padx=5, sticky=tk.W
             )
+
+        ttk.Button(
+            options_frame,
+            text="✕",
+            width=2,
+            command=self._reset_display_options,
+        ).grid(row=0, column=3, rowspan=2, padx=(5, 2), sticky=tk.NS)
 
         global_frame = ttk.Labelframe(row2, text="Global", padding=(5, 5))
         global_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
