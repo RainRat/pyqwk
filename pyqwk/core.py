@@ -750,6 +750,7 @@ class ProcessingSettings:
     thread_id_filters: set[int] | None = None
     attachment_pattern: str | None = None
     count_only: bool = False
+    threads: bool = False
 
 
 @dataclass
@@ -8038,3 +8039,226 @@ def show_validation_report(
             logger.info(line)
 
     return valid_all
+
+
+def show_threads(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Load and filter messages, group them into threads, and output the list of threads."""
+    messages = []
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            user_name = settings.my_name or (bbs_info.user_name if bbs_info else None)
+            allowed_conferences = get_allowed_conferences(
+                settings.conferences, board_dict
+            )
+            allowed_exclude_conferences = get_allowed_conferences(
+                settings.exclude_conferences, board_dict
+            )
+
+            is_structured = isinstance(file_data, list)
+            if is_structured:
+                messages_to_process = file_data
+            else:
+                messages_to_process = parse_messages(
+                    file_data, None, settings.encoding, headers_only=False
+                )
+
+            for message in messages_to_process:
+                message = replace(
+                    message,
+                    confname=message.confname or board_dict.get(message.confnum),
+                    bbs_name=message.bbs_name
+                    or (bbs_info.name if bbs_info else None),
+                    bbs_id=message.bbs_id
+                    or (bbs_info.bbs_id if bbs_info else None),
+                    source_file=message.source_file or os.path.basename(input_path),
+                )
+
+                if matches_filters(
+                    message,
+                    settings,
+                    allowed_conferences,
+                    user_name,
+                    allowed_exclude_conferences,
+                ):
+                    messages.append(message)
+        except Exception as e:
+            logger.error(f"Error reading messages for thread listing from {input_path}: {e}")
+
+    if not messages:
+        logger.info("No matching messages/threads found.")
+        return
+
+    # Build threaded structure
+    threaded_messages = _order_messages_by_thread(messages)
+
+    threads_dict = {}
+    threads_order = []
+
+    for msg in threaded_messages:
+        tid = msg.thread_id
+        if tid not in threads_dict:
+            threads_dict[tid] = {
+                "thread_id": str(tid),
+                "subject": _normalize_subject(msg.header.msgsubject, lowercase=False),
+                "started_by": msg.header.msgfrom.strip(),
+                "started_at": _parse_qwk_date(msg.header.msgdate, msg.header.msgtime),
+                "message_count": msg.thread_size,
+                "max_depth": msg.depth,
+                "last_activity": _parse_qwk_date(msg.header.msgdate, msg.header.msgtime),
+            }
+            threads_order.append(tid)
+        else:
+            entry = threads_dict[tid]
+            if msg.depth > entry["max_depth"]:
+                entry["max_depth"] = msg.depth
+            msg_dt = _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+            if msg_dt > entry["last_activity"]:
+                entry["last_activity"] = msg_dt
+
+    # Apply sorting
+    if settings.sort:
+        sort_key = settings.sort
+        if sort_key == "date":
+            threads_order.sort(key=lambda tid: threads_dict[tid]["started_at"], reverse=settings.reverse)
+        elif sort_key in ("subject", "title"):
+            threads_order.sort(key=lambda tid: threads_dict[tid]["subject"].lower(), reverse=settings.reverse)
+        elif sort_key in ("author", "from"):
+            threads_order.sort(key=lambda tid: threads_dict[tid]["started_by"].lower(), reverse=settings.reverse)
+        elif sort_key in ("size", "thread_size", "replies", "num"):
+            threads_order.sort(key=lambda tid: threads_dict[tid]["message_count"], reverse=settings.reverse)
+        elif sort_key in ("last_activity", "activity"):
+            threads_order.sort(key=lambda tid: threads_dict[tid]["last_activity"], reverse=settings.reverse)
+        elif sort_key == "random":
+            import random
+            random.shuffle(threads_order)
+    else:
+        # Default sort by started_at ascending (oldest first)
+        threads_order.sort(key=lambda tid: threads_dict[tid]["started_at"], reverse=settings.reverse)
+
+    # Format output
+    output = ""
+    fmt = settings.format or "text"
+
+    if fmt == "json":
+        json_list = []
+        for tid in threads_order:
+            entry = dict(threads_dict[tid])
+            entry["started_at"] = entry["started_at"].isoformat()
+            entry["last_activity"] = entry["last_activity"].isoformat()
+            json_list.append(entry)
+        output = json.dumps(json_list, indent=4, ensure_ascii=False)
+
+    elif fmt == "csv":
+        output_io = io.StringIO()
+        fieldnames = ["thread_id", "subject", "started_by", "started_at", "message_count", "max_depth", "last_activity"]
+        writer = csv.DictWriter(output_io, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+        writer.writeheader()
+        for tid in threads_order:
+            entry = threads_dict[tid]
+            writer.writerow({
+                "thread_id": entry["thread_id"],
+                "subject": entry["subject"],
+                "started_by": entry["started_by"],
+                "started_at": entry["started_at"].strftime("%Y-%m-%d %H:%M:%S"),
+                "message_count": entry["message_count"],
+                "max_depth": entry["max_depth"],
+                "last_activity": entry["last_activity"].strftime("%Y-%m-%d %H:%M:%S")
+            })
+        output = output_io.getvalue()
+
+    elif fmt == "markdown":
+        lines = [
+            "# Conversation Threads\n",
+            "| ID | Subject | Started By | Date | Messages | Max Depth | Last Activity |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        for tid in threads_order:
+            entry = threads_dict[tid]
+            subj = _escape_markdown(entry["subject"])
+            started_by = _escape_markdown(entry["started_by"])
+            date_str = entry["started_at"].strftime("%Y-%m-%d")
+            last_act_str = entry["last_activity"].strftime("%Y-%m-%d")
+            lines.append(
+                f"| {entry['thread_id']} | {subj} | {started_by} | {date_str} | {entry['message_count']} | {entry['max_depth']} | {last_act_str} |"
+            )
+        output = "\n".join(lines) + "\n"
+
+    elif fmt == "html":
+        title = "Conversation Threads"
+        html_parts = _get_html_header(title)
+        html_parts.append(f"<h1>{title}</h1>")
+        html_parts.append("<table>")
+        html_parts.append(
+            "<thead><tr><th>ID</th><th>Subject</th><th>Started By</th><th>Date</th><th>Messages</th><th>Max Depth</th><th>Last Activity</th></tr></thead>"
+        )
+        html_parts.append("<tbody>")
+        for tid in threads_order:
+            entry = threads_dict[tid]
+            html_parts.append("<tr>")
+            html_parts.append(f"<td>{html.escape(entry['thread_id'])}</td>")
+            html_parts.append(f"<td>{html.escape(entry['subject'])}</td>")
+            html_parts.append(f"<td>{html.escape(entry['started_by'])}</td>")
+            html_parts.append(f"<td>{entry['started_at'].strftime('%Y-%m-%d')}</td>")
+            html_parts.append(f"<td>{entry['message_count']}</td>")
+            html_parts.append(f"<td>{entry['max_depth']}</td>")
+            html_parts.append(f"<td>{entry['last_activity'].strftime('%Y-%m-%d')}</td>")
+            html_parts.append("</tr>")
+        html_parts.append("</tbody></table>")
+        html_parts.extend(_get_html_footer())
+        output = "\n".join(html_parts)
+
+    else:
+        # Default to text format
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        BOLD = "1"
+        CYAN = "36"
+        DIM = "90"
+
+        header_line = (
+            f"  {_colorize('ID', BOLD, enabled=use_colors):<12} "
+            f"{_colorize('Subject', BOLD, enabled=use_colors):<35} "
+            f"{_colorize('Started By', BOLD, enabled=use_colors):<20} "
+            f"{_colorize('Date', BOLD, enabled=use_colors):<12} "
+            f"{_colorize('Msgs', BOLD, enabled=use_colors):<6} "
+            f"{_colorize('Depth', BOLD, enabled=use_colors):<6} "
+            f"{_colorize('Last Activity', BOLD, enabled=use_colors)}\r\n"
+        )
+        separator_str = "-" * 115 + "\r\n"
+        parts = [header_line, _colorize(separator_str, DIM, enabled=use_colors)]
+
+        for tid in threads_order:
+            entry = threads_dict[tid]
+
+            tid_fmt = entry["thread_id"][:6]
+            tid_part = f"  {_colorize(f'{tid_fmt:<6}', CYAN, enabled=use_colors)} "
+
+            subj_fmt = entry["subject"][:33]
+            if len(entry["subject"]) > 33:
+                subj_fmt += "..."
+            subj_part = f"{subj_fmt:<35} "
+
+            by_fmt = entry["started_by"][:18]
+            if len(entry["started_by"]) > 18:
+                by_fmt += "..."
+            by_part = f"{_colorize(f'{by_fmt:<20}', DIM, enabled=use_colors)} "
+
+            date_part = f"{entry['started_at'].strftime('%Y-%m-%d'):<12} "
+            count_val = entry["message_count"]
+            count_part = f"{_colorize(f'{count_val:<6}', BOLD, enabled=use_colors)} "
+            depth_val = entry["max_depth"]
+            depth_part = f"{depth_val:<6} "
+            last_part = entry["last_activity"].strftime("%Y-%m-%d")
+
+            parts.append(f"{tid_part}{subj_part}{by_part}{date_part}{count_part}{depth_part}{last_part}\r\n")
+
+        output = "".join(parts)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")

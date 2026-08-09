@@ -834,6 +834,11 @@ examples:
         help="Show archive statistics and exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--threads",
+        action="store_true",
+        help="List all conversation threads in the archives and exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "--merge-stats",
         action="store_true",
         help="Show a single merged report when analyzing multiple archives.",
@@ -957,6 +962,9 @@ examples:
     elif args.info or args.stats:
         output_mode = "stdout"
         resolved_output_path = None
+    elif getattr(args, "threads", False):
+        output_mode = "stdout" if not output_path else "file"
+        resolved_output_path = output_path
     elif args.individualfiles:
         if output_path is None:
             if len(args.input_paths) == 1 and not has_directory_input:
@@ -1124,6 +1132,7 @@ examples:
         max_thread_size=getattr(args, "max_thread_size", None),
         attachment_pattern=getattr(args, "attachment_pattern", None),
         count_only=getattr(args, "count_only", False),
+        threads=getattr(args, "threads", False),
     )
 
     if getattr(args, "count_only", False):
@@ -1148,6 +1157,11 @@ examples:
 
     if args.stats:
         show_stats(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "threads", False):
+        from pyqwk.core import show_threads
+        show_threads(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
