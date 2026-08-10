@@ -853,6 +853,7 @@ class QwkGuiApp:
 
         # Bind keyboard shortcuts
         self.root.bind("<Control-o>", self.open_file)
+        self.root.bind("<Control-O>", self.open_file)
         self.root.bind("<Control-t>", self._toggle_threaded_shortcut)
         self.root.bind("<Control-T>", self._toggle_threaded_shortcut)
         self.root.bind("<Control-w>", self._toggle_wrap_shortcut)
@@ -860,14 +861,22 @@ class QwkGuiApp:
         self.root.bind("<Control-Shift-C>", self._toggle_clean_shortcut)
         self.root.bind("<Control-Shift-c>", self._toggle_clean_shortcut)
         self.root.bind("<Control-f>", self._focus_search)
+        self.root.bind("<Control-F>", self._focus_search)
         self.root.bind("<Control-e>", self._focus_exclude)
+        self.root.bind("<Control-E>", self._focus_exclude)
         self.root.bind("<Control-s>", self.export_messages)
+        self.root.bind("<Control-S>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
+        self.root.bind("<Control-I>", self.show_stats_window)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
+        self.root.bind("<Control-G>", self.prompt_jump_to_message)
         self.root.bind("<Control-u>", self.jump_to_referenced_message)
         self.root.bind("<Control-U>", self.jump_to_referenced_message)
         self.root.bind("<Control-q>", self.quit_app)
+        self.root.bind("<Control-Q>", self.quit_app)
         self.root.bind("<Control-X>", self.clear_filters)
+        self.root.bind("<Control-Shift-X>", self.clear_filters)
+        self.root.bind("<Control-Shift-x>", self.clear_filters)
         self.root.bind("<Escape>", self.clear_search)
         self.root.bind("<F3>", lambda e: self._navigate_search_matches(1))
         self.root.bind("<Shift-F3>", lambda e: self._navigate_search_matches(-1))
@@ -1465,10 +1474,33 @@ class QwkGuiApp:
         self.exclude_entry.bind("<Return>", self._on_search_enter)
         self.exclude_entry.bind("<Shift-Return>", self._on_search_shift_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
+        self.exclude_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind(
             "<Up>", lambda e: self._select_relative_message(-1, force=True)
         )
         self.search_entry.bind(
+            "<Down>", lambda e: self._select_relative_message(1, force=True)
+        )
+        self.exclude_entry.bind(
+            "<Up>", lambda e: self._select_relative_message(-1, force=True)
+        )
+        self.exclude_entry.bind(
+            "<Down>", lambda e: self._select_relative_message(1, force=True)
+        )
+        self.min_words_entry.bind("<Return>", self._on_search_enter)
+        self.min_words_entry.bind("<Escape>", self.clear_search)
+        self.min_words_entry.bind(
+            "<Up>", lambda e: self._select_relative_message(-1, force=True)
+        )
+        self.min_words_entry.bind(
+            "<Down>", lambda e: self._select_relative_message(1, force=True)
+        )
+        self.max_words_entry.bind("<Return>", self._on_search_enter)
+        self.max_words_entry.bind("<Escape>", self.clear_search)
+        self.max_words_entry.bind(
+            "<Up>", lambda e: self._select_relative_message(-1, force=True)
+        )
+        self.max_words_entry.bind(
             "<Down>", lambda e: self._select_relative_message(1, force=True)
         )
         self.root.bind("<Control-f>", self._focus_search)
@@ -1565,6 +1597,7 @@ class QwkGuiApp:
             padx=15,
             pady=15,
             background="#ffffff",
+            foreground="#000000",
             relief=tk.FLAT,
             borderwidth=0,
         )

@@ -124,3 +124,46 @@ def test_focus_search_with_slash_and_non_entry(mock_gui_deps):
     with patch.object(app, "_focus_entry_field") as mock_focus_field:
         app._focus_search(event_ctrl_f)
         mock_focus_field.assert_called_once_with("search_entry", "search_var")
+
+
+def test_new_ui_shortcuts_and_consistency(mock_gui_deps):
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    # 1. Verify uppercase Ctrl shortcuts and equivalents are bound on root
+    bound_events = [args[0][0] for args in root.bind.call_args_list]
+    assert "<Control-O>" in bound_events
+    assert "<Control-S>" in bound_events
+    assert "<Control-I>" in bound_events
+    assert "<Control-F>" in bound_events
+    assert "<Control-E>" in bound_events
+    assert "<Control-G>" in bound_events
+    assert "<Control-Q>" in bound_events
+    assert "<Control-U>" in bound_events
+    assert "<Control-Shift-X>" in bound_events
+    assert "<Control-Shift-x>" in bound_events
+
+    # 2. Verify standard bindings on exclude_entry
+    exclude_binds = [args[0][0] for args in app.exclude_entry.bind.call_args_list]
+    assert "<Up>" in exclude_binds
+    assert "<Down>" in exclude_binds
+    assert "<Escape>" in exclude_binds
+
+    # 3. Verify standard bindings on min_words_entry and max_words_entry
+    min_binds = [args[0][0] for args in app.min_words_entry.bind.call_args_list]
+    assert "<Return>" in min_binds
+    assert "<Escape>" in min_binds
+    assert "<Up>" in min_binds
+    assert "<Down>" in min_binds
+
+    max_binds = [args[0][0] for args in app.max_words_entry.bind.call_args_list]
+    assert "<Return>" in max_binds
+    assert "<Escape>" in max_binds
+    assert "<Up>" in max_binds
+    assert "<Down>" in max_binds
+
+    # 4. Verify detail_text foreground
+    text_mock = mock_gui_deps["tk"].Text
+    kwargs_list = [args[1] for args in text_mock.call_args_list]
+    assert any(kw.get("foreground") == "#000000" for kw in kwargs_list)
