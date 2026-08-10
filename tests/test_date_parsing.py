@@ -6,7 +6,7 @@ import datetime
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import _parse_qwk_date
+from pyqwk.core import _parse_qwk_date, _parse_rfc_date_string
 
 
 class TestDateParsing:
@@ -80,3 +80,24 @@ class TestDateParsing:
 
         dt = _parse_qwk_date("1995-05-15", "09:00:05")
         assert dt == datetime.datetime(1995, 5, 15, 9, 0, 5)
+
+
+class TestRFCDateParsing:
+    """Test suite for _parse_rfc_date_string function."""
+
+    def test_parse_valid_rfc_date(self):
+        # Fri, 09 Jun 2023 10:30:00 +0000
+        msg_date, msg_time = _parse_rfc_date_string("Fri, 09 Jun 2023 10:30:00 +0000")
+        assert msg_date == "06-09-23"
+        assert msg_time == "10:30"
+
+    def test_parse_null_and_empty_rfc_date(self):
+        # None and empty string
+        assert _parse_rfc_date_string(None) == ("01-01-70", "00:00")
+        assert _parse_rfc_date_string("") == ("01-01-70", "00:00")
+
+    def test_parse_invalid_rfc_date_format(self):
+        import pytest
+        # Invalid format should raise ValueError
+        with pytest.raises(ValueError, match="Invalid date format"):
+            _parse_rfc_date_string("not-a-date")
