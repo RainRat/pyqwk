@@ -215,22 +215,63 @@ def test_gui_replies_column(mock_load, mock_open, tmp_path):
     mock_load.return_value = ([m1, m2], {1: "General"})
     mock_open.return_value = ["fake.qwk"]
 
-    root = tk.Tk()
-    try:
+    with patch("pyqwk.gui.tk") as mock_tk, \
+         patch("pyqwk.gui.ttk") as mock_ttk, \
+         patch("pyqwk.gui.font"), \
+         patch("pyqwk.gui.messagebox"):
+
+        # Configure Variable mock return values
+        mock_tk.BooleanVar.return_value.get.return_value = False
+        mock_tk.StringVar.return_value.get.return_value = ""
+        mock_tk.IntVar.return_value.get.return_value = 0
+
+        # Tkinter constants
+        mock_tk.END = "end"
+        mock_tk.HORIZONTAL = "horizontal"
+        mock_tk.VERTICAL = "vertical"
+        mock_tk.BOTH = "both"
+        mock_tk.X = "x"
+        mock_tk.Y = "y"
+        mock_tk.LEFT = "left"
+        mock_tk.RIGHT = "right"
+        mock_tk.TOP = "top"
+        mock_tk.BOTTOM = "bottom"
+        mock_tk.SUNKEN = "sunken"
+        mock_tk.W = "w"
+        mock_tk.E = "e"
+        mock_tk.WORD = "word"
+        mock_tk.DISABLED = "disabled"
+        mock_tk.NORMAL = "normal"
+        mock_tk.INSERT = "insert"
+
+        root = MagicMock()
         app = QwkGuiApp(root)
         app.load_messages(["fake.qwk"])
 
         assert hasattr(app, "message_list")
-        app.sort_column("Replies", False)
-        # Order should be m2 (0) then m1 (1)
-        pass
-        pass
 
-        app.sort_column("Replies", True) # Descending
-        pass
-        pass
-    finally:
-        root.destroy()
+        # Mock the treeview children to return indices 0 and 1 for root, and empty list for children
+        def mock_get_children(item_id=""):
+            if item_id == "":
+                return ["0", "1"]
+            return []
+        app.message_list.get_children.side_effect = mock_get_children
+
+        # Sort Ascending: m2 (0 replies, iid "1") should come first, then m1 (1 reply, iid "0")
+        app.sort_column("Replies", False)
+        calls_asc = app.message_list.move.call_args_list
+        assert len(calls_asc) == 2
+        assert calls_asc[0].args == ("1", "", 0)
+        assert calls_asc[1].args == ("0", "", 1)
+
+        app.message_list.move.reset_mock()
+
+        # Sort Descending: m1 (1 reply, iid "0") should come first, then m2 (0 replies, iid "1")
+        app.sort_column("Replies", True)
+        calls_desc = app.message_list.move.call_args_list
+        assert len(calls_desc) == 2
+        assert calls_desc[0].args == ("0", "", 0)
+        assert calls_desc[1].args == ("1", "", 1)
 
 
 def test_matches_filters_engagement_max():
