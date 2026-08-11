@@ -6,7 +6,7 @@ import datetime
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pyqwk.core import _parse_qwk_date
+from pyqwk.core import _parse_qwk_date, _parse_rfc_date_string
 
 
 class TestDateParsing:
@@ -80,3 +80,15 @@ class TestDateParsing:
 
         dt = _parse_qwk_date("1995-05-15", "09:00:05")
         assert dt == datetime.datetime(1995, 5, 15, 9, 0, 5)
+
+    def test_parse_rfc_date_string_valid(self):
+        # RFC 2822 standard format
+        d, t = _parse_rfc_date_string("Fri, 27 Oct 2023 14:30:00 +0000")
+        assert d == "10-27-23"
+        assert t == "14:30"
+
+    def test_parse_rfc_date_string_invalid(self):
+        # Invalid date strings should raise ValueError
+        import pytest
+        with pytest.raises(ValueError):
+            _parse_rfc_date_string("invalid date")
