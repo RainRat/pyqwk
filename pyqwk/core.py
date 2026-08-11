@@ -8038,3 +8038,268 @@ def show_validation_report(
             logger.info(line)
 
     return valid_all
+
+
+def calculate_threads(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> list[dict[str, Any]]:
+    """Analyze archives and group messages into conversation threads with structural metrics."""
+    all_raw_messages: list[ParsedMessage] = []
+    seen_ids = set()
+
+    initial_filtering_settings = settings
+    if settings.threaded or settings.thread_id_filters or any(
+        v is not None
+        for v in (
+            settings.min_replies,
+            settings.max_replies,
+            settings.min_thread_size,
+            settings.max_thread_size,
+        )
+    ):
+        initial_filtering_settings = replace(
+            settings,
+            min_depth=None,
+            max_depth=None,
+            min_replies=None,
+            max_replies=None,
+            min_thread_size=None,
+            max_thread_size=None,
+            thread_id_filters=None,
+        )
+
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            if isinstance(file_data, list):
+                raw_messages = file_data
+            else:
+                raw_messages = parse_messages(file_data, None, settings.encoding)
+
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            user_name = settings.my_name or (bbs_info.user_name if bbs_info else None)
+            allowed_conferences = get_allowed_conferences(
+                settings.conferences, board_dict
+            )
+            allowed_exclude_conferences = None
+            if getattr(settings, "exclude_conferences", None):
+                allowed_exclude_conferences = get_allowed_conferences(
+                    settings.exclude_conferences, board_dict
+                )
+
+            for msg in raw_messages:
+                msg.confname = board_dict.get(msg.confnum)
+                if bbs_info:
+                    msg.bbs_name = bbs_info.name
+                    msg.bbs_id = bbs_info.bbs_id
+
+                msg_id = (msg.source_file or input_path, msg.confnum, msg.msgnum if msg.msgnum is not None else id(msg))
+                if msg_id in seen_ids:
+                    continue
+
+                if matches_filters(
+                    msg,
+                    initial_filtering_settings,
+                    allowed_conferences,
+                    user_name,
+                    allowed_exclude_conferences,
+                ):
+                    seen_ids.add(msg_id)
+                    all_raw_messages.append(msg)
+        except Exception as e:
+            logger.error(f"Error loading data for threads calculation from {input_path}: {e}")
+
+    threaded_messages = _order_messages_by_thread(all_raw_messages)
+
+    threads_map: dict[str, list[ParsedMessage]] = defaultdict(list)
+    for msg in threaded_messages:
+        if msg.thread_id is not None:
+            threads_map[msg.thread_id].append(msg)
+
+    threads_stats: list[dict[str, Any]] = []
+    for thread_id, msgs in threads_map.items():
+        root_msg = next((m for m in msgs if m.depth == 0), None)
+        if not root_msg:
+            root_msg = msgs[0]
+
+        root_subject = root_msg.header.msgsubject
+        starter = root_msg.header.msgfrom
+        reply_count = len(msgs) - 1
+        deepest_depth = max(m.depth for m in msgs)
+        newest_dt = None
+        newest_msg = None
+        for m in msgs:
+            dt = _parse_qwk_date(m.header.msgdate, m.header.msgtime)
+            if newest_dt is None or dt > newest_dt:
+                newest_dt = dt
+                newest_msg = m
+
+        last_activity_str = f"{newest_msg.header.msgdate} {newest_msg.header.msgtime}" if newest_msg else root_msg.header.msgdate
+
+        threads_stats.append({
+            "thread_id": thread_id,
+            "subject": root_subject,
+            "starter": starter,
+            "reply_count": reply_count,
+            "deepest_depth": deepest_depth,
+            "last_activity": last_activity_str,
+            "last_activity_dt": newest_dt,
+        })
+
+    # Filter threads based on thread-level settings
+    filtered_threads_stats = []
+    for t in threads_stats:
+        if settings.thread_id_filters is not None:
+            try:
+                tid_int = int(t["thread_id"])
+                if tid_int not in settings.thread_id_filters:
+                    continue
+            except ValueError:
+                pass
+
+        if settings.min_replies is not None and t["reply_count"] < settings.min_replies:
+            continue
+        if settings.max_replies is not None and t["reply_count"] > settings.max_replies:
+            continue
+
+        thread_size = t["reply_count"] + 1
+        if settings.min_thread_size is not None and thread_size < settings.min_thread_size:
+            continue
+        if settings.max_thread_size is not None and thread_size > settings.max_thread_size:
+            continue
+
+        filtered_threads_stats.append(t)
+
+    # Sorting
+    reverse_sort = settings.reverse
+    if settings.sort == "subject":
+        filtered_threads_stats.sort(key=lambda x: x["subject"].lower(), reverse=reverse_sort)
+    elif settings.sort in ("author", "starter"):
+        filtered_threads_stats.sort(key=lambda x: x["starter"].lower(), reverse=reverse_sort)
+    elif settings.sort in ("replies", "thread_size"):
+        filtered_threads_stats.sort(key=lambda x: x["reply_count"], reverse=not reverse_sort if settings.sort == "replies" and not settings.reverse else reverse_sort)
+    elif settings.sort == "depth":
+        filtered_threads_stats.sort(key=lambda x: x["deepest_depth"], reverse=not reverse_sort if not settings.reverse else reverse_sort)
+    else:
+        filtered_threads_stats.sort(key=lambda x: x["last_activity_dt"] or datetime.datetime.min, reverse=not reverse_sort)
+
+    for t in filtered_threads_stats:
+        t.pop("last_activity_dt", None)
+
+    return filtered_threads_stats
+
+
+def show_threads(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Analyze archives and group messages into conversation threads with structural metrics."""
+    try:
+        threads_stats = calculate_threads(input_paths, settings, logger)
+    except PROCESSING_EXCEPTIONS as e:
+        logger.error(f"Error calculating threads: {e}")
+        return
+
+    if not threads_stats:
+        return
+
+    output = ""
+    if settings.format == "json":
+        output = json.dumps(threads_stats, indent=4, ensure_ascii=False)
+    elif settings.format == "csv":
+        import csv
+        import io
+        output_stream = io.StringIO()
+        writer = csv.DictWriter(output_stream, fieldnames=["thread_id", "subject", "starter", "reply_count", "deepest_depth", "last_activity"])
+        writer.writeheader()
+        for t in threads_stats:
+            writer.writerow(t)
+        output = output_stream.getvalue()
+    elif settings.format == "html":
+        title = "Conversation Threads"
+        html_parts = _get_html_header(title)
+        html_parts.append(f"<h1>{title}</h1>")
+        html_parts.append('<div class="stats-container">')
+        html_parts.append('<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">')
+        html_parts.append(
+            '<thead><tr style="background-color: #f2f2f2;">'
+            "<th>Thread ID</th><th>Subject</th><th>Starter</th>"
+            "<th>Replies</th><th>Deepest Depth</th><th>Last Activity</th>"
+            "</tr></thead>"
+        )
+        html_parts.append("<tbody>")
+        for t in threads_stats:
+            html_parts.append(
+                f"<tr>"
+                f"<td>{html.escape(str(t['thread_id']))}</td>"
+                f"<td>{html.escape(t['subject'])}</td>"
+                f"<td>{html.escape(t['starter'])}</td>"
+                f"<td align='center'>{t['reply_count']}</td>"
+                f"<td align='center'>{t['deepest_depth']}</td>"
+                f"<td>{html.escape(t['last_activity'])}</td>"
+                f"</tr>"
+            )
+        html_parts.append("</tbody></table>")
+        html_parts.append("</div>")
+        html_parts.extend(_get_html_footer())
+        output = "\n".join(html_parts)
+    elif settings.format == "markdown":
+        title = "Conversation Threads"
+        md_parts = [f"# {title}\n"]
+        md_parts.append("| Thread ID | Subject | Starter | Replies | Deepest Depth | Last Activity |")
+        md_parts.append("| :--- | :--- | :--- | :---: | :---: | :--- |")
+        for t in threads_stats:
+            subject_escaped = t["subject"].replace("|", "\\|")
+            starter_escaped = t["starter"].replace("|", "\\|")
+            md_parts.append(
+                f"| {t['thread_id']} | {subject_escaped} | {starter_escaped} | {t['reply_count']} | {t['deepest_depth']} | {t['last_activity']} |"
+            )
+        output = "\n".join(md_parts) + "\n"
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_threads_as_text(threads_stats, use_colors=use_colors)
+
+    if settings.output_path:
+        _write_text_output(output, settings.output_path, encoding="utf-8")
+    else:
+        for line in output.splitlines():
+            logger.info(line)
+
+
+def render_threads_as_text(threads_stats: list[dict[str, Any]], use_colors: bool = False) -> str:
+    """Render conversation threads into a human-readable text report."""
+    CYAN = "36"
+    BOLD = "1"
+    DIM = "90"
+
+    parts = []
+    header = f"{'Thread ID':<10} | {'Subject':<40} | {'Starter':<15} | {'Replies':<7} | {'Depth':<5} | {'Last Activity':<17}"
+    separator = "-" * len(header)
+
+    if use_colors:
+        parts.append(_colorize(header, BOLD, enabled=use_colors))
+        parts.append(_colorize(separator, DIM, enabled=use_colors))
+    else:
+        parts.append(header)
+        parts.append(separator)
+
+    for t in threads_stats:
+        thread_id = str(t["thread_id"])
+        subject = t["subject"]
+        if len(subject) > 40:
+            subject = subject[:37] + "..."
+        starter = t["starter"]
+        if len(starter) > 15:
+            starter = starter[:12] + "..."
+
+        replies = str(t["reply_count"])
+        depth = str(t["deepest_depth"])
+        last_activity = t["last_activity"]
+
+        line = f"{thread_id:<10} | {subject:<40} | {starter:<15} | {replies:<7} | {depth:<5} | {last_activity:<17}"
+        parts.append(line)
+
+    return "\n".join(parts) + "\n"

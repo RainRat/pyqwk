@@ -16,6 +16,7 @@ from pyqwk.core import (
     resolve_output_format,
     show_info,
     show_stats,
+    show_threads,
     validate_archive,
     show_validation_report,
 )
@@ -834,6 +835,11 @@ examples:
         help="Show archive statistics and exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--threads",
+        action="store_true",
+        help="Show conversation threads and exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "--merge-stats",
         action="store_true",
         help="Show a single merged report when analyzing multiple archives.",
@@ -1148,6 +1154,10 @@ examples:
 
     if args.stats:
         show_stats(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "threads", False):
+        show_threads(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
