@@ -8038,3 +8038,222 @@ def show_validation_report(
             logger.info(line)
 
     return valid_all
+
+
+def render_threads_as_text(thread_metrics: list[dict[str, Any]], use_colors: bool = False) -> str:
+    """Render a thread list into a human-readable text report."""
+    BOLD = "1"
+    CYAN = "36"
+    DIM = "90"
+
+    parts = []
+    parts.append(f"Conversation Threads:")
+
+    # Header
+    hdr = f"  {'Thread ID':<10} | {'Root Subject':<30} | {'Starter':<20} | {'Replies':<7} | {'Max Depth':<9} | {'Last Activity':<14}"
+    parts.append(_colorize(hdr, BOLD, enabled=use_colors))
+    parts.append(_colorize("  " + "-" * 105, DIM, enabled=use_colors))
+
+    for t in thread_metrics:
+        tid = str(t["thread_id"])
+        subj = t["root_subject"]
+        if len(subj) > 30:
+            subj = subj[:27] + "..."
+        starter = t["starter"]
+        if len(starter) > 20:
+            starter = starter[:17] + "..."
+        replies = str(t["reply_count"])
+        depth = str(t["deepest_depth"])
+        last_act = t["last_activity"]
+
+        line = f"  {tid:<10} | {subj:<30} | {starter:<20} | {replies:<7} | {depth:<9} | {last_act:<14}"
+        parts.append(line)
+
+    return "\n".join(parts) + "\n"
+
+
+def _render_threads_html(thread_metrics: list[dict[str, Any]], title: str) -> str:
+    """Render conversation threads as an HTML document with basic table styles."""
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{html.escape(title)}</h1>")
+
+    # Simple inline styles for table in threads view
+    html_parts.append("<style>")
+    html_parts.append("table { border-collapse: collapse; width: 100%; margin-top: 1em; font-family: sans-serif; }")
+    html_parts.append("th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }")
+    html_parts.append("th { background-color: #f2f2f2; font-weight: bold; }")
+    html_parts.append("tr:nth-child(even) { background-color: #f9f9f9; }")
+    html_parts.append("</style>")
+
+    html_parts.append('<div class="stats-container">')
+    html_parts.append("<table>")
+    html_parts.append(
+        "<thead><tr>"
+        "<th>Thread ID</th>"
+        "<th>Root Subject</th>"
+        "<th>Starter</th>"
+        "<th>Replies</th>"
+        "<th>Max Depth</th>"
+        "<th>Last Activity</th>"
+        "</tr></thead>"
+    )
+    html_parts.append("<tbody>")
+    for t in thread_metrics:
+        html_parts.append("<tr>")
+        html_parts.append(f"<td>{html.escape(str(t['thread_id']))}</td>")
+        html_parts.append(f"<td>{html.escape(t['root_subject'])}</td>")
+        html_parts.append(f"<td>{html.escape(t['starter'])}</td>")
+        html_parts.append(f"<td>{t['reply_count']}</td>")
+        html_parts.append(f"<td>{t['deepest_depth']}</td>")
+        html_parts.append(f"<td>{html.escape(t['last_activity'])}</td>")
+        html_parts.append("</tr>")
+    html_parts.append("</tbody></table>")
+    html_parts.append("</div>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_threads_markdown(thread_metrics: list[dict[str, Any]], title: str) -> str:
+    """Render conversation threads as a Markdown document."""
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| Thread ID | Root Subject | Starter | Replies | Max Depth | Last Activity |")
+    md_parts.append("|---|---|---|---|---|---|")
+    for t in thread_metrics:
+        subj = _escape_markdown(t["root_subject"])
+        starter = _escape_markdown(t["starter"])
+        md_parts.append(
+            f"| {t['thread_id']} | {subj} | {starter} | {t['reply_count']} | {t['deepest_depth']} | {t['last_activity']} |"
+        )
+    return "\n".join(md_parts) + "\n"
+
+
+def _render_threads_csv(thread_metrics: list[dict[str, Any]]) -> str:
+    """Render conversation threads as CSV format."""
+    output = io.StringIO()
+    fieldnames = ["thread_id", "root_subject", "starter", "reply_count", "deepest_depth", "last_activity"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
+    writer.writeheader()
+    for t in thread_metrics:
+        writer.writerow(t)
+    return output.getvalue()
+
+
+def show_threads(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives, run thread reconstruction, and export conversation thread-listing metrics."""
+    all_messages = []
+
+    # 1. Load messages and build a unified list
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    continue
+                msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            for msg in msgs:
+                msg.confname = msg.confname or board_dict.get(msg.confnum)
+                msg.bbs_name = msg.bbs_name or (bbs_info.name if bbs_info else None)
+                msg.bbs_id = msg.bbs_id or (bbs_info.bbs_id if bbs_info else None)
+                msg.source_file = msg.source_file or os.path.basename(input_path)
+            all_messages.extend(msgs)
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    if not all_messages:
+        logger.warning("No messages loaded. Thread-listing aborted.")
+        return
+
+    # 2. Gather filters criteria
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
+
+    for input_path in input_paths:
+        try:
+            _, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
+        except Exception:
+            pass
+
+    # 3. Apply settings filters to select matching messages
+    matching_messages = []
+    for msg in all_messages:
+        if matches_filters(msg, settings, allowed_conferences, user_name, allowed_exclude_conferences):
+            matching_messages.append(msg)
+
+    # 4. Thread reconstruction
+    threaded_messages = _order_messages_by_thread(matching_messages)
+
+    # 5. Group by thread ID
+    threads_map = defaultdict(list)
+    for msg in threaded_messages:
+        if msg.thread_id is not None:
+            threads_map[msg.thread_id].append(msg)
+
+    # 6. Map thread metrics
+    thread_metrics = []
+    for tid, msgs_in_thread in threads_map.items():
+        root_msg = next((m for m in msgs_in_thread if m.depth == 0), None)
+        if not root_msg:
+            root_msg = msgs_in_thread[0]
+
+        root_subject = root_msg.header.msgsubject.strip()
+        starter = root_msg.header.msgfrom.strip()
+        reply_count = len(msgs_in_thread) - 1
+        deepest_depth = max(m.depth for m in msgs_in_thread)
+
+        newest_msg = max(
+            msgs_in_thread,
+            key=lambda m: _parse_qwk_date(m.header.msgdate, m.header.msgtime)
+        )
+        last_activity = f"{newest_msg.header.msgdate} {newest_msg.header.msgtime}"
+
+        thread_metrics.append({
+            "thread_id": tid,
+            "root_subject": root_subject,
+            "starter": starter,
+            "reply_count": reply_count,
+            "deepest_depth": deepest_depth,
+            "last_activity": last_activity
+        })
+
+    # 7. Sort threads by thread ID numerically or string fallback
+    def thread_sort_key(t):
+        try:
+            return (0, int(t["thread_id"]))
+        except ValueError:
+            return (1, t["thread_id"])
+    thread_metrics.sort(key=thread_sort_key)
+
+    # 8. Render output format
+    output = ""
+    title = "Conversation Threads"
+    if settings.format == "json":
+        output = json.dumps(thread_metrics, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_threads_html(thread_metrics, title)
+    elif settings.format == "markdown":
+        output = _render_threads_markdown(thread_metrics, title)
+    elif settings.format == "csv":
+        output = _render_threads_csv(thread_metrics)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_threads_as_text(thread_metrics, use_colors=use_colors)
+
+    # 9. Write or print report
+    _write_text_output(output, settings.output_path, encoding="utf-8")
