@@ -98,7 +98,7 @@ class ListPresetsAction(argparse.Action):
                 "equiv": "--format html --threaded --clean --toc"
             },
             "forum": {
-                "desc": "Save messages as clean, threaded individual HTML files with an index discussion board.",
+                "desc": "Save messages as clean, threaded individual HTML files with an index (static discussion board).",
                 "equiv": "--format html --clean --threaded --individual-files --toc"
             },
             "feed": {
@@ -811,7 +811,7 @@ examples:
             "  email: Save messages as individual EML files.\n"
             "  backup: Create a complete SQLite backup with private and unique messages.\n"
             "  digest: Save a single clean, threaded HTML file with a table of contents.\n"
-            "  forum: Save messages as clean, threaded individual HTML files with an index discussion board.\n"
+            "  forum: Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
             "  feed: Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
             "  text-archive: Save clean text without headers."
         ),
