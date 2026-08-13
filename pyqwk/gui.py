@@ -849,9 +849,22 @@ class QwkGuiApp:
         view_menu.add_cascade(label="Columns", menu=columns_menu)
         menubar.add_cascade(label="View", menu=view_menu, underline=0)
 
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(
+            label="Keyboard Shortcuts...",
+            command=self.show_shortcuts_window,
+            accelerator="F1",
+        )
+        help_menu.add_command(
+            label="About PyQWK...",
+            command=self.show_about_dialog,
+        )
+        menubar.add_cascade(label="Help", menu=help_menu, underline=0)
+
         self.root.config(menu=menubar)
 
         # Bind keyboard shortcuts
+        self.root.bind("<F1>", self.show_shortcuts_window)
         self.root.bind("<Control-o>", self.open_file)
         self.root.bind("<Control-t>", self._toggle_threaded_shortcut)
         self.root.bind("<Control-T>", self._toggle_threaded_shortcut)
@@ -3174,6 +3187,140 @@ class QwkGuiApp:
         except Exception as e:
             self.status_label.config(text="Error calculating statistics")
             messagebox.showerror("Statistics Error", str(e))
+
+    def show_shortcuts_window(self, _event: object | None = None) -> None:
+        """Display a beautiful, structured Keyboard Shortcuts dialog."""
+        help_win = tk.Toplevel(self.root)
+        help_win.title("Keyboard Shortcuts")
+        help_win.geometry("550x550")
+        help_win.resizable(False, False)
+        help_win.transient(self.root)
+        help_win.grab_set()  # Make it modal
+
+        # Center the window on parent
+        help_win.update_idletasks()
+        parent_x = self.root.winfo_rootx()
+        parent_y = self.root.winfo_rooty()
+        parent_w = self.root.winfo_width()
+        parent_h = self.root.winfo_height()
+        w, h = 550, 550
+        x = parent_x + (parent_w - w) // 2
+        y = parent_y + (parent_h - h) // 2
+        help_win.geometry(f"{w}x{h}+{x}+{y}")
+
+        help_win.bind("<Escape>", lambda e: help_win.destroy())
+        help_win.bind("<Return>", lambda e: help_win.destroy())
+
+        main_frame = ttk.Frame(help_win, padding=15)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title/Header
+        title_lbl = ttk.Label(
+            main_frame,
+            text="Keyboard Shortcuts Reference",
+            font=("TkDefaultFont", 14, "bold"),
+        )
+        title_lbl.pack(anchor=tk.W, pady=(0, 10))
+
+        text_frame = ttk.Frame(main_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        txt = tk.Text(
+            text_frame,
+            font=("TkFixedFont", 10),
+            wrap=tk.NONE,
+            bg="#fdfdfd",
+            fg="#000000",
+            relief=tk.SUNKEN,
+            bd=1,
+            padx=10,
+            pady=10,
+        )
+        sb_y = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=txt.yview)
+        txt.config(yscrollcommand=sb_y.set)
+        sb_y.pack(side=tk.RIGHT, fill=tk.Y)
+        txt.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        txt.tag_configure("group", font=("TkDefaultFont", 10, "bold"), foreground="#004085")
+        txt.tag_configure("key", font=("TkFixedFont", 10, "bold"), foreground="#000000")
+        txt.tag_configure("desc", font=("TkDefaultFont", 10), foreground="#333333")
+
+        shortcut_groups = [
+            (
+                "Archive & Stats",
+                [
+                    ("Ctrl+O", "Open Archive(s)"),
+                    ("Ctrl+S", "Export Current View"),
+                    ("Ctrl+I", "Archive Statistics"),
+                    ("Ctrl+Q", "Quit Application"),
+                ],
+            ),
+            (
+                "Search & Filters",
+                [
+                    ("Ctrl+F / /", "Search / Find Keyword"),
+                    ("Ctrl+E", "Focus Exclude Field"),
+                    ("F3", "Find Next Search Match"),
+                    ("Shift+F3", "Find Previous Search Match"),
+                    ("Enter", "Find Next (Search focused)"),
+                    ("Shift+Enter", "Find Previous (Search focused)"),
+                    ("Esc", "Clear Search / Filters"),
+                    ("Ctrl+Shift+X", "Reset All Filters"),
+                ],
+            ),
+            (
+                "View & Toggles",
+                [
+                    ("Ctrl+T", "Toggle Conversations (Threaded)"),
+                    ("Ctrl+Shift+C", "Toggle Clean View"),
+                    ("Ctrl+W", "Toggle Wrap Text"),
+                ],
+            ),
+            (
+                "Navigation",
+                [
+                    ("J / N", "Next Message"),
+                    ("K / P", "Previous Message"),
+                    ("Space / PgDn", "Scroll Down / Next Message"),
+                    ("Shift+Spc/PgUp", "Scroll Up / Prev Message"),
+                    ("BackSpace", "Scroll Up / Prev Message"),
+                    ("Ctrl+G", "Go to Message Number"),
+                    ("Ctrl+U", "Go to Referenced Message"),
+                    ("Alt+Left", "Go Back (History)"),
+                    ("R", "Random Message"),
+                    ("[ / ]", "Prev / Next Conference"),
+                    ("{ / }", "Prev / Next BBS Archive"),
+                ],
+            ),
+        ]
+
+        for group_name, shortcuts in shortcut_groups:
+            txt.insert(tk.END, f"• {group_name}\n", "group")
+            for key, desc in shortcuts:
+                txt.insert(tk.END, f"  {key:<18}", "key")
+                txt.insert(tk.END, f"{desc}\n", "desc")
+            txt.insert(tk.END, "\n")
+
+        txt.config(state=tk.DISABLED)
+
+        # Bottom Frame with Close button
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, side=tk.BOTTOM)
+
+        close_btn = ttk.Button(btn_frame, text="Close", command=help_win.destroy)
+        close_btn.pack(side=tk.RIGHT)
+        close_btn.focus_set()
+
+    def show_about_dialog(self) -> None:
+        """Display the About PyQWK dialog."""
+        messagebox.showinfo(
+            "About PyQWK",
+            "PyQWK Graphical Reader v0.1.0\n\n"
+            "A modern, highly functional utility for browsing, searching, "
+            "and exporting classic BBS QWK and REP packets, "
+            "as well as many modern mail/discussion formats.\n\n"
+            "Copyright © PyQWK Maintainers."
+        )
 
     def _update_status_bar(self, message_index: int | None = None) -> None:
         """Update the status label with relevant information.
