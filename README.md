@@ -120,6 +120,24 @@ If you prefer not to use a virtual environment, you can install the tool directl
    qwk archive.qwk
    ```
 
+### Option 3: Install with Poetry (For Developers and Advanced Users)
+
+If you use Poetry to manage Python packages, you can install the tool and its dependencies easily.
+
+1. Open your terminal in the `pyqwk` folder.
+2. Install the package and all dependencies:
+   ```bash
+   poetry install
+   ```
+3. Run `pyqwk` inside the virtual environment:
+   ```bash
+   poetry run qwk archive.qwk
+   ```
+4. Or start the graphical reader:
+   ```bash
+   poetry run qwk-gui
+   ```
+
 *Note: You can also run the reader without installing:*
 ```bash
 python -m pyqwk.gui
@@ -717,6 +735,19 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 ## Contributing
 
 We welcome your contributions!
+
+### Option 1: Using Poetry (Recommended)
+
+1. Install development tools:
+   ```bash
+   poetry install
+   ```
+2. Run tests:
+   ```bash
+   poetry run pytest
+   ```
+
+### Option 2: Using standard pip
 
 1. Install development tools:
    ```bash
