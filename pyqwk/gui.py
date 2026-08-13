@@ -927,9 +927,9 @@ class QwkGuiApp:
         if widget is None:
             return False
         try:
-            if isinstance(tk.Entry, type) and isinstance(widget, tk.Entry):
+            if isinstance(widget, tk.Entry):
                 return True
-            if isinstance(ttk.Entry, type) and isinstance(widget, ttk.Entry):
+            if isinstance(widget, ttk.Entry):
                 return True
         except TypeError:
             pass
