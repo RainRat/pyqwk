@@ -25,3 +25,8 @@ qwk-gui = "pyqwk.gui:main"
 [tool.setuptools]
 packages = ["pyqwk"]
 py-modules = ["qwk"]
+
+[dependency-groups]
+dev = [
+    "pytest-mock (>=3.15.1,<4.0.0)"
+]
