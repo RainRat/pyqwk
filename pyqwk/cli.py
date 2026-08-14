@@ -69,6 +69,15 @@ def _parse_cli_date(
 
 
 class ListPresetsAction(argparse.Action):
+    """Custom argparse Action to display available workflow presets and exit.
+
+    We inherit from argparse.Action and use nargs=0 so that '--list-presets' can be
+    called directly by the user as a flag. By printing the preset definitions and
+    calling parser.exit(0) immediately inside __call__, we successfully bypass
+    argparse's validation checks for required positional arguments (like 'input_paths').
+    This ensures users can run 'qwk --list-presets' alone without needing to supply
+    dummy archive files.
+    """
     def __init__(self, option_strings, dest, default=None, required=False, help=None):
         super().__init__(
             option_strings=option_strings,
@@ -891,7 +900,13 @@ examples:
             },
         }
 
-        # Determine which arguments were explicitly passed on the command line
+        # Determine which arguments were explicitly passed on the command line.
+        # This is a critical workaround: standard argparse does not distinguish between
+        # a default value defined on the parser and an option explicitly passed by the user
+        # (both end up as plain attributes in the parsed Namespace).
+        # To allow explicit CLI arguments to override preset settings (while avoiding having
+        # implicit parser defaults unintentionally overwrite presets), we manually inspect sys.argv
+        # to identify options actually typed by the user and populate 'explicit_keys'.
         explicit_keys = set()
         for action in parser._actions:
             for opt in action.option_strings:
