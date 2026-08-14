@@ -51,9 +51,23 @@ def _is_maildir(path: str) -> bool:
 
 
 def expand_paths(paths: list[str]) -> list[str]:
-    """Recursively find supported QWK files in directories."""
+    """Recursively find supported QWK files in directories, expanding glob wildcards."""
+    import glob
     expanded_paths = []
+
+    # Expand glob patterns first
+    globbed_paths = []
     for path in paths:
+        if any(char in path for char in ("*", "?", "[", "]")):
+            matches = glob.glob(path, recursive=True)
+            if matches:
+                globbed_paths.extend(matches)
+            else:
+                globbed_paths.append(path)
+        else:
+            globbed_paths.append(path)
+
+    for path in globbed_paths:
         if os.path.isdir(path):
             if _is_maildir(path):
                 expanded_paths.append(path)
