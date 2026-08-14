@@ -1382,6 +1382,12 @@ def _safe_to_int(v: Any) -> int | None:
         return None
 
 
+def _parse_rfc_date_string(date_str: str) -> tuple[str, str]:
+    """Parse an RFC 2822/5322 date-time string into a tuple of (date, time)."""
+    dt = email.utils.parsedate_to_datetime(date_str)
+    return dt.strftime("%m-%d-%y"), dt.strftime("%H:%M")
+
+
 def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
     """Convert an RSS XML tree into ParsedMessage objects."""
     messages = []
@@ -1413,9 +1419,7 @@ def _parse_rss_messages(root: ET.Element) -> list[ParsedMessage]:
         msg_time = "00:00"
         if pub_date_str:
             try:
-                dt = email.utils.parsedate_to_datetime(pub_date_str)
-                msg_date = dt.strftime("%m-%d-%y")
-                msg_time = dt.strftime("%H:%M")
+                msg_date, msg_time = _parse_rfc_date_string(pub_date_str)
             except (ValueError, TypeError):
                 logging.getLogger("pyqwk.core").warning("Failed to parse RSS pubDate: %r", pub_date_str)
 
@@ -1588,9 +1592,7 @@ def _message_from_email(msg_obj: Any) -> ParsedMessage:
     date_hdr = get_hdr("Date")
     if date_hdr:
         try:
-            dt = email.utils.parsedate_to_datetime(date_hdr)
-            msg_date = dt.strftime("%m-%d-%y")
-            msg_time = dt.strftime("%H:%M")
+            msg_date, msg_time = _parse_rfc_date_string(date_hdr)
         except (ValueError, TypeError):
             pass
 
