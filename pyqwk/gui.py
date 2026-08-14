@@ -29,6 +29,7 @@ from pyqwk.core import (
     extract_binaries,
     calculate_archive_stats,
     render_stats_as_text,  # noqa: F401
+    validate_archive,
     __version__,
     expand_paths,
     ConferenceMap,
@@ -752,6 +753,11 @@ class QwkGuiApp:
             command=self.show_stats_window,
             accelerator="Ctrl+I",
         )
+        file_menu.add_command(
+            label="Validate Archive(s)...",
+            command=self.validate_current_archives,
+            accelerator="Ctrl+Shift+V",
+        )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
         menubar.add_cascade(label="File", menu=file_menu, underline=0)
@@ -863,6 +869,8 @@ class QwkGuiApp:
         self.root.bind("<Control-e>", self._focus_exclude)
         self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
+        self.root.bind("<Control-Shift-V>", self.validate_current_archives)
+        self.root.bind("<Control-Shift-v>", self.validate_current_archives)
         self.root.bind("<Control-g>", self.prompt_jump_to_message)
         self.root.bind("<Control-u>", self.jump_to_referenced_message)
         self.root.bind("<Control-U>", self.jump_to_referenced_message)
@@ -3174,6 +3182,158 @@ class QwkGuiApp:
         except Exception as e:
             self.status_label.config(text="Error calculating statistics")
             messagebox.showerror("Statistics Error", str(e))
+
+    def validate_current_archives(self, _event: object | None = None) -> None:
+        """Validate structural integrity and metadata completeness of current archives."""
+        if not self.current_paths:
+            messagebox.showwarning("Archive Validation", "Please open an archive first.")
+            return
+
+        try:
+            self.status_label.config(text="Validating archive(s)...")
+            self.progress.pack(side=tk.RIGHT, padx=10)
+            self.progress["value"] = 0
+            self.progress["maximum"] = len(self.current_paths)
+            self.root.update_idletasks()
+
+            results = []
+            encoding = self._current_settings().encoding
+
+            for i, p in enumerate(self.current_paths):
+                self.progress["value"] = i
+                self.root.update_idletasks()
+                try:
+                    res = validate_archive(p, self.logger, encoding)
+                except Exception as e:
+                    res = {
+                        "valid": False,
+                        "format": "unknown",
+                        "messages_count": 0,
+                        "errors": [f"Validation failed with exception: {e}"],
+                        "warnings": []
+                    }
+                results.append((p, res))
+
+            self.progress.pack_forget()
+            self._update_status_bar()
+
+            # Create dialog window
+            val_win = tk.Toplevel(self.root)
+            val_win.title("Archive Integrity Validation")
+            val_win.geometry("750x600")
+            val_win.bind("<Escape>", lambda e: val_win.destroy())
+
+            main_frame = ttk.Frame(val_win, padding=10)
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            txt = tk.Text(
+                main_frame, font=("TkFixedFont", 10), wrap=tk.NONE, padx=10, pady=10
+            )
+            sb_y = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=txt.yview)
+            sb_x = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=txt.xview)
+            txt.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
+
+            # Footer
+            footer = ttk.Frame(val_win, padding=(10, 5))
+            footer.pack(side=tk.BOTTOM, fill=tk.X)
+
+            def save_validation_report():
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Validation Report",
+                    filetypes=[
+                        ("Text files", "*.txt"),
+                        ("Markdown files", "*.md"),
+                        ("All files", "*.*"),
+                    ],
+                    defaultextension=".txt",
+                )
+                if not save_path:
+                    return
+                try:
+                    report_content = txt.get("1.0", tk.END)
+                    with open(save_path, "w", encoding="utf-8") as f:
+                        f.write(report_content)
+                    messagebox.showinfo(
+                        "Report Saved",
+                        f"Successfully saved validation report to {os.path.basename(save_path)}",
+                    )
+                except Exception as e:
+                    messagebox.showerror("Save Report Error", str(e))
+
+            ttk.Button(footer, text="Save Report...", command=save_validation_report).pack(
+                side=tk.LEFT, padx=5
+            )
+            ttk.Button(footer, text="Close", command=val_win.destroy).pack(
+                side=tk.RIGHT
+            )
+
+            txt.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            sb_y.pack(side=tk.RIGHT, fill=tk.Y, before=txt)
+            sb_x.pack(side=tk.BOTTOM, fill=tk.X)
+
+            # Setup Tags
+            txt.tag_configure("title", font=("TkDefaultFont", 14, "bold"), foreground="#0055aa")
+            txt.tag_configure("header", font=("TkDefaultFont", 11, "bold"), foreground="#444444")
+            txt.tag_configure("bold", font=("TkFixedFont", 10, "bold"))
+            txt.tag_configure("valid", font=("TkFixedFont", 10, "bold"), foreground="green")
+            txt.tag_configure("invalid", font=("TkFixedFont", 10, "bold"), foreground="red")
+            txt.tag_configure("error", foreground="red")
+            txt.tag_configure("warning", foreground="#ff6600")
+
+            # Write content
+            txt.insert(tk.END, "============================================================\n", "bold")
+            txt.insert(tk.END, "               ARCHIVE INTEGRITY VALIDATION                 \n", "title")
+            txt.insert(tk.END, "============================================================\n\n", "bold")
+
+            # Summary counts
+            total = len(results)
+            valid_count = sum(1 for p, r in results if r["valid"])
+            invalid_count = total - valid_count
+
+            txt.insert(tk.END, f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            txt.insert(tk.END, f"Total Archives Validated: {total}\n")
+            txt.insert(tk.END, "Status: ")
+            if invalid_count == 0:
+                txt.insert(tk.END, f"ALL VALID ({valid_count}/{total})\n\n", "valid")
+            else:
+                txt.insert(tk.END, f"ISSUES DETECTED ({invalid_count} archive(s) invalid)\n\n", "invalid")
+
+            for idx, (p, r) in enumerate(results, 1):
+                txt.insert(tk.END, f"------------------------------------------------------------\n", "bold")
+                txt.insert(tk.END, f"[{idx} of {total}] Archive Details\n", "header")
+                txt.insert(tk.END, f"------------------------------------------------------------\n")
+                txt.insert(tk.END, f"File Path: {p}\n")
+                txt.insert(tk.END, f"Detected Format: {r.get('format', 'unknown').upper()}\n")
+                txt.insert(tk.END, f"Message Count: {r.get('messages_count', 0)}\n")
+                txt.insert(tk.END, "Validation Status: ")
+                if r["valid"]:
+                    txt.insert(tk.END, "VALID\n", "valid")
+                else:
+                    txt.insert(tk.END, "INVALID\n", "invalid")
+
+                errors = r.get("errors", [])
+                if errors:
+                    txt.insert(tk.END, "\nErrors found:\n", "bold")
+                    for err in errors:
+                        txt.insert(tk.END, f"  ❌ {err}\n", "error")
+
+                warnings = r.get("warnings", [])
+                if warnings:
+                    txt.insert(tk.END, "\nWarnings found:\n", "bold")
+                    for warn in warnings:
+                        txt.insert(tk.END, f"  ⚠️  {warn}\n", "warning")
+
+                if not errors and not warnings:
+                    txt.insert(tk.END, "\nNo errors or warnings detected.\n", "valid")
+
+                txt.insert(tk.END, "\n")
+
+            txt.config(state=tk.DISABLED)
+
+        except Exception as e:
+            self.progress.pack_forget()
+            self._update_status_bar()
+            messagebox.showerror("Validation Error", str(e))
 
     def _update_status_bar(self, message_index: int | None = None) -> None:
         """Update the status label with relevant information.
