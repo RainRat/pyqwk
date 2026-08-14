@@ -519,6 +519,31 @@ qwk archive.qwk --msgnum 100-200
 qwk archive.qwk --reply-to 100-200
 ```
 
+**Filter by Conversation Thread ID:**
+```bash
+# Show only messages belonging to thread root message #42
+qwk archive.qwk --thread-id 42
+
+# Show messages from a range of threads
+qwk archive.qwk --thread-id 100-150
+```
+
+**Filter by Attachment Filename Pattern:**
+```bash
+# Show only messages with attachments matching a wildcard pattern
+qwk archive.qwk --attachment-pattern "*.zip"
+
+# Show only messages containing attachments with "image" in the name
+qwk archive.qwk --attachment-pattern "image"
+```
+
+**Count Matching Messages Only:**
+You can output only the integer count of matching messages to the screen. This is very useful for shell scripts and piping:
+```bash
+# Count how many messages were sent by Alice
+qwk archive.qwk --from "Alice" --count-only
+```
+
 **Dry Run:**
 Preview your changes without writing files:
 ```bash
@@ -610,6 +635,8 @@ for msg in messages:
 | `--to` | Show messages to a specific recipient. Supports partial matches. |
 | `-s, --subject` | Show messages with specific keywords in the subject. Supports partial matches. |
 | `--body` | Show messages with specific keywords in the body. Supports partial matches. |
+| `--attachment-pattern` | Show only messages with attachments matching a wildcard pattern (e.g., `*.zip`, `image.gif`, or `png`). |
+| `--thread-id` | Show only messages belonging to specific conversation thread IDs (the root message number of a thread). |
 | `-X, --exclude` | Hide messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. Supports partial matches. |
 | `--exclude-from` | Hide messages from a specific author. Supports partial matches. |
 | `--exclude-to` | Hide messages sent to a specific recipient. Supports partial matches. |
@@ -631,6 +658,7 @@ for msg in messages:
 | `-K, --skip` | Skip the first NUM matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
 | `--reverse` | Reverse the sorting order. |
+| `--count-only` | Output only the integer count of matching messages to the screen and exit. |
 | `--min-length` | Show messages with at least NUM characters. |
 | `--max-length` | Show messages with at most NUM characters. |
 | `--min-words` | Show messages with at least NUM words. |
