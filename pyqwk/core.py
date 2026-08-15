@@ -8273,3 +8273,197 @@ def show_threads(
 
     # 9. Write or print report
     _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
+def render_attachments_as_text(attachment_records: list[dict[str, Any]], use_colors: bool = False) -> str:
+    """Render a list of attachment records into a human-readable text report."""
+    if not attachment_records:
+        return "No attachments found in the specified archive(s).\n"
+
+    BOLD = "1"
+    CYAN = "36"
+    DIM = "90"
+
+    parts = []
+    parts.append("Archive Attachments:")
+
+    hdr = f"  {'Filename':<30} | {'Msg #':<7} | {'Author':<20} | {'Conference':<20} | {'BBS':<15} | {'Source File':<15}"
+    parts.append(_colorize(hdr, BOLD, enabled=use_colors))
+    parts.append(_colorize("  " + "-" * 118, DIM, enabled=use_colors))
+
+    for item in attachment_records:
+        fname = item["filename"]
+        if len(fname) > 30:
+            fname = fname[:27] + "..."
+        msgnum = str(item["msgnum"])
+        author = item["author"]
+        if len(author) > 20:
+            author = author[:17] + "..."
+        conf = item["conference"]
+        if len(conf) > 20:
+            conf = conf[:17] + "..."
+        bbs = item["bbs_name"]
+        if len(bbs) > 15:
+            bbs = bbs[:12] + "..."
+        source = item["source_file"]
+        if len(source) > 15:
+            source = source[:12] + "..."
+
+        line = f"  {fname:<30} | {msgnum:<7} | {author:<20} | {conf:<20} | {bbs:<15} | {source:<15}"
+        parts.append(line)
+
+    return "\n".join(parts) + "\n"
+
+
+def _render_attachments_html(attachment_records: list[dict[str, Any]], title: str) -> str:
+    """Render attachment records as an HTML document with styled table."""
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{html.escape(title)}</h1>")
+
+    html_parts.append("<style>")
+    html_parts.append("table { border-collapse: collapse; width: 100%; margin-top: 1em; font-family: sans-serif; }")
+    html_parts.append("th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }")
+    html_parts.append("th { background-color: #f2f2f2; font-weight: bold; }")
+    html_parts.append("tr:nth-child(even) { background-color: #f9f9f9; }")
+    html_parts.append("</style>")
+
+    html_parts.append('<div class="stats-container">')
+    html_parts.append("<table>")
+    html_parts.append(
+        "<thead><tr>"
+        "<th>Filename</th>"
+        "<th>Msg #</th>"
+        "<th>Author</th>"
+        "<th>Conference</th>"
+        "<th>BBS</th>"
+        "<th>Source File</th>"
+        "</tr></thead>"
+    )
+    html_parts.append("<tbody>")
+    for item in attachment_records:
+        html_parts.append("<tr>")
+        html_parts.append(f"<td>{html.escape(str(item['filename']))}</td>")
+        html_parts.append(f"<td>{item['msgnum']}</td>")
+        html_parts.append(f"<td>{html.escape(str(item['author']))}</td>")
+        html_parts.append(f"<td>{html.escape(str(item['conference']))}</td>")
+        html_parts.append(f"<td>{html.escape(str(item['bbs_name']))}</td>")
+        html_parts.append(f"<td>{html.escape(str(item['source_file']))}</td>")
+        html_parts.append("</tr>")
+    html_parts.append("</tbody></table>")
+    html_parts.append("</div>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_attachments_markdown(attachment_records: list[dict[str, Any]], title: str) -> str:
+    """Render attachment records as a Markdown document."""
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| Filename | Msg # | Author | Conference | BBS | Source File |")
+    md_parts.append("|---|---|---|---|---|---|")
+    for item in attachment_records:
+        fname = _escape_markdown(item["filename"])
+        author = _escape_markdown(item["author"])
+        conf = _escape_markdown(item["conference"])
+        bbs = _escape_markdown(item["bbs_name"])
+        source = _escape_markdown(item["source_file"])
+        md_parts.append(
+            f"| {fname} | {item['msgnum']} | {author} | {conf} | {bbs} | {source} |"
+        )
+    return "\n".join(md_parts) + "\n"
+
+
+def _render_attachments_csv(attachment_records: list[dict[str, Any]]) -> str:
+    """Render attachment records in CSV format."""
+    output = io.StringIO()
+    fieldnames = ["filename", "msgnum", "author", "conference", "bbs_name", "source_file"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
+    writer.writeheader()
+    for item in attachment_records:
+        writer.writerow(item)
+    return output.getvalue()
+
+
+def show_attachments(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives, discover attachments across matching messages, and export structured attachment records."""
+    all_messages = []
+
+    # 1. Load messages from all input paths
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    continue
+                msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            for msg in msgs:
+                msg.confname = msg.confname or board_dict.get(msg.confnum)
+                msg.bbs_name = msg.bbs_name or (bbs_info.name if bbs_info else None)
+                msg.bbs_id = msg.bbs_id or (bbs_info.bbs_id if bbs_info else None)
+                msg.source_file = msg.source_file or os.path.basename(input_path)
+            all_messages.extend(msgs)
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    # 2. Gather filter criteria
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
+
+    for input_path in input_paths:
+        try:
+            _, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
+        except Exception:
+            pass
+
+    # 3. Apply settings filters and discover attachments
+    attachment_records = []
+    for msg in all_messages:
+        if matches_filters(msg, settings, allowed_conferences, user_name, allowed_exclude_conferences):
+            attachments = msg.discover_attachments()
+            if attachments:
+                for filename in attachments:
+                    attachment_records.append({
+                        "filename": filename,
+                        "msgnum": msg.header.msgnum,
+                        "author": (msg.header.msgfrom or "").strip(),
+                        "conference": msg.confname or f"Conf #{msg.confnum}",
+                        "bbs_name": (msg.bbs_name or msg.bbs_id or "").strip(),
+                        "source_file": msg.source_file or "",
+                    })
+
+    # 4. Sort records by filename then msgnum
+    attachment_records.sort(key=lambda x: (x["filename"].lower(), x["msgnum"]))
+
+    # 5. Render output format
+    output = ""
+    title = "Archive Attachments"
+    if settings.format == "json":
+        output = json.dumps(attachment_records, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_attachments_html(attachment_records, title)
+    elif settings.format == "markdown":
+        output = _render_attachments_markdown(attachment_records, title)
+    elif settings.format == "csv":
+        output = _render_attachments_csv(attachment_records)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_attachments_as_text(attachment_records, use_colors=use_colors)
+
+    # 6. Write or print report
+    _write_text_output(output, settings.output_path, encoding="utf-8")
