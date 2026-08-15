@@ -1483,7 +1483,7 @@ class QwkGuiApp:
         for i, (text, var, cmd) in enumerate(
             [
                 ("Conversations", self.threaded_var, self.reload_messages),
-                ("Clean", self.clean_var, self.reload_messages),
+                ("Clean View", self.clean_var, self.reload_messages),
                 ("Wrap", self.wrap_var, self._update_wrap),
                 ("Remove Colors", self.ansi_var, self.reload_messages),
                 ("Hide Personal Info", self.redact_pii_var, self.reload_messages),
