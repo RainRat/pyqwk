@@ -8273,3 +8273,164 @@ def show_threads(
 
     # 9. Write or print report
     _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
+def render_conferences_as_text(conf_list: list[dict[str, Any]], use_colors: bool = False) -> str:
+    """Render a conference list into a human-readable text report."""
+    BOLD = "1"
+    DIM = "90"
+
+    parts = []
+    parts.append("Conferences List:")
+
+    hdr = f"  {'Conf #':<8} | {'Conference Name':<35} | {'Messages':<10} | {'BBS':<20}"
+    parts.append(_colorize(hdr, BOLD, enabled=use_colors))
+    parts.append(_colorize("  " + "-" * 83, DIM, enabled=use_colors))
+
+    for c in conf_list:
+        num = str(c["number"])
+        name = c["name"]
+        if len(name) > 35:
+            name = name[:32] + "..."
+        count = str(c["message_count"])
+        bbs = c.get("bbs_name", "")
+        if len(bbs) > 20:
+            bbs = bbs[:17] + "..."
+
+        line = f"  {num:<8} | {name:<35} | {count:<10} | {bbs:<20}"
+        parts.append(line)
+
+    return "\n".join(parts) + "\n"
+
+
+def _render_conferences_html(conf_list: list[dict[str, Any]], title: str) -> str:
+    """Render conference list as an HTML document."""
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{html.escape(title)}</h1>")
+
+    html_parts.append("<style>")
+    html_parts.append("table { border-collapse: collapse; width: 100%; margin-top: 1em; font-family: sans-serif; }")
+    html_parts.append("th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }")
+    html_parts.append("th { background-color: #f2f2f2; font-weight: bold; }")
+    html_parts.append("tr:nth-child(even) { background-color: #f9f9f9; }")
+    html_parts.append("</style>")
+
+    html_parts.append('<div class="stats-container">')
+    html_parts.append("<table>")
+    html_parts.append(
+        "<thead><tr>"
+        "<th>Conf #</th>"
+        "<th>Conference Name</th>"
+        "<th>Messages</th>"
+        "<th>BBS</th>"
+        "</tr></thead>"
+    )
+    html_parts.append("<tbody>")
+    for c in conf_list:
+        html_parts.append("<tr>")
+        html_parts.append(f"<td>{c['number']}</td>")
+        html_parts.append(f"<td>{html.escape(c['name'])}</td>")
+        html_parts.append(f"<td>{c['message_count']}</td>")
+        html_parts.append(f"<td>{html.escape(c.get('bbs_name', ''))}</td>")
+        html_parts.append("</tr>")
+    html_parts.append("</tbody></table>")
+    html_parts.append("</div>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_conferences_markdown(conf_list: list[dict[str, Any]], title: str) -> str:
+    """Render conference list as a Markdown document."""
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| Conf # | Conference Name | Messages | BBS |")
+    md_parts.append("|---|---|---|---|")
+    for c in conf_list:
+        name = _escape_markdown(c["name"])
+        bbs = _escape_markdown(c.get("bbs_name", ""))
+        md_parts.append(f"| {c['number']} | {name} | {c['message_count']} | {bbs} |")
+    return "\n".join(md_parts) + "\n"
+
+
+def _render_conferences_csv(conf_list: list[dict[str, Any]]) -> str:
+    """Render conference list as CSV format."""
+    output = io.StringIO()
+    fieldnames = ["number", "name", "message_count", "bbs_name"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
+    writer.writeheader()
+    for c in conf_list:
+        writer.writerow(c)
+    return output.getvalue()
+
+
+def show_conferences(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives and export a summary list of all conferences found."""
+    conf_counts: Counter[int] = Counter()
+    conf_names: dict[int, str] = {}
+    conf_bbs: dict[int, str] = {}
+
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            bbs_name = (bbs_info.name if bbs_info else None) or (bbs_info.bbs_id if bbs_info else None) or ""
+
+            for conf_num, name in board_dict.items():
+                conf_names[conf_num] = name
+                if conf_num not in conf_bbs and bbs_name:
+                    conf_bbs[conf_num] = bbs_name
+
+            if isinstance(file_data, list):
+                messages_to_process = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    continue
+                messages_to_process = parse_messages(
+                    file_data, None, settings.encoding, headers_only=True
+                )
+
+            for msg in messages_to_process:
+                conf_num = msg.confnum
+                conf_counts[conf_num] += 1
+                if msg.confname:
+                    conf_names[conf_num] = msg.confname
+                if msg.bbs_name:
+                    conf_bbs[conf_num] = msg.bbs_name
+
+        except Exception as e:
+            logger.error("Error reading conferences from %s: %s", input_path, e)
+
+    all_conf_nums = sorted(set(conf_counts.keys()) | set(conf_names.keys()))
+    if not all_conf_nums:
+        logger.warning("No conferences found.")
+        return
+
+    conf_list = []
+    for num in all_conf_nums:
+        conf_list.append({
+            "number": num,
+            "name": conf_names.get(num, f"Conference {num}"),
+            "message_count": conf_counts.get(num, 0),
+            "bbs_name": conf_bbs.get(num, ""),
+        })
+
+    output = ""
+    title = "Conferences List"
+    if settings.format == "json":
+        output = json.dumps(conf_list, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_conferences_html(conf_list, title)
+    elif settings.format == "markdown":
+        output = _render_conferences_markdown(conf_list, title)
+    elif settings.format == "csv":
+        output = _render_conferences_csv(conf_list)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_conferences_as_text(conf_list, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")

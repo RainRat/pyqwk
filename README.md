@@ -401,6 +401,11 @@ qwk messages.mbox --format qwk -o output.qwk
 
 ## Filtering & Searching
 
+**List Conferences in Archive:**
+```bash
+qwk archive.qwk --list-conferences
+```
+
 **Filter by Conference:**
 ```bash
 qwk archive.qwk -C "General Chat"
@@ -677,6 +682,7 @@ for msg in messages:
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
+| `--list-conferences` | Show a summary of all conferences in the archives and exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
