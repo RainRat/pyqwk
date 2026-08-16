@@ -69,6 +69,52 @@ def _parse_cli_date(
         )
 
 
+PRESETS_INFO = {
+    "blog": {
+        "desc": "Save messages as clean, threaded individual Markdown files.",
+        "equiv": "--format markdown --clean --threaded --individual-files",
+    },
+    "email": {
+        "desc": "Save messages as individual EML files.",
+        "equiv": "--format eml --individual-files",
+    },
+    "backup": {
+        "desc": "Create a complete SQLite backup with private and unique messages.",
+        "equiv": "--format sqlite --private --unique",
+    },
+    "digest": {
+        "desc": "Save a single clean, threaded HTML file with a table of contents.",
+        "equiv": "--format html --threaded --clean --toc",
+    },
+    "forum": {
+        "desc": "Save messages as clean, threaded individual HTML files with an index (static discussion board).",
+        "equiv": "--format html --clean --threaded --individual-files --toc",
+    },
+    "feed": {
+        "desc": "Save messages as a clean, chronological RSS feed sorted from newest to oldest.",
+        "equiv": "--format rss --clean --sort date --reverse",
+    },
+    "text-archive": {
+        "desc": "Save clean text without headers.",
+        "equiv": "--format text --clean --noheader",
+    },
+}
+
+
+class QwkArgumentParser(argparse.ArgumentParser):
+    """Custom ArgumentParser providing rich error context for options like --preset."""
+
+    def error(self, message: str) -> None:
+        if "invalid choice" in message and "preset" in message.lower():
+            preset_details = "\n".join(
+                f"  {name:<14} {info['desc']}"
+                for name, info in PRESETS_INFO.items()
+            )
+            extra_msg = f"{message}\n\nAvailable workflow presets:\n{preset_details}"
+            super().error(extra_msg)
+        super().error(message)
+
+
 class ListPresetsAction(argparse.Action):
     """Custom argparse Action to display available workflow presets and exit.
 
@@ -90,37 +136,6 @@ class ListPresetsAction(argparse.Action):
         )
 
     def __call__(self, parser, namespace, values, option_string=None):
-        presets = {
-            "blog": {
-                "desc": "Save messages as clean, threaded individual Markdown files.",
-                "equiv": "--format markdown --clean --threaded --individual-files"
-            },
-            "email": {
-                "desc": "Save messages as individual EML files.",
-                "equiv": "--format eml --individual-files"
-            },
-            "backup": {
-                "desc": "Create a complete SQLite backup with private and unique messages.",
-                "equiv": "--format sqlite --private --unique"
-            },
-            "digest": {
-                "desc": "Save a single clean, threaded HTML file with a table of contents.",
-                "equiv": "--format html --threaded --clean --toc"
-            },
-            "forum": {
-                "desc": "Save messages as clean, threaded individual HTML files with an index (static discussion board).",
-                "equiv": "--format html --clean --threaded --individual-files --toc"
-            },
-            "feed": {
-                "desc": "Save messages as a clean, chronological RSS feed sorted from newest to oldest.",
-                "equiv": "--format rss --clean --sort date --reverse"
-            },
-            "text-archive": {
-                "desc": "Save clean text without headers.",
-                "equiv": "--format text --clean --noheader"
-            }
-        }
-
         use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 
         bold_cyan = "\033[1;36m"
@@ -133,7 +148,7 @@ class ListPresetsAction(argparse.Action):
             header = f"{bold_cyan}{header}{reset}"
 
         print(header + "\n")
-        for name, details in presets.items():
+        for name, details in PRESETS_INFO.items():
             preset_name = name
             desc = details["desc"]
             equiv = details["equiv"]
@@ -170,7 +185,7 @@ def main() -> None:
         "    {attachments}, {attachment_count}"
     )
 
-    parser = argparse.ArgumentParser(
+    parser = QwkArgumentParser(
         description="Convert BBS message archives into modern formats like HTML, Markdown, and SQLite.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=f"""
