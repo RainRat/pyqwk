@@ -278,6 +278,11 @@ qwk archive.qwk -o messages.txt
 qwk archive.qwk --threaded -o messages.txt
 ```
 
+**Show conversation threads summary:**
+```bash
+qwk archive.qwk --threads
+```
+
 **Create a browsable HTML file:**
 ```bash
 qwk archive.qwk --format html -o messages.html
@@ -677,6 +682,11 @@ for msg in messages:
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
+| `--threads` | Show a summary of all conversation threads and exit. |
+| `--validate` | Validate the structural integrity and metadata completeness of archives and exit. |
+| `-q, --quiet` | Hide progress bars and status output. |
+| `-l, --loglevel` | Set the level of detail shown in logs (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
+| `-V, --version` | Display version information and exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
