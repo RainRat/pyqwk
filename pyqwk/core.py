@@ -5362,10 +5362,7 @@ def _write_mbox(
     board_dict: Mapping[int, str] | None = None,
 ) -> None:
     """Write messages to an mbox file."""
-    parts = []
-    for message in messages:
-        parts.append(_serialize_rfc822(message, include_mbox_header=True))
-
+    parts = [_serialize_rfc822(msg, include_mbox_header=True) for msg in messages]
     _write_text_output("\n".join(parts), output_path, encoding=encoding)
 
 
@@ -5382,10 +5379,7 @@ def _write_eml(
     If multiple messages are provided and no individual files are requested,
     they are aggregated with double newlines, effectively becoming a text-based collection.
     """
-    parts = []
-    for message in messages:
-        parts.append(_serialize_rfc822(message, include_mbox_header=False))
-
+    parts = [_serialize_rfc822(msg, include_mbox_header=False) for msg in messages]
     _write_text_output("\n\n".join(parts), output_path, encoding=encoding)
 
 
