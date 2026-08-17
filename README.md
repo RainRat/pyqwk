@@ -278,6 +278,11 @@ qwk archive.qwk -o messages.txt
 qwk archive.qwk --threaded -o messages.txt
 ```
 
+**Show a summary of conversation threads:**
+```bash
+qwk archive.qwk --threads
+```
+
 **Create a browsable HTML file:**
 ```bash
 qwk archive.qwk --format html -o messages.html
@@ -594,8 +599,13 @@ for msg in messages:
 | :--- | :--- |
 | `-o`, `--output` | Save results to a file or folder. |
 | `-v, --verbose` | Show more details like conference names and message numbers. |
+| `-q, --quiet` | Hide the progress bar and other information. |
+| `-l, --loglevel` | Set the log detail level (DEBUG, INFO, WARNING, ERROR, CRITICAL). |
+| `-V, --version` | Show the version number and exit. |
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
+| `-j, --json` | Shortcut for `--format json`. |
+| `-J, --jsonl` | Shortcut for `--format jsonl`. |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
@@ -603,6 +613,9 @@ for msg in messages:
 | `-u, --unique` | Remove duplicate messages during a merge. |
 | `-T`, `--threaded` | Group replies into threads. |
 | `--clean` | Remove signatures, quotes, attachments, and color codes. |
+| `-t, --truncate-signatures` | Stop reading a message when a signature is found. |
+| `-c, --cut-quoting` | Remove quoted text from earlier messages. |
+| `-b, --binaries-removal` | Remove attachments like images or programs from the message text. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
 | `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
@@ -627,6 +640,7 @@ for msg in messages:
 | `--has-msg-links` | Show messages that contain internal message links (e.g., 'msg #123'). |
 | `-A, --strip-ansi` | Remove color codes and other formatting symbols. |
 | `-H, --headers-only` | Show the message details (metadata) without the body. |
+| `-n, --noheader` | Hide message details (headers) in the output text. |
 | `-E, --encoding` | Set the text encoding (default is `cp437`). |
 | `-S, --search` | Show messages with specific keywords in any common field: Author, To, Subject, Body, Conference, BBS, BBS ID, Source File, and Attachments. Supports partial matches. |
 | `-C, --conference` | Show messages from a specific conference (name or number). Supports partial matches. |
@@ -677,6 +691,7 @@ for msg in messages:
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
+| `--threads` | Show a summary of all conversation threads and exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
