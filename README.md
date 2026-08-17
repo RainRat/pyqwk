@@ -394,6 +394,11 @@ qwk archive.qwk --format maildir -o ./my_maildir/
 qwk archive.qwk --validate
 ```
 
+**List conference areas across archives:**
+```bash
+qwk archive.qwk --list-conferences
+```
+
 **Export messages to a classic QWK packet:**
 ```bash
 qwk messages.mbox --format qwk -o output.qwk
@@ -598,6 +603,7 @@ for msg in messages:
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
+| `--list-conferences` | List all conference areas across input archives and exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |

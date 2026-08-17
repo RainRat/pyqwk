@@ -8273,3 +8273,156 @@ def show_threads(
 
     # 9. Write or print report
     _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
+def render_conferences_as_text(conf_list: list[dict[str, Any]], use_colors: bool = True) -> str:
+    """Render a list of conference entries into a formatted text string."""
+    lines = []
+    header_str = "Conference Areas"
+    if use_colors:
+        lines.append(_colorize(header_str, "bold", "cyan"))
+    else:
+        lines.append(header_str)
+
+    sep = "-" * 80
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    col_hdr = f"  {'#':<5} {'Conference Name':<32} {'Messages':<10} {'BBS Name':<25}"
+    if use_colors:
+        lines.append(_colorize(col_hdr, "bold"))
+    else:
+        lines.append(col_hdr)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    for conf in conf_list:
+        cnum = str(conf["number"])
+        cname = str(conf["name"])
+        if len(cname) > 30:
+            cname = cname[:27] + "..."
+        count = str(conf["message_count"])
+        bbs = str(conf["bbs_name"])
+        if len(bbs) > 23:
+            bbs = bbs[:20] + "..."
+
+        row_str = f"  {cnum:<5} {cname:<32} {count:<10} {bbs:<25}"
+        lines.append(row_str)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    summary_str = f"Total Conferences: {len(conf_list)}"
+    if use_colors:
+        lines.append(_colorize(summary_str, "bold", "green"))
+    else:
+        lines.append(summary_str)
+
+    return "\n".join(lines)
+
+
+def _render_conferences_html(conf_list: list[dict[str, Any]], title: str) -> str:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{title}</h1>")
+    html_parts.append("<table class='stats-table'>")
+    html_parts.append("<thead><tr><th>#</th><th>Conference Name</th><th>Messages</th><th>BBS Name</th></tr></thead>")
+    html_parts.append("<tbody>")
+    for conf in conf_list:
+        html_parts.append(
+            f"<tr><td>{conf['number']}</td><td>{html.escape(str(conf['name']))}</td>"
+            f"<td>{conf['message_count']}</td><td>{html.escape(str(conf['bbs_name']))}</td></tr>"
+        )
+    html_parts.append("</tbody></table>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_conferences_markdown(conf_list: list[dict[str, Any]], title: str) -> str:
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| # | Conference Name | Messages | BBS Name |")
+    md_parts.append("|---|-----------------|----------|----------|")
+    for conf in conf_list:
+        md_parts.append(f"| {conf['number']} | {conf['name']} | {conf['message_count']} | {conf['bbs_name']} |")
+    return "\n".join(md_parts)
+
+
+def _render_conferences_csv(conf_list: list[dict[str, Any]]) -> str:
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["number", "name", "message_count", "bbs_name"])
+    writer.writeheader()
+    writer.writerows(conf_list)
+    return output.getvalue()
+
+
+def show_list_conferences(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives and export a list of conference areas."""
+    conferences_map = {}
+
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            bbs_name = (bbs_info.name if bbs_info and bbs_info.name else None) or "Unknown"
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    msgs = []
+                else:
+                    msgs = list(parse_messages(file_data, None, settings.encoding, headers_only=True))
+
+            counts = defaultdict(int)
+            for msg in msgs:
+                counts[msg.confnum] += 1
+
+            all_conf_nums = sorted(set(board_dict.keys()) | set(counts.keys()))
+            for cnum in all_conf_nums:
+                cname = board_dict.get(cnum) or f"Conference {cnum}"
+                key = (cnum, cname, bbs_name)
+                conferences_map[key] = conferences_map.get(key, 0) + counts.get(cnum, 0)
+
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    conf_list = []
+    for (cnum, cname, bbs_name), count in sorted(conferences_map.items(), key=lambda x: (x[0][2], x[0][0])):
+        conf_list.append({
+            "number": cnum,
+            "name": cname,
+            "message_count": count,
+            "bbs_name": bbs_name,
+        })
+
+    if not conf_list:
+        logger.warning("No conferences found.")
+        return
+
+    output = ""
+    title = "Conference Areas"
+    if settings.format == "json":
+        output = json.dumps(conf_list, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_conferences_html(conf_list, title)
+    elif settings.format == "markdown":
+        output = _render_conferences_markdown(conf_list, title)
+    elif settings.format == "csv":
+        output = _render_conferences_csv(conf_list)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_conferences_as_text(conf_list, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
