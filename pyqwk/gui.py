@@ -1078,12 +1078,22 @@ class QwkGuiApp:
     def clear_search(self, _event: object | None = None) -> None:
         """Clear search fields or reset filters based on focus and content.
 
-        Handles the Escape key to clear search/exclude fields first, and if already
-        empty or not focused, resets all active filters.
+        Handles the Escape key to clear search/exclude fields or word limits first,
+        and if already empty or not focused, resets all active filters.
         """
         focused_widget = self.root.focus_get()
         search_entry = getattr(self, "search_entry", None)
         exclude_entry = getattr(self, "exclude_entry", None)
+        min_words_entry = getattr(self, "min_words_entry", None)
+        max_words_entry = getattr(self, "max_words_entry", None)
+
+        if focused_widget in (min_words_entry, max_words_entry):
+            if self.min_words_var.get().strip() or self.max_words_var.get().strip():
+                self.min_words_var.set("")
+                self.max_words_var.set("")
+                self.reload_messages()
+                self.message_list.focus_set()
+                return
 
         is_search_focused = focused_widget in (search_entry, exclude_entry)
         has_search_content = bool(
@@ -1474,7 +1484,11 @@ class QwkGuiApp:
             limits_frame,
             text="✕",
             width=2,
-            command=lambda: [self.min_words_var.set(""), self.max_words_var.set("")],
+            command=lambda: [
+                self.min_words_var.set(""),
+                self.max_words_var.set(""),
+                self.reload_messages(),
+            ],
         ).pack(side=tk.LEFT, padx=(2, 0))
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
