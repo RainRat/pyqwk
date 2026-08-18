@@ -394,6 +394,15 @@ qwk archive.qwk --format maildir -o ./my_maildir/
 qwk archive.qwk --validate
 ```
 
+**Show conversation threads summary:**
+```bash
+# Display a summary of all conversation threads
+qwk archive.qwk --threads
+
+# Save conversation threads summary as Markdown
+qwk archive.qwk --threads --format markdown -o threads.md
+```
+
 **Export messages to a classic QWK packet:**
 ```bash
 qwk messages.mbox --format qwk -o output.qwk
@@ -677,6 +686,7 @@ for msg in messages:
 | `-I, --info` | Show a summary of the archive and exit. |
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
+| `--threads` | Show a summary of all conversation threads and exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
