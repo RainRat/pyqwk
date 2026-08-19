@@ -142,6 +142,7 @@ class ListPresetsAction(argparse.Action):
 
         bold_cyan = "\033[1;36m"
         bold_green = "\033[1;32m"
+        bold_white = "\033[1;37m"
         dim_gray = "\033[2m"
         reset = "\033[0m"
 
@@ -155,13 +156,18 @@ class ListPresetsAction(argparse.Action):
             desc = details["desc"]
             equiv = details["equiv"]
 
+            desc_label = "Description:"
+            equiv_label = "Equivalent: "
+
             if use_colors:
                 preset_name = f"{bold_green}{preset_name}{reset}"
+                desc_label = f"{bold_white}{desc_label}{reset}"
+                equiv_label = f"{bold_white}{equiv_label}{reset}"
                 equiv = f"{dim_gray}{equiv}{reset}"
 
             print(f"  {preset_name}")
-            print(f"    Description: {desc}")
-            print(f"    Equivalent:  {equiv}\n")
+            print(f"    {desc_label} {desc}")
+            print(f"    {equiv_label} {equiv}\n")
 
         parser.exit(0)
 
