@@ -198,3 +198,17 @@ def test_preset_feed(mock_expand_paths, mock_process_merged_files):
     assert settings.strip_ansi is True
     assert settings.sort == "date"
     assert settings.reverse is True
+
+
+def test_invalid_preset_error_message(capsys):
+    """Verify that specifying an invalid preset prints detailed available preset descriptions."""
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "--preset", "invalid_preset"]):
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+        assert excinfo.value.code == 2
+
+    captured = capsys.readouterr()
+    assert "invalid choice: 'invalid_preset'" in captured.err
+    assert "Available workflow presets:" in captured.err
+    assert "blog" in captured.err
+    assert "Save messages as clean, threaded individual Markdown files." in captured.err
