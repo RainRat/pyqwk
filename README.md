@@ -409,6 +409,15 @@ qwk archive.qwk --validate
 qwk archive.qwk --list-conferences
 ```
 
+**Show conversation threads summary:**
+```bash
+# Display a summary of all conversation threads
+qwk archive.qwk --threads
+
+# Save conversation threads summary as Markdown
+qwk archive.qwk --threads --format markdown -o threads.md
+```
+
 **Export messages to a classic QWK packet:**
 ```bash
 qwk messages.mbox --format qwk -o output.qwk
