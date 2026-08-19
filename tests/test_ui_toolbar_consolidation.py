@@ -54,7 +54,7 @@ def test_toolbar_consolidation():
             "Message Links",
             "Regex",
             "Conversations",
-            "Clean",
+            "Clean View",
             "Wrap",
             "Remove Colors",
             "Hide Personal Info",
