@@ -6,7 +6,6 @@ import logging
 import os
 import webbrowser
 import tkinter as tk
-from tkinter import font  # Required for patching in test suite
 from collections import Counter
 from dataclasses import replace
 from tkinter import filedialog, messagebox, ttk, simpledialog, font  # noqa: F401 (Needed for tests)
@@ -2036,7 +2035,10 @@ class QwkGuiApp:
                     else:  # phone
                         uri = "tel:" + "".join(c for c in evalue if c.isdigit() or c == "+")
 
-                    cmd = lambda e, u=uri: webbrowser.open(u)
+                    def open_link(e, u=uri):
+                        return webbrowser.open(u)
+
+                    cmd = open_link
                 else:  # msg_link
                     # Extract message number from text (e.g. "msg #123" -> 123)
                     msg_num_match = RE_MSG_LINK_PATTERN.search(evalue)
@@ -3438,9 +3440,9 @@ class QwkGuiApp:
                 txt.insert(tk.END, f"ISSUES DETECTED ({invalid_count} archive(s) invalid)\n\n", "invalid")
 
             for idx, (p, r) in enumerate(results, 1):
-                txt.insert(tk.END, f"------------------------------------------------------------\n", "bold")
+                txt.insert(tk.END, "------------------------------------------------------------\n", "bold")
                 txt.insert(tk.END, f"[{idx} of {total}] Archive Details\n", "header")
-                txt.insert(tk.END, f"------------------------------------------------------------\n")
+                txt.insert(tk.END, "------------------------------------------------------------\n")
                 txt.insert(tk.END, f"File Path: {p}\n")
                 txt.insert(tk.END, f"Detected Format: {r.get('format', 'unknown').upper()}\n")
                 txt.insert(tk.END, f"Message Count: {r.get('messages_count', 0)}\n")

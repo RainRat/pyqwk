@@ -7953,7 +7953,6 @@ def _render_validation_markdown(all_results: list[dict[str, Any]]) -> list[str]:
 def render_validation_as_text(all_results: list[dict[str, Any]], use_colors: bool = False) -> str:
     """Render archive validation information into a human-readable text report."""
     BOLD = "1"
-    CYAN = "36"
     RED = "31"
     GREEN = "32"
     YELLOW = "33"
@@ -8051,11 +8050,10 @@ def show_validation_report(
 def render_threads_as_text(thread_metrics: list[dict[str, Any]], use_colors: bool = False) -> str:
     """Render a thread list into a human-readable text report."""
     BOLD = "1"
-    CYAN = "36"
     DIM = "90"
 
     parts = []
-    parts.append(f"Conversation Threads:")
+    parts.append("Conversation Threads:")
 
     # Header
     hdr = f"  {'Thread ID':<10} | {'Root Subject':<30} | {'Starter':<20} | {'Replies':<7} | {'Max Depth':<9} | {'Last Activity':<14}"
@@ -8273,7 +8271,6 @@ def render_attachments_as_text(attachment_records: list[dict[str, Any]], use_col
         return "No attachments found in the specified archive(s).\n"
 
     BOLD = "1"
-    CYAN = "36"
     DIM = "90"
 
     parts = []

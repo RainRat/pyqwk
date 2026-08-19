@@ -278,11 +278,6 @@ qwk archive.qwk -o messages.txt
 qwk archive.qwk --threaded -o messages.txt
 ```
 
-**Show a summary of conversation threads:**
-```bash
-qwk archive.qwk --threads
-```
-
 **Create a browsable HTML file:**
 ```bash
 qwk archive.qwk --format html -o messages.html
