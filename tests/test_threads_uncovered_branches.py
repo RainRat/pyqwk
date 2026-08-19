@@ -1,10 +1,8 @@
 import logging
 import json
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from pyqwk.core import (
-    BLOCK_SIZE,
     BBSInfo,
     ConferenceMap,
     ParsedMessage,
