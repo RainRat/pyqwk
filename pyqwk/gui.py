@@ -76,6 +76,7 @@ class QwkGuiApp:
         self._search_matches = []
         self._current_match_idx = -1
         self._pending_match_idx: int | None = None
+        self.font_size_offset = 0
 
         self.column_labels = {
             "#0": "Subject",
@@ -633,6 +634,17 @@ class QwkGuiApp:
                 ],
             ),
             (
+                "View & Zoom",
+                [
+                    ("Ctrl + + / =", "Zoom In"),
+                    ("Ctrl + -", "Zoom Out"),
+                    ("Ctrl + 0", "Reset Zoom"),
+                    ("Ctrl + T", "Toggle Threaded"),
+                    ("Ctrl+Shift+C", "Toggle Clean View"),
+                    ("Ctrl + W", "Toggle Wrap Text"),
+                ],
+            ),
+            (
                 "Navigation",
                 [
                     ("J / N", "Next Message"),
@@ -844,6 +856,22 @@ class QwkGuiApp:
             command=self.reload_messages,
         )
         view_menu.add_separator()
+        view_menu.add_command(
+            label="Zoom In",
+            command=lambda: self.adjust_zoom(1),
+            accelerator="Ctrl+Plus",
+        )
+        view_menu.add_command(
+            label="Zoom Out",
+            command=lambda: self.adjust_zoom(-1),
+            accelerator="Ctrl+Minus",
+        )
+        view_menu.add_command(
+            label="Reset Zoom",
+            command=self.reset_zoom,
+            accelerator="Ctrl+0",
+        )
+        view_menu.add_separator()
         columns_menu = tk.Menu(view_menu, tearoff=0)
         for col, label in self.column_labels.items():
             if col != "#0":
@@ -899,6 +927,13 @@ class QwkGuiApp:
         self.root.bind("<Control-Shift-X>", self.clear_filters)
         self.root.bind("<Control-Shift-x>", self.clear_filters)
         self.root.bind("<Escape>", self.clear_search)
+        self.root.bind("<Control-plus>", lambda e: self.adjust_zoom(1))
+        self.root.bind("<Control-equal>", lambda e: self.adjust_zoom(1))
+        self.root.bind("<Control-KP_Add>", lambda e: self.adjust_zoom(1))
+        self.root.bind("<Control-minus>", lambda e: self.adjust_zoom(-1))
+        self.root.bind("<Control-KP_Subtract>", lambda e: self.adjust_zoom(-1))
+        self.root.bind("<Control-0>", lambda e: self.reset_zoom())
+        self.root.bind("<Control-KP_0>", lambda e: self.reset_zoom())
         self.root.bind("<F3>", lambda e: self._navigate_search_matches(1))
         self.root.bind("<Shift-F3>", lambda e: self._navigate_search_matches(-1))
         self.root.bind("j", lambda e: self._select_relative_message(1))
@@ -1266,6 +1301,43 @@ class QwkGuiApp:
                 if self.column_vars[col].get():
                     visible.append(col)
         self.message_list["displaycolumns"] = visible
+
+    def adjust_zoom(self, delta: int) -> None:
+        """Adjust the font size offset of the detail text view."""
+        self.font_size_offset = max(-4, min(10, self.font_size_offset + delta))
+        self._update_detail_fonts()
+
+    def reset_zoom(self) -> None:
+        """Reset the font size offset of the detail text view to zero."""
+        self.font_size_offset = 0
+        self._update_detail_fonts()
+
+    def _update_detail_fonts(self) -> None:
+        """Update the fonts of all tags in the detail text viewer."""
+        self.detail_text.tag_configure(
+            "header_label", font=("TkDefaultFont", 10 + self.font_size_offset, "bold")
+        )
+        self.detail_text.tag_configure(
+            "header_meta_label", font=("TkDefaultFont", 9 + self.font_size_offset, "bold")
+        )
+        self.detail_text.tag_configure(
+            "header_meta", font=("TkDefaultFont", 9 + self.font_size_offset)
+        )
+        self.detail_text.tag_configure(
+            "header_value", font=("TkDefaultFont", 10 + self.font_size_offset)
+        )
+        self.detail_text.tag_configure(
+            "header_subject", font=("TkDefaultFont", 14 + self.font_size_offset, "bold")
+        )
+        self.detail_text.tag_configure(
+            "badge_private", font=("TkDefaultFont", 8 + self.font_size_offset, "bold")
+        )
+        self.detail_text.tag_configure(
+            "badge_mine", font=("TkDefaultFont", 8 + self.font_size_offset, "bold")
+        )
+        self.detail_text.tag_configure(
+            "body", font=("TkFixedFont", 10 + self.font_size_offset)
+        )
 
     def _build_status_bar(self) -> None:
         status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
@@ -1699,6 +1771,7 @@ class QwkGuiApp:
         )
         self.detail_text.tag_configure("body", font=("TkFixedFont", 10))
         self.detail_text.tag_configure("quote", foreground="#4e9a06")
+        self._update_detail_fonts()
         self.detail_text.tag_configure(
             "search_highlight", background="#ffff00", foreground="#000000"
         )
@@ -3480,11 +3553,14 @@ class QwkGuiApp:
                 ],
             ),
             (
-                "View & Toggles",
+                "View, Zoom & Toggles",
                 [
                     ("Ctrl+T", "Toggle Conversations (Threaded)"),
                     ("Ctrl+Shift+C", "Toggle Clean View"),
                     ("Ctrl+W", "Toggle Wrap Text"),
+                    ("Ctrl++ / =", "Zoom In"),
+                    ("Ctrl+-", "Zoom Out"),
+                    ("Ctrl+0", "Reset Zoom"),
                 ],
             ),
             (
