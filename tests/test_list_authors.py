@@ -1,16 +1,13 @@
 import pytest
-import sys
 import json
-import csv
 import io
 import logging
 import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from pyqwk.core import (
     ConferenceMap,
     BBSInfo,
-    ParsedMessage,
     ProcessingSettings,
     show_list_authors,
     render_authors_as_text,

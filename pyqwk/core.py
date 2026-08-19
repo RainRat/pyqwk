@@ -8708,12 +8708,19 @@ def show_list_authors(
 ) -> None:
     """Read archives and export a summary list of message authors."""
     all_messages = []
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
 
-    # 1. Load messages from all input paths
+    # 1. Load messages from all input paths and gather filter criteria
     for input_path in input_paths:
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
             bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
 
             if isinstance(file_data, list):
                 msgs = file_data
@@ -8731,23 +8738,7 @@ def show_list_authors(
         except Exception as e:
             logger.error("Failed to load archive %s: %s", input_path, e)
 
-    # 2. Gather filter criteria
-    allowed_conferences = set()
-    allowed_exclude_conferences = set()
-    user_name = settings.my_name
-
-    for input_path in input_paths:
-        try:
-            _, board_dict = load_data(input_path, logger, settings.encoding)
-            bbs_info = getattr(board_dict, "bbs_info", None)
-            if not user_name and bbs_info:
-                user_name = bbs_info.user_name
-            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
-            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
-        except Exception:
-            pass
-
-    # 3. Apply settings filters and group by author
+    # 2. Apply settings filters and group by author
     author_stats = defaultdict(lambda: {
         "count": 0,
         "first_dt": None,
