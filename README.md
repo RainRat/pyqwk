@@ -354,6 +354,11 @@ qwk archive.qwk --clean -o clean.txt
 qwk archive.qwk --extract-attachments -o output/
 ```
 
+**List all attachments in an archive:**
+```bash
+qwk archive.qwk --list-attachments
+```
+
 **Hide personal information (emails and phones):**
 ```bash
 qwk archive.qwk --redact-pii -o safe.txt
@@ -604,6 +609,7 @@ for msg in messages:
 | `-T`, `--threaded` | Group replies into threads. |
 | `--clean` | Remove signatures, quotes, attachments, and color codes. |
 | `-x, --extract-attachments` | Save attachments to a folder. |
+| `--list-attachments` | Show a summary of all attachments found across processed archives and exit. |
 | `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize` | Organize files into folders by conference. |
