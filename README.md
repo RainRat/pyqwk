@@ -404,6 +404,11 @@ qwk archive.qwk --validate
 qwk archive.qwk --list-conferences
 ```
 
+**List message authors across archives:**
+```bash
+qwk archive.qwk --list-authors
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads
@@ -623,6 +628,7 @@ for msg in messages:
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
+| `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
