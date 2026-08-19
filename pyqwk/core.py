@@ -1040,20 +1040,18 @@ class MessageHeader:
             conf_name = str(self.confnum)
             not_found_flag = True
 
-        def fmt_val(val: str) -> str:
-            if redact_pii:
-                val = _redact_pii(val)
-            return _linkify_text(
-                val, "ansi", search_term=highlight_term, is_regex=is_regex, use_colors=use_colors
-            )
-
         def fmt_line(
             label: str, value: str, newline: bool = True, pad: int = 16
         ) -> str:
             suffix = "\r\n" if newline else ""
             label_fmt = f"{label:<{pad}}"
             label_part = _colorize(label_fmt, "90", enabled=use_colors)
-            return f"{label_part}{fmt_val(value)}{suffix}"
+            if redact_pii:
+                value = _redact_pii(value)
+            formatted_val = _linkify_text(
+                value, "ansi", search_term=highlight_term, is_regex=is_regex, use_colors=use_colors
+            )
+            return f"{label_part}{formatted_val}{suffix}"
 
         header_parts: list[str] = []
         if include_separator:
