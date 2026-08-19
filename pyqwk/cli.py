@@ -18,6 +18,7 @@ from pyqwk.core import (
     show_stats,
     show_threads,
     show_attachments,
+    show_list_conferences,
     validate_archive,
     show_validation_report,
 )
@@ -875,6 +876,11 @@ examples:
         help="Show a list of all attachments found across processed archives and exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-conferences",
+        action="store_true",
+        help="List all conference areas across input archives and exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -999,7 +1005,7 @@ examples:
     elif args.info or args.stats:
         output_mode = "stdout"
         resolved_output_path = None
-    elif getattr(args, "threads", False) or getattr(args, "list_attachments", False):
+    elif getattr(args, "threads", False) or getattr(args, "list_attachments", False) or getattr(args, "list_conferences", False):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
     elif args.individualfiles:
@@ -1201,6 +1207,10 @@ examples:
 
     if getattr(args, "list_attachments", False):
         show_attachments(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_conferences", False):
+        show_list_conferences(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
