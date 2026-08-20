@@ -80,3 +80,23 @@ def test_depth_calculation_and_filtering():
                 and (settings.max_depth is None or m.depth <= settings.max_depth)]
     assert len(filtered) == 1
     assert filtered[0].msgnum == 10
+
+
+def test_cli_depth_arguments(mocker, monkeypatch, tmp_path):
+    from pyqwk.cli import main
+
+    mock_process = mocker.patch("pyqwk.cli.process_merged_files")
+    test_file = tmp_path / "dummy.qwk"
+    test_file.write_text("dummy content")
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["qwk", str(test_file), "--threaded", "--min-depth", "1", "--max-depth", "5"]
+    )
+
+    main()
+
+    mock_process.assert_called_once()
+    _, settings, _ = mock_process.call_args[0]
+    assert settings.min_depth == 1
+    assert settings.max_depth == 5

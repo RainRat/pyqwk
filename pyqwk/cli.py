@@ -660,6 +660,20 @@ examples:
         default=None,
     )
     quality_group.add_argument(
+        "--min-depth",
+        metavar="NUM",
+        help="Show messages with a thread depth of at least NUM.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
+        "--max-depth",
+        metavar="NUM",
+        help="Show messages with a thread depth of at most NUM.",
+        type=int,
+        default=None,
+    )
+    quality_group.add_argument(
         "--min-length",
         metavar="NUM",
         help="Show messages with at least NUM characters.",
