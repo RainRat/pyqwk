@@ -649,7 +649,7 @@ for msg in messages:
 | `--organize-by-subject` | Organize files into folders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
 | `--filename-pattern` | Set a custom filename pattern for individual files (e.g., `{date}_{author}_{subject}`). |
-| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments). |
+| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, attachments, replies, or thread_size). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
@@ -714,6 +714,7 @@ for msg in messages:
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
 | `--threads` | Show a summary of all conversation threads and exit. |
+| `--validate` | Validate archive integrity and metadata completeness, then exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
