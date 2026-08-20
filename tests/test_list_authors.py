@@ -176,3 +176,51 @@ def test_cli_list_authors_integration(tmp_path, mock_author_data):
                     assert len(output) == 2
                     assert output[0]["author"] == "Alice"
                     assert output[0]["message_count"] == 2
+
+
+def test_show_list_authors_real_parsed_message(message_factory):
+    m1 = message_factory(1, 0, "Hello World", confnum=1)
+    m1.header.msgfrom = "Charlie"
+    m1.header.msgto = "Dave"
+    m1.header.msgdate = "05-10-95"
+    m1.header.msgtime = "14:30"
+    # Ensure m1 does NOT have a .datetime attribute set
+    if hasattr(m1, "datetime"):
+        delattr(m1, "datetime")
+
+    board = ConferenceMap({1: "General"})
+    board.bbs_info = BBSInfo(name="Test BBS", bbs_id="TESTBBS", user_name="Charlie")
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+
+    logger = logging.getLogger("test_real_parsed_msg")
+
+    with patch("pyqwk.core.load_data", return_value=([m1], board)):
+        with patch("pyqwk.core._write_text_output") as mock_write:
+            show_list_authors(["test.qwk"], settings, logger)
+            mock_write.assert_called_once()
+            output_content = mock_write.call_args[0][0]
+            authors_out = json.loads(output_content)
+
+            assert len(authors_out) == 1
+            assert authors_out[0]["author"] == "Charlie"
+            assert authors_out[0]["message_count"] == 1
+            assert authors_out[0]["first_active"] == "1995-05-10"
+            assert authors_out[0]["last_active"] == "1995-05-10"
+            assert authors_out[0]["bbs_name"] == "Test BBS"
