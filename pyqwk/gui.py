@@ -991,18 +991,10 @@ class QwkGuiApp:
         if widget is None:
             return False
         try:
-            if isinstance(widget, tk.Entry):
+            if isinstance(widget, (tk.Entry, ttk.Entry)):
                 return True
-            if isinstance(widget, ttk.Entry):
+            if hasattr(widget, "winfo_class") and widget.winfo_class() in ("Entry", "TEntry"):
                 return True
-        except TypeError:
-            pass
-
-        try:
-            if hasattr(widget, "winfo_class"):
-                cls = widget.winfo_class()
-                if cls in ("Entry", "TEntry"):
-                    return True
         except Exception:
             pass
 
