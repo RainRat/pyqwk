@@ -176,3 +176,40 @@ def test_cli_list_authors_integration(tmp_path, mock_author_data):
                     assert len(output) == 2
                     assert output[0]["author"] == "Alice"
                     assert output[0]["message_count"] == 2
+
+
+def test_show_list_authors_real_parsed_message(message_factory):
+    m1 = message_factory(1, 0, "Real Parsed Message", confnum=1)
+    m1.header.msgfrom = "Charlie"
+    m1.header.msgdate = "01-01-24"
+    m1.header.msgtime = "12:00"
+
+    board = ConferenceMap({1: "General"})
+    board.bbs_info = BBSInfo(name="Test BBS")
+    logger = logging.getLogger("test_real_msg")
+
+    for fmt in ["html", "markdown", "csv", "text"]:
+        settings = ProcessingSettings(
+            verbose=False,
+            private=True,
+            no_header=False,
+            truncate_signatures=False,
+            cut_quoting=False,
+            individual_files=False,
+            threaded=False,
+            binaries_removal=False,
+            redact_pii=False,
+            format=fmt,
+            separator="none",
+            output_mode="stdout",
+            output_path=None,
+            encoding="cp437",
+            quiet=True,
+        )
+
+        with patch("pyqwk.core.load_data", return_value=([m1], board)):
+            with patch("pyqwk.core._write_text_output") as mock_write:
+                show_list_authors(["dummy.qwk"], settings, logger)
+                mock_write.assert_called_once()
+                out = mock_write.call_args[0][0]
+                assert "Charlie" in out

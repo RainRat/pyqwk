@@ -163,3 +163,34 @@ def test_cli_list_conferences_integration(tmp_path, mock_conference_data):
                     assert len(output) == 2
                     assert output[0]["name"] == "General Discussion"
                     assert output[0]["bbs_name"] == "Vintage BBS"
+
+
+def test_show_list_conferences_all_formats(mock_conference_data):
+    msgs, board = mock_conference_data
+    logger = logging.getLogger("test_conf_formats")
+
+    for fmt in ["html", "markdown", "csv", "text"]:
+        settings = ProcessingSettings(
+            verbose=False,
+            private=True,
+            no_header=False,
+            truncate_signatures=False,
+            cut_quoting=False,
+            individual_files=False,
+            threaded=False,
+            binaries_removal=False,
+            redact_pii=False,
+            format=fmt,
+            separator="none",
+            output_mode="stdout",
+            output_path=None,
+            encoding="cp437",
+            quiet=True,
+        )
+
+        with patch("pyqwk.core.load_data", return_value=(msgs, board)):
+            with patch("pyqwk.core._write_text_output") as mock_write:
+                show_list_conferences(["dummy.qwk"], settings, logger)
+                mock_write.assert_called_once()
+                out = mock_write.call_args[0][0]
+                assert "General Discussion" in out
