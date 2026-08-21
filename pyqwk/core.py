@@ -8149,12 +8149,19 @@ def show_threads(
 ) -> None:
     """Read archives, run thread reconstruction, and export conversation thread-listing metrics."""
     all_messages = []
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
 
-    # 1. Load messages and build a unified list
+    # 1. Load messages and gather filter criteria across all input paths
     for input_path in input_paths:
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
             bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
 
             if isinstance(file_data, list):
                 msgs = file_data
@@ -8175,22 +8182,6 @@ def show_threads(
     if not all_messages:
         logger.warning("No messages loaded. Thread-listing aborted.")
         return
-
-    # 2. Gather filters criteria
-    allowed_conferences = set()
-    allowed_exclude_conferences = set()
-    user_name = settings.my_name
-
-    for input_path in input_paths:
-        try:
-            _, board_dict = load_data(input_path, logger, settings.encoding)
-            bbs_info = getattr(board_dict, "bbs_info", None)
-            if not user_name and bbs_info:
-                user_name = bbs_info.user_name
-            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
-            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
-        except Exception:
-            pass
 
     # 3. Apply settings filters to select matching messages
     matching_messages = []
@@ -8377,12 +8368,19 @@ def show_attachments(
 ) -> None:
     """Read archives, discover attachments across matching messages, and export structured attachment records."""
     all_messages = []
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
 
-    # 1. Load messages from all input paths
+    # 1. Load messages and gather filter criteria across all input paths
     for input_path in input_paths:
         try:
             file_data, board_dict = load_data(input_path, logger, settings.encoding)
             bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
 
             if isinstance(file_data, list):
                 msgs = file_data
@@ -8399,22 +8397,6 @@ def show_attachments(
             all_messages.extend(msgs)
         except Exception as e:
             logger.error("Failed to load archive %s: %s", input_path, e)
-
-    # 2. Gather filter criteria
-    allowed_conferences = set()
-    allowed_exclude_conferences = set()
-    user_name = settings.my_name
-
-    for input_path in input_paths:
-        try:
-            _, board_dict = load_data(input_path, logger, settings.encoding)
-            bbs_info = getattr(board_dict, "bbs_info", None)
-            if not user_name and bbs_info:
-                user_name = bbs_info.user_name
-            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
-            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
-        except Exception:
-            pass
 
     # 3. Apply settings filters and discover attachments
     attachment_records = []
