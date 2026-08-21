@@ -20,6 +20,7 @@ from pyqwk.core import (
     show_attachments,
     show_list_conferences,
     show_list_authors,
+    show_list_bbs,
     validate_archive,
     show_validation_report,
 )
@@ -893,6 +894,11 @@ examples:
         help="List all message authors across input archives with message counts and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-bbs",
+        action="store_true",
+        help="List all Bulletin Board Systems (BBS) across input archives with conference/message counts and active date ranges, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -1022,6 +1028,7 @@ examples:
         or getattr(args, "list_attachments", False)
         or getattr(args, "list_conferences", False)
         or getattr(args, "list_authors", False)
+        or getattr(args, "list_bbs", False)
     ):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
@@ -1232,6 +1239,10 @@ examples:
 
     if getattr(args, "list_authors", False):
         show_list_authors(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_bbs", False):
+        show_list_bbs(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):

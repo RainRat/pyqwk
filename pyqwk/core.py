@@ -6401,6 +6401,218 @@ def show_info(
     _write_text_output(output, settings.output_path, encoding="utf-8")
 
 
+def render_bbs_as_text(bbs_list: list[dict[str, Any]], use_colors: bool = True) -> str:
+    """Render a list of BBS entries into a formatted text string."""
+    lines = []
+    header_str = "Bulletin Board Systems"
+    if use_colors:
+        lines.append(_colorize(header_str, "bold", "cyan"))
+    else:
+        lines.append(header_str)
+
+    sep = "-" * 85
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    col_hdr = f"  {'BBS Name':<25} {'BBS ID':<10} {'Sysop':<15} {'Confs':<8} {'Messages':<10} {'First Active':<12} {'Last Active':<12}"
+    if use_colors:
+        lines.append(_colorize(col_hdr, "bold"))
+    else:
+        lines.append(col_hdr)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    for item in bbs_list:
+        name = str(item["bbs_name"])
+        if len(name) > 23:
+            name = name[:20] + "..."
+        bbs_id = str(item["bbs_id"] or "N/A")
+        if len(bbs_id) > 8:
+            bbs_id = bbs_id[:8]
+        sysop = str(item["sysop"] or "N/A")
+        if len(sysop) > 13:
+            sysop = sysop[:10] + "..."
+        confs = str(item["conference_count"])
+        msgs = str(item["message_count"])
+        first_act = str(item["first_active"] or "N/A")
+        last_act = str(item["last_active"] or "N/A")
+
+        row_str = f"  {name:<25} {bbs_id:<10} {sysop:<15} {confs:<8} {msgs:<10} {first_act:<12} {last_act:<12}"
+        lines.append(row_str)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    summary_str = f"Total BBSes: {len(bbs_list)}"
+    if use_colors:
+        lines.append(_colorize(summary_str, "bold", "green"))
+    else:
+        lines.append(summary_str)
+
+    return "\n".join(lines)
+
+
+def _render_bbs_html(bbs_list: list[dict[str, Any]], title: str) -> str:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{title}</h1>")
+    html_parts.append("<table class='stats-table'>")
+    html_parts.append("<thead><tr><th>BBS Name</th><th>BBS ID</th><th>Sysop</th><th>Location</th><th>Conferences</th><th>Messages</th><th>First Active</th><th>Last Active</th></tr></thead>")
+    html_parts.append("<tbody>")
+    for item in bbs_list:
+        html_parts.append(
+            f"<tr><td>{html.escape(str(item['bbs_name']))}</td>"
+            f"<td>{html.escape(str(item['bbs_id'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['sysop'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['location'] or 'N/A'))}</td>"
+            f"<td>{item['conference_count']}</td>"
+            f"<td>{item['message_count']}</td>"
+            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td></tr>"
+        )
+    html_parts.append("</tbody></table>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_bbs_markdown(bbs_list: list[dict[str, Any]], title: str) -> str:
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| BBS Name | BBS ID | Sysop | Location | Conferences | Messages | First Active | Last Active |")
+    md_parts.append("|----------|--------|-------|----------|-------------|----------|--------------|-------------|")
+    for item in bbs_list:
+        md_parts.append(
+            f"| {item['bbs_name']} | {item['bbs_id'] or 'N/A'} | {item['sysop'] or 'N/A'} | {item['location'] or 'N/A'} | {item['conference_count']} | {item['message_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} |"
+        )
+    return "\n".join(md_parts)
+
+
+def _render_bbs_csv(bbs_list: list[dict[str, Any]]) -> str:
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "bbs_name",
+            "bbs_id",
+            "sysop",
+            "location",
+            "conference_count",
+            "message_count",
+            "first_active",
+            "last_active",
+        ],
+    )
+    writer.writeheader()
+    writer.writerows(bbs_list)
+    return output.getvalue()
+
+
+def show_list_bbs(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives and export a summary list of Bulletin Board Systems (BBS)."""
+    bbs_stats = defaultdict(lambda: {
+        "bbs_name": "Unknown",
+        "bbs_id": "",
+        "sysop": "",
+        "location": "",
+        "conferences": set(),
+        "count": 0,
+        "first_dt": None,
+        "last_dt": None,
+    })
+
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            bbs_name = (bbs_info.name if bbs_info and bbs_info.name else None) or "Unknown"
+            bbs_id = (bbs_info.bbs_id if bbs_info and bbs_info.bbs_id else "")
+            sysop = (bbs_info.sysop if bbs_info and bbs_info.sysop else "")
+            location = (bbs_info.location if bbs_info and bbs_info.location else "")
+
+            key = (bbs_name, bbs_id)
+            entry = bbs_stats[key]
+            entry["bbs_name"] = bbs_name
+            entry["bbs_id"] = bbs_id
+            if sysop and not entry["sysop"]:
+                entry["sysop"] = sysop
+            if location and not entry["location"]:
+                entry["location"] = location
+
+            if isinstance(board_dict, dict):
+                entry["conferences"].update(board_dict.keys())
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    msgs = []
+                else:
+                    msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            for msg in msgs:
+                entry["count"] += 1
+                if msg.confnum is not None:
+                    entry["conferences"].add(msg.confnum)
+                msg_dt = getattr(msg, "datetime", None)
+                if not msg_dt and hasattr(msg, "header") and msg.header:
+                    msg_dt = _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+                if msg_dt:
+                    if entry["first_dt"] is None or msg_dt < entry["first_dt"]:
+                        entry["first_dt"] = msg_dt
+                    if entry["last_dt"] is None or msg_dt > entry["last_dt"]:
+                        entry["last_dt"] = msg_dt
+
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    bbs_list = []
+    for (name, b_id), entry in sorted(bbs_stats.items(), key=lambda x: (-x[1]["count"], x[0][0].lower())):
+        first_active_str = entry["first_dt"].strftime("%Y-%m-%d") if entry["first_dt"] else None
+        last_active_str = entry["last_dt"].strftime("%Y-%m-%d") if entry["last_dt"] else None
+
+        bbs_list.append({
+            "bbs_name": entry["bbs_name"],
+            "bbs_id": entry["bbs_id"],
+            "sysop": entry["sysop"],
+            "location": entry["location"],
+            "conference_count": len(entry["conferences"]),
+            "message_count": entry["count"],
+            "first_active": first_active_str,
+            "last_active": last_active_str,
+        })
+
+    if not bbs_list:
+        logger.warning("No Bulletin Board Systems found.")
+        return
+
+    output = ""
+    title = "Bulletin Board Systems"
+    if settings.format == "json":
+        output = json.dumps(bbs_list, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_bbs_html(bbs_list, title)
+    elif settings.format == "markdown":
+        output = _render_bbs_markdown(bbs_list, title)
+    elif settings.format == "csv":
+        output = _render_bbs_csv(bbs_list)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_bbs_as_text(bbs_list, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
 def _compute_stats_from_messages(
     messages: Iterator[ParsedMessage],
     file_label: str = "Archive",
