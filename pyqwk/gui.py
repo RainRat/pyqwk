@@ -3617,7 +3617,7 @@ class QwkGuiApp:
         """Update the status label with relevant information.
 
         This builds a detailed status message that includes search matches,
-        message selection, and archive summary.
+        message selection, archive summary, and active search/exclusion terms.
         """
         parts = []
 
@@ -3627,11 +3627,19 @@ class QwkGuiApp:
                 f"Match {self._current_match_idx + 1} of {len(self._search_matches)}"
             )
 
-        # 2. Message Selection Progress
+        # 2. Search / Exclusion Query Terms
+        search_term = self.search_var.get().strip() if hasattr(self, "search_var") else ""
+        exclude_term = self.exclude_var.get().strip() if hasattr(self, "exclude_var") else ""
+        if search_term:
+            parts.append(f'Query: "{search_term}"')
+        if exclude_term:
+            parts.append(f'Excluding: "{exclude_term}"')
+
+        # 3. Message Selection Progress
         if message_index is not None and len(self.messages) > 0:
             parts.append(f"Message {message_index + 1} of {len(self.messages)}")
 
-        # 3. Archive Summary
+        # 4. Archive Summary
         summary = f"Showing {len(self.messages)} of {self.total_msg_count} messages"
         if self.source_display_name:
             summary += f" from {self.source_display_name}"
