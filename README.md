@@ -649,11 +649,11 @@ for msg in messages:
 | `--organize-by-subject` | Organize files into folders by message subject. |
 | `--organize-pattern` | Set a custom folder structure for individual files. |
 | `--filename-pattern` | Set a custom filename pattern for individual files (e.g., `{date}_{author}_{subject}`). |
-| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, or attachments). |
+| `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, attachments, replies, or thread_size). |
 | `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
-| `--my-name` | Set your name for the `--mine` filter and QWK exports. |
+| `--my-name`, `--user` | Set your name for the `--mine` filter and QWK exports. |
 | `--has-attachments` | Show messages that contain attachments. |
 | `--has-links` | Show messages that contain links. |
 | `--has-emails` | Show messages that contain email addresses. |
