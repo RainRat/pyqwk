@@ -1701,6 +1701,8 @@ class QwkGuiApp:
         )
 
         self.message_list.bind("<<TreeviewSelect>>", self.on_message_selected)
+        self.message_list.bind("<Return>", self._on_message_list_activate)
+        self.message_list.bind("<Double-1>", self._on_message_list_activate)
 
         # Context menu for list
         self.message_list.bind("<Button-3>", self._show_list_context_menu)
@@ -3639,6 +3641,13 @@ class QwkGuiApp:
 
         # Build final string
         self.status_label.config(text="  •  ".join(parts))
+
+    def _on_message_list_activate(self, _event: object | None = None) -> str | None:
+        """Transfer focus to the detail text pane when Return or Double-Click is triggered on a message."""
+        if self.message_list.selection():
+            self.detail_text.focus_set()
+            return "break"
+        return None
 
     def on_message_selected(self, _event: object | None = None) -> None:
         selected_items = self.message_list.selection()
