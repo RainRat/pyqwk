@@ -8751,11 +8751,12 @@ def show_list_authors(
             author_name = (msg.header.msgfrom or "").strip() or "Unknown"
             stats = author_stats[author_name]
             stats["count"] += 1
-            if msg.datetime:
-                if stats["first_dt"] is None or msg.datetime < stats["first_dt"]:
-                    stats["first_dt"] = msg.datetime
-                if stats["last_dt"] is None or msg.datetime > stats["last_dt"]:
-                    stats["last_dt"] = msg.datetime
+            msg_dt = getattr(msg, "datetime", None) or _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+            if msg_dt:
+                if stats["first_dt"] is None or msg_dt < stats["first_dt"]:
+                    stats["first_dt"] = msg_dt
+                if stats["last_dt"] is None or msg_dt > stats["last_dt"]:
+                    stats["last_dt"] = msg_dt
             bbs_name = (msg.bbs_name or msg.bbs_id or "").strip()
             if bbs_name:
                 stats["bbs_names"].add(bbs_name)
