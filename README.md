@@ -155,6 +155,9 @@ qwk-gui
 # Open a specific file
 qwk-gui archive.qwk
 
+# Open a file and highlight messages for your name
+qwk-gui archive.qwk --my-name "Alice"
+
 # Open several archives at once
 qwk-gui archive1.qwk archive2.qwk
 
@@ -180,6 +183,7 @@ qwk-gui messages.db
 - **Ctrl + O**: Open an archive.
 - **Ctrl + S**: Export the current filtered view.
 - **Ctrl + I**: View archive statistics and reports.
+- **Ctrl + Shift + V**: Validate archive integrity.
 - **Ctrl + Q**: Exit the application.
 
 **Search & Filters**
@@ -192,6 +196,14 @@ qwk-gui messages.db
 - **Esc**: Clear the search on the first press and all filters on the second press.
 - **Ctrl + Shift + X**: Clear all filters instantly.
 
+**View & Zoom**
+- **Ctrl + Plus** or **Ctrl + =**: Increase detail view text size.
+- **Ctrl + Minus**: Decrease detail view text size.
+- **Ctrl + 0**: Reset detail view text size.
+- **Ctrl + T**: Toggle conversation view (threaded).
+- **Ctrl + Shift + C**: Toggle clean view.
+- **Ctrl + W**: Toggle line wrapping.
+
 **Navigation**
 - **j** or **n**: Move to the next message.
 - **k** or **p**: Move to the previous message.
@@ -199,9 +211,13 @@ qwk-gui messages.db
 - **Shift + Space**, **BackSpace**, or **PgUp**: Scroll up or move to the previous message.
 - **Ctrl + G**: Jump to a specific message number.
 - **Ctrl + U**: Go to the referenced parent message.
+- **Alt + Left**: Go back to the previous message in reading history.
 - **r**: Select a random message.
 - **[** or **]**: Move to the previous or next conference.
 - **{** or **}**: Move to the previous or next BBS archive.
+
+**Help**
+- **F1**: Open the keyboard shortcuts reference window.
 
 ## Workflow Presets
 
