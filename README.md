@@ -720,6 +720,7 @@ for msg in messages:
 | `--stats` | Show message statistics and exit. |
 | `--merge-stats` | Show a single merged report for multiple archives. |
 | `--threads` | Show a summary of all conversation threads and exit. |
+| `--validate` | Validate archive integrity and metadata completeness, then exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
