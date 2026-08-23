@@ -180,7 +180,17 @@ qwk-gui messages.db
 - **Ctrl + O**: Open an archive.
 - **Ctrl + S**: Export the current filtered view.
 - **Ctrl + I**: View archive statistics and reports.
+- **Ctrl + Shift + V**: Validate archive integrity and completeness.
 - **Ctrl + Q**: Exit the application.
+- **F1**: Display all keyboard shortcuts.
+
+**View & Display**
+- **Ctrl + Plus** or **Ctrl + Equal**: Increase message font size (zoom in).
+- **Ctrl + Minus**: Decrease message font size (zoom out).
+- **Ctrl + 0**: Reset message font size to default.
+- **Ctrl + T**: Toggle threaded conversation view.
+- **Ctrl + W**: Toggle line wrapping.
+- **Ctrl + Shift + C**: Toggle clean view mode.
 
 **Search & Filters**
 - **Ctrl + F** or **/**: Jump to the search bar.
@@ -197,6 +207,7 @@ qwk-gui messages.db
 - **k** or **p**: Move to the previous message.
 - **Space** or **PgDn**: Scroll down or move to the next message.
 - **Shift + Space**, **BackSpace**, or **PgUp**: Scroll up or move to the previous message.
+- **Alt + Left**: Navigate back to the previously selected message.
 - **Ctrl + G**: Jump to a specific message number.
 - **Ctrl + U**: Go to the referenced parent message.
 - **r**: Select a random message.
@@ -802,6 +813,8 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 - **If options do not work together:** Some options cannot be used together:
   - You cannot use `--oneline` and `--individual-files` at the same time.
   - You cannot use `--threaded` with `eml` or `maildir` formats.
+  - You cannot use `--individual-files` with `qwk` or `rep` formats.
+  - You must provide an output path (`-o` or `--output`) when exporting to `sqlite`, `qwk`, or `rep` formats.
 - **If you get folder errors:** When you save messages as individual files, or when you use the `eml` or `maildir` formats, the output path (`-o` or `--output`) must be a folder or a compressed archive (such as `.zip`, `.tar.gz`, `.tar.bz2`, or `.tgz`). If you provide a regular file path (like `.txt` or `.html`) for these multi-file formats, the tool will show an error.
 
 ## Contributing
