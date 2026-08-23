@@ -1101,6 +1101,20 @@ class QwkGuiApp:
 
         return None
 
+    def _clear_search_field(self) -> None:
+        """Clear the search field, immediately reload messages, and restore focus."""
+        self.search_var.set("")
+        self.reload_messages()
+        if hasattr(self, "search_entry"):
+            self.search_entry.focus_set()
+
+    def _clear_exclude_field(self) -> None:
+        """Clear the exclude field, immediately reload messages, and restore focus."""
+        self.exclude_var.set("")
+        self.reload_messages()
+        if hasattr(self, "exclude_entry"):
+            self.exclude_entry.focus_set()
+
     def clear_search(self, _event: object | None = None) -> None:
         """Clear search fields or reset filters based on focus and content.
 
@@ -1415,7 +1429,7 @@ class QwkGuiApp:
             search_frame,
             text="✕",
             width=2,
-            command=lambda: [self.search_var.set(""), self.search_entry.focus_set()],
+            command=self._clear_search_field,
         ).pack(side=tk.LEFT, padx=(0, 5))
 
         self.search_count_label = ttk.Label(
@@ -1452,7 +1466,7 @@ class QwkGuiApp:
             search_frame,
             text="✕",
             width=2,
-            command=lambda: [self.exclude_var.set(""), self.exclude_entry.focus_set()],
+            command=self._clear_exclude_field,
         ).pack(side=tk.LEFT, padx=(0, 2))
 
         ttk.Separator(search_frame, orient=tk.VERTICAL).pack(
