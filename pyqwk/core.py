@@ -8351,8 +8351,7 @@ def _render_threads_csv(thread_metrics: list[dict[str, Any]]) -> str:
     fieldnames = ["thread_id", "root_subject", "starter", "reply_count", "deepest_depth", "last_activity"]
     writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
     writer.writeheader()
-    for t in thread_metrics:
-        writer.writerow(t)
+    writer.writerows(thread_metrics)
     return output.getvalue()
 
 
@@ -8570,8 +8569,7 @@ def _render_attachments_csv(attachment_records: list[dict[str, Any]]) -> str:
     fieldnames = ["filename", "msgnum", "author", "conference", "bbs_name", "source_file"]
     writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
     writer.writeheader()
-    for item in attachment_records:
-        writer.writerow(item)
+    writer.writerows(attachment_records)
     return output.getvalue()
 
 
