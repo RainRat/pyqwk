@@ -1,28 +1,22 @@
-import sys
 from unittest.mock import MagicMock, patch
-
-# Mock tkinter before pyqwk.gui imports
-mock_tk = MagicMock()
-mock_ttk = MagicMock()
-sys.modules["tkinter"] = mock_tk
-sys.modules["tkinter.filedialog"] = MagicMock()
-sys.modules["tkinter.messagebox"] = MagicMock()
-sys.modules["tkinter.simpledialog"] = MagicMock()
-sys.modules["tkinter.ttk"] = mock_ttk
-
 import pytest
 from pyqwk.gui import QwkGuiApp
 
 
 @pytest.fixture
 def app():
-    root = MagicMock()
-    root.after = MagicMock()
-    with patch("tkinter.StringVar"), patch("tkinter.BooleanVar"):
-        app = QwkGuiApp(root)
-        app.message_list = MagicMock()
-        app.detail_text = MagicMock()
-        return app
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
+    ):
+        root = MagicMock()
+        root.after = MagicMock()
+        app_inst = QwkGuiApp(root)
+        app_inst.message_list = MagicMock()
+        app_inst.detail_text = MagicMock()
+        return app_inst
 
 
 def test_on_message_list_activate_with_selection(app):

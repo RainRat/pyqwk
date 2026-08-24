@@ -211,3 +211,46 @@ def test_show_list_subjects_all_formats(mock_subject_data):
                 mock_write.assert_called_once()
                 out = mock_write.call_args[0][0]
                 assert "Hello World" in out
+
+
+def test_show_list_subjects_raw_bytes(message_factory):
+    m = message_factory(1, 0, "Subj")
+    board_map = ConferenceMap()
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+    logger = logging.getLogger("test_subj_bytes")
+
+    short_bytes = b"short"
+    long_bytes = bytearray(256)
+
+    def mock_load(path, logger_arg, enc):
+        if path == "short.qwk":
+            return short_bytes, board_map
+        if path == "long.qwk":
+            return long_bytes, board_map
+        return [m], board_map
+
+    with patch("pyqwk.core.load_data", side_effect=mock_load):
+        with patch("pyqwk.core.parse_messages", return_value=[m]):
+            with patch("pyqwk.core._write_text_output") as mock_write:
+                show_list_subjects(
+                    ["short.qwk", "long.qwk", "valid.json"], settings, logger
+                )
+                mock_write.assert_called_once()
+

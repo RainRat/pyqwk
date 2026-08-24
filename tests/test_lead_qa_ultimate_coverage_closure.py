@@ -1,8 +1,6 @@
 import logging
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from pyqwk.core import (
     BBSInfo,
     ConferenceMap,
