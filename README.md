@@ -425,6 +425,11 @@ qwk archive.qwk --list-authors
 qwk archive.qwk --list-bbs
 ```
 
+**List message subjects across archives:**
+```bash
+qwk archive.qwk --list-subjects
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads
@@ -646,6 +651,7 @@ for msg in messages:
 | `--list-conferences` | List all conference areas across input archives and exit. |
 | `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
 | `--list-bbs` | List all Bulletin Board Systems (BBS) across input archives with conference/message counts and active date ranges, then exit. |
+| `--list-subjects` | List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
