@@ -1129,9 +1129,7 @@ class QwkGuiApp:
 
         if focused_widget in (min_words_entry, max_words_entry):
             if self.min_words_var.get().strip() or self.max_words_var.get().strip():
-                self.min_words_var.set("")
-                self.max_words_var.set("")
-                self.reload_messages()
+                self._reset_word_limits()
                 self.message_list.focus_set()
                 return
 

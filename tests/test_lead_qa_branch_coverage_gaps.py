@@ -1,9 +1,7 @@
 import os
 import io
 import tarfile
-import tempfile
 import logging
-from unittest.mock import MagicMock
 import pytest
 
 from pyqwk.core import (
@@ -75,30 +73,6 @@ def test_process_merged_files_dry_run_archive_pack(tmp_path, test_logger):
         output_path=str(tmp_path / "output.zip"),
         encoding="utf-8",
         dry_run=True,
-    )
-
-    hdr = MessageHeader(
-        status=" ",
-        msgnum=1,
-        msgdate="01-01-20",
-        msgtime="12:00",
-        msgto="All",
-        msgfrom="Alice",
-        msgsubject="Test",
-        msgpassword="",
-        refnum=None,
-        numblocks=1,
-        msgflag=" ",
-        confnum=1,
-        lognum=0,
-        nettag="",
-    )
-    msg = ParsedMessage(
-        text="Sample body",
-        msgnum=1,
-        refnum=None,
-        confnum=1,
-        header=hdr,
     )
 
     # Should skip _pack_directory_to_archive because dry_run is True
