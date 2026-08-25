@@ -121,11 +121,11 @@ class QwkArgumentParser(argparse.ArgumentParser):
             quick_usage = (
                 f"{message}\n\n"
                 "To process or view an archive, pass one or more archive files or directories:\n"
-                "  qwk archive.qwk --oneline               # Show one-line summary\n"
+                "  qwk archive.qwk --oneline               # Show a quick summary\n"
                 "  qwk archive.qwk -P blog -o ./output     # Export using a preset\n"
-                "  qwk archive.qwk --search \"keyword\"     # Search messages\n"
+                "  qwk archive.qwk --search \"keyword\"     # Search for messages\n"
                 "  qwk --list-presets                      # List available workflow presets\n"
-                "  qwk --help                              # Display full help & options"
+                "  qwk --help                              # Display full help and options"
             )
             super().error(quick_usage)
         super().error(message)
