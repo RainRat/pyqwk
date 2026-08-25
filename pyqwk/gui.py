@@ -1188,6 +1188,12 @@ class QwkGuiApp:
         self._update_wrap()
         self.reload_messages()
 
+    def _reset_word_limits(self) -> None:
+        """Reset min/max word count limits to default empty state and reload messages."""
+        self.min_words_var.set("")
+        self.max_words_var.set("")
+        self.reload_messages()
+
     def _push_current_to_history(self) -> None:
         """Push the currently selected message's conference and number to history."""
         if not hasattr(self, "_history_stack") or not hasattr(self, "messages"):
@@ -1561,11 +1567,7 @@ class QwkGuiApp:
             limits_frame,
             text="✕",
             width=2,
-            command=lambda: [
-                self.min_words_var.set(""),
-                self.max_words_var.set(""),
-                self.reload_messages(),
-            ],
+            command=self._reset_word_limits,
         ).pack(side=tk.LEFT, padx=(2, 0))
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
