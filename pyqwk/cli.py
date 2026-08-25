@@ -20,6 +20,7 @@ from pyqwk.core import (
     show_attachments,
     show_list_conferences,
     show_list_authors,
+    show_list_recipients,
     show_list_bbs,
     show_list_subjects,
     validate_archive,
@@ -920,6 +921,12 @@ examples:
         help="List all message authors across input archives with message counts and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-recipients",
+        "--list-to",
+        action="store_true",
+        help="List all message recipients across input archives with message counts and active date ranges, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "--list-bbs",
         action="store_true",
         help="List all Bulletin Board Systems (BBS) across input archives with conference/message counts and active date ranges, then exit. You can save this to a file with -o.",
@@ -1059,6 +1066,8 @@ examples:
         or getattr(args, "list_attachments", False)
         or getattr(args, "list_conferences", False)
         or getattr(args, "list_authors", False)
+        or getattr(args, "list_recipients", False)
+        or getattr(args, "list_to", False)
         or getattr(args, "list_bbs", False)
         or getattr(args, "list_subjects", False)
     ):
@@ -1271,6 +1280,10 @@ examples:
 
     if getattr(args, "list_authors", False):
         show_list_authors(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_recipients", False) or getattr(args, "list_to", False):
+        show_list_recipients(input_paths, settings, logger)
         sys.exit(0)
 
     if getattr(args, "list_bbs", False):

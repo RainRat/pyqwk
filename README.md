@@ -420,6 +420,11 @@ qwk archive.qwk --list-conferences
 qwk archive.qwk --list-authors
 ```
 
+**List message recipients across archives:**
+```bash
+qwk archive.qwk --list-recipients
+```
+
 **List Bulletin Board Systems across archives:**
 ```bash
 qwk archive.qwk --list-bbs
@@ -650,6 +655,7 @@ for msg in messages:
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
 | `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
+| `--list-recipients`, `--list-to` | List all message recipients with message counts and active date ranges, then exit. |
 | `--list-bbs` | List all Bulletin Board Systems (BBS) across input archives with conference/message counts and active date ranges, then exit. |
 | `--list-subjects` | List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
