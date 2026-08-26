@@ -435,6 +435,11 @@ qwk archive.qwk --list-bbs
 qwk archive.qwk --list-subjects
 ```
 
+**List extracted URLs across archives:**
+```bash
+qwk archive.qwk --list-urls
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads
@@ -658,6 +663,7 @@ for msg in messages:
 | `--list-recipients`, `--list-to` | List all message recipients with message counts and active date ranges, then exit. |
 | `--list-bbs` | List all Bulletin Board Systems (BBS) across input archives with conference/message counts and active date ranges, then exit. |
 | `--list-subjects` | List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. |
+| `--list-urls`, `--list-links` | List all web URLs extracted from message bodies with message counts, author counts, and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |

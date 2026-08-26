@@ -23,6 +23,7 @@ from pyqwk.core import (
     show_list_recipients,
     show_list_bbs,
     show_list_subjects,
+    show_list_urls,
     validate_archive,
     show_validation_report,
 )
@@ -937,6 +938,12 @@ examples:
         help="List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-urls",
+        "--list-links",
+        action="store_true",
+        help="List all URLs extracted from message bodies across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -1070,6 +1077,8 @@ examples:
         or getattr(args, "list_to", False)
         or getattr(args, "list_bbs", False)
         or getattr(args, "list_subjects", False)
+        or getattr(args, "list_urls", False)
+        or getattr(args, "list_links", False)
     ):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
@@ -1292,6 +1301,10 @@ examples:
 
     if getattr(args, "list_subjects", False):
         show_list_subjects(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_urls", False) or getattr(args, "list_links", False):
+        show_list_urls(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
