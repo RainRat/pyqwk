@@ -280,7 +280,7 @@ examples:
     io_group.add_argument(
         "--organize-by-bbs",
         dest="organize_by_bbs",
-        help="Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead.",
+        help="Organize archives into folders named after the BBS. If used with -o or --output, organizes the export folder instead.",
         action="store_true",
     )
     io_group.add_argument(
@@ -309,14 +309,14 @@ examples:
     io_group.add_argument(
         "-E",
         "--encoding",
-        help="Set the text encoding (default is 'cp437'). Use this if text looks incorrect.",
+        help="Set text encoding for older archives (default is 'cp437'). Try 'cp850' or 'latin1' if text or special characters display incorrectly.",
         default="cp437",
     )
 
     content_group = parser.add_argument_group("Content Processing")
     content_group.add_argument(
         "--clean",
-        help="Remove signatures, old quotes, attachments, and color codes.",
+        help="Remove signatures, quoted text, attachments, and color codes.",
         action="store_true",
     )
     content_group.add_argument(
