@@ -38,7 +38,7 @@ def test_oneline_individual_files_conflict(monkeypatch, testdata_dir, capsys):
 
     assert exc.value.code == 2
     stderr = capsys.readouterr().err
-    assert "You cannot use --oneline and --individual-files at the same time." in stderr
+    assert "Cannot use --oneline and --individual-files at the same time." in stderr
 
 
 def test_organize_by_bbs_cli_execution(monkeypatch, testdata_dir):

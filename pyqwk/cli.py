@@ -1024,7 +1024,7 @@ examples:
 
     if args.oneline and args.individualfiles:
         parser.error(
-            "You cannot use --oneline and --individual-files at the same time. "
+            "Cannot use --oneline and --individual-files at the same time. "
             "Please choose --oneline for a quick summary, or --individual-files to save each message separately."
         )
 
