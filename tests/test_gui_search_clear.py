@@ -47,7 +47,7 @@ def test_clear_exclude_field_triggers_immediate_reload():
 def test_exclude_clear_button_functionality():
     with (
         patch("pyqwk.gui.tk"),
-        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.ttk"),
         patch("pyqwk.gui.filedialog"),
         patch("pyqwk.gui.messagebox"),
     ):

@@ -1,5 +1,4 @@
 import logging
-import pytest
 from pyqwk.core import (
     MessageHeader,
     ParsedMessage,

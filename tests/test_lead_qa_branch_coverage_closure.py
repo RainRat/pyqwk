@@ -1,6 +1,4 @@
 import logging
-import sys
-from unittest.mock import MagicMock
 
 import pytest
 

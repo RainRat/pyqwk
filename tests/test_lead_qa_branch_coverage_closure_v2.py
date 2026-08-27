@@ -1,5 +1,4 @@
 import os
-import pytest
 import logging
 from pyqwk.core import (
     detect_extension,
@@ -9,8 +8,6 @@ from pyqwk.core import (
     show_list_recipients,
     show_list_subjects,
     ProcessingSettings,
-    ParsedMessage,
-    MessageHeader,
 )
 
 
