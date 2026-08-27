@@ -463,7 +463,11 @@ qwk my_archives/ --bbs "The Digital Horizon"
 
 **Keyword Search:**
 ```bash
+# Search across all message fields
 qwk archive.qwk --search "BBS"
+
+# Search specifically within message body text
+qwk archive.qwk --body "setup instructions"
 ```
 
 **Filter by Date:**
@@ -497,6 +501,12 @@ qwk archive.qwk --limit-per-subject 3
 ```bash
 # Show only the first 3 messages from each BBS
 qwk my_archives/ --limit-per-bbs 3
+```
+
+**Limit per Recipient:**
+```bash
+# Show only the first 2 messages for each recipient
+qwk archive.qwk --limit-per-to 2
 ```
 
 **Find Content:**
