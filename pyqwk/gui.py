@@ -175,24 +175,24 @@ class QwkGuiApp:
 
         menu.add_command(
             label="Copy Subject",
-            command=lambda s=orig_subject: self._copy_to_clipboard(s),
+            command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
         )
         menu.add_command(
             label="Copy From",
-            command=lambda f=orig_from: self._copy_to_clipboard(f),
+            command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
         )
         menu.add_command(
             label="Copy To",
-            command=lambda t=orig_to: self._copy_to_clipboard(t),
+            command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
         )
         menu.add_command(
             label="Copy Num",
-            command=lambda n=orig_num: self._copy_to_clipboard(n),
+            command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
         )
         menu.add_command(
             label="Copy Full Message",
             command=lambda: self._copy_to_clipboard(
-                self.detail_text.get("1.0", tk.END).strip()
+                self.detail_text.get("1.0", tk.END).strip(), "Full Message"
             ),
         )
         if msg.refnum:
@@ -281,25 +281,25 @@ class QwkGuiApp:
 
             menu.add_command(
                 label="Copy Subject",
-                command=lambda s=orig_subject: self._copy_to_clipboard(s),
+                command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
             )
             menu.add_command(
                 label="Copy From",
-                command=lambda f=orig_from: self._copy_to_clipboard(f),
+                command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
             )
             menu.add_command(
                 label="Copy To",
-                command=lambda t=orig_to: self._copy_to_clipboard(t),
+                command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
             )
             menu.add_command(
                 label="Copy Num",
-                command=lambda n=orig_num: self._copy_to_clipboard(n),
+                command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
             )
 
         menu.add_command(
             label="Copy Full Message",
             command=lambda: self._copy_to_clipboard(
-                self.detail_text.get("1.0", tk.END).strip()
+                self.detail_text.get("1.0", tk.END).strip(), "Full Message"
             ),
         )
 
@@ -402,10 +402,14 @@ class QwkGuiApp:
         except tk.TclError:
             pass
 
-    def _copy_to_clipboard(self, text: str) -> None:
-        """Copy the given text to the system clipboard."""
+    def _copy_to_clipboard(self, text: str, label: str | None = None) -> None:
+        """Copy the given text to the system clipboard and display status feedback."""
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
+        if label:
+            self.status_label.config(text=f"Copied {label} to clipboard")
+        else:
+            self.status_label.config(text="Copied text to clipboard")
 
     def _is_any_filter_active(self) -> bool:
         """Return True if any visibility filters are currently active."""
