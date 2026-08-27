@@ -127,7 +127,7 @@ def test_show_list_context_menu(app):
         app.detail_text.get.return_value = "Full Formatted Message Content"
         app._copy_to_clipboard = MagicMock()
         cmd_cb()
-        app._copy_to_clipboard.assert_called_once_with("Full Formatted Message Content")
+        app._copy_to_clipboard.assert_called_once_with("Full Formatted Message Content", "Full Message")
 
 
 def test_show_text_context_menu(app):
