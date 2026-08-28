@@ -257,3 +257,47 @@ def test_show_list_emails_raw_bytes(message_factory):
                     ["short.qwk", "long.qwk", "valid.json"], settings, logger
                 )
                 mock_write.assert_called_once()
+
+
+def test_show_list_emails_edge_cases(message_factory):
+    m1 = message_factory(1, 0, "Subj 1")
+    m1.header.msgdate = "INVALID-DATE"
+    m1.header.msgtime = "INVALID-TIME"
+    m1.datetime = None
+    m1.text = "Write to user@example.org and   "
+    m1.bbs_name = None
+    m1.bbs_id = None
+
+    board = ConferenceMap()
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+    logger = logging.getLogger("test_emails_edge_cases")
+
+    with patch("pyqwk.core.load_data", return_value=([m1], board)):
+        with patch("pyqwk.core._write_text_output") as mock_write:
+            with patch("pyqwk.core._parse_qwk_date", return_value=None):
+                show_list_emails(["dummy.qwk"], settings, logger)
+                mock_write.assert_called_once()
+                out = json.loads(mock_write.call_args[0][0])
+                assert len(out) == 1
+                assert out[0]["email"] == "user@example.org"
+                assert out[0]["first_active"] is None
+                assert out[0]["last_active"] is None
+                assert out[0]["bbs_name"] == "Unknown"
+
