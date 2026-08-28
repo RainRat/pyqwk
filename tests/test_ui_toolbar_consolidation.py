@@ -31,6 +31,14 @@ def test_toolbar_consolidation():
         ]
         assert len(filter_frame_calls) == 1, "Expected one 'Filters' labelframe"
 
+        # Check that "BBS & Conferences" labelframe exists
+        bbs_conf_frame_calls = [
+            call
+            for call in mock_ttk.Labelframe.call_args_list
+            if call[1].get("text") == "BBS & Conferences"
+        ]
+        assert len(bbs_conf_frame_calls) == 1, "Expected one 'BBS & Conferences' labelframe"
+
         # Check that "Discovery:" label DOES NOT exist
         discovery_label_calls = [
             call
