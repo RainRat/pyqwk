@@ -6606,6 +6606,208 @@ def show_list_urls(
     _write_text_output(output, settings.output_path, encoding="utf-8")
 
 
+def render_emails_as_text(email_list: list[dict[str, Any]], use_colors: bool = True) -> str:
+    """Render an email address list into a human-readable text report."""
+    lines = []
+    title = "Extracted Emails"
+
+    if use_colors:
+        lines.append(_colorize(f"=== {title} ===", "bold", "cyan"))
+    else:
+        lines.append(f"=== {title} ===")
+
+    sep = "-" * 105
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    col_hdr = f"  {'Email':<45} {'Messages':<10} {'Authors':<9} {'First Active':<12} {'Last Active':<12} {'BBS Name':<15}"
+    if use_colors:
+        lines.append(_colorize(col_hdr, "bold"))
+    else:
+        lines.append(col_hdr)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    for item in email_list:
+        email_str = str(item["email"])
+        if len(email_str) > 43:
+            email_str = email_str[:40] + "..."
+        msgs = str(item["message_count"])
+        authors = str(item["authors_count"])
+        first_act = str(item["first_active"] or "N/A")
+        last_act = str(item["last_active"] or "N/A")
+        bbs = str(item["bbs_name"] or "Unknown")
+        if len(bbs) > 13:
+            bbs = bbs[:10] + "..."
+
+        row_str = f"  {email_str:<45} {msgs:<10} {authors:<9} {first_act:<12} {last_act:<12} {bbs:<15}"
+        lines.append(row_str)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    summary_str = f"Total Emails: {len(email_list)}"
+    if use_colors:
+        lines.append(_colorize(summary_str, "bold", "green"))
+    else:
+        lines.append(summary_str)
+
+    return "\n".join(lines)
+
+
+def _render_emails_html(email_list: list[dict[str, Any]], title: str) -> str:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{title}</h1>")
+    html_parts.append("<table class='stats-table'>")
+    html_parts.append("<thead><tr><th>Email</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
+    html_parts.append("<tbody>")
+    for item in email_list:
+        html_parts.append(
+            f"<tr><td>{html.escape(str(item['email']))}</td>"
+            f"<td>{item['message_count']}</td>"
+            f"<td>{item['authors_count']}</td>"
+            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
+        )
+    html_parts.append("</tbody></table>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_emails_markdown(email_list: list[dict[str, Any]], title: str) -> str:
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| Email | Messages | Authors | First Active | Last Active | BBS Name |")
+    md_parts.append("|-------|----------|---------|--------------|-------------|----------|")
+    for item in email_list:
+        md_parts.append(
+            f"| {item['email']} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
+        )
+    return "\n".join(md_parts)
+
+
+def _render_emails_csv(email_list: list[dict[str, Any]]) -> str:
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["email", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
+    writer.writeheader()
+    writer.writerows(email_list)
+    return output.getvalue()
+
+
+def show_list_emails(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives and export a summary list of extracted email addresses."""
+    all_messages = []
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
+
+    # 1. Load messages from all input paths and gather filter criteria
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    continue
+                msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            for msg in msgs:
+                msg.confname = msg.confname or board_dict.get(msg.confnum)
+                msg.bbs_name = msg.bbs_name or (bbs_info.name if bbs_info else None)
+                msg.bbs_id = msg.bbs_id or (bbs_info.bbs_id if bbs_info else None)
+                msg.source_file = msg.source_file or os.path.basename(input_path)
+            all_messages.extend(msgs)
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    # 2. Apply settings filters and group by extracted email
+    email_stats = defaultdict(lambda: {
+        "count": 0,
+        "authors": set(),
+        "first_dt": None,
+        "last_dt": None,
+        "bbs_names": set(),
+    })
+
+    for msg in all_messages:
+        if matches_filters(msg, settings, allowed_conferences, user_name, allowed_exclude_conferences):
+            extracted_emails = RE_EMAIL_PATTERN.findall(msg.text or "")
+            for email_addr in extracted_emails:
+                email_clean = email_addr.strip()
+                if not email_clean:
+                    continue
+                stats = email_stats[email_clean]
+                stats["count"] += 1
+                msgfrom = (msg.header.msgfrom or "").strip()
+                if msgfrom:
+                    stats["authors"].add(msgfrom)
+                msg_dt = getattr(msg, "datetime", None) or _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+                if msg_dt:
+                    if stats["first_dt"] is None or msg_dt < stats["first_dt"]:
+                        stats["first_dt"] = msg_dt
+                    if stats["last_dt"] is None or msg_dt > stats["last_dt"]:
+                        stats["last_dt"] = msg_dt
+                bbs_name = (msg.bbs_name or msg.bbs_id or "").strip()
+                if bbs_name:
+                    stats["bbs_names"].add(bbs_name)
+
+    # 3. Build email list sorted by count descending, then email ascending
+    email_list = []
+    for email_val, stats in sorted(email_stats.items(), key=lambda x: (-x[1]["count"], x[0].lower())):
+        first_active_str = stats["first_dt"].strftime("%Y-%m-%d") if stats["first_dt"] else None
+        last_active_str = stats["last_dt"].strftime("%Y-%m-%d") if stats["last_dt"] else None
+        bbs_str = ", ".join(sorted(stats["bbs_names"])) if stats["bbs_names"] else "Unknown"
+
+        email_list.append({
+            "email": email_val,
+            "message_count": stats["count"],
+            "authors_count": len(stats["authors"]),
+            "first_active": first_active_str,
+            "last_active": last_active_str,
+            "bbs_name": bbs_str,
+        })
+
+    if not email_list:
+        logger.warning("No email addresses found across messages.")
+        return
+
+    output = ""
+    title = "Extracted Emails"
+    if settings.format == "json":
+        output = json.dumps(email_list, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_emails_html(email_list, title)
+    elif settings.format == "markdown":
+        output = _render_emails_markdown(email_list, title)
+    elif settings.format == "csv":
+        output = _render_emails_csv(email_list)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_emails_as_text(email_list, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
 def render_bbs_as_text(bbs_list: list[dict[str, Any]], use_colors: bool = True) -> str:
     """Render a list of BBS entries into a formatted text string."""
     lines = []
