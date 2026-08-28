@@ -1492,7 +1492,7 @@ class QwkGuiApp:
         row2 = ttk.Frame(toolbar)
         row2.pack(side=tk.TOP, fill=tk.X)
 
-        archives_frame = ttk.Labelframe(row2, text="Archives", padding=(5, 5))
+        archives_frame = ttk.Labelframe(row2, text="BBS & Conferences", padding=(5, 5))
         archives_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
         ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
