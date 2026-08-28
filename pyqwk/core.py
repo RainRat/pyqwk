@@ -5577,18 +5577,21 @@ def _write_csv(
     )
     writer.writeheader()
 
-    for message in messages:
-        row = message.header.as_dict
-        row["conference_name"] = message.confname
-        row["bbs_name"] = message.bbs_name
-        row["bbs_id"] = message.bbs_id
-        row["source_file"] = message.source_file
-        row["text"] = message.text
-        row["depth"] = message.depth
-        row["thread_id"] = message.thread_id
-        row["parent_msgnum"] = message.parent_msgnum
-        row["attachments"] = ";".join(message.attachments or [])
-        writer.writerow(row)
+    writer.writerows(
+        {
+            **message.header.as_dict,
+            "conference_name": message.confname,
+            "bbs_name": message.bbs_name,
+            "bbs_id": message.bbs_id,
+            "source_file": message.source_file,
+            "text": message.text,
+            "depth": message.depth,
+            "thread_id": message.thread_id,
+            "parent_msgnum": message.parent_msgnum,
+            "attachments": ";".join(message.attachments or []),
+        }
+        for message in messages
+    )
 
     _write_text_output(output.getvalue(), output_path, encoding=encoding)
 
