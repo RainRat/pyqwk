@@ -2577,7 +2577,7 @@ def parse_messages(
     encoding: str = "cp437",
     headers_only: bool = False,
 ) -> Iterator[ParsedMessage]:
-    """Convert the original bytes from a QWK message file into a list of messages.
+    """Convert the original bytes from a QWK message file into an iterator of messages.
 
     Args:
         file_data: Original bytes from a messages.dat file.
