@@ -6491,12 +6491,20 @@ def _render_urls_markdown(url_list: list[dict[str, Any]], title: str) -> str:
     return "\n".join(md_parts)
 
 
-def _render_urls_csv(url_list: list[dict[str, Any]]) -> str:
+def _render_csv_table(records: list[dict[str, Any]], fieldnames: list[str], **writer_kwargs: Any) -> str:
+    """Render a list of record dictionaries into a CSV formatted string."""
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["url", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
+    writer = csv.DictWriter(output, fieldnames=fieldnames, **writer_kwargs)
     writer.writeheader()
-    writer.writerows(url_list)
+    writer.writerows(records)
     return output.getvalue()
+
+
+def _render_urls_csv(url_list: list[dict[str, Any]]) -> str:
+    return _render_csv_table(
+        url_list,
+        ["url", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
+    )
 
 
 def show_list_urls(
@@ -6694,11 +6702,10 @@ def _render_emails_markdown(email_list: list[dict[str, Any]], title: str) -> str
 
 
 def _render_emails_csv(email_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["email", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
-    writer.writeheader()
-    writer.writerows(email_list)
-    return output.getvalue()
+    return _render_csv_table(
+        email_list,
+        ["email", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
+    )
 
 
 def show_list_emails(
@@ -6900,10 +6907,9 @@ def _render_bbs_markdown(bbs_list: list[dict[str, Any]], title: str) -> str:
 
 
 def _render_bbs_csv(bbs_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(
-        output,
-        fieldnames=[
+    return _render_csv_table(
+        bbs_list,
+        [
             "bbs_name",
             "bbs_id",
             "sysop",
@@ -6914,9 +6920,6 @@ def _render_bbs_csv(bbs_list: list[dict[str, Any]]) -> str:
             "last_active",
         ],
     )
-    writer.writeheader()
-    writer.writerows(bbs_list)
-    return output.getvalue()
 
 
 def show_list_bbs(
@@ -8754,12 +8757,12 @@ def _render_threads_markdown(thread_metrics: list[dict[str, Any]], title: str) -
 
 def _render_threads_csv(thread_metrics: list[dict[str, Any]]) -> str:
     """Render conversation threads as CSV format."""
-    output = io.StringIO()
-    fieldnames = ["thread_id", "root_subject", "starter", "reply_count", "deepest_depth", "last_activity"]
-    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
-    writer.writeheader()
-    writer.writerows(thread_metrics)
-    return output.getvalue()
+    return _render_csv_table(
+        thread_metrics,
+        ["thread_id", "root_subject", "starter", "reply_count", "deepest_depth", "last_activity"],
+        quoting=csv.QUOTE_ALL,
+        escapechar="\\",
+    )
 
 
 def show_threads(
@@ -8972,12 +8975,12 @@ def _render_attachments_markdown(attachment_records: list[dict[str, Any]], title
 
 def _render_attachments_csv(attachment_records: list[dict[str, Any]]) -> str:
     """Render attachment records in CSV format."""
-    output = io.StringIO()
-    fieldnames = ["filename", "msgnum", "author", "conference", "bbs_name", "source_file"]
-    writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, escapechar="\\")
-    writer.writeheader()
-    writer.writerows(attachment_records)
-    return output.getvalue()
+    return _render_csv_table(
+        attachment_records,
+        ["filename", "msgnum", "author", "conference", "bbs_name", "source_file"],
+        quoting=csv.QUOTE_ALL,
+        escapechar="\\",
+    )
 
 
 def show_attachments(
@@ -9136,11 +9139,10 @@ def _render_conferences_markdown(conf_list: list[dict[str, Any]], title: str) ->
 
 
 def _render_conferences_csv(conf_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["number", "name", "message_count", "bbs_name"])
-    writer.writeheader()
-    writer.writerows(conf_list)
-    return output.getvalue()
+    return _render_csv_table(
+        conf_list,
+        ["number", "name", "message_count", "bbs_name"],
+    )
 
 
 def show_list_conferences(
@@ -9295,11 +9297,10 @@ def _render_authors_markdown(author_list: list[dict[str, Any]], title: str) -> s
 
 
 def _render_authors_csv(author_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["author", "message_count", "first_active", "last_active", "bbs_name"])
-    writer.writeheader()
-    writer.writerows(author_list)
-    return output.getvalue()
+    return _render_csv_table(
+        author_list,
+        ["author", "message_count", "first_active", "last_active", "bbs_name"],
+    )
 
 
 def show_list_authors(
@@ -9485,11 +9486,10 @@ def _render_recipients_markdown(recipient_list: list[dict[str, Any]], title: str
 
 
 def _render_recipients_csv(recipient_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["recipient", "message_count", "first_active", "last_active", "bbs_name"])
-    writer.writeheader()
-    writer.writerows(recipient_list)
-    return output.getvalue()
+    return _render_csv_table(
+        recipient_list,
+        ["recipient", "message_count", "first_active", "last_active", "bbs_name"],
+    )
 
 
 def show_list_recipients(
@@ -9678,11 +9678,10 @@ def _render_subjects_markdown(subject_list: list[dict[str, Any]], title: str) ->
 
 
 def _render_subjects_csv(subject_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["subject", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
-    writer.writeheader()
-    writer.writerows(subject_list)
-    return output.getvalue()
+    return _render_csv_table(
+        subject_list,
+        ["subject", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
+    )
 
 
 def show_list_subjects(
