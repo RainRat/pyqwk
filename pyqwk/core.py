@@ -1291,6 +1291,9 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
 
             attachments = row["attachments"].split(";") if row["attachments"] else None
 
+            reply_count = _safe_to_int(row["reply_count"]) if "reply_count" in row.keys() else 0
+            thread_size = _safe_to_int(row["thread_size"]) if "thread_size" in row.keys() else 1
+
             msg = ParsedMessage(
                 text=row["text"],
                 msgnum=header.msgnum,
@@ -1306,6 +1309,8 @@ def _parse_sqlite_messages(db_path: str) -> tuple[list[ParsedMessage], Conferenc
                 or bbs_info.bbs_id,
                 source_file=row["source_file"],
                 attachments=attachments,
+                reply_count=reply_count or 0,
+                thread_size=thread_size or 1,
             )
             messages.append(msg)
     finally:
@@ -1367,6 +1372,8 @@ def _parse_json_messages(
             bbs_id=entry.get("bbs_id"),
             source_file=entry.get("source_file"),
             attachments=entry.get("attachments"),
+            reply_count=_safe_to_int(entry.get("reply_count", 0)) or 0,
+            thread_size=_safe_to_int(entry.get("thread_size", 1)) or 1,
         )
         messages.append(msg)
     return messages
@@ -1530,6 +1537,8 @@ def _parse_csv_messages(data: Iterator[dict[str, Any]]) -> list[ParsedMessage]:
             bbs_id=row.get("bbs_id"),
             source_file=row.get("source_file"),
             attachments=attachments,
+            reply_count=_safe_to_int(row.get("reply_count", 0)) or 0,
+            thread_size=_safe_to_int(row.get("thread_size", 1)) or 1,
         )
         messages.append(msg)
     return messages
@@ -5570,6 +5579,8 @@ def _write_csv(
         "thread_id",
         "parent_msgnum",
         "attachments",
+        "reply_count",
+        "thread_size",
     ]
 
     writer = csv.DictWriter(
@@ -5589,6 +5600,8 @@ def _write_csv(
             "thread_id": message.thread_id,
             "parent_msgnum": message.parent_msgnum,
             "attachments": ";".join(message.attachments or []),
+            "reply_count": message.reply_count,
+            "thread_size": message.thread_size,
         }
         for message in messages
     )
@@ -5677,7 +5690,9 @@ def _write_sqlite(
             bbs_name TEXT,
             bbs_id TEXT,
             source_file TEXT,
-            attachments TEXT
+            attachments TEXT,
+            reply_count INTEGER,
+            thread_size INTEGER
         )
     """)
 
@@ -5746,8 +5761,8 @@ def _write_sqlite(
                 conference_number, message_number, date, author, recipient,
                 subject, status, text, reference_number, thread_id, depth,
                 parent_message_number, conference_name, bbs_name, bbs_id, source_file,
-                attachments
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                attachments, reply_count, thread_size
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 header.confnum,
@@ -5767,6 +5782,8 @@ def _write_sqlite(
                 msg.bbs_id,
                 msg.source_file,
                 ";".join(msg.attachments or []),
+                msg.reply_count,
+                msg.thread_size,
             ),
         )
 
