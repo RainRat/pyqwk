@@ -445,6 +445,11 @@ qwk archive.qwk --list-urls
 qwk archive.qwk --list-emails
 ```
 
+**List extracted phone numbers across archives:**
+```bash
+qwk archive.qwk --list-phones
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads
@@ -680,6 +685,7 @@ for msg in messages:
 | `--list-subjects` | List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-urls` | List all extracted URLs across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-emails` | List all extracted email addresses across input archives with message counts, author counts, and active date ranges, then exit. |
+| `--list-phones` | List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
