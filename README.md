@@ -89,6 +89,7 @@ Using a virtual environment keeps your Python packages organized. It prevents co
      ```powershell
      venv\Scripts\Activate.ps1
      ```
+     *Note: If PowerShell shows a script execution error, run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first.*
    - **macOS and Linux:**
      ```bash
      source venv/bin/activate
