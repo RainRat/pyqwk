@@ -365,6 +365,11 @@ qwk archive.qwk --clean -o clean.txt
 qwk archive.qwk --extract-attachments -o output/
 ```
 
+**Organize extracted attachments into subfolders:**
+```bash
+qwk archive.qwk --extract-attachments --organize-attachments -o output/
+```
+
 **List all attachments in an archive:**
 ```bash
 qwk archive.qwk --list-attachments
