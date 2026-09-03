@@ -300,3 +300,62 @@ def test_show_list_phones_edge_cases(message_factory):
                 assert out[0]["first_active"] is None
                 assert out[0]["last_active"] is None
                 assert out[0]["bbs_name"] == "Unknown"
+
+
+def test_show_list_phones_filters_and_branch_edge_cases(message_factory):
+    m_excluded = message_factory(1, 0, "Subj 1", confnum=99)
+    m_excluded.text = "Call 555-999-8888"
+
+    m1 = message_factory(2, 0, "Subj 2", confnum=1)
+    m1.header.msgfrom = "   "
+    m1.datetime = None
+    m1.header.msgdate = "01-01-20"
+    m1.header.msgtime = "10:00"
+    m1.text = "   555-000-1111"
+    m1.bbs_name = None
+    m1.bbs_id = "SYS_BBS_1"
+
+    m2 = message_factory(3, 0, "Subj 3", confnum=1)
+    m2.header.msgfrom = "Bob"
+    m2.datetime = None
+    m2.header.msgdate = "01-02-20"
+    m2.header.msgtime = "12:00"
+    m2.text = "Call 555-000-1111"
+    m2.bbs_name = "Main BBS"
+    m2.bbs_id = "SYS_BBS_1"
+
+    board = ConferenceMap({1: "General", 99: "Excluded"})
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+        exclude_conferences=["99"],
+    )
+    logger = logging.getLogger("test_phones_branches")
+
+    with patch("pyqwk.core.load_data", return_value=([m_excluded, m1, m2], board)):
+        with patch("pyqwk.core._write_text_output") as mock_write:
+            show_list_phones(["dummy.qwk"], settings, logger)
+            mock_write.assert_called_once()
+            out = json.loads(mock_write.call_args[0][0])
+            assert len(out) == 1
+            phone_entry = out[0]
+            assert phone_entry["phone"] == "555-000-1111"
+            assert phone_entry["message_count"] == 2
+            assert phone_entry["authors_count"] == 1
+            assert phone_entry["first_active"] == "2020-01-01"
+            assert phone_entry["last_active"] == "2020-01-02"
+            assert "Main BBS" in phone_entry["bbs_name"]
