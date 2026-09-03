@@ -6923,11 +6923,10 @@ def _render_phones_markdown(phone_list: list[dict[str, Any]], title: str) -> str
 
 
 def _render_phones_csv(phone_list: list[dict[str, Any]]) -> str:
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["phone", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
-    writer.writeheader()
-    writer.writerows(phone_list)
-    return output.getvalue()
+    return _render_csv_table(
+        phone_list,
+        ["phone", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
+    )
 
 
 def show_list_phones(
