@@ -769,8 +769,8 @@ for msg in messages:
 | `--min-attachments` | Show messages with at least NUM attachments. |
 | `--max-words` | Show messages with at most NUM words. |
 | `--max-attachments` | Show messages with at most NUM attachments. |
-| `--min-depth` | Show messages with a thread depth of at least NUM. |
-| `--max-depth` | Show messages with a thread depth of at most NUM. |
+| `--min-depth` | Show messages with a conversation thread depth of at least NUM (0 for original posts, 1 for direct replies). |
+| `--max-depth` | Show messages with a conversation thread depth of at most NUM (0 for original posts, 1 for direct replies). |
 | `--min-replies` | Show messages with at least NUM direct replies. |
 | `--max-replies` | Show messages with at most NUM direct replies. |
 | `--min-thread-size` | Show messages belonging to a conversation with at least NUM messages. |

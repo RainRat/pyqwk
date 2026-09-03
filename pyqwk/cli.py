@@ -679,14 +679,14 @@ examples:
     quality_group.add_argument(
         "--min-depth",
         metavar="NUM",
-        help="Show messages with a thread depth of at least NUM.",
+        help="Show messages with a conversation thread depth of at least NUM (0 for original posts, 1 for direct replies).",
         type=int,
         default=None,
     )
     quality_group.add_argument(
         "--max-depth",
         metavar="NUM",
-        help="Show messages with a thread depth of at most NUM.",
+        help="Show messages with a conversation thread depth of at most NUM (0 for original posts, 1 for direct replies).",
         type=int,
         default=None,
     )
