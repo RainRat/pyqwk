@@ -1438,7 +1438,7 @@ class QwkGuiApp:
             text="✕",
             width=2,
             command=self._clear_search_field,
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        ).pack(side=tk.LEFT, padx=(0, 2))
 
         self.search_count_label = ttk.Label(
             search_frame, text="", width=12, anchor=tk.CENTER
