@@ -70,6 +70,16 @@ def test_pivot_filter_subject(mock_gui_deps):
         app.search_var.set.assert_called_with("testing 123")
         mock_reload.assert_called_once()
 
+def test_pivot_filter_recipient(mock_gui_deps):
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    with patch.object(app, "reload_messages") as mock_reload:
+        app._pivot_filter(recipient="Alice", exclude_recipient="Bob")
+        app.search_var.set.assert_called_with("Alice")
+        app.exclude_var.set.assert_called_with("Bob")
+        mock_reload.assert_called_once()
+
 def test_render_message_subject_link(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
@@ -145,7 +155,7 @@ def test_render_message_links_robustness_pii(mock_gui_deps):
 
         # Check To link
         tag_callbacks[to_tags[0]](None)
-        mock_pivot.assert_called_with(author="john.doe@example.com")
+        mock_pivot.assert_called_with(recipient="john.doe@example.com")
 
         # Check Subject link
         tag_callbacks[subject_tags[0]](None)
@@ -191,3 +201,39 @@ def test_context_menus_have_subject_pivot(mock_gui_deps):
         assert "Copy From" in copy_labels
         assert "Copy To" in copy_labels
         assert "Copy Num" in copy_labels
+
+def test_context_menus_have_recipient_pivot(mock_gui_deps):
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    header = MessageHeader(
+        status=" ", msgnum=1, msgdate="01-01-23", msgtime="12:00",
+        msgto="Target Recipient", msgfrom="Author", msgsubject="Subject",
+        msgpassword="", refnum=None, numblocks=1, msgflag=" ",
+        confnum=1, lognum=0, nettag=" "
+    )
+    msg = ParsedMessage(text="Body", msgnum=1, refnum=None, confnum=1, header=header)
+    app.messages = [msg]
+
+    app.message_list.identify_row.return_value = "0"
+
+    with patch("pyqwk.gui.tk.Menu") as mock_menu_cls:
+        mock_menu = mock_menu_cls.return_value
+
+        # Test List Context Menu
+        app._show_list_context_menu(MagicMock(x=0, y=0))
+
+        recip_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Recipient" in c.kwargs.get("label", "")]
+        assert len(recip_call) == 1
+        ex_recip_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Recipient" in c.kwargs.get("label", "")]
+        assert len(ex_recip_call) == 1
+
+        # Test Text Context Menu
+        mock_menu.add_command.reset_mock()
+        app.message_list.selection.return_value = ("0",)
+        app._show_text_context_menu(MagicMock())
+
+        recip_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Recipient" in c.kwargs.get("label", "")]
+        assert len(recip_call) == 1
+        ex_recip_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Recipient" in c.kwargs.get("label", "")]
+        assert len(ex_recip_call) == 1
