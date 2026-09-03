@@ -10,6 +10,86 @@ from collections import Counter
 from dataclasses import replace
 from tkinter import filedialog, messagebox, ttk, simpledialog, font  # noqa: F401 (Needed for tests)
 
+class ToolTip:
+    """Hover tooltip popup for Tkinter widgets."""
+
+    def __init__(self, widget: tk.Widget, text: str, delay_ms: int = 500) -> None:
+        self.widget = widget
+        self.text = text
+        self.delay_ms = delay_ms
+        self.tooltip_window: tk.Toplevel | None = None
+        self._timer_id: str | None = None
+
+        self.widget.bind("<Enter>", self._on_enter, add="+")
+        self.widget.bind("<Leave>", self._on_leave, add="+")
+        self.widget.bind("<ButtonPress>", self._on_leave, add="+")
+        self.widget.bind("<Destroy>", self._on_destroy, add="+")
+
+    def _on_enter(self, _event: tk.Event | None = None) -> None:
+        self._schedule()
+
+    def _on_leave(self, _event: tk.Event | None = None) -> None:
+        self._unschedule()
+        self.hide()
+
+    def _on_destroy(self, _event: tk.Event | None = None) -> None:
+        self._unschedule()
+        self.hide()
+
+    def _schedule(self) -> None:
+        self._unschedule()
+        self._timer_id = self.widget.after(self.delay_ms, self.show)
+
+    def _unschedule(self) -> None:
+        if self._timer_id:
+            try:
+                self.widget.after_cancel(self._timer_id)
+            except Exception:
+                pass
+            self._timer_id = None
+
+    def show(self) -> None:
+        if self.tooltip_window or not self.text:
+            return
+        try:
+            x = self.widget.winfo_rootx() + 10
+            y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+        except Exception:
+            return
+
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+
+        try:
+            tw.attributes("-topmost", True)
+        except Exception:
+            pass
+
+        label = tk.Label(
+            tw,
+            text=self.text,
+            justify=tk.LEFT,
+            background="#ffffe0",
+            foreground="#000000",
+            relief=tk.SOLID,
+            borderwidth=1,
+            font=("TkDefaultFont", 8, "normal"),
+            padx=4,
+            pady=2,
+        )
+        label.pack(ipadx=1)
+
+    def hide(self) -> None:
+        tw = self.tooltip_window
+        self.tooltip_window = None
+        if tw:
+            try:
+                tw.destroy()
+            except Exception:
+                pass
+
+
 from pyqwk.core import (
     ProcessingSettings,
     _order_messages_by_thread,
@@ -1433,30 +1513,37 @@ class QwkGuiApp:
         self.search_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind("<Control-f>", self._focus_search)
         self.search_entry.bind("<Control-e>", self._focus_exclude)
-        ttk.Button(
+        btn_clear_search = ttk.Button(
             search_frame,
             text="✕",
             width=2,
             command=self._clear_search_field,
-        ).pack(side=tk.LEFT, padx=(0, 2))
+        )
+        btn_clear_search.pack(side=tk.LEFT, padx=(0, 2))
+        ToolTip(btn_clear_search, "Clear Search Field")
 
         self.search_count_label = ttk.Label(
             search_frame, text="", width=12, anchor=tk.CENTER
         )
         self.search_count_label.pack(side=tk.LEFT)
 
-        ttk.Button(
+        btn_prev_match = ttk.Button(
             search_frame,
             text="▲",
             width=2,
             command=lambda: self._navigate_search_matches(-1),
-        ).pack(side=tk.LEFT, padx=1)
-        ttk.Button(
+        )
+        btn_prev_match.pack(side=tk.LEFT, padx=1)
+        ToolTip(btn_prev_match, "Previous Match (Shift+F3)")
+
+        btn_next_match = ttk.Button(
             search_frame,
             text="▼",
             width=2,
             command=lambda: self._navigate_search_matches(1),
-        ).pack(side=tk.LEFT, padx=(1, 5))
+        )
+        btn_next_match.pack(side=tk.LEFT, padx=(1, 5))
+        ToolTip(btn_next_match, "Next Match (F3)")
 
         ttk.Separator(search_frame, orient=tk.VERTICAL).pack(
             side=tk.LEFT, fill=tk.Y, padx=5
@@ -1470,12 +1557,14 @@ class QwkGuiApp:
         self.exclude_entry.bind("<Escape>", self.clear_search)
         self.exclude_entry.bind("<Control-f>", self._focus_search)
         self.exclude_entry.bind("<Control-e>", self._focus_exclude)
-        ttk.Button(
+        btn_clear_exclude = ttk.Button(
             search_frame,
             text="✕",
             width=2,
             command=self._clear_exclude_field,
-        ).pack(side=tk.LEFT, padx=(0, 2))
+        )
+        btn_clear_exclude.pack(side=tk.LEFT, padx=(0, 2))
+        ToolTip(btn_clear_exclude, "Clear Exclude Field")
 
         ttk.Separator(search_frame, orient=tk.VERTICAL).pack(
             side=tk.LEFT, fill=tk.Y, padx=5
@@ -1494,35 +1583,51 @@ class QwkGuiApp:
 
         archives_frame = ttk.Labelframe(row2, text="BBS & Conferences", padding=(5, 5))
         archives_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(
+        btn_prev_bbs = ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_bbs(-1)
-        ).grid(row=0, column=0, padx=(2, 0), pady=2)
+        )
+        btn_prev_bbs.grid(row=0, column=0, padx=(2, 0), pady=2)
+        ToolTip(btn_prev_bbs, "Previous BBS ({)")
+
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.grid(row=0, column=1, padx=2, pady=2)
-        ttk.Button(
+        btn_reset_bbs = ttk.Button(
             archives_frame,
             text="✕",
             width=2,
             command=self._reset_bbs_filter,
-        ).grid(row=0, column=2, padx=0, pady=2)
-        ttk.Button(
-            archives_frame, text="▶", width=2, command=lambda: self._navigate_bbs(1)
-        ).grid(row=0, column=3, padx=(0, 5), pady=2)
+        )
+        btn_reset_bbs.grid(row=0, column=2, padx=0, pady=2)
+        ToolTip(btn_reset_bbs, "Reset BBS Filter")
 
-        ttk.Button(
+        btn_next_bbs = ttk.Button(
+            archives_frame, text="▶", width=2, command=lambda: self._navigate_bbs(1)
+        )
+        btn_next_bbs.grid(row=0, column=3, padx=(0, 5), pady=2)
+        ToolTip(btn_next_bbs, "Next BBS (})")
+
+        btn_prev_conf = ttk.Button(
             archives_frame, text="◀", width=2, command=lambda: self._navigate_conference(-1)
-        ).grid(row=1, column=0, padx=(2, 0), pady=2)
+        )
+        btn_prev_conf.grid(row=1, column=0, padx=(2, 0), pady=2)
+        ToolTip(btn_prev_conf, "Previous Conference ([)")
+
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.conf_combo.grid(row=1, column=1, padx=2, pady=2)
-        ttk.Button(
+        btn_reset_conf = ttk.Button(
             archives_frame,
             text="✕",
             width=2,
             command=self._reset_conf_filter,
-        ).grid(row=1, column=2, padx=0, pady=2)
-        ttk.Button(
+        )
+        btn_reset_conf.grid(row=1, column=2, padx=0, pady=2)
+        ToolTip(btn_reset_conf, "Reset Conference Filter")
+
+        btn_next_conf = ttk.Button(
             archives_frame, text="▶", width=2, command=lambda: self._navigate_conference(1)
-        ).grid(row=1, column=3, padx=(0, 5), pady=2)
+        )
+        btn_next_conf.grid(row=1, column=3, padx=(0, 5), pady=2)
+        ToolTip(btn_next_conf, "Next Conference (])")
 
         filters_frame = ttk.Labelframe(row2, text="Filters", padding=(5, 5))
         filters_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
@@ -1543,12 +1648,14 @@ class QwkGuiApp:
                 filters_frame, text=text, variable=var, command=self.reload_messages
             ).grid(row=i // 3, column=i % 3, padx=5, sticky=tk.W)
 
-        ttk.Button(
+        btn_reset_filters = ttk.Button(
             filters_frame,
             text="✕",
             width=2,
             command=self._reset_visibility_filters,
-        ).grid(row=0, column=3, rowspan=3, padx=(5, 2), sticky=tk.NS)
+        )
+        btn_reset_filters.grid(row=0, column=3, rowspan=3, padx=(5, 2), sticky=tk.NS)
+        ToolTip(btn_reset_filters, "Reset Message Visibility Filters")
 
         limits_frame = ttk.Labelframe(row2, text="Word Limits", padding=(5, 5))
         limits_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
@@ -1565,12 +1672,14 @@ class QwkGuiApp:
         )
         self.max_words_entry.pack(side=tk.LEFT, padx=2)
 
-        ttk.Button(
+        btn_reset_limits = ttk.Button(
             limits_frame,
             text="✕",
             width=2,
             command=self._reset_word_limits,
-        ).pack(side=tk.LEFT, padx=(2, 0))
+        )
+        btn_reset_limits.pack(side=tk.LEFT, padx=(2, 0))
+        ToolTip(btn_reset_limits, "Reset Word Count Limits")
 
         options_frame = ttk.Labelframe(row2, text="Display", padding=(5, 5))
         options_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
@@ -1589,12 +1698,14 @@ class QwkGuiApp:
                 row=i // 3, column=i % 3, padx=5, sticky=tk.W
             )
 
-        ttk.Button(
+        btn_reset_display = ttk.Button(
             options_frame,
             text="✕",
             width=2,
             command=self._reset_display_options,
-        ).grid(row=0, column=3, rowspan=2, padx=(5, 2), sticky=tk.NS)
+        )
+        btn_reset_display.grid(row=0, column=3, rowspan=2, padx=(5, 2), sticky=tk.NS)
+        ToolTip(btn_reset_display, "Reset Display Options to Defaults")
 
         global_frame = ttk.Labelframe(row2, text="Global", padding=(5, 5))
         global_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
