@@ -25,6 +25,7 @@ from pyqwk.core import (
     show_list_subjects,
     show_list_urls,
     show_list_emails,
+    show_list_phones,
     validate_archive,
     show_validation_report,
 )
@@ -949,6 +950,11 @@ examples:
         help="List all extracted email addresses across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-phones",
+        action="store_true",
+        help="List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -1084,6 +1090,7 @@ examples:
         or getattr(args, "list_subjects", False)
         or getattr(args, "list_urls", False)
         or getattr(args, "list_emails", False)
+        or getattr(args, "list_phones", False)
     ):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
@@ -1314,6 +1321,10 @@ examples:
 
     if getattr(args, "list_emails", False):
         show_list_emails(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_phones", False):
+        show_list_phones(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
