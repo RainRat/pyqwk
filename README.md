@@ -341,6 +341,11 @@ qwk archive.qwk --individual-files --organize-by-to -o output_folder/
 qwk archive.qwk --individual-files --organize-by-subject -o output_folder/
 ```
 
+**Organize files by BBS:**
+```bash
+qwk archive.qwk --individual-files --organize-by-bbs -o output_folder/
+```
+
 **Use a custom folder structure:**
 ```bash
 qwk archive.qwk --individual-files --organize-pattern "{year}/{month}/{author}" -o output_folder/
