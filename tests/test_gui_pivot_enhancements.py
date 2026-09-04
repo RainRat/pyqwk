@@ -145,7 +145,7 @@ def test_render_message_links_robustness_pii(mock_gui_deps):
 
         # Check To link
         tag_callbacks[to_tags[0]](None)
-        mock_pivot.assert_called_with(author="john.doe@example.com")
+        mock_pivot.assert_called_with(recipient="john.doe@example.com")
 
         # Check Subject link
         tag_callbacks[subject_tags[0]](None)
@@ -173,9 +173,11 @@ def test_context_menus_have_subject_pivot(mock_gui_deps):
         # Test List Context Menu
         app._show_list_context_menu(MagicMock(x=0, y=0))
 
-        # Find "Filter by Subject" call
+        # Find "Filter by Subject" and "Filter by Recipient" calls
         subj_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Subject" in c.kwargs.get("label", "")]
         assert len(subj_call) == 1
+        recip_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Recipient" in c.kwargs.get("label", "")]
+        assert len(recip_call) == 1
 
         # Test Text Context Menu
         mock_menu.add_command.reset_mock()
@@ -184,6 +186,8 @@ def test_context_menus_have_subject_pivot(mock_gui_deps):
 
         subj_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Subject" in c.kwargs.get("label", "")]
         assert len(subj_call) == 1
+        recip_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Recipient" in c.kwargs.get("label", "")]
+        assert len(recip_call) == 1
 
         # Verify Copy commands also present in Text Context Menu
         copy_labels = [c.kwargs.get("label", "") for c in mock_menu.add_command.call_args_list if "Copy " in c.kwargs.get("label", "")]
