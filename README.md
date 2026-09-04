@@ -537,6 +537,9 @@ qwk archive.qwk --limit-per-to 2
 
 **Find Content:**
 ```bash
+# Show messages with attachments
+qwk archive.qwk --has-attachments
+
 # Show messages with links
 qwk archive.qwk --has-links
 
@@ -548,6 +551,9 @@ qwk archive.qwk --has-emails
 
 # Show messages with color codes
 qwk archive.qwk --has-ansi
+
+# Show messages with internal message links
+qwk archive.qwk --has-msg-links
 ```
 
 **Filter by Person:**
