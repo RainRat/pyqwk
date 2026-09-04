@@ -293,6 +293,16 @@ class QwkGuiApp:
             command=lambda a=orig_from: self._pivot_filter(exclude_author=a),
         )
 
+        recipient_label = (orig_to[:20] + "...") if len(orig_to) > 20 else orig_to
+        menu.add_command(
+            label=f"Filter by Recipient: {recipient_label}",
+            command=lambda t=orig_to: self._pivot_filter(recipient=t),
+        )
+        menu.add_command(
+            label="Exclude Recipient",
+            command=lambda t=orig_to: self._pivot_filter(exclude_recipient=t),
+        )
+
         subj_label = (
             (orig_subject[:20] + "...") if len(orig_subject) > 20 else orig_subject
         )
@@ -403,6 +413,19 @@ class QwkGuiApp:
                 menu.add_command(
                     label="Exclude Author",
                     command=lambda a=author_text: self._pivot_filter(exclude_author=a),
+                )
+
+                to_text = msg.header.msgto.strip()
+                to_label = (
+                    (to_text[:20] + "...") if len(to_text) > 20 else to_text
+                )
+                menu.add_command(
+                    label=f"Filter by Recipient: {to_label}",
+                    command=lambda t=to_text: self._pivot_filter(recipient=t),
+                )
+                menu.add_command(
+                    label="Exclude Recipient",
+                    command=lambda t=to_text: self._pivot_filter(exclude_recipient=t),
                 )
 
                 subj_text = msg.header.msgsubject.strip()
@@ -2058,7 +2081,7 @@ class QwkGuiApp:
                 "To:",
                 msg_to,
                 f"to_link_{id(msg)}",
-                lambda e, a=orig_to: self._pivot_filter(author=a),
+                lambda e, a=orig_to: self._pivot_filter(recipient=a),
             ),
             ("Date:", f"{header.msgdate} {header.msgtime}", None, None),
             (
