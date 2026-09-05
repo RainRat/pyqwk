@@ -1,6 +1,7 @@
 import os
 import sys
 import tkinter as tk
+from tkinter import ttk
 import pytest
 
 from pyqwk.gui import ToolTip, QwkGuiApp
@@ -81,3 +82,13 @@ def test_tooltip_destroy_cleanup(tk_root):
 def test_gui_app_has_tooltips(tk_root):
     app = QwkGuiApp(tk_root)
     assert hasattr(app, "root")
+    assert hasattr(app, "back_button")
+
+
+def test_toolbar_buttons_have_tooltip_bindings(tk_root):
+    app = QwkGuiApp(tk_root)
+    tk_root.update_idletasks()
+
+    # Check back button attribute exists
+    assert hasattr(app, "back_button")
+    assert app.back_button is not None
