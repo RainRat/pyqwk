@@ -1465,18 +1465,21 @@ class QwkGuiApp:
 
         actions_frame = ttk.Labelframe(row1, text="Archive", padding=(5, 5))
         actions_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(actions_frame, text="Open", width=8, command=self.open_file).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Button(actions_frame, text="Folder", width=8, command=self.open_folder).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Button(actions_frame, text="Export", width=8, command=self.export_messages).pack(
-            side=tk.LEFT, padx=2
-        )
-        ttk.Button(actions_frame, text="Stats", width=8, command=self.show_stats_window).pack(
-            side=tk.LEFT, padx=2
-        )
+        btn_open = ttk.Button(actions_frame, text="Open", width=8, command=self.open_file)
+        btn_open.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_open, "Open Archive(s) (Ctrl+O)")
+
+        btn_folder = ttk.Button(actions_frame, text="Folder", width=8, command=self.open_folder)
+        btn_folder.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_folder, "Open Folder with Archives")
+
+        btn_export = ttk.Button(actions_frame, text="Export", width=8, command=self.export_messages)
+        btn_export.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_export, "Export Current View (Ctrl+S)")
+
+        btn_stats = ttk.Button(actions_frame, text="Stats", width=8, command=self.show_stats_window)
+        btn_stats.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_stats, "Archive Statistics (Ctrl+I)")
 
         nav_frame = ttk.Labelframe(row1, text="Navigation", padding=(5, 5))
         nav_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
@@ -1484,24 +1487,37 @@ class QwkGuiApp:
             nav_frame, text="Back", width=8, command=self.go_back, state=tk.DISABLED
         )
         self.back_button.pack(side=tk.LEFT, padx=2)
-        ttk.Button(
+        ToolTip(self.back_button, "Go Back in History (Alt+Left)")
+
+        btn_prev_msg = ttk.Button(
             nav_frame,
             text="Prev",
             width=8,
             command=lambda: self._select_relative_message(-1),
-        ).pack(side=tk.LEFT, padx=2)
-        ttk.Button(
+        )
+        btn_prev_msg.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_prev_msg, "Previous Message (K / P)")
+
+        btn_next_msg = ttk.Button(
             nav_frame,
             text="Next",
             width=8,
             command=lambda: self._select_relative_message(1),
-        ).pack(side=tk.LEFT, padx=2)
-        ttk.Button(
+        )
+        btn_next_msg.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_next_msg, "Next Message (J / N)")
+
+        btn_jump = ttk.Button(
             nav_frame, text="Jump", width=8, command=self.prompt_jump_to_message
-        ).pack(side=tk.LEFT, padx=2)
-        ttk.Button(
+        )
+        btn_jump.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_jump, "Jump to Message Number (Ctrl+G)")
+
+        btn_random = ttk.Button(
             nav_frame, text="Random", width=8, command=self._select_random_message
-        ).pack(side=tk.LEFT, padx=2)
+        )
+        btn_random.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_random, "Pick Random Message (R)")
 
         search_frame = ttk.Labelframe(row1, text="Search & Find", padding=(5, 5))
         search_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
@@ -1709,9 +1725,9 @@ class QwkGuiApp:
 
         global_frame = ttk.Labelframe(row2, text="Global", padding=(5, 5))
         global_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(global_frame, text="Reset All", width=10, command=self.clear_filters).pack(
-            side=tk.LEFT, padx=2
-        )
+        btn_reset_all = ttk.Button(global_frame, text="Reset All", width=10, command=self.clear_filters)
+        btn_reset_all.pack(side=tk.LEFT, padx=2)
+        ToolTip(btn_reset_all, "Reset All Filters & Search (Ctrl+Shift+X)")
 
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
