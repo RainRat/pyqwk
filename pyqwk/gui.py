@@ -1082,14 +1082,13 @@ class QwkGuiApp:
         except Exception:
             pass
 
-        search_entry = getattr(self, "search_entry", None)
-        exclude_entry = getattr(self, "exclude_entry", None)
-        min_words_entry = getattr(self, "min_words_entry", None)
-        max_words_entry = getattr(self, "max_words_entry", None)
-        if widget in (search_entry, exclude_entry, min_words_entry, max_words_entry):
-            return True
-
-        return False
+        entries = (
+            getattr(self, "search_entry", None),
+            getattr(self, "exclude_entry", None),
+            getattr(self, "min_words_entry", None),
+            getattr(self, "max_words_entry", None),
+        )
+        return widget in entries
 
     def _select_relative_message(self, delta: int, force: bool = False) -> bool:
         """Move the selection up or down in the treeview display order.
