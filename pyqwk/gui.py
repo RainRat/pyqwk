@@ -1230,20 +1230,22 @@ class QwkGuiApp:
         else:
             self.clear_filters()
 
+    @staticmethod
+    def _reset_combo_selection(combo: ttk.Combobox, default_value: str) -> None:
+        """Reset combobox selection to first item or fallback to default value."""
+        try:
+            combo.current(0)
+        except Exception:
+            combo.set(default_value)
+
     def _reset_bbs_filter(self) -> None:
         """Reset the BBS selection to the default state."""
-        try:
-            self.bbs_combo.current(0)
-        except Exception:
-            self.bbs_combo.set("All BBSes")
+        self._reset_combo_selection(self.bbs_combo, "All BBSes")
         self.reload_messages()
 
     def _reset_conf_filter(self) -> None:
         """Reset the conference selection to the default state."""
-        try:
-            self.conf_combo.current(0)
-        except Exception:
-            self.conf_combo.set("All Conferences")
+        self._reset_combo_selection(self.conf_combo, "All Conferences")
         self.reload_messages()
 
     def _reset_visibility_filters(self) -> None:
@@ -1353,14 +1355,8 @@ class QwkGuiApp:
         self.exclude_var.set("")
         self.min_words_var.set("")
         self.max_words_var.set("")
-        try:
-            self.bbs_combo.current(0)
-        except Exception:
-            self.bbs_combo.set("All BBSes")
-        try:
-            self.conf_combo.current(0)
-        except Exception:
-            self.conf_combo.set("All Conferences")
+        self._reset_combo_selection(self.bbs_combo, "All BBSes")
+        self._reset_combo_selection(self.conf_combo, "All Conferences")
         self.private_var.set(True)
         self.has_attach_var.set(False)
         self.mine_var.set(False)
