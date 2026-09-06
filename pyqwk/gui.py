@@ -293,6 +293,16 @@ class QwkGuiApp:
             command=lambda a=orig_from: self._pivot_filter(exclude_author=a),
         )
 
+        to_label = (orig_to[:20] + "...") if len(orig_to) > 20 else orig_to
+        menu.add_command(
+            label=f"Filter by Recipient: {to_label}",
+            command=lambda t=orig_to: self._pivot_filter(recipient=t),
+        )
+        menu.add_command(
+            label="Exclude Recipient",
+            command=lambda t=orig_to: self._pivot_filter(exclude_recipient=t),
+        )
+
         subj_label = (
             (orig_subject[:20] + "...") if len(orig_subject) > 20 else orig_subject
         )
@@ -403,6 +413,19 @@ class QwkGuiApp:
                 menu.add_command(
                     label="Exclude Author",
                     command=lambda a=author_text: self._pivot_filter(exclude_author=a),
+                )
+
+                to_text = msg.header.msgto.strip()
+                to_label = (
+                    (to_text[:20] + "...") if len(to_text) > 20 else to_text
+                )
+                menu.add_command(
+                    label=f"Filter by Recipient: {to_label}",
+                    command=lambda t=to_text: self._pivot_filter(recipient=t),
+                )
+                menu.add_command(
+                    label="Exclude Recipient",
+                    command=lambda t=to_text: self._pivot_filter(exclude_recipient=t),
                 )
 
                 subj_text = msg.header.msgsubject.strip()
@@ -563,18 +586,23 @@ class QwkGuiApp:
     def _pivot_filter(
         self,
         author: str | None = None,
+        recipient: str | None = None,
         conf_num: int | None = None,
         bbs_name: str | None = None,
         subject: str | None = None,
         exclude_author: str | None = None,
+        exclude_recipient: str | None = None,
         exclude_conf_num: int | None = None,
         exclude_bbs_name: str | None = None,
         exclude_subject: str | None = None,
     ) -> None:
-        """Update filters based on the selected author, conference, BBS, or subject."""
+        """Update filters based on the selected author, recipient, conference, BBS, or subject."""
         self._push_current_to_history()
         if author:
             self.search_var.set(author)
+
+        if recipient:
+            self.search_var.set(recipient)
 
         if subject:
             self.search_var.set(_normalize_subject(subject))
@@ -595,6 +623,9 @@ class QwkGuiApp:
 
         if exclude_author:
             self.exclude_var.set(exclude_author)
+
+        if exclude_recipient:
+            self.exclude_var.set(exclude_recipient)
 
         if exclude_subject:
             self.exclude_var.set(_normalize_subject(exclude_subject))
@@ -2058,7 +2089,7 @@ class QwkGuiApp:
                 "To:",
                 msg_to,
                 f"to_link_{id(msg)}",
-                lambda e, a=orig_to: self._pivot_filter(author=a),
+                lambda e, t=orig_to: self._pivot_filter(recipient=t),
             ),
             ("Date:", f"{header.msgdate} {header.msgtime}", None, None),
             (
