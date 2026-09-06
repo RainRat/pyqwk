@@ -909,11 +909,7 @@ Install the system package based on your Linux distribution:
 - **Fedora/RHEL:** `sudo dnf install xorg-x11-server-Xvfb`
 - **Arch Linux:** `sudo pacman -S xorg-server-xvfb`
 
-1. Install the headless Python dependencies:
-   ```bash
-   python -m pip install mss Pillow
-   ```
-2. Run the tests:
-   ```bash
-   xvfb-run -a python3 -m pytest
-   ```
+Run the tests with `xvfb-run`:
+```bash
+xvfb-run -a python3 -m pytest
+```
