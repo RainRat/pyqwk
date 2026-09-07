@@ -81,3 +81,15 @@ def test_tooltip_destroy_cleanup(tk_root):
 def test_gui_app_has_tooltips(tk_root):
     app = QwkGuiApp(tk_root)
     assert hasattr(app, "root")
+
+    # Verify that action and navigation buttons have ToolTip event bindings attached
+    buttons_to_check = [
+        app.back_button,
+    ]
+    for btn in buttons_to_check:
+        if hasattr(btn.bind, "call_args_list"):
+            bound_events = [call[0][0] for call in btn.bind.call_args_list]
+            assert "<Enter>" in bound_events
+        else:
+            bindings = btn.bind()
+            assert "<Enter>" in bindings
