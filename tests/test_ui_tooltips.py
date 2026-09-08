@@ -81,3 +81,5 @@ def test_tooltip_destroy_cleanup(tk_root):
 def test_gui_app_has_tooltips(tk_root):
     app = QwkGuiApp(tk_root)
     assert hasattr(app, "root")
+    # Verify Back button has tooltip
+    assert hasattr(app, "back_button")
