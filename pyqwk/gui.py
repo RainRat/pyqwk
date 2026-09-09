@@ -3734,7 +3734,8 @@ class QwkGuiApp:
         """Update the status label with relevant information.
 
         This builds a detailed status message that includes search matches,
-        message selection, archive summary, and active search/exclusion terms.
+        message selection, archive summary, active search/exclusion terms,
+        and active filtering settings.
         """
         parts = []
 
@@ -3752,11 +3753,49 @@ class QwkGuiApp:
         if exclude_term:
             parts.append(f'Excluding: "{exclude_term}"')
 
-        # 3. Message Selection Progress
+        # 3. Active Filters Summary
+        active_filters = []
+        if hasattr(self, "bbs_combo"):
+            bbs_val = self.bbs_combo.get()
+            if bbs_val and not bbs_val.startswith("All BBSes"):
+                active_filters.append(f"BBS: {bbs_val}")
+
+        if hasattr(self, "conf_combo"):
+            conf_val = self.conf_combo.get()
+            if conf_val and not conf_val.startswith("All Conferences"):
+                active_filters.append(f"Conf: {conf_val}")
+
+        if hasattr(self, "min_words_var") and self.min_words_var.get().strip():
+            active_filters.append(f"Min Words: {self.min_words_var.get().strip()}")
+
+        if hasattr(self, "max_words_var") and self.max_words_var.get().strip():
+            active_filters.append(f"Max Words: {self.max_words_var.get().strip()}")
+
+        if hasattr(self, "private_var") and not self.private_var.get():
+            active_filters.append("Private Hidden")
+
+        filter_vars = [
+            ("Attachments", "has_attach_var"),
+            ("My Messages", "mine_var"),
+            ("On This Day", "on_this_day_var"),
+            ("Links", "has_links_var"),
+            ("Emails", "has_emails_var"),
+            ("Phones", "has_phones_var"),
+            ("Colors", "has_ansi_var"),
+            ("Message Links", "has_msg_links_var"),
+        ]
+        for label, var_attr in filter_vars:
+            if hasattr(self, var_attr) and getattr(self, var_attr).get():
+                active_filters.append(label)
+
+        if active_filters:
+            parts.append(f"Filters: {', '.join(active_filters)}")
+
+        # 4. Message Selection Progress
         if message_index is not None and len(self.messages) > 0:
             parts.append(f"Message {message_index + 1} of {len(self.messages)}")
 
-        # 4. Archive Summary
+        # 5. Archive Summary
         summary = f"Showing {len(self.messages)} of {self.total_msg_count} messages"
         if self.source_display_name:
             summary += f" from {self.source_display_name}"
