@@ -1,6 +1,6 @@
 import pytest
 import datetime
-from pyqwk.cli import _parse_cli_date
+from pyqwk.cli import _parse_cli_date, _parse_msgnum_ranges
 from pyqwk.core import resolve_output_format as _resolve_output_format
 
 
@@ -47,3 +47,21 @@ def test_resolve_output_format_default():
     assert _resolve_output_format(None, "out.foo", "file") == "text"
     assert _resolve_output_format(None, None, "stdout") == "text"
     assert _resolve_output_format(None, "somefile", "stdout") == "text"
+
+
+def test_parse_msgnum_ranges_valid_and_edge_cases():
+    assert _parse_msgnum_ranges(None) is None
+    assert _parse_msgnum_ranges("") is None
+    assert _parse_msgnum_ranges("10, 20-23, 30") == {10, 20, 21, 22, 23, 30}
+
+    with pytest.raises(ValueError, match="Invalid message number range: '30-20'"):
+        _parse_msgnum_ranges("30-20")
+
+    with pytest.raises(ValueError, match="Invalid message number range: '10-20-30'"):
+        _parse_msgnum_ranges("10-20-30")
+
+    with pytest.raises(ValueError, match="Invalid message number range: '-10'"):
+        _parse_msgnum_ranges("-10")
+
+    with pytest.raises(ValueError, match="Invalid message number: 'abc'"):
+        _parse_msgnum_ranges("abc")
