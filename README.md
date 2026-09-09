@@ -461,6 +461,11 @@ qwk archive.qwk --list-emails
 qwk archive.qwk --list-phones
 ```
 
+**List internal message link references across archives:**
+```bash
+qwk archive.qwk --list-msg-links
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads
