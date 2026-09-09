@@ -898,22 +898,23 @@ You can set up your development environment and run tests using standard Python 
 
 ### Headless Testing
 
-If you are running the test suite on a headless Linux system (such as in a CI/CD environment or a remote server without an active display), you must run tests using `xvfb-run`.
+If you run the test suite on a headless Linux system (such as in a CI/CD environment or remote server without an active display), run tests using `xvfb-run`.
 
-This requires the `xvfb` (X virtual framebuffer) system package to be installed on your operating system.
+This requires the `xvfb` (X virtual framebuffer) system package on your operating system.
 
 **Prerequisites:**
 
-Install the system package based on your Linux distribution:
+Install the package for your Linux distribution:
 - **Ubuntu/Debian:** `sudo apt install xvfb`
 - **Fedora/RHEL:** `sudo dnf install xorg-x11-server-Xvfb`
 - **Arch Linux:** `sudo pacman -S xorg-server-xvfb`
 
-1. Install the headless Python dependencies:
-   ```bash
-   python -m pip install mss Pillow
-   ```
-2. Run the tests:
-   ```bash
-   xvfb-run -a python3 -m pytest
-   ```
+Run tests using `xvfb-run`:
+```bash
+xvfb-run -a python3 -m pytest
+```
+
+Or if using Poetry:
+```bash
+xvfb-run -a poetry run pytest
+```
