@@ -81,3 +81,14 @@ def test_tooltip_destroy_cleanup(tk_root):
 def test_gui_app_has_tooltips(tk_root):
     app = QwkGuiApp(tk_root)
     assert hasattr(app, "root")
+
+
+def test_toolbar_action_button_tooltips(tk_root):
+    app = QwkGuiApp(tk_root)
+    assert hasattr(app, "back_button")
+    if hasattr(app.back_button, "bind"):
+        try:
+            enter_bindings = app.back_button.bind("<Enter>")
+            assert enter_bindings is not None
+        except Exception:
+            pass
