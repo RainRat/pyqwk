@@ -2,7 +2,7 @@ import datetime
 import io
 import json
 import logging
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -316,3 +316,59 @@ def test_show_list_msg_links_edge_cases(message_factory):
                 assert out[0]["first_active"] is None
                 assert out[0]["last_active"] is None
                 assert out[0]["bbs_name"] == "Unknown"
+
+
+def test_show_list_msg_links_whitespace_match_handling(message_factory):
+    m = message_factory(1, 0, "Subj")
+    m.text = "Check msg #10"
+    board = ConferenceMap()
+    mock_match = MagicMock()
+    mock_match.group.return_value = "   "
+    mock_pat = MagicMock()
+    mock_pat.finditer.return_value = [mock_match]
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+    logger = logging.getLogger("test_msg_links_whitespace")
+
+    with patch("pyqwk.core.load_data", return_value=([m], board)):
+        with patch("pyqwk.core.RE_MSG_LINK_PATTERN", mock_pat):
+            with patch("logging.Logger.warning") as mock_warn:
+                show_list_msg_links(["dummy.qwk"], settings, logger)
+                mock_warn.assert_called_once_with("No message links found across messages.")
+
+
+def test_cli_list_msg_links_multiple_inputs_stdout(tmp_path, mock_msg_link_data):
+    test_file1 = tmp_path / "a.qwk"
+    test_file2 = tmp_path / "b.qwk"
+    test_file1.touch()
+    test_file2.touch()
+
+    msgs, board = mock_msg_link_data
+    test_args = ["qwk.py", str(test_file1), str(test_file2), "--list-msg-links", "--format", "json"]
+
+    with patch("sys.argv", test_args):
+        with patch("pyqwk.cli.expand_paths", return_value=[str(test_file1), str(test_file2)]):
+            with patch("pyqwk.core.load_data", return_value=(msgs, board)):
+                with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
+                    output = json.loads(fake_out.getvalue())
+                    assert len(output) == 2
+

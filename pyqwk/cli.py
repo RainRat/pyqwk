@@ -1100,6 +1100,7 @@ examples:
         or getattr(args, "list_urls", False)
         or getattr(args, "list_emails", False)
         or getattr(args, "list_phones", False)
+        or getattr(args, "list_msg_links", False)
     ):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
