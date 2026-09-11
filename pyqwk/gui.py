@@ -3800,6 +3800,8 @@ class QwkGuiApp:
 
         # 4. Archive Summary
         summary = f"Showing {len(self.messages)} of {self.total_msg_count} messages"
+        if self._is_any_filter_active():
+            summary += " (Filtered)"
         if self.source_display_name:
             summary += f" from {self.source_display_name}"
         parts.append(summary)
