@@ -3090,7 +3090,7 @@ def matches_filters(
 def _slugify(text: str, default: str) -> str:
     """Create a safe name for a file or folder by removing special characters."""
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_").lower()[:30]
-    return slug if slug else default
+    return slug or default
 
 
 def _get_organization_subpath(
