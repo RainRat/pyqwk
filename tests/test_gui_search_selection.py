@@ -102,3 +102,27 @@ def test_show_text_context_menu_no_selection(app):
         labels = [c[1].get("label", "") for c in calls]
         for label in labels:
             assert "Search for" not in label
+
+
+def test_search_entry_control_return_focus(app):
+    """Verify that Ctrl+Return in search_entry reloads messages and shifts focus to message_list."""
+    app.reload_messages = MagicMock()
+    app.message_list = MagicMock()
+
+    res = app._on_search_control_enter(None)
+
+    assert res == "break"
+    app.reload_messages.assert_called_once()
+    app.message_list.focus_set.assert_called_once()
+
+
+def test_exclude_entry_control_return_focus(app):
+    """Verify that Ctrl+Return in exclude_entry reloads messages and shifts focus to message_list."""
+    app.reload_messages = MagicMock()
+    app.message_list = MagicMock()
+
+    res = app._on_search_control_enter(None)
+
+    assert res == "break"
+    app.reload_messages.assert_called_once()
+    app.message_list.focus_set.assert_called_once()
