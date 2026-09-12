@@ -501,6 +501,21 @@ qwk archive.qwk --search "BBS"
 qwk archive.qwk --body "setup instructions"
 ```
 
+**Exclude Content:**
+```bash
+# Hide messages containing specific keywords
+qwk archive.qwk --exclude "spam"
+
+# Hide messages from a specific author
+qwk archive.qwk --exclude-from "BotUser"
+```
+
+**Regular Expressions:**
+```bash
+# Search using regular expression patterns
+qwk archive.qwk --search "BBS-\d+" --regex
+```
+
 **Filter by Date:**
 ```bash
 # Between two specific dates
@@ -632,6 +647,15 @@ qwk archive.qwk --attachment-pattern "*.zip"
 
 # Show only messages containing attachments with "image" in the name
 qwk archive.qwk --attachment-pattern "image"
+```
+
+**Sort Results:**
+```bash
+# Sort messages by date from newest to oldest
+qwk archive.qwk --sort date --reverse
+
+# Sort messages by word count
+qwk archive.qwk --sort words
 ```
 
 **Count Matching Messages Only:**
