@@ -908,6 +908,7 @@ examples:
     )
     parser.add_argument(
         "--threads",
+        "--list-threads",
         action="store_true",
         help="Show a summary of all conversation threads and exit. You can save this to a file with -o.",
     )

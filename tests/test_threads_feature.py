@@ -236,3 +236,42 @@ def test_cli_threads_integration(tmp_path):
                     assert t["reply_count"] == 1
                     assert t["deepest_depth"] == 1
                     assert t["last_activity"] == "02-02-24 12:30"
+
+
+def test_cli_list_threads_alias_integration(tmp_path):
+    test_file = tmp_path / "dummy.qwk"
+    test_file.touch()
+
+    m1 = MessageHeader(
+        status=" ",
+        msgnum=10,
+        msgdate="02-02-24",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="User1",
+        msgsubject="CLI Thread topic",
+        msgpassword="",
+        refnum=0,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=0,
+        nettag=" ",
+    )
+
+    msgs = [
+        ParsedMessage(text="B1", msgnum=10, refnum=0, confnum=1, header=m1),
+    ]
+
+    test_args = ["qwk.py", str(test_file), "--list-threads", "--format", "json"]
+
+    with patch("sys.argv", test_args):
+        with patch("pyqwk.cli.expand_paths", return_value=[str(test_file)]):
+            with patch("pyqwk.core.load_data", return_value=(msgs, {})):
+                with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
+                    output = json.loads(fake_out.getvalue())
+                    assert len(output) == 1
+                    assert output[0]["thread_id"] == "10"
