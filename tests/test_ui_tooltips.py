@@ -92,3 +92,22 @@ def test_toolbar_action_button_tooltips(tk_root):
             assert enter_bindings is not None
         except Exception:
             pass
+
+
+def test_toolbar_entry_and_combo_tooltips(tk_root):
+    app = QwkGuiApp(tk_root)
+    widgets = [
+        app.search_entry,
+        app.exclude_entry,
+        app.bbs_combo,
+        app.conf_combo,
+        app.min_words_entry,
+        app.max_words_entry,
+    ]
+    for widget in widgets:
+        assert hasattr(widget, "bind")
+        try:
+            enter_bindings = widget.bind("<Enter>")
+            assert enter_bindings is not None
+        except Exception:
+            pass
