@@ -8995,6 +8995,37 @@ def _render_validation_markdown(all_results: list[dict[str, Any]]) -> list[str]:
     return parts
 
 
+def _render_validation_csv(all_results: list[dict[str, Any]]) -> str:
+    """Render archive validation results as a CSV string."""
+    csv_records = []
+    for res in all_results:
+        csv_records.append({
+            "file": res.get("file", ""),
+            "valid": res.get("valid", False),
+            "format": res.get("format", ""),
+            "messages_count": res.get("messages_count", 0),
+            "errors_count": len(res.get("errors", [])),
+            "warnings_count": len(res.get("warnings", [])),
+            "errors": "; ".join(res.get("errors", [])),
+            "warnings": "; ".join(res.get("warnings", [])),
+        })
+    return _render_csv_table(
+        csv_records,
+        [
+            "file",
+            "valid",
+            "format",
+            "messages_count",
+            "errors_count",
+            "warnings_count",
+            "errors",
+            "warnings",
+        ],
+        quoting=csv.QUOTE_ALL,
+        escapechar="\\",
+    )
+
+
 def render_validation_as_text(all_results: list[dict[str, Any]], use_colors: bool = False) -> str:
     """Render archive validation information into a human-readable text report."""
     BOLD = "1"
@@ -9075,6 +9106,8 @@ def show_validation_report(
         md_parts = [f"# {title}\n"]
         md_parts.extend(_render_validation_markdown(all_results))
         output = "\n".join(md_parts)
+    elif settings.format == "csv":
+        output = _render_validation_csv(all_results)
     else:
         use_colors = (
             not settings.output_path
