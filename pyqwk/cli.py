@@ -43,11 +43,11 @@ def _parse_msgnum_ranges(msgnum_str: str | None) -> set[int] | None:
         if "-" in part:
             try:
                 start, end = map(int, part.split("-"))
-                if start > end:
-                    raise ValueError(f"Invalid message number range: '{part}'")
-                msgnums.update(range(start, end + 1))
             except ValueError:
                 raise ValueError(f"Invalid message number range: '{part}'")
+            if start > end:
+                raise ValueError(f"Invalid message number range: '{part}'")
+            msgnums.update(range(start, end + 1))
         else:
             try:
                 msgnums.add(int(part))
