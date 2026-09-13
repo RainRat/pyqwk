@@ -766,7 +766,7 @@ for msg in messages:
 | `--limit-per-subject` | Limit the number of matching messages per subject. |
 | `--limit-per-to` | Limit the number of matching messages per recipient. |
 | `--limit-per-bbs` | Limit the number of matching messages per BBS. |
-| `--tail` | Show the last NUM matching messages. Alias: `--last`. |
+| `--tail`, `--last` | Show the last NUM matching messages. |
 | `--on-this-day` | Show messages from the same month and day. |
 | `-N, --msgnum` | Show specific message numbers or ranges. |
 | `-R, --reply-to`, `--refnum` | Show messages that are a reply to specific reference/message numbers or ranges. |
