@@ -633,7 +633,7 @@ examples:
         "--my-name",
         "--user",
         dest="my_name",
-        help="Set your name for the --mine filter and QWK exports.",
+        help="Set your name or user ID to identify your messages when filtering with --mine or exporting QWK packets.",
     )
     date_content_group.add_argument(
         "--has-attachments",
