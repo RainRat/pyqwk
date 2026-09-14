@@ -242,7 +242,7 @@ def test_show_validation_report_csv(tmp_path, logger):
     assert '"file","valid","format","messages_count","errors_count","warnings_count","errors","warnings"' in csv_content
     assert str(p1) in csv_content
     assert str(p2) in csv_content
-    assert '"True"' in csv_content or '"True"' in csv_content
+    assert '"True"' in csv_content and '"False"' in csv_content
     assert '"JSON syntax error' in csv_content
 
 
