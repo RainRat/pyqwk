@@ -6332,6 +6332,48 @@ def _render_info_markdown(all_info: list[dict[str, Any]]) -> list[str]:
     return parts
 
 
+def _render_info_csv(all_info: list[dict[str, Any]]) -> str:
+    """Render archive information as a CSV string."""
+    csv_records = []
+    for info in all_info:
+        bbs = info.get("bbs_info") or {}
+        confs = info.get("conferences") or []
+        conf_summary = "; ".join(
+            f"{c['number']}:{c['name']} ({c['message_count']})" for c in confs
+        )
+        csv_records.append(
+            {
+                "file": info.get("file", ""),
+                "bbs_name": bbs.get("name", ""),
+                "sysop": bbs.get("sysop", ""),
+                "location": bbs.get("location", ""),
+                "bbs_id": bbs.get("bbs_id", ""),
+                "packet_at": bbs.get("packet_at", ""),
+                "user_name": bbs.get("user_name", ""),
+                "total_messages": info.get("total_messages", 0),
+                "conferences_count": len(confs),
+                "conferences": conf_summary,
+                "error": info.get("error", ""),
+            }
+        )
+    return _render_csv_table(
+        csv_records,
+        [
+            "file",
+            "bbs_name",
+            "sysop",
+            "location",
+            "bbs_id",
+            "packet_at",
+            "user_name",
+            "total_messages",
+            "conferences_count",
+            "conferences",
+            "error",
+        ],
+    )
+
+
 def show_info(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
@@ -6410,6 +6452,8 @@ def show_info(
         md_parts = [f"# {title}\n"]
         md_parts.extend(_render_info_markdown(all_info))
         output = "\n".join(md_parts)
+    elif settings.format == "csv":
+        output = _render_info_csv(all_info)
     else:
         use_colors = (
             not settings.output_path
