@@ -116,6 +116,17 @@ def test_search_entry_control_return_focus(app):
     app.message_list.focus_set.assert_called_once()
 
 
+def test_word_limits_control_return_bindings(app):
+    """Verify that min_words_entry and max_words_entry have <Control-Return> bound to _on_search_control_enter."""
+    min_calls = app.min_words_entry.bind.call_args_list
+    min_bound_sequences = [c[0][0] for c in min_calls]
+    assert "<Control-Return>" in min_bound_sequences
+
+    max_calls = app.max_words_entry.bind.call_args_list
+    max_bound_sequences = [c[0][0] for c in max_calls]
+    assert "<Control-Return>" in max_bound_sequences
+
+
 def test_exclude_entry_control_return_focus(app):
     """Verify that Ctrl+Return in exclude_entry reloads messages and shifts focus to message_list."""
     app.reload_messages = MagicMock()
