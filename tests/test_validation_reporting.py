@@ -210,6 +210,42 @@ def test_show_validation_report_markdown(tmp_path, logger):
     assert "JSON syntax error" in md_content
 
 
+def test_show_validation_report_csv(tmp_path, logger):
+    p1 = tmp_path / "valid.json"
+    p1.write_text('{"type": "qwk_archive", "messages": []}')
+    p2 = tmp_path / "invalid.json"
+    p2.write_text('{invalid json')
+
+    report_file = tmp_path / "report.csv"
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="csv",
+        separator="none",
+        output_mode="file",
+        output_path=str(report_file),
+        encoding="utf-8"
+    )
+
+    valid_all = show_validation_report([str(p1), str(p2)], settings, logger)
+    assert valid_all is False
+
+    assert report_file.exists()
+    csv_content = report_file.read_text(encoding="utf-8")
+    assert '"file","valid","format","messages_count","errors_count","warnings_count","errors","warnings"' in csv_content
+    assert str(p1) in csv_content
+    assert str(p2) in csv_content
+    assert '"True"' in csv_content or '"True"' in csv_content
+    assert '"JSON syntax error' in csv_content
+
+
 def test_show_validation_report_exception_handling(tmp_path, logger, mocker):
     from pyqwk.core import validate_archive
     # Mock validate_archive to raise an exception
