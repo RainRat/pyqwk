@@ -1553,6 +1553,7 @@ class QwkGuiApp:
             search_frame, textvariable=self.search_var, width=18
         )
         self.search_entry.pack(side=tk.LEFT, padx=(0, 0))
+        ToolTip(self.search_entry, "Search Keyword (Ctrl+F or /)")
         self.search_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind("<Control-f>", self._focus_search)
         self.search_entry.bind("<Control-e>", self._focus_exclude)
@@ -1597,6 +1598,7 @@ class QwkGuiApp:
             search_frame, textvariable=self.exclude_var, width=18
         )
         self.exclude_entry.pack(side=tk.LEFT, padx=(0, 0))
+        ToolTip(self.exclude_entry, "Exclude Keyword (Ctrl+E)")
         self.exclude_entry.bind("<Escape>", self.clear_search)
         self.exclude_entry.bind("<Control-f>", self._focus_search)
         self.exclude_entry.bind("<Control-e>", self._focus_exclude)
@@ -1634,6 +1636,7 @@ class QwkGuiApp:
 
         self.bbs_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.bbs_combo.grid(row=0, column=1, padx=2, pady=2)
+        ToolTip(self.bbs_combo, "Filter by BBS ({ / })")
         btn_reset_bbs = ttk.Button(
             archives_frame,
             text="✕",
@@ -1657,6 +1660,7 @@ class QwkGuiApp:
 
         self.conf_combo = ttk.Combobox(archives_frame, state="readonly", width=18)
         self.conf_combo.grid(row=1, column=1, padx=2, pady=2)
+        ToolTip(self.conf_combo, "Filter by Conference ([ / ])")
         btn_reset_conf = ttk.Button(
             archives_frame,
             text="✕",
@@ -1708,12 +1712,14 @@ class QwkGuiApp:
             limits_frame, textvariable=self.min_words_var, width=5
         )
         self.min_words_entry.pack(side=tk.LEFT, padx=2)
+        ToolTip(self.min_words_entry, "Minimum Word Count Filter")
 
         ttk.Label(limits_frame, text="Max:").pack(side=tk.LEFT)
         self.max_words_entry = ttk.Entry(
             limits_frame, textvariable=self.max_words_var, width=5
         )
         self.max_words_entry.pack(side=tk.LEFT, padx=2)
+        ToolTip(self.max_words_entry, "Maximum Word Count Filter")
 
         btn_reset_limits = ttk.Button(
             limits_frame,
