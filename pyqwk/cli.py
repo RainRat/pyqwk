@@ -72,13 +72,13 @@ def _parse_cli_date(
         return None
     try:
         dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-        if end_of_day:
-            dt = dt.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return dt
     except ValueError:
         raise ValueError(
             f"The date format for '{date_str}' is invalid. Please use YYYY-MM-DD."
         )
+    if end_of_day:
+        dt = dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return dt
 
 
 PRESETS_INFO = {
