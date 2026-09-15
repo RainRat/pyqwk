@@ -2426,9 +2426,11 @@ class QwkGuiApp:
             self.reload_messages()
             self.message_list.focus_set()
 
-    def _on_search_enter(self, _event: object) -> None:
-        """Run the search or move through matches when Enter is pressed."""
-        self._handle_search_navigation(1)
+    def _on_search_enter(self, _event: object) -> str:
+        """Reload messages, apply search query, and transfer focus to the message list treeview."""
+        self.reload_messages()
+        self.message_list.focus_set()
+        return "break"
 
     def _on_search_shift_enter(self, _event: object) -> None:
         """Move back through matches when Shift+Enter is pressed."""
