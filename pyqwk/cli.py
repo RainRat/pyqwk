@@ -27,6 +27,7 @@ from pyqwk.core import (
     show_list_emails,
     show_list_phones,
     show_list_msg_links,
+    show_list_sources,
     validate_archive,
     show_validation_report,
 )
@@ -965,6 +966,12 @@ examples:
         help="List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-sources",
+        "--list-files",
+        action="store_true",
+        help="List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -1102,6 +1109,8 @@ examples:
         or getattr(args, "list_emails", False)
         or getattr(args, "list_phones", False)
         or getattr(args, "list_msg_links", False)
+        or getattr(args, "list_sources", False)
+        or getattr(args, "list_files", False)
     ):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
@@ -1340,6 +1349,10 @@ examples:
 
     if getattr(args, "list_msg_links", False) or getattr(args, "list_message_links", False):
         show_list_msg_links(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_sources", False) or getattr(args, "list_files", False):
+        show_list_sources(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
