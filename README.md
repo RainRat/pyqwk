@@ -555,6 +555,18 @@ qwk my_archives/ --limit-per-bbs 3
 qwk archive.qwk --limit-per-to 2
 ```
 
+**Limit and Skip Results:**
+```bash
+# Stop after 10 matching messages
+qwk archive.qwk --limit 10
+
+# Skip the first 5 matching messages
+qwk archive.qwk --skip 5
+
+# Show the last 10 matching messages
+qwk archive.qwk --tail 10
+```
+
 **Find Content:**
 ```bash
 # Show messages with attachments
