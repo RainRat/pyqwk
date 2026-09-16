@@ -202,6 +202,7 @@ class QwkGuiApp:
         self.exclude_var = tk.StringVar()
         self.exclude_var.trace_add("write", self._on_search_changed)
         self._search_timer: str | None = None
+        self._status_restore_timer: str | None = None
 
         # Create custom styles
         self.style = ttk.Style()
@@ -509,10 +510,31 @@ class QwkGuiApp:
         """Copy the given text to the system clipboard and display status feedback."""
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
+        if getattr(self, "_status_restore_timer", None):
+            try:
+                self.root.after_cancel(self._status_restore_timer)
+            except Exception:
+                pass
+            self._status_restore_timer = None
+
         if label:
             self.status_label.config(text=f"Copied {label} to clipboard")
         else:
             self.status_label.config(text="Copied text to clipboard")
+
+        self._status_restore_timer = self.root.after(3000, self._restore_status_bar)
+
+    def _restore_status_bar(self) -> None:
+        """Restore standard status bar contents after temporary feedback."""
+        self._status_restore_timer = None
+        current_selection = self.message_list.selection() if hasattr(self, "message_list") else None
+        idx = None
+        if current_selection:
+            try:
+                idx = int(current_selection[0])
+            except (ValueError, IndexError):
+                pass
+        self._update_status_bar(idx)
 
     def _is_any_filter_active(self) -> bool:
         """Return True if any visibility filters are currently active."""

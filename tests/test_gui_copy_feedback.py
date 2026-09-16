@@ -21,3 +21,8 @@ def test_copy_to_clipboard_status_feedback():
         # Test without label parameter
         app._copy_to_clipboard("Sample Text")
         app.status_label.config.assert_called_with(text="Copied text to clipboard")
+
+        # Test status restoration callback
+        with patch.object(app, "_update_status_bar") as mock_update_status:
+            app._restore_status_bar()
+            mock_update_status.assert_called_once()
