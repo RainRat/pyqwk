@@ -5335,6 +5335,10 @@ def _serialize_rfc822(
         msg["X-QWK-Thread-ID"] = message.thread_id
     if message.parent_msgnum is not None:
         msg["X-QWK-Parent-Msgnum"] = str(message.parent_msgnum)
+    if message.reply_count > 0:
+        msg["X-QWK-Reply-Count"] = str(message.reply_count)
+    if message.thread_size > 1:
+        msg["X-QWK-Thread-Size"] = str(message.thread_size)
 
     msg.set_content(clean_body)
 
