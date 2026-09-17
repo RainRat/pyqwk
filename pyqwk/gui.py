@@ -1216,19 +1216,21 @@ class QwkGuiApp:
 
         return None
 
+    def _clear_filter_field(self, var_attr: str, entry_attr: str) -> None:
+        """Clear a filter variable, reload messages, and restore focus to its entry widget if present."""
+        getattr(self, var_attr).set("")
+        self.reload_messages()
+        entry = getattr(self, entry_attr, None)
+        if entry:
+            entry.focus_set()
+
     def _clear_search_field(self) -> None:
         """Clear the search field, immediately reload messages, and restore focus."""
-        self.search_var.set("")
-        self.reload_messages()
-        if hasattr(self, "search_entry"):
-            self.search_entry.focus_set()
+        self._clear_filter_field("search_var", "search_entry")
 
     def _clear_exclude_field(self) -> None:
         """Clear the exclude field, immediately reload messages, and restore focus."""
-        self.exclude_var.set("")
-        self.reload_messages()
-        if hasattr(self, "exclude_entry"):
-            self.exclude_entry.focus_set()
+        self._clear_filter_field("exclude_var", "exclude_entry")
 
     def clear_search(self, _event: object | None = None) -> None:
         """Clear search fields or reset filters based on focus and content.
