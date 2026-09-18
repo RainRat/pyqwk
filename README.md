@@ -170,7 +170,7 @@ qwk-gui messages.db
 - **Search:** Find messages by keyword or use regular expressions. Cycle through matches with **F3** or **Shift + F3**. The reader moves to the next or previous message when you reach the end of the current one.
 - **Attachments:** Click attachment links in the header to save files. Use **File > Extract All Attachments...** to save all files from your current view.
 - **Filtering:** Narrow your view by BBS, conference, author, recipient, word count, or messages sent "on this day." Use the **Exclude** field to hide messages matching specific keywords. You can also filter for private messages or messages with attachments. Quick toggles help you find messages with links, emails, phones, color codes, or specific word counts.
-- **Context Menus:** Right-click a message to copy its details, filter the view, or exclude specific authors and subjects.
+- **Context Menus:** Right-click a message to copy its details, filter the view, or exclude specific authors, recipients, and subjects.
 - **Exporting:** Save your current filtered view to any format (HTML, Markdown, JSON, etc.).
 - **Viewing Options:** Use "Conversations" to group replies into a threaded view. Use "Clean" view to hide signatures, quotes, attachments, and color codes. Use "Remove Colors" to strip only color codes. Use "Hide Personal Info" to redact emails and phone numbers. Use "Embed Attachments" to include images directly in messages.
 - **Statistics:** View detailed activity reports. You can also save these reports as HTML files with interactive charts.
@@ -499,6 +499,9 @@ qwk archive.qwk --search "BBS"
 
 # Search specifically within message body text
 qwk archive.qwk --body "setup instructions"
+
+# Search specifically within message subject text
+qwk archive.qwk --subject "help"
 ```
 
 **Exclude Content:**
@@ -508,6 +511,18 @@ qwk archive.qwk --exclude "spam"
 
 # Hide messages from a specific author
 qwk archive.qwk --exclude-from "BotUser"
+
+# Hide messages sent to a specific recipient
+qwk archive.qwk --exclude-to "All"
+
+# Hide messages with specific keywords in the subject
+qwk archive.qwk --exclude-subject "digest"
+
+# Hide messages from a specific conference
+qwk archive.qwk --exclude-conference "Off-Topic"
+
+# Hide messages from a specific BBS
+qwk my_archives/ --exclude-bbs "Test BBS"
 ```
 
 **Regular Expressions:**
