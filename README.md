@@ -953,6 +953,7 @@ You can set up your development environment and run tests using standard Python 
    ```bash
    python -m pip install -e . pytest pytest-mock pytest-cov
    ```
+   *(Note: `pytest-mock` is required to run mock-based tests.)*
 2. Run tests:
    ```bash
    python -m pytest
