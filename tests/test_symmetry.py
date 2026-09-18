@@ -300,3 +300,54 @@ def test_sqlite_thread_metadata_symmetry():
         assert legacy_msgs[0].thread_size == 1
     finally:
         shutil.rmtree(tmpdir)
+
+
+def test_email_thread_metadata_symmetry():
+    tmpdir = tempfile.mkdtemp()
+    try:
+        eml_path = os.path.join(tmpdir, "test.eml")
+        mbox_path = os.path.join(tmpdir, "test.mbox")
+        maildir_path = os.path.join(tmpdir, "test.maildir")
+        logger = logging.getLogger("test")
+
+        header1 = MessageHeader(
+            status=" ", msgnum=1, msgdate="01-01-23", msgtime="12:00",
+            msgto="Alice", msgfrom="Bob", msgsubject="Email Thread",
+            msgpassword="", refnum=0, numblocks=0, msgflag=" ", confnum=1, lognum=0, nettag=""
+        )
+        msg1 = ParsedMessage(
+            text="Email message text.", msgnum=1, refnum=0, confnum=1, header=header1,
+            reply_count=4, thread_size=5
+        )
+
+        base_settings = dict(
+            verbose=False, private=True, no_header=False, truncate_signatures=False,
+            cut_quoting=False, individual_files=False, threaded=False, binaries_removal=False,
+            redact_pii=False, separator="none", output_mode="file", encoding="utf-8"
+        )
+
+        # 1. EML format
+        settings_eml = ProcessingSettings(format="eml", output_path=eml_path, **base_settings)
+        write_messages([msg1], eml_path, settings_eml)
+        imported_eml_msgs, _ = load_data(eml_path, logger)
+        assert len(imported_eml_msgs) == 1
+        assert imported_eml_msgs[0].reply_count == 4
+        assert imported_eml_msgs[0].thread_size == 5
+
+        # 2. MBOX format
+        settings_mbox = ProcessingSettings(format="mbox", output_path=mbox_path, **base_settings)
+        write_messages([msg1], mbox_path, settings_mbox)
+        imported_mbox_msgs, _ = load_data(mbox_path, logger)
+        assert len(imported_mbox_msgs) == 1
+        assert imported_mbox_msgs[0].reply_count == 4
+        assert imported_mbox_msgs[0].thread_size == 5
+
+        # 3. Maildir format
+        settings_maildir = ProcessingSettings(format="maildir", output_path=maildir_path, **base_settings)
+        write_messages([msg1], maildir_path, settings_maildir)
+        imported_maildir_msgs, _ = load_data(maildir_path, logger)
+        assert len(imported_maildir_msgs) == 1
+        assert imported_maildir_msgs[0].reply_count == 4
+        assert imported_maildir_msgs[0].thread_size == 5
+    finally:
+        shutil.rmtree(tmpdir)
