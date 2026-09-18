@@ -234,6 +234,9 @@ qwk archive.qwk --preset backup -o backup.db
 # Create a single threaded HTML digest with a table of contents
 qwk archive.qwk --preset digest -o digest.html
 
+# Create a single threaded plain text digest with a table of contents
+qwk archive.qwk --preset digest-text -o digest.txt
+
 # Save messages as clean, threaded individual HTML files with an index (static discussion board)
 qwk archive.qwk --preset forum -o my_forum_dir/
 
@@ -258,6 +261,7 @@ qwk --list-presets
 | `email` | Saves messages as individual EML files. | `--format eml --individual-files` |
 | `backup` | Creates a SQLite backup with private and unique messages. | `--format sqlite --private --unique` |
 | `digest` | Saves a single clean, threaded HTML file with a table of contents. | `--format html --threaded --clean --toc` |
+| `digest-text` | Saves a single clean, threaded plain text file with a table of contents. | `--format text --threaded --clean --toc` |
 | `forum` | Saves clean, threaded individual HTML files with an index. | `--format html --clean --threaded --individual-files --toc` |
 | `feed` | Saves a clean chronological RSS feed. | `--format rss --clean --sort date --reverse` |
 | `text-archive` | Saves clean text without headers. | `--format text --clean --noheader` |
@@ -737,7 +741,7 @@ for msg in messages:
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
 | `-j, --json` | Shortcut for `--format json`. |
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
-| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, forum, feed, text-archive). |
+| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
 | `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
