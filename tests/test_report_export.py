@@ -1,4 +1,3 @@
-import os
 import logging
 import pytest
 from pyqwk.core import show_stats, show_info, ProcessingSettings
@@ -76,6 +75,27 @@ def test_stats_export_csv(tmp_path, base_settings, mock_logger):
     assert "file,total_messages,matching_messages" in content
     assert "testdata/test1_qwk.zip" in content
     assert "Warren Zatwarni" in content
+
+
+def test_stats_export_csv_edge_cases():
+    from pyqwk.core import _render_stats_csv
+
+    # Test handling of None/missing fields without raising exceptions
+    sparse_stats = [
+        {
+            "file": "sparse.qwk",
+            "reply_rate": None,
+            "avg_message_length": None,
+            "avg_word_count": None,
+            "conversation": {"avg_thread_length": None},
+            "authors": [None, "invalid_author", {"name": "Test", "count": 1}],
+            "dates": None,
+        }
+    ]
+    csv_text = _render_stats_csv(sparse_stats)
+    assert "file,total_messages,matching_messages" in csv_text
+    assert "sparse.qwk" in csv_text
+    assert "Test (1)" in csv_text
 
 def test_info_export_html(tmp_path, base_settings, mock_logger):
     input_path = "testdata/test1_qwk.zip"

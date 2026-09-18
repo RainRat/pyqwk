@@ -8172,11 +8172,31 @@ def _render_stats_csv(all_stats: list[dict[str, Any]]) -> str:
         keywords = stats.get("keywords") or []
         bbses = stats.get("bbses") or []
 
-        authors_str = "; ".join(f"{a['name']} ({a['count']})" for a in authors[:5])
-        confs_str = "; ".join(f"{c['name']} ({c['count']})" for c in confs[:5])
-        subjects_str = "; ".join(f"{s['subject']} ({s['count']})" for s in subjects[:5])
-        keywords_str = "; ".join(f"{k['word']} ({k['count']})" for k in keywords[:5])
-        bbs_str = "; ".join(f"{b['name']} ({b['count']})" for b in bbses[:5])
+        authors_str = "; ".join(
+            f"{a.get('name', '')} ({a.get('count', 0)})"
+            for a in authors[:5]
+            if isinstance(a, dict)
+        )
+        confs_str = "; ".join(
+            f"{c.get('name', '')} ({c.get('count', 0)})"
+            for c in confs[:5]
+            if isinstance(c, dict)
+        )
+        subjects_str = "; ".join(
+            f"{s.get('subject', '')} ({s.get('count', 0)})"
+            for s in subjects[:5]
+            if isinstance(s, dict)
+        )
+        keywords_str = "; ".join(
+            f"{k.get('word', '')} ({k.get('count', 0)})"
+            for k in keywords[:5]
+            if isinstance(k, dict)
+        )
+        bbs_str = "; ".join(
+            f"{b.get('name', '')} ({b.get('count', 0)})"
+            for b in bbses[:5]
+            if isinstance(b, dict)
+        )
 
         conv = stats.get("conversation") or {}
 
@@ -8188,14 +8208,14 @@ def _render_stats_csv(all_stats: list[dict[str, Any]]) -> str:
                 "attachments_count": stats.get("attachments_count", 0),
                 "private_count": stats.get("private_count", 0),
                 "reply_count": stats.get("reply_count", 0),
-                "reply_rate": round(stats.get("reply_rate", 0.0), 2),
+                "reply_rate": round(stats.get("reply_rate") or 0.0, 2),
                 "earliest_date": dates.get("earliest") or "",
                 "latest_date": dates.get("latest") or "",
-                "avg_message_length": round(stats.get("avg_message_length", 0.0), 1),
-                "avg_word_count": round(stats.get("avg_word_count", 0.0), 1),
-                "thread_count": conv.get("thread_count", 0),
-                "avg_thread_length": round(conv.get("avg_thread_length", 0.0), 1),
-                "max_thread_length": conv.get("max_thread_length", 0),
+                "avg_message_length": round(stats.get("avg_message_length") or 0.0, 1),
+                "avg_word_count": round(stats.get("avg_word_count") or 0.0, 1),
+                "thread_count": conv.get("thread_count") or 0,
+                "avg_thread_length": round(conv.get("avg_thread_length") or 0.0, 1),
+                "max_thread_length": conv.get("max_thread_length") or 0,
                 "top_authors": authors_str,
                 "top_conferences": confs_str,
                 "top_subjects": subjects_str,

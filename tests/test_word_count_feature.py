@@ -1,9 +1,14 @@
-import pytest
-import sys
-from unittest.mock import MagicMock, patch
 import logging
-from pyqwk.core import ProcessingSettings, matches_filters, ParsedMessage, MessageHeader, process_merged_files, _get_message_mapping, calculate_archive_stats
-import os
+from unittest.mock import MagicMock, patch
+from pyqwk.core import (
+    MessageHeader,
+    ParsedMessage,
+    ProcessingSettings,
+    _get_message_mapping,
+    calculate_archive_stats,
+    matches_filters,
+    process_merged_files,
+)
 
 def test_word_count_filtering():
     """Verify that messages can be filtered by word count."""
