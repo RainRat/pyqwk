@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import pytest
 
 from pyqwk.core import (
