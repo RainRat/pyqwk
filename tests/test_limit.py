@@ -556,3 +556,228 @@ def test_skip_zero_with_sorting(mock_logger):
             assert "From" in output
             assert "To" in output
             assert "Sub" in output
+
+
+def test_skip_ignores_first_n_messages(tmp_path, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+    mock_messages = [create_mock_msg(i, text=f"Msg:{i:02d}") for i in range(1, 11)]
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
+        quiet=True,
+        skip=5,
+    )
+
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg:01" not in content
+    assert "Msg:05" not in content
+    assert "Msg:06" in content
+    assert "Msg:10" in content
+
+
+def test_skip_and_limit_together(tmp_path, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+    mock_messages = [create_mock_msg(i, text=f"Msg:{i:02d}") for i in range(1, 11)]
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
+        quiet=True,
+        skip=2,
+        limit=3,
+    )
+
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg:01" not in content
+    assert "Msg:02" not in content
+    assert "Msg:03" in content
+    assert "Msg:04" in content
+    assert "Msg:05" in content
+    assert "Msg:06" not in content
+
+
+def test_skip_exceeds_total(tmp_path, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+    mock_messages = [create_mock_msg(i, text=f"Msg:{i:02d}") for i in range(1, 11)]
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
+        quiet=True,
+        skip=20,
+    )
+
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert content == ""
+
+
+def test_skip_with_unique(tmp_path, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+    mock_messages = [create_mock_msg(i, text=f"Msg:{i:02d}") for i in range(1, 11)]
+    duplicated_msgs = []
+    for m in mock_messages:
+        duplicated_msgs.append(m)
+        duplicated_msgs.append(m)
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(duplicated_msgs))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
+        quiet=True,
+        unique=True,
+        skip=2,
+        limit=2,
+    )
+
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "Msg:01" not in content
+    assert "Msg:02" not in content
+    assert "Msg:03" in content
+    assert "Msg:04" in content
+    assert "Msg:05" not in content
+
+
+def test_tail_restricts_output(tmp_path, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+    mock_messages = [
+        create_mock_msg(i, text=" ".join([f"word{j}" for j in range(i)]))
+        for i in range(1, 11)
+    ]
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
+        quiet=True,
+        tail=3,
+    )
+
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert "word0" in content
+    assert "word7" in content
+    assert "word9" in content
+    assert content.count("word0") == 3
+
+
+def test_tail_with_skip_and_limit(tmp_path, mock_logger, monkeypatch):
+    output_path = tmp_path / "output.txt"
+    mock_messages = [
+        create_mock_msg(i, text=" ".join([f"word{j}" for j in range(i)]))
+        for i in range(1, 11)
+    ]
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="file",
+        output_path=str(output_path),
+        encoding="cp437",
+        quiet=True,
+        skip=2,
+        limit=5,
+        tail=2,
+    )
+
+    process_merged_files(["dummy.qwk"], settings, mock_logger)
+
+    content = output_path.read_text(encoding="latin1")
+    assert content.count("word0") == 2
+    assert "word5" in content
+    assert "word6" in content
+    assert "word7" not in content

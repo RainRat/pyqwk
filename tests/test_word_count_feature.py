@@ -1,7 +1,8 @@
 import pytest
 import sys
 from unittest.mock import MagicMock, patch
-from pyqwk.core import ProcessingSettings, matches_filters, ParsedMessage, MessageHeader, process_merged_files
+import logging
+from pyqwk.core import ProcessingSettings, matches_filters, ParsedMessage, MessageHeader, process_merged_files, _get_message_mapping, calculate_archive_stats
 import os
 
 def test_word_count_filtering():
@@ -164,3 +165,49 @@ def test_gui_word_limits_ui_present():
         assert hasattr(app, "max_words_var")
         assert hasattr(app, "min_words_entry")
         assert hasattr(app, "max_words_entry")
+
+
+def test_word_count_variable():
+    header = MessageHeader(" ", 1, "01-01-23", "12:00", "Everyone", "Alice", "Subject", "", None, 2, " ", 1, 1, "")
+    msg = ParsedMessage(text="word0 word1 word2 word3 word4", msgnum=5, refnum=None, confnum=1, header=header)
+    mapping = _get_message_mapping(msg, 1)
+    assert mapping["word_count"] == 5
+
+
+def test_avg_word_count_stats(monkeypatch):
+    header = MessageHeader(" ", 1, "01-01-23", "12:00", "Everyone", "Alice", "Subject", "", None, 2, " ", 1, 1, "")
+    mock_messages = [
+        ParsedMessage(
+            text=" ".join([f"word{j}" for j in range(i)]),
+            msgnum=i,
+            refnum=None,
+            confnum=1,
+            header=header,
+        )
+        for i in range(1, 11)
+    ]
+
+    monkeypatch.setattr("pyqwk.core.load_data", lambda *args, **kwargs: (bytearray(), {1: "General"}))
+    monkeypatch.setattr("pyqwk.core.parse_messages", lambda *args, **kwargs: iter(mock_messages))
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=True,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+
+    logger = logging.getLogger("test_word_count_feature")
+    stats = calculate_archive_stats(["dummy.qwk"], settings, logger)
+    assert stats["avg_word_count"] == 5.5
