@@ -162,3 +162,73 @@ def test_show_info_truncated_messages_dat(capsys, mock_logger, default_settings)
         captured = capsys.readouterr()
         # Should not crash and should print the file path
         assert "File: truncated.zip" in captured.out
+
+
+def test_show_info_csv_format(capsys, mock_logger, default_settings):
+    """Test that info output can be exported as CSV."""
+    import csv
+    import io
+
+    input_path = "testdata/test1_qwk.zip"
+    csv_settings = replace(default_settings, format="csv")
+
+    show_info([input_path], csv_settings, mock_logger)
+
+    captured = capsys.readouterr()
+    output = captured.out
+
+    reader = csv.DictReader(io.StringIO(output))
+    rows = list(reader)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["file"] == input_path
+    assert row["bbs_name"] == "Benden Weyr, Pern, Sagittarius Sector"
+    assert row["sysop"] == "Ken Read"
+    assert row["bbs_id"] == "Benden"
+    assert row["total_messages"] == "1"
+    assert row["conferences_count"] == "1"
+    assert "4:Pnw.Tech (1)" in row["conferences"]
+    assert row["error"] == ""
+
+
+def test_show_info_csv_format_multiple_files_and_errors(capsys, mock_logger, default_settings):
+    """Test CSV export for show_info with multiple files including error cases."""
+    import csv
+    import io
+    from pyqwk.core import BBSInfo
+
+    input_paths = ["testdata/test1_qwk.zip", "testdata/test2_qwk.zip"]
+    csv_settings = replace(default_settings, format="csv")
+
+    board_dict1 = MagicMock()
+    board_dict1.bbs_info = BBSInfo(
+        name="BBS One",
+        sysop="SysOp One",
+        location="City One",
+        bbs_id="ID1",
+        packet_at="2023-01-01",
+        user_name="User1",
+    )
+    board_dict1.get = MagicMock(return_value=None)
+
+    with patch("pyqwk.core.load_data") as mock_load:
+        mock_load.side_effect = [
+            ([], board_dict1),
+            (bytearray(b"too_short"), {}),
+        ]
+
+        show_info(input_paths, csv_settings, mock_logger)
+
+    captured = capsys.readouterr()
+    reader = csv.DictReader(io.StringIO(captured.out))
+    rows = list(reader)
+
+    assert len(rows) == 2
+    assert rows[0]["file"] == "testdata/test1_qwk.zip"
+    assert rows[0]["bbs_name"] == "BBS One"
+    assert rows[0]["sysop"] == "SysOp One"
+    assert rows[0]["error"] == ""
+
+    assert rows[1]["file"] == "testdata/test2_qwk.zip"
+    assert rows[1]["error"] == "Invalid or empty file."
