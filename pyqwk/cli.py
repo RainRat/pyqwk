@@ -880,14 +880,14 @@ examples:
         choices=["blog", "email", "backup", "digest", "digest-text", "forum", "feed", "text-archive"],
         help=(
             "Apply predefined parameter combinations for common workflows:\n"
-            "  blog: Save messages as clean, threaded individual Markdown files.\n"
-            "  email: Save messages as individual EML files.\n"
-            "  backup: Create a complete SQLite backup with private and unique messages.\n"
-            "  digest: Save a single clean, threaded HTML file with a table of contents.\n"
-            "  digest-text: Save a single clean, threaded plain text file with a table of contents.\n"
-            "  forum: Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
-            "  feed: Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
-            "  text-archive: Save clean text without headers."
+            "  blog           Save messages as clean, threaded individual Markdown files.\n"
+            "  email          Save messages as individual EML files.\n"
+            "  backup         Create a complete SQLite backup with private and unique messages.\n"
+            "  digest         Save a single clean, threaded HTML file with a table of contents.\n"
+            "  digest-text    Save a single clean, threaded plain text file with a table of contents.\n"
+            "  forum          Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
+            "  feed           Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
+            "  text-archive   Save clean text without headers."
         ),
     )
     preset_group.add_argument(
