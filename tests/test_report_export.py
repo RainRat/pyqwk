@@ -61,6 +61,22 @@ def test_stats_export_markdown(tmp_path, base_settings, mock_logger):
     assert "### Archive Summary" in content
     assert "Warren Zatwarni" in content
 
+def test_stats_export_csv(tmp_path, base_settings, mock_logger):
+    input_path = "testdata/test1_qwk.zip"
+    output_file = tmp_path / "stats.csv"
+
+    settings = base_settings
+    settings.format = "csv"
+    settings.output_path = str(output_file)
+
+    show_stats([input_path], settings, mock_logger)
+
+    assert output_file.exists()
+    content = output_file.read_text(encoding="utf-8")
+    assert "file,total_messages,matching_messages" in content
+    assert "testdata/test1_qwk.zip" in content
+    assert "Warren Zatwarni" in content
+
 def test_info_export_html(tmp_path, base_settings, mock_logger):
     input_path = "testdata/test1_qwk.zip"
     output_file = tmp_path / "info.html"

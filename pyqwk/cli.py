@@ -248,6 +248,9 @@ examples:
   # Save statistics as an HTML report
   qwk archive.qwk --stats --format html -o stats.html
 
+  # Save statistics as a CSV report
+  qwk archive.qwk --stats --format csv -o stats.csv
+
   # Save archive info as Markdown
   qwk archive.qwk --info --format markdown -o info.md
 

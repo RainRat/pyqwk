@@ -8161,6 +8161,73 @@ def render_stats_as_text(stats: dict[str, Any], use_colors: bool = False) -> str
     return "\n".join(parts) + "\n"
 
 
+def _render_stats_csv(all_stats: list[dict[str, Any]]) -> str:
+    """Render archive statistics entries into a CSV string."""
+    csv_records = []
+    for stats in all_stats:
+        dates = stats.get("dates") or {}
+        authors = stats.get("authors") or []
+        confs = stats.get("conferences") or []
+        subjects = stats.get("subjects") or []
+        keywords = stats.get("keywords") or []
+        bbses = stats.get("bbses") or []
+
+        authors_str = "; ".join(f"{a['name']} ({a['count']})" for a in authors[:5])
+        confs_str = "; ".join(f"{c['name']} ({c['count']})" for c in confs[:5])
+        subjects_str = "; ".join(f"{s['subject']} ({s['count']})" for s in subjects[:5])
+        keywords_str = "; ".join(f"{k['word']} ({k['count']})" for k in keywords[:5])
+        bbs_str = "; ".join(f"{b['name']} ({b['count']})" for b in bbses[:5])
+
+        conv = stats.get("conversation") or {}
+
+        csv_records.append(
+            {
+                "file": stats.get("file", ""),
+                "total_messages": stats.get("total_messages", 0),
+                "matching_messages": stats.get("matching_messages", 0),
+                "attachments_count": stats.get("attachments_count", 0),
+                "private_count": stats.get("private_count", 0),
+                "reply_count": stats.get("reply_count", 0),
+                "reply_rate": round(stats.get("reply_rate", 0.0), 2),
+                "earliest_date": dates.get("earliest") or "",
+                "latest_date": dates.get("latest") or "",
+                "avg_message_length": round(stats.get("avg_message_length", 0.0), 1),
+                "avg_word_count": round(stats.get("avg_word_count", 0.0), 1),
+                "thread_count": conv.get("thread_count", 0),
+                "avg_thread_length": round(conv.get("avg_thread_length", 0.0), 1),
+                "max_thread_length": conv.get("max_thread_length", 0),
+                "top_authors": authors_str,
+                "top_conferences": confs_str,
+                "top_subjects": subjects_str,
+                "top_keywords": keywords_str,
+                "top_bbses": bbs_str,
+            }
+        )
+
+    fieldnames = [
+        "file",
+        "total_messages",
+        "matching_messages",
+        "attachments_count",
+        "private_count",
+        "reply_count",
+        "reply_rate",
+        "earliest_date",
+        "latest_date",
+        "avg_message_length",
+        "avg_word_count",
+        "thread_count",
+        "avg_thread_length",
+        "max_thread_length",
+        "top_authors",
+        "top_conferences",
+        "top_subjects",
+        "top_keywords",
+        "top_bbses",
+    ]
+    return _render_csv_table(csv_records, fieldnames)
+
+
 def show_stats(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
@@ -8187,6 +8254,8 @@ def show_stats(
     output = ""
     if settings.format == "json":
         output = json.dumps(all_stats, indent=4, ensure_ascii=False)
+    elif settings.format == "csv":
+        output = _render_stats_csv(all_stats)
     elif settings.format == "html":
         title = "Archive Statistics"
         html_parts = _get_html_header(title)

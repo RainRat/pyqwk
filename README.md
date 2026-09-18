@@ -852,7 +852,7 @@ for msg in messages:
 | `-1, --oneline` | Show a one-line summary (Conf, Date, From, To, Flags, Subject). Use with --verbose to include the message number. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
-| `--stats` | Show message statistics and exit. |
+| `--stats` | Show message statistics and exit. You can save this to a file with -o (supports Text, JSON, HTML, Markdown, and CSV). |
 | `--merge-stats` | Show a single merged report for multiple archives. |
 | `--threads`, `--list-threads` | Show a summary of all conversation threads and exit. |
 | `--validate` | Validate archive integrity and metadata completeness, then exit. |
