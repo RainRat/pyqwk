@@ -98,7 +98,7 @@ Using a virtual environment keeps your Python packages organized. It prevents co
    ```bash
    python -m pip install .
    ```
-5. Run `pyqwk` using the command-line command:
+5. Run `qwk` using the command-line command:
    ```bash
    qwk archive.qwk
    ```
@@ -626,8 +626,14 @@ qwk archive.qwk --mine
 # At least 1000 characters
 qwk archive.qwk --min-length 1000
 
+# At most 500 characters
+qwk archive.qwk --max-length 500
+
 # At least 2 attachments
 qwk archive.qwk --min-attachments 2
+
+# At most 5 attachments
+qwk archive.qwk --max-attachments 5
 ```
 
 **Filter by Length (Words):**
@@ -653,8 +659,14 @@ qwk archive.qwk --threaded --min-depth 2
 # Show messages with at least 5 direct replies
 qwk archive.qwk --min-replies 5
 
+# Show messages with at most 2 direct replies
+qwk archive.qwk --max-replies 2
+
 # Show messages from large conversations (at least 20 messages)
 qwk archive.qwk --min-thread-size 20
+
+# Show messages from small conversations (at most 5 messages)
+qwk archive.qwk --max-thread-size 5
 ```
 
 **Filter by Message Number:**
