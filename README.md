@@ -475,6 +475,11 @@ qwk archive.qwk --list-msg-links
 qwk archive.qwk --list-sources
 ```
 
+**List extracted keywords across archives:**
+```bash
+qwk archive.qwk --list-keywords
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads (or use --list-threads)
@@ -770,6 +775,7 @@ for msg in messages:
 | `--list-phones` | List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-msg-links`, `--list-message-links` | List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-sources`, `--list-files` | List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. |
+| `--list-keywords` | List top extracted keywords across matching messages with frequency, author counts, and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
