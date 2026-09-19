@@ -1790,10 +1790,10 @@ class QwkGuiApp:
         # Binds
         self.search_entry.bind("<Return>", self._on_search_enter)
         self.search_entry.bind("<Shift-Return>", self._on_search_shift_enter)
-        self.search_entry.bind("<Control-Return>", self._on_search_control_enter)
+        self.search_entry.bind("<Control-Return>", self._on_search_enter)
         self.exclude_entry.bind("<Return>", self._on_search_enter)
         self.exclude_entry.bind("<Shift-Return>", self._on_search_shift_enter)
-        self.exclude_entry.bind("<Control-Return>", self._on_search_control_enter)
+        self.exclude_entry.bind("<Control-Return>", self._on_search_enter)
         self.search_entry.bind("<Escape>", self.clear_search)
         self.exclude_entry.bind("<Escape>", self.clear_search)
         self.search_entry.bind(
@@ -1809,7 +1809,7 @@ class QwkGuiApp:
             "<Down>", lambda e: self._select_relative_message(1, force=True)
         )
         self.min_words_entry.bind("<Return>", self._on_search_enter)
-        self.min_words_entry.bind("<Control-Return>", self._on_search_control_enter)
+        self.min_words_entry.bind("<Control-Return>", self._on_search_enter)
         self.min_words_entry.bind("<Escape>", self.clear_search)
         self.min_words_entry.bind(
             "<Up>", lambda e: self._select_relative_message(-1, force=True)
@@ -1818,7 +1818,7 @@ class QwkGuiApp:
             "<Down>", lambda e: self._select_relative_message(1, force=True)
         )
         self.max_words_entry.bind("<Return>", self._on_search_enter)
-        self.max_words_entry.bind("<Control-Return>", self._on_search_control_enter)
+        self.max_words_entry.bind("<Control-Return>", self._on_search_enter)
         self.max_words_entry.bind("<Escape>", self.clear_search)
         self.max_words_entry.bind(
             "<Up>", lambda e: self._select_relative_message(-1, force=True)
@@ -2462,12 +2462,6 @@ class QwkGuiApp:
     def _on_search_shift_enter(self, _event: object) -> None:
         """Move back through matches when Shift+Enter is pressed."""
         self._handle_search_navigation(-1)
-
-    def _on_search_control_enter(self, _event: object) -> str:
-        """Reload messages and focus the message list treeview."""
-        self.reload_messages()
-        self.message_list.focus_set()
-        return "break"
 
     def reload_messages(self) -> None:
         if self._search_timer is not None:
