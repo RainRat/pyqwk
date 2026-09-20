@@ -909,7 +909,9 @@ class QwkGuiApp:
             accelerator="Ctrl+Shift+V",
         )
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.quit_app, accelerator="Ctrl+Q")
+        file_menu.add_command(
+            label="Exit", command=self.root.quit, accelerator="Ctrl+Q"
+        )
         menubar.add_cascade(label="File", menu=file_menu, underline=0)
 
         self.edit_menu = edit_menu = tk.Menu(menubar, tearoff=0)
@@ -1059,8 +1061,8 @@ class QwkGuiApp:
         self.root.bind("<Control-G>", self.prompt_jump_to_message)
         self.root.bind("<Control-u>", self.jump_to_referenced_message)
         self.root.bind("<Control-U>", self.jump_to_referenced_message)
-        self.root.bind("<Control-q>", self.quit_app)
-        self.root.bind("<Control-Q>", self.quit_app)
+        self.root.bind("<Control-q>", lambda _e: self.root.quit())
+        self.root.bind("<Control-Q>", lambda _e: self.root.quit())
         self.root.bind("<Control-X>", self.clear_filters)
         self.root.bind("<Control-Shift-X>", self.clear_filters)
         self.root.bind("<Control-Shift-x>", self.clear_filters)
@@ -1435,9 +1437,6 @@ class QwkGuiApp:
         self._update_wrap()
         self.reload_messages()
         self.message_list.focus_set()
-
-    def quit_app(self, _event: object | None = None) -> None:
-        self.root.quit()
 
     def _update_wrap(self) -> None:
         """Toggle text wrapping in the detail view."""
