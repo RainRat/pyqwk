@@ -62,8 +62,11 @@ def test_search_entry_bindings(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
-    # Check if Shift-Return is bound
+    # Check if Shift-Return is bound across entry fields
     app.search_entry.bind.assert_any_call("<Shift-Return>", app._on_search_shift_enter)
+    app.exclude_entry.bind.assert_any_call("<Shift-Return>", app._on_search_shift_enter)
+    app.min_words_entry.bind.assert_any_call("<Shift-Return>", app._on_search_shift_enter)
+    app.max_words_entry.bind.assert_any_call("<Shift-Return>", app._on_search_shift_enter)
 
 
 def test_on_search_enter_navigation(mock_gui_deps):
