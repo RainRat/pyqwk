@@ -3,6 +3,8 @@ import logging
 import pytest
 
 from pyqwk.core import (
+    BBSInfo,
+    ConferenceMap,
     MessageHeader,
     ParsedMessage,
     ProcessingSettings,
@@ -123,7 +125,6 @@ def test_show_list_sources_formats(tmp_path, base_settings, mocker):
     msg2 = create_sample_message(msgnum=2, author="Bob", confnum=2, source_file="src_a.json", bbs_name="BBS A")
     msg3 = create_sample_message(msgnum=3, author="Charlie", confnum=1, source_file="src_b.json", bbs_name="BBS B")
 
-    # Mock load_data to return pre-constructed message lists
     def mock_load(path, log, enc):
         if "src_a" in path:
             return [msg1, msg2], {1: "General", 2: "Tech"}
@@ -133,13 +134,11 @@ def test_show_list_sources_formats(tmp_path, base_settings, mocker):
 
     paths = [str(tmp_path / "src_a.json"), str(tmp_path / "src_b.json")]
 
-    # 1. Plain Text stdout
     mock_stdout = mocker.patch("sys.stdout.write")
     show_list_sources(paths, base_settings, logger)
     written_text = "".join(call[0][0] for call in mock_stdout.call_args_list)
     assert "Source Files" in written_text
 
-    # 2. JSON export
     json_path = str(tmp_path / "sources.json")
     json_settings = base_settings
     json_settings.format = "json"
@@ -153,7 +152,6 @@ def test_show_list_sources_formats(tmp_path, base_settings, mocker):
     assert json_data[0]["message_count"] == 2
     assert json_data[0]["authors_count"] == 2
 
-    # 3. CSV export
     csv_path = str(tmp_path / "sources.csv")
     csv_settings = base_settings
     csv_settings.format = "csv"
@@ -165,7 +163,6 @@ def test_show_list_sources_formats(tmp_path, base_settings, mocker):
     assert "src_a.json" in csv_content
     assert "src_b.json" in csv_content
 
-    # 4. HTML export
     html_path = str(tmp_path / "sources.html")
     html_settings = base_settings
     html_settings.format = "html"
@@ -176,7 +173,6 @@ def test_show_list_sources_formats(tmp_path, base_settings, mocker):
         html_content = f.read()
     assert "<h1>Source Files</h1>" in html_content
 
-    # 5. Markdown export
     md_path = str(tmp_path / "sources.md")
     md_settings = base_settings
     md_settings.format = "markdown"
@@ -198,7 +194,6 @@ def test_show_list_sources_empty(tmp_path, base_settings, mocker):
 
 
 def test_cli_list_sources_flags(tmp_path, mocker):
-    # Test --list-sources and --list-files CLI invocation
     qwk_file = tmp_path / "test.qwk"
     qwk_file.write_bytes(b"\x00" * 128)
 
@@ -216,3 +211,77 @@ def test_cli_list_sources_flags(tmp_path, mocker):
         main()
     assert exc_info.value.code == 0
     assert mock_show.called
+
+
+def test_show_list_sources_load_archive_error_logging(tmp_path, base_settings, mocker):
+    logger = mocker.MagicMock(spec=logging.Logger)
+    mocker.patch("pyqwk.core.load_data", side_effect=RuntimeError("Corrupted archive"))
+
+    show_list_sources([str(tmp_path / "failing.qwk")], base_settings, logger)
+    logger.error.assert_called_once()
+    assert "Failed to load archive" in logger.error.call_args[0][0]
+
+
+def test_show_list_sources_bytearray_and_edge_case_handling(tmp_path, base_settings, mocker):
+    logger = mocker.MagicMock(spec=logging.Logger)
+
+    hdr_excluded = MessageHeader(
+        status=" ", msgnum=10, msgdate="10-12-23", msgtime="12:00",
+        msgto="Bob", msgfrom="ExcludedAuthor", msgsubject="Secret",
+        msgpassword="", refnum=None, numblocks=1, msgflag=" ",
+        confnum=1, lognum=1, nettag=""
+    )
+    msg_excluded = ParsedMessage(
+        text="Excluded message", msgnum=10, refnum=None, confnum=1,
+        header=hdr_excluded, source_file="src_exclude.qwk", bbs_name="BBS X"
+    )
+
+    hdr_edge = MessageHeader(
+        status=" ", msgnum=11, msgdate="INVALID_DATE", msgtime="INVALID",
+        msgto="Bob", msgfrom="   ", msgsubject="No Author",
+        msgpassword="", refnum=None, numblocks=1, msgflag=" ",
+        confnum=99, lognum=1, nettag=""
+    )
+    msg_edge = ParsedMessage(
+        text="Edge case message", msgnum=11, refnum=None, confnum=99,
+        header=hdr_edge, source_file="src_edge.qwk", bbs_name="", bbs_id=""
+    )
+    msg_edge.confnum = None
+
+    board_dict1 = ConferenceMap()
+    board_dict1.bbs_info = BBSInfo(user_name="BBSUser")
+
+    raw_header = MessageHeader(
+        status=" ", msgnum=1, msgdate="01-01-24", msgtime="10:00",
+        msgto="Alice", msgfrom="Bob", msgsubject="Byte Record",
+        msgpassword="", refnum=None, numblocks=2, msgflag=" ",
+        confnum=5, lognum=1, nettag=""
+    )
+    valid_bytes = bytearray(b"Produced QWK    " + b"\x00" * 112 + raw_header.to_bytes() + b"Hello byte msg\x00" * 8)
+
+    def mock_load(path, log, enc):
+        if "short_bytes.qwk" in path:
+            return bytearray(b"too_short"), ConferenceMap()
+        if "valid_bytes.qwk" in path:
+            return valid_bytes, ConferenceMap()
+        return [msg_excluded, msg_edge], board_dict1
+
+    mocker.patch("pyqwk.core.load_data", side_effect=mock_load)
+
+    settings = base_settings
+    settings.exclude_authors = ["ExcludedAuthor"]
+    settings.output_path = str(tmp_path / "out_sources.json")
+    settings.format = "json"
+
+    paths = [
+        str(tmp_path / "short_bytes.qwk"),
+        str(tmp_path / "valid_bytes.qwk"),
+        str(tmp_path / "mixed.json"),
+    ]
+
+    show_list_sources(paths, settings, logger)
+
+    with open(settings.output_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert len(data) >= 1
