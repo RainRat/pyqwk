@@ -396,7 +396,7 @@ examples:
     content_group.add_argument(
         "-H",
         "--headers-only",
-        help="Show the message details (metadata) without the body.",
+        help="Show message header details without the body.",
         action="store_true",
     )
 
@@ -484,7 +484,7 @@ examples:
     control_group.add_argument(
         "--validate",
         action="store_true",
-        help="Validate the structural integrity and metadata completeness of the archives and exit.",
+        help="Check archive file structure and completeness for errors, then exit.",
     )
     control_group.add_argument(
         "-v",
@@ -873,7 +873,7 @@ examples:
     sorting_limit_group.add_argument(
         "--count-only",
         action="store_true",
-        help="Output only the integer count of matching messages to stdout and exit.",
+        help="Output only the total count of matching messages to the screen and exit.",
     )
 
     preset_group = parser.add_argument_group("Workflow Presets")
