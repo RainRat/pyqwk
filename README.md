@@ -465,6 +465,11 @@ qwk archive.qwk --list-emails
 qwk archive.qwk --list-phones
 ```
 
+**List top extracted keywords across archives:**
+```bash
+qwk archive.qwk --list-keywords
+```
+
 **List extracted internal message links across archives:**
 ```bash
 qwk archive.qwk --list-msg-links
@@ -768,6 +773,7 @@ for msg in messages:
 | `--list-urls` | List all extracted URLs across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-emails` | List all extracted email addresses across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-phones` | List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. |
+| `--list-keywords` | List top extracted keywords across input archives with frequency counts, author counts, and active date ranges, then exit. |
 | `--list-msg-links`, `--list-message-links` | List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-sources`, `--list-files` | List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
