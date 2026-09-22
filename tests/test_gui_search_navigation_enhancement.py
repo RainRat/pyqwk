@@ -100,6 +100,17 @@ def test_on_search_shift_enter_navigation(mock_gui_deps):
         mock_nav.assert_called_with(-1)
 
 
+def test_handle_search_navigation_pending_timer(mock_gui_deps):
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app._search_timer = "active_timer_id"
+    with patch.object(app, "reload_messages") as mock_reload:
+        app._handle_search_navigation(1)
+        mock_reload.assert_called_once()
+        app.message_list.focus_set.assert_called_once()
+
+
 def test_welcome_screen_updated_shortcuts(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)

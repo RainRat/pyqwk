@@ -216,3 +216,46 @@ def test_cli_list_sources_flags(tmp_path, mocker):
         main()
     assert exc_info.value.code == 0
     assert mock_show.called
+
+
+def test_show_list_sources_coverage_gaps(tmp_path, base_settings, mocker):
+    from pyqwk.core import BBSInfo, ConferenceMap
+
+    logger = logging.getLogger("pyqwk.test")
+    mock_log_err = mocker.patch.object(logger, "error")
+
+    board_dict_with_bbs = ConferenceMap()
+    board_dict_with_bbs.bbs_info = BBSInfo(user_name="SysopUser")
+    msg1 = create_sample_message(msgnum=1, author="Alice", source_file="src_a.qwk")
+
+    short_data = bytearray(b"too_short")
+    full_data = bytearray(b"\x00" * 128)
+    board_dict_bytes = ConferenceMap()
+
+    def mock_load(path, log, enc):
+        if "failing" in path:
+            raise RuntimeError("Archive load error")
+        if "short" in path:
+            return short_data, board_dict_bytes
+        if "bytes" in path:
+            return full_data, board_dict_bytes
+        return [msg1], board_dict_with_bbs
+
+    mocker.patch("pyqwk.core.load_data", side_effect=mock_load)
+
+    paths = [
+        str(tmp_path / "valid.qwk"),
+        str(tmp_path / "short.qwk"),
+        str(tmp_path / "bytes.qwk"),
+        str(tmp_path / "failing.qwk"),
+    ]
+
+    base_settings.my_name = None
+    mock_stdout = mocker.patch("sys.stdout.write")
+    show_list_sources(paths, base_settings, logger)
+
+    mock_log_err.assert_called_once()
+    assert "Failed to load archive" in mock_log_err.call_args[0][0]
+
+    written_text = "".join(call[0][0] for call in mock_stdout.call_args_list)
+    assert "src_a.qwk" in written_text
