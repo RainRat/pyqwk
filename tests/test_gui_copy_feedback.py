@@ -36,3 +36,37 @@ def test_copy_to_clipboard_status_feedback():
         app._restore_status_bar()
         assert app._status_timer is None
         app._update_status_bar.assert_called_once_with(0)
+
+
+def test_copy_to_clipboard_after_cancel_exception():
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
+    ):
+        root = MagicMock()
+        app = QwkGuiApp(root)
+        app.status_label = MagicMock()
+
+        app._status_timer = "invalid_timer"
+        app.root.after_cancel.side_effect = Exception("Invalid timer")
+        app._copy_to_clipboard("Sample Text")
+        assert app._status_timer is not None
+
+
+def test_restore_status_bar_invalid_selection_index():
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
+    ):
+        root = MagicMock()
+        app = QwkGuiApp(root)
+
+        app._update_status_bar = MagicMock()
+        app.message_list = MagicMock()
+        app.message_list.selection.return_value = ("not_an_int",)
+        app._restore_status_bar()
+        app._update_status_bar.assert_called_once_with(None)
