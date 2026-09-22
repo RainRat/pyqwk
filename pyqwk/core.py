@@ -6526,15 +6526,19 @@ def render_msg_links_as_text(msg_link_list: list[dict[str, Any]], use_colors: bo
     return "\n".join(lines)
 
 
-def _render_msg_links_html(msg_link_list: list[dict[str, Any]], title: str) -> str:
+def _render_list_report_html(
+    items: list[dict[str, Any]], title: str, col1_header: str, key_name: str
+) -> str:
     html_parts = _get_html_header(title)
     html_parts.append(f"<h1>{title}</h1>")
     html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Message Link</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
+    html_parts.append(
+        f"<thead><tr><th>{col1_header}</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>"
+    )
     html_parts.append("<tbody>")
-    for item in msg_link_list:
+    for item in items:
         html_parts.append(
-            f"<tr><td>{html.escape(str(item['msg_link']))}</td>"
+            f"<tr><td>{html.escape(str(item[key_name]))}</td>"
             f"<td>{item['message_count']}</td>"
             f"<td>{item['authors_count']}</td>"
             f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
@@ -6546,15 +6550,26 @@ def _render_msg_links_html(msg_link_list: list[dict[str, Any]], title: str) -> s
     return "\n".join(html_parts)
 
 
-def _render_msg_links_markdown(msg_link_list: list[dict[str, Any]], title: str) -> str:
+def _render_list_report_markdown(
+    items: list[dict[str, Any]], title: str, col1_header: str, key_name: str
+) -> str:
+    sep = "-" * (len(col1_header) + 2)
     md_parts = [f"# {title}\n"]
-    md_parts.append("| Message Link | Messages | Authors | First Active | Last Active | BBS Name |")
-    md_parts.append("|--------------|----------|---------|--------------|-------------|----------|")
-    for item in msg_link_list:
+    md_parts.append(f"| {col1_header} | Messages | Authors | First Active | Last Active | BBS Name |")
+    md_parts.append(f"|{sep}|----------|---------|--------------|-------------|----------|")
+    for item in items:
         md_parts.append(
-            f"| {item['msg_link']} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
+            f"| {item[key_name]} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
         )
     return "\n".join(md_parts)
+
+
+def _render_msg_links_html(msg_link_list: list[dict[str, Any]], title: str) -> str:
+    return _render_list_report_html(msg_link_list, title, "Message Link", "msg_link")
+
+
+def _render_msg_links_markdown(msg_link_list: list[dict[str, Any]], title: str) -> str:
+    return _render_list_report_markdown(msg_link_list, title, "Message Link", "msg_link")
 
 
 def _render_msg_links_csv(msg_link_list: list[dict[str, Any]]) -> str:
@@ -6728,34 +6743,11 @@ def render_urls_as_text(url_list: list[dict[str, Any]], use_colors: bool = True)
 
 
 def _render_urls_html(url_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>URL</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in url_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['url']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_list_report_html(url_list, title, "URL", "url")
 
 
 def _render_urls_markdown(url_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| URL | Messages | Authors | First Active | Last Active | BBS Name |")
-    md_parts.append("|-----|----------|---------|--------------|-------------|----------|")
-    for item in url_list:
-        md_parts.append(
-            f"| {item['url']} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_list_report_markdown(url_list, title, "URL", "url")
 
 
 def _render_csv_table(
@@ -6940,34 +6932,11 @@ def render_emails_as_text(email_list: list[dict[str, Any]], use_colors: bool = T
 
 
 def _render_emails_html(email_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Email</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in email_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['email']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_list_report_html(email_list, title, "Email", "email")
 
 
 def _render_emails_markdown(email_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Email | Messages | Authors | First Active | Last Active | BBS Name |")
-    md_parts.append("|-------|----------|---------|--------------|-------------|----------|")
-    for item in email_list:
-        md_parts.append(
-            f"| {item['email']} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_list_report_markdown(email_list, title, "Email", "email")
 
 
 def _render_emails_csv(email_list: list[dict[str, Any]]) -> str:
@@ -7142,34 +7111,11 @@ def render_phones_as_text(phone_list: list[dict[str, Any]], use_colors: bool = T
 
 
 def _render_phones_html(phone_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Phone Number</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in phone_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['phone']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_list_report_html(phone_list, title, "Phone Number", "phone")
 
 
 def _render_phones_markdown(phone_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Phone Number | Messages | Authors | First Active | Last Active | BBS Name |")
-    md_parts.append("|--------------|----------|---------|--------------|-------------|----------|")
-    for item in phone_list:
-        md_parts.append(
-            f"| {item['phone']} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_list_report_markdown(phone_list, title, "Phone Number", "phone")
 
 
 def _render_phones_csv(phone_list: list[dict[str, Any]]) -> str:
@@ -10240,34 +10186,11 @@ def render_subjects_as_text(subject_list: list[dict[str, Any]], use_colors: bool
 
 
 def _render_subjects_html(subject_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Subject</th><th>Messages</th><th>Authors</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in subject_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['subject']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_list_report_html(subject_list, title, "Subject", "subject")
 
 
 def _render_subjects_markdown(subject_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Subject | Messages | Authors | First Active | Last Active | BBS Name |")
-    md_parts.append("|---------|----------|---------|--------------|-------------|----------|")
-    for item in subject_list:
-        md_parts.append(
-            f"| {item['subject']} | {item['message_count']} | {item['authors_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_list_report_markdown(subject_list, title, "Subject", "subject")
 
 
 def _render_subjects_csv(subject_list: list[dict[str, Any]]) -> str:
