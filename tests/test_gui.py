@@ -567,7 +567,7 @@ class TestQwkGui:
 
     def test_quit_app(self, mock_gui_deps):
         app = get_app()
-        app.quit_app()
+        app.root.quit()
         app.root.quit.assert_called_once()
 
     def test_load_messages_threaded(self, mock_gui_deps):
