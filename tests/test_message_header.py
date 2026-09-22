@@ -154,6 +154,21 @@ class TestMessageHeaderParsing:
 
         assert exc_info.value.message_type == "X"
 
+    def test_from_bytes_raises_on_unicode_decode_error(self) -> None:
+        invalid_utf8_record = b"\xff" * 128
+        with pytest.raises(MessagesDatFormatError) as exc_info:
+            MessageHeader.from_bytes(invalid_utf8_record, encoding="utf-8")
+
+        assert "Failed to decode header field with encoding 'utf-8'." in str(exc_info.value)
+
+    def test_from_dict_defaults(self) -> None:
+        hdr = MessageHeader.from_dict({})
+        assert hdr.msgnum is None
+        assert hdr.refnum is None
+        assert hdr.confnum is None
+        assert hdr.status == ""
+        assert hdr.msgfrom == ""
+
 
 class TestMessageHeaderFormatting:
     """Unit tests for MessageHeader formatting and serialization logic."""

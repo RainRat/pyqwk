@@ -210,6 +210,13 @@ def test_process_merged_files_with_attachments():
             pyqwk.core.parse_messages = original_parse_messages
 
 
+def test_yenc_decode_exception(mocker):
+    mocker.patch("builtins.ord", side_effect=TypeError("mock error"))
+    text = "=ybegin name=test.txt\n*+,/\n=yend\n"
+    binaries = extract_binaries(text)
+    assert binaries == []
+
+
 def test_uue_unterminated_at_end():
     text = "begin 644 test.txt\n#0V%T"
     binaries = extract_binaries(text)
