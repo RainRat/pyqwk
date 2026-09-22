@@ -721,7 +721,7 @@ qwk archive.qwk --sort words
 ```
 
 **Count Matching Messages Only:**
-You can output only the integer count of matching messages to the screen. This is very useful for shell scripts and piping:
+You can output only the total count of matching messages to the screen. This is very useful for shell scripts and piping:
 ```bash
 # Count how many messages were sent by Alice
 qwk archive.qwk --from "Alice" --count-only
@@ -861,7 +861,7 @@ for msg in messages:
 | `-K, --skip` | Skip the first NUM matching messages. |
 | `--regex` | Use regular expressions for search and filters. |
 | `--reverse` | Reverse the sorting order. |
-| `--count-only` | Output only the integer count of matching messages to the screen and exit. |
+| `--count-only` | Output only the total count of matching messages to the screen and exit. |
 | `--min-length` | Show messages with at least NUM characters. |
 | `--max-length` | Show messages with at most NUM characters. |
 | `--min-words` | Show messages with at least NUM words. |
@@ -881,7 +881,7 @@ for msg in messages:
 | `--stats` | Show message statistics and exit. You can save this to a file with -o (supports Text, JSON, HTML, Markdown, and CSV). |
 | `--merge-stats` | Show a single merged report for multiple archives. |
 | `--threads`, `--list-threads` | Show a summary of all conversation threads and exit. |
-| `--validate` | Validate archive integrity and metadata completeness, then exit. |
+| `--validate` | Check archive file structure and completeness for errors, then exit. |
 | `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
