@@ -153,12 +153,14 @@ def test_new_ui_shortcuts_and_consistency(mock_gui_deps):
     # 3. Verify standard bindings on min_words_entry and max_words_entry
     min_binds = [args[0][0] for args in app.min_words_entry.bind.call_args_list]
     assert "<Return>" in min_binds
+    assert "<Shift-Return>" in min_binds
     assert "<Escape>" in min_binds
     assert "<Up>" in min_binds
     assert "<Down>" in min_binds
 
     max_binds = [args[0][0] for args in app.max_words_entry.bind.call_args_list]
     assert "<Return>" in max_binds
+    assert "<Shift-Return>" in max_binds
     assert "<Escape>" in max_binds
     assert "<Up>" in max_binds
     assert "<Down>" in max_binds
