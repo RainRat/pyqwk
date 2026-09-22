@@ -70,13 +70,21 @@ def test_on_search_enter_navigation(mock_gui_deps):
     root = MagicMock()
     app = QwkGuiApp(root)
 
-    # Pressing Enter in search field reloads messages and shifts focus to message_list
+    # Pressing Enter in search field when no search matches are present reloads messages and shifts focus to message_list
     app._search_timer = None
     app.root.focus_get.return_value = app.search_entry
     with patch.object(app, "reload_messages") as mock_reload:
         res = app._on_search_enter(MagicMock())
         mock_reload.assert_called_once()
         app.message_list.focus_set.assert_called_once()
+        assert res == "break"
+
+    # Pressing Enter in search field when search matches are present navigates forward through matches
+    app._search_matches = [("1.0", "1.5")]
+    app.root.focus_get.return_value = app.search_entry
+    with patch.object(app, "_navigate_search_matches") as mock_nav:
+        res = app._on_search_enter(MagicMock())
+        mock_nav.assert_called_once_with(1)
         assert res == "break"
 
 
