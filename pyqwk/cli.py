@@ -873,7 +873,7 @@ examples:
     sorting_limit_group.add_argument(
         "--count-only",
         action="store_true",
-        help="Output only the integer count of matching messages to stdout and exit.",
+        help="Output only the integer count of matching messages to the screen and exit.",
     )
 
     preset_group = parser.add_argument_group("Workflow Presets")
