@@ -425,6 +425,20 @@ qwk archive.qwk --format maildir -o ./my_maildir/
 qwk archive.qwk --validate
 ```
 
+**Show archive information summary:**
+```bash
+qwk archive.qwk --info
+```
+
+**Show archive statistics:**
+```bash
+# View statistics in the terminal
+qwk archive.qwk --stats
+
+# Save statistics report as an HTML file with charts
+qwk archive.qwk --stats --format html -o stats.html
+```
+
 **List conference areas across archives:**
 ```bash
 qwk archive.qwk --list-conferences
