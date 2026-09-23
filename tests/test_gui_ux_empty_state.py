@@ -58,8 +58,16 @@ def app():
 
 def test_render_empty_state_listing_filters(app):
     # Set up some active filters
+    app.search_var = MagicMock()
     app.search_var.get.return_value = "vintage"
+    app.regex_var = MagicMock()
     app.regex_var.get.return_value = True
+    app.exclude_var = MagicMock()
+    app.exclude_var.get.return_value = "unwanted"
+    app.min_words_var = MagicMock()
+    app.min_words_var.get.return_value = ""
+    app.max_words_var = MagicMock()
+    app.max_words_var.get.return_value = ""
     app.bbs_combo.get.return_value = "The Cave BBS"
     app.conf_combo.get.return_value = "General"
     app.mine_var.get.return_value = True
@@ -82,6 +90,8 @@ def test_render_empty_state_listing_filters(app):
     # Verify specific filter reporting
     assert any("'vintage'" in text for text in inserted_texts)
     assert any("Regex Search" in text for text in inserted_texts)
+    assert any("'unwanted'" in text for text in inserted_texts)
+    assert any("Exclude" in text for text in inserted_texts)
     assert any("The Cave BBS" in text for text in inserted_texts)
     assert any("General" in text for text in inserted_texts)
     assert any(

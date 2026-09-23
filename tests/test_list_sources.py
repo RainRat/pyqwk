@@ -321,7 +321,7 @@ def test_show_list_sources_filtering_and_edge_branches(tmp_path, base_settings, 
 
     mocker.patch("pyqwk.core.load_data", return_value=([msg1, msg2], {}))
 
-    base_settings.search = "Target"
+    base_settings.search_term = "Target"
     mock_stdout = mocker.patch("sys.stdout.write")
     show_list_sources([str(tmp_path / "edge_src.qwk")], base_settings, logger)
 

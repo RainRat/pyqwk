@@ -5243,7 +5243,7 @@ def _parse_qwk_date(msgdate: str, msgtime: str) -> datetime.datetime:
         second = time_parts[2] if len(time_parts) > 2 else 0
 
         return datetime.datetime(year, month, day, hour, minute, second)
-    except (ValueError, IndexError):
+    except (ValueError, IndexError, TypeError):
         # Fallback for invalid dates
         return datetime.datetime(1970, 1, 1, 0, 0)
 

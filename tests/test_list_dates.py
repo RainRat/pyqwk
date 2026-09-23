@@ -257,3 +257,101 @@ def test_show_list_dates_coverage_gaps(tmp_path, base_settings, mocker):
 
     written_text = "".join(call[0][0] for call in mock_stdout.call_args_list)
     assert "2023-10-12" in written_text
+
+
+def test_show_list_dates_filtering_and_edge_branches(tmp_path, base_settings, mocker):
+    logger = logging.getLogger("pyqwk.test")
+
+    # msg1: Matches search filter, has empty author, confnum=None, empty BBS, long BBS (> 13 chars)
+    hdr1 = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="10-12-23",
+        msgtime="12:00",
+        msgto="Bob",
+        msgfrom="   ",
+        msgsubject="Target subject",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=None,
+        lognum=1,
+        nettag="",
+    )
+    msg1 = ParsedMessage(
+        text="Sample text",
+        msgnum=1,
+        refnum=None,
+        confnum=None,
+        header=hdr1,
+        bbs_name="A Very Long BBS Name That Truncates",
+        bbs_id=None,
+        source_file="dates_src.qwk",
+    )
+
+    # msg2: Matches same date, tests min/max time comparison
+    hdr2 = MessageHeader(
+        status=" ",
+        msgnum=2,
+        msgdate="10-12-23",
+        msgtime="18:00",
+        msgto="Bob",
+        msgfrom="Alice",
+        msgsubject="Target subject 2",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
+    msg2 = ParsedMessage(
+        text="Sample text 2",
+        msgnum=2,
+        refnum=None,
+        confnum=1,
+        header=hdr2,
+        bbs_name="   ",
+        bbs_id=None,
+        source_file="dates_src.qwk",
+    )
+
+    # msg3: Does NOT match search filter (filtered out)
+    hdr3 = MessageHeader(
+        status=" ",
+        msgnum=3,
+        msgdate="10-12-23",
+        msgtime="09:00",
+        msgto="Bob",
+        msgfrom="Eve",
+        msgsubject="Ignored",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
+    msg3 = ParsedMessage(
+        text="No match here",
+        msgnum=3,
+        refnum=None,
+        confnum=1,
+        header=hdr3,
+        bbs_name="Test BBS",
+        bbs_id=None,
+        source_file="dates_src.qwk",
+    )
+
+    mocker.patch("pyqwk.core.load_data", return_value=([msg1, msg2, msg3], {}))
+
+    base_settings.search_term = "Target"
+    mock_stdout = mocker.patch("sys.stdout.write")
+    show_list_dates([str(tmp_path / "dates_src.qwk")], base_settings, logger)
+
+    written_text = "".join(call[0][0] for call in mock_stdout.call_args_list)
+    assert "2023-10-12" in written_text
+
