@@ -2003,13 +2003,8 @@ class QwkGuiApp:
 
     def _current_settings(self) -> ProcessingSettings:
         clean = self.clean_var.get()
-        search_val = self.search_var.get().strip()
-        if not search_val:
-            search_val = None
-
-        exclude_val = self.exclude_var.get().strip()
-        if not exclude_val:
-            exclude_val = None
+        search_val = self.search_var.get().strip() or None
+        exclude_val = self.exclude_var.get().strip() or None
 
         selected_bbs_name = self.bbs_combo.get()
         bbs_names = None
@@ -2049,8 +2044,8 @@ class QwkGuiApp:
             encoding="cp437",
             regex=self.regex_var.get(),
             quiet=True,
-            search_term=search_val if search_val else None,
-            exclude_search=exclude_val if exclude_val else None,
+            search_term=search_val,
+            exclude_search=exclude_val,
             conferences=conferences,
             bbs_names=bbs_names,
             has_attachments=self.has_attach_var.get(),
