@@ -259,3 +259,71 @@ def test_show_list_sources_coverage_gaps(tmp_path, base_settings, mocker):
 
     written_text = "".join(call[0][0] for call in mock_stdout.call_args_list)
     assert "src_a.qwk" in written_text
+
+
+def test_show_list_sources_filtering_and_edge_branches(tmp_path, base_settings, mocker):
+    logger = logging.getLogger("pyqwk.test")
+
+    # Message 1: Matches search filter, but has empty author, confnum=None, valid date, empty BBS name
+    hdr1 = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="10-12-23",
+        msgtime="12:00",
+        msgto="Bob",
+        msgfrom="   ",
+        msgsubject="Test Match",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=None,
+        lognum=1,
+        nettag="",
+    )
+    msg1 = ParsedMessage(
+        text="Target search term here",
+        msgnum=1,
+        refnum=None,
+        confnum=None,
+        header=hdr1,
+        bbs_name="   ",
+        bbs_id=None,
+        source_file="edge_src.qwk",
+    )
+
+    # Message 2: Does NOT match search filter (filtered out)
+    hdr2 = MessageHeader(
+        status=" ",
+        msgnum=2,
+        msgdate="10-12-23",
+        msgtime="12:00",
+        msgto="Bob",
+        msgfrom="Alice",
+        msgsubject="Unrelated Subject",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
+    msg2 = ParsedMessage(
+        text="Other text without target",
+        msgnum=2,
+        refnum=None,
+        confnum=1,
+        header=hdr2,
+        bbs_name="Sample BBS",
+        source_file="edge_src.qwk",
+    )
+
+    mocker.patch("pyqwk.core.load_data", return_value=([msg1, msg2], {}))
+
+    base_settings.search = "Target"
+    mock_stdout = mocker.patch("sys.stdout.write")
+    show_list_sources([str(tmp_path / "edge_src.qwk")], base_settings, logger)
+
+    written_text = "".join(call[0][0] for call in mock_stdout.call_args_list)
+    assert "edge_src.qwk" in written_text
