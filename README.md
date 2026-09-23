@@ -498,6 +498,11 @@ qwk archive.qwk --list-msg-links
 qwk archive.qwk --list-sources
 ```
 
+**List message activity timeline by date across archives:**
+```bash
+qwk archive.qwk --list-dates
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads (or use --list-threads)
@@ -806,6 +811,7 @@ for msg in messages:
 | `--list-keywords` | List top extracted keywords across input archives with frequency counts, author counts, and active date ranges, then exit. |
 | `--list-msg-links`, `--list-message-links` | List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-sources`, `--list-files` | List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. |
+| `--list-dates`, `--list-timeline` | List message activity summarized by date across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
