@@ -29,6 +29,7 @@ from pyqwk.core import (
     show_list_keywords,
     show_list_msg_links,
     show_list_sources,
+    show_list_dates,
     validate_archive,
     show_validation_report,
 )
@@ -986,6 +987,12 @@ examples:
         help="List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-dates",
+        "--list-timeline",
+        action="store_true",
+        help="List message activity summarized by date across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -1378,6 +1385,10 @@ examples:
 
     if getattr(args, "list_sources", False) or getattr(args, "list_files", False):
         show_list_sources(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_dates", False) or getattr(args, "list_timeline", False):
+        show_list_dates(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
