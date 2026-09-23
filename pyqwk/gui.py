@@ -827,6 +827,11 @@ class QwkGuiApp:
             self.detail_text.insert(tk.END, f"  {label:<15}: ", "header_label")
             self.detail_text.insert(tk.END, f"'{search_val}'\n", "body")
 
+        exclude_val = self.exclude_var.get().strip() if getattr(self, "exclude_var", None) else ""
+        if exclude_val:
+            self.detail_text.insert(tk.END, f"  {'Exclude':<15}: ", "header_label")
+            self.detail_text.insert(tk.END, f"'{exclude_val}'\n", "body")
+
         bbs_val = self.bbs_combo.get()
         if bbs_val and not bbs_val.startswith("All BBSes"):
             self.detail_text.insert(tk.END, f"  {'BBS':<15}: ", "header_label")
