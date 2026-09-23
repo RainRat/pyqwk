@@ -120,6 +120,10 @@ If you prefer not to use a virtual environment, you can install the tool directl
    ```bash
    qwk archive.qwk
    ```
+4. Or start the graphical reader:
+   ```bash
+   qwk-gui
+   ```
 
 *Note: You can also run the reader without installing:*
 ```bash
