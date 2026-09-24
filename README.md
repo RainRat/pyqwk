@@ -441,6 +441,9 @@ qwk archive.qwk --stats
 
 # Save statistics report as an HTML file with charts
 qwk archive.qwk --stats --format html -o stats.html
+
+# View a single merged report when analyzing multiple archives
+qwk archive1.qwk archive2.qwk --stats --merge-stats
 ```
 
 **List conference areas across archives:**
@@ -647,6 +650,9 @@ qwk archive.qwk --from "Sysop" --to "Alice"
 
 # Messages specifically for you (based on your user name)
 qwk archive.qwk --mine
+
+# Specify your user name for --mine or QWK exports
+qwk archive.qwk --mine --my-name "Alice"
 ```
 
 **Filter by Length:**
