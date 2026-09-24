@@ -12,6 +12,7 @@ def mock_app():
             app.root = root
             app.detail_text = MagicMock()
             app.search_var = MagicMock()
+            app.exclude_var = MagicMock()
             app.regex_var = MagicMock()
             app.bbs_combo = MagicMock()
             app.conf_combo = MagicMock()
@@ -36,6 +37,7 @@ def test_render_empty_state_private_hidden(mock_app):
     app = mock_app
     app.private_var.get.return_value = False # Private Hidden
     app.search_var.get.return_value = ""
+    app.exclude_var.get.return_value = ""
     app.bbs_combo.get.return_value = "All BBSes"
     app.conf_combo.get.return_value = "All Conferences"
     app.min_words_var.get.return_value = ""

@@ -805,7 +805,7 @@ class QwkGuiApp:
                 self.detail_text.insert(tk.END, f"{desc}\n", "header_value")
 
     def _render_empty_state(self) -> None:
-        """Render an interactive empty state when no messages match the filters."""
+        """Render an interactive empty state when no messages match the filters or archive is empty."""
         self.detail_text.delete("1.0", tk.END)
         self._update_status_bar()
         self.search_count_label.config(text="")
@@ -814,78 +814,98 @@ class QwkGuiApp:
         self._render_hr()
         self.detail_text.insert(tk.END, "\n")
 
-        self.detail_text.insert(
-            tk.END,
-            "Your current filters returned no results. Check the settings below:\n\n",
-            "body",
-        )
+        if self._is_any_filter_active():
+            self.detail_text.insert(
+                tk.END,
+                "Your current filters returned no results. Check the settings below:\n\n",
+                "body",
+            )
 
-        # List active filters
-        search_val = self.search_var.get().strip()
-        if search_val:
-            label = "Regex Search" if self.regex_var.get() else "Search"
-            self.detail_text.insert(tk.END, f"  {label:<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"'{search_val}'\n", "body")
+            # List active filters
+            search_val = self.search_var.get().strip()
+            if search_val:
+                label = "Regex Search" if self.regex_var.get() else "Search"
+                self.detail_text.insert(tk.END, f"  {label:<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"'{search_val}'\n", "body")
 
-        exclude_val = self.exclude_var.get().strip() if getattr(self, "exclude_var", None) else ""
-        if exclude_val:
-            self.detail_text.insert(tk.END, f"  {'Exclude':<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"'{exclude_val}'\n", "body")
+            exclude_val = self.exclude_var.get().strip() if getattr(self, "exclude_var", None) else ""
+            if exclude_val:
+                self.detail_text.insert(tk.END, f"  {'Exclude':<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"'{exclude_val}'\n", "body")
 
-        bbs_val = self.bbs_combo.get()
-        if bbs_val and not bbs_val.startswith("All BBSes"):
-            self.detail_text.insert(tk.END, f"  {'BBS':<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{bbs_val}\n", "body")
+            bbs_val = self.bbs_combo.get()
+            if bbs_val and not bbs_val.startswith("All BBSes"):
+                self.detail_text.insert(tk.END, f"  {'BBS':<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"{bbs_val}\n", "body")
 
-        conf_val = self.conf_combo.get()
-        if conf_val and not conf_val.startswith("All Conferences"):
-            self.detail_text.insert(tk.END, f"  {'Conference':<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{conf_val}\n", "body")
+            conf_val = self.conf_combo.get()
+            if conf_val and not conf_val.startswith("All Conferences"):
+                self.detail_text.insert(tk.END, f"  {'Conference':<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"{conf_val}\n", "body")
 
-        min_words = self.min_words_var.get().strip()
-        if min_words:
-            self.detail_text.insert(tk.END, f"  {'Min Words':<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{min_words}\n", "body")
+            min_words = self.min_words_var.get().strip()
+            if min_words:
+                self.detail_text.insert(tk.END, f"  {'Min Words':<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"{min_words}\n", "body")
 
-        max_words = self.max_words_var.get().strip()
-        if max_words:
-            self.detail_text.insert(tk.END, f"  {'Max Words':<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{max_words}\n", "body")
+            max_words = self.max_words_var.get().strip()
+            if max_words:
+                self.detail_text.insert(tk.END, f"  {'Max Words':<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"{max_words}\n", "body")
 
-        active_bools = []
-        if not self.private_var.get():
-            active_bools.append("Private Hidden")
-        for text, var in [
-            ("Attachments", self.has_attach_var),
-            ("My Messages", self.mine_var),
-            ("On This Day", self.on_this_day_var),
-            ("Links", self.has_links_var),
-            ("Emails", self.has_emails_var),
-            ("Phones", self.has_phones_var),
-            ("Colors", self.has_ansi_var),
-            ("Message Links", self.has_msg_links_var),
-        ]:
-            if var.get():
-                active_bools.append(text)
+            active_bools = []
+            if not self.private_var.get():
+                active_bools.append("Private Hidden")
+            for text, var in [
+                ("Attachments", self.has_attach_var),
+                ("My Messages", self.mine_var),
+                ("On This Day", self.on_this_day_var),
+                ("Links", self.has_links_var),
+                ("Emails", self.has_emails_var),
+                ("Phones", self.has_phones_var),
+                ("Colors", self.has_ansi_var),
+                ("Message Links", self.has_msg_links_var),
+            ]:
+                if var.get():
+                    active_bools.append(text)
 
-        if active_bools:
-            self.detail_text.insert(tk.END, f"  {'Filters':<15}: ", "header_label")
-            self.detail_text.insert(tk.END, f"{', '.join(active_bools)}\n", "body")
+            if active_bools:
+                self.detail_text.insert(tk.END, f"  {'Filters':<15}: ", "header_label")
+                self.detail_text.insert(tk.END, f"{', '.join(active_bools)}\n", "body")
 
-        self.detail_text.insert(tk.END, "\n")
+            self.detail_text.insert(tk.END, "\n")
 
-        # Action links
-        self.detail_text.insert(
-            tk.END, "Reset all filters and search", ("link", "body", "reset_all")
-        )
-        self.detail_text.tag_bind("reset_all", "<Button-1>", self.clear_filters)
+            # Action links
+            self.detail_text.insert(
+                tk.END, "Reset all filters and search", ("link", "body", "reset_all")
+            )
+            self.detail_text.tag_bind("reset_all", "<Button-1>", self.clear_filters)
 
-        self.detail_text.insert(tk.END, "\n\n", "body")
-        self.detail_text.insert(tk.END, "Tip: Press ", "body")
-        self.detail_text.insert(tk.END, "Esc", "header_label")
-        self.detail_text.insert(
-            tk.END, " to progressively clear search and filters.", "body"
-        )
+            self.detail_text.insert(tk.END, "\n\n", "body")
+            self.detail_text.insert(tk.END, "Tip: Press ", "body")
+            self.detail_text.insert(tk.END, "Esc", "header_label")
+            self.detail_text.insert(
+                tk.END, " to progressively clear search and filters.", "body"
+            )
+        else:
+            self.detail_text.insert(
+                tk.END,
+                "The selected archive or folder contains no messages.\n\n",
+                "body",
+            )
+            self.detail_text.insert(tk.END, "Click ", "body")
+            self.detail_text.insert(
+                tk.END, "Open Archive", ("link", "body", "empty_open_file")
+            )
+            self.detail_text.tag_bind("empty_open_file", "<Button-1>", self.open_file)
+            self.detail_text.insert(tk.END, " or ", "body")
+            self.detail_text.insert(
+                tk.END, "Open Folder", ("link", "body", "empty_open_folder")
+            )
+            self.detail_text.tag_bind("empty_open_folder", "<Button-1>", self.open_folder)
+            self.detail_text.insert(
+                tk.END, " to choose another archive.", "body"
+            )
 
     def _build_menu(self) -> None:
         menubar = tk.Menu(self.root)
