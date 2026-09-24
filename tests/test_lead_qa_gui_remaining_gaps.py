@@ -56,6 +56,37 @@ def test_render_empty_state_private_hidden(mock_app):
     # Use ANY for tk.END to avoid MagicMock comparison issues
     app.detail_text.insert.assert_any_call(ANY, "Private Hidden\n", "body")
 
+
+def test_render_empty_state_search_only_no_bools(mock_app):
+    """Cover false branch for if active_bools in pyqwk/gui.py."""
+    app = mock_app
+    app.private_var.get.return_value = True
+    app.search_var.get.return_value = "query"
+    app.exclude_var.get.return_value = ""
+    app.bbs_combo.get.return_value = "All BBSes"
+    app.conf_combo.get.return_value = "All Conferences"
+    app.min_words_var.get.return_value = ""
+    app.max_words_var.get.return_value = ""
+
+    for var in [
+        app.has_attach_var,
+        app.mine_var,
+        app.on_this_day_var,
+        app.has_links_var,
+        app.has_emails_var,
+        app.has_phones_var,
+        app.has_ansi_var,
+        app.has_msg_links_var,
+    ]:
+        var.get.return_value = False
+
+    with patch.object(app, "_update_status_bar"), patch.object(app, "_render_hr"):
+        app._render_empty_state()
+
+    inserted_calls = [c.args[1] for c in app.detail_text.insert.call_args_list if len(c.args) > 1]
+    assert any("'query'\n" in text for text in inserted_calls)
+
+
 def test_reset_bbs_filter_exception(mock_app):
     """Cover lines 914-915 in pyqwk/gui.py."""
     app = mock_app

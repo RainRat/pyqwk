@@ -135,3 +135,95 @@ def test_cli_organize_by_date_dispatch(tmp_path, monkeypatch, mocker):
 
     assert exc_info.value.code == 0
     mock_org.assert_called_once()
+
+
+def test_organize_by_date_bytearray_under_block_size(tmp_path, monkeypatch, mock_logger, mocker):
+    monkeypatch.chdir(tmp_path)
+    file_path = tmp_path / "test.qwk"
+    file_path.write_bytes(b"short")
+
+    mocker.patch("pyqwk.core.load_data", return_value=(bytearray(b"short"), ConferenceMap()))
+
+    settings = create_test_settings()
+    organize_by_date([str(file_path)], settings, mock_logger)
+
+    target_path = tmp_path / "Unknown_Date" / "test.qwk"
+    assert target_path.exists()
+
+
+def make_msg(date_str="03-15-21", time_str="10:00"):
+    header = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate=date_str,
+        msgtime=time_str,
+        msgto="Bob",
+        msgfrom="Alice",
+        msgsubject="Test",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=0,
+        nettag=" ",
+    )
+    return ParsedMessage(text="Sample", msgnum=1, refnum=None, confnum=1, header=header)
+
+
+def test_organize_by_date_bytearray_with_messages(tmp_path, monkeypatch, mock_logger, mocker):
+    monkeypatch.chdir(tmp_path)
+    file_path = tmp_path / "test.qwk"
+    file_path.write_bytes(b"x" * 512)
+
+    fake_msg = make_msg("03-15-21", "10:00")
+    mocker.patch("pyqwk.core.load_data", return_value=(bytearray(b"x" * 512), ConferenceMap()))
+    mocker.patch("pyqwk.core.parse_messages", return_value=[fake_msg])
+
+    settings = create_test_settings()
+    organize_by_date([str(file_path)], settings, mock_logger)
+
+    target_path = tmp_path / "2021" / "03" / "test.qwk"
+    assert target_path.exists()
+
+
+def test_organize_by_date_parse_exception_and_epoch_fallback(tmp_path, monkeypatch, mock_logger, mocker):
+    monkeypatch.chdir(tmp_path)
+    file_path = tmp_path / "test.json"
+    file_path.write_text("{}", encoding="utf-8")
+
+    msg1 = make_msg("bad-date", "10:00")
+    msg2 = make_msg("01-01-70", "00:00")
+    mocker.patch("pyqwk.core.load_data", return_value=([msg1, msg2], ConferenceMap()))
+
+    def fake_parse_date(date_str, time_str):
+        if date_str == "bad-date":
+            raise ValueError("Invalid date")
+        import datetime
+        return datetime.datetime(1970, 1, 1, 0, 0)
+
+    mocker.patch("pyqwk.core._parse_qwk_date", side_effect=fake_parse_date)
+
+    settings = create_test_settings()
+    organize_by_date([str(file_path)], settings, mock_logger)
+
+    target_path = tmp_path / "Unknown_Date" / "test.json"
+    assert target_path.exists()
+
+
+def test_organize_by_date_target_folder_already_exists(tmp_path, monkeypatch, mock_logger):
+    monkeypatch.chdir(tmp_path)
+    target_dir = tmp_path / "2022" / "05"
+    target_dir.mkdir(parents=True)
+    file_path = tmp_path / "test.json"
+    file_path.write_text(
+        '{"type": "qwk_archive", "messages": [{"header": {"msgdate": "05-20-22", "msgtime": "12:00", "msgnum": 1, "confnum": 1}, "text": "Hello"}]}',
+        encoding="utf-8",
+    )
+
+    settings = create_test_settings()
+    organize_by_date([str(file_path)], settings, mock_logger)
+
+    target_path = target_dir / "test.json"
+    assert target_path.exists()
+    assert not file_path.exists()
