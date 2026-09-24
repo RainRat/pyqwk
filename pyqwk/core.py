@@ -6564,6 +6564,46 @@ def _render_list_report_markdown(
     return "\n".join(md_parts)
 
 
+def _render_entity_report_html(
+    report_list: list[dict[str, Any]], title: str, header_label: str, key_name: str
+) -> str:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{title}</h1>")
+    html_parts.append("<table class='stats-table'>")
+    html_parts.append(
+        f"<thead><tr><th>{header_label}</th><th>Messages</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>"
+    )
+    html_parts.append("<tbody>")
+    for item in report_list:
+        html_parts.append(
+            f"<tr><td>{html.escape(str(item[key_name]))}</td>"
+            f"<td>{item['message_count']}</td>"
+            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
+        )
+    html_parts.append("</tbody></table>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_entity_report_markdown(
+    report_list: list[dict[str, Any]], title: str, header_label: str, key_name: str
+) -> str:
+    md_parts = [f"# {title}\n"]
+    md_parts.append(
+        f"| {header_label} | Messages | First Active | Last Active | BBS Name |"
+    )
+    md_parts.append(
+        f"|{'-' * (len(header_label) + 2)}|----------|--------------|-------------|----------|"
+    )
+    for item in report_list:
+        md_parts.append(
+            f"| {item[key_name]} | {item['message_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
+        )
+    return "\n".join(md_parts)
+
+
 def _render_msg_links_html(msg_link_list: list[dict[str, Any]], title: str) -> str:
     return _render_list_report_html(msg_link_list, title, "Message Link", "msg_link")
 
@@ -10006,33 +10046,11 @@ def render_authors_as_text(author_list: list[dict[str, Any]], use_colors: bool =
 
 
 def _render_authors_html(author_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Author</th><th>Messages</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in author_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['author']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_entity_report_html(author_list, title, "Author", "author")
 
 
 def _render_authors_markdown(author_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Author | Messages | First Active | Last Active | BBS Name |")
-    md_parts.append("|--------|----------|--------------|-------------|----------|")
-    for item in author_list:
-        md_parts.append(
-            f"| {item['author']} | {item['message_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_entity_report_markdown(author_list, title, "Author", "author")
 
 
 def _render_authors_csv(author_list: list[dict[str, Any]]) -> str:
@@ -10195,33 +10213,11 @@ def render_recipients_as_text(recipient_list: list[dict[str, Any]], use_colors: 
 
 
 def _render_recipients_html(recipient_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Recipient</th><th>Messages</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in recipient_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['recipient']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_entity_report_html(recipient_list, title, "Recipient", "recipient")
 
 
 def _render_recipients_markdown(recipient_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Recipient | Messages | First Active | Last Active | BBS Name |")
-    md_parts.append("|-----------|----------|--------------|-------------|----------|")
-    for item in recipient_list:
-        md_parts.append(
-            f"| {item['recipient']} | {item['message_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_entity_report_markdown(recipient_list, title, "Recipient", "recipient")
 
 
 def _render_recipients_csv(recipient_list: list[dict[str, Any]]) -> str:
