@@ -13,6 +13,7 @@ from pyqwk.core import (
     process_merged_files,
     process_multiple_files,
     organize_by_bbs,
+    organize_by_date,
     resolve_output_format,
     show_info,
     show_stats,
@@ -290,7 +291,7 @@ examples:
     )
     io_group.add_argument(
         "--organize-by-date",
-        help="Organize individual files into subfolders by date (YYYY/MM).",
+        help="Organize archives into folders by date (YYYY/MM). If used with -o or --output, organizes the export folder instead.",
         action="store_true",
     )
     io_group.add_argument(
@@ -1117,7 +1118,7 @@ examples:
     if output_path:
         is_archive_out = output_path.lower().endswith((".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz"))
 
-    if args.organize_by_bbs:
+    if (args.organize_by_bbs or getattr(args, "organize_by_date", False)) and not output_path:
         output_mode = "file"
         resolved_output_path = None
     elif args.info or args.stats:
@@ -1325,6 +1326,10 @@ examples:
 
     if args.organize_by_bbs and not args.output_path:
         organize_by_bbs(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "organize_by_date", False) and not args.output_path:
+        organize_by_date(input_paths, settings, logger)
         sys.exit(0)
 
     if args.info:
