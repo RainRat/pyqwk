@@ -8838,7 +8838,7 @@ def organize_by_date(
                         dt = _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
                         if dt and dt != datetime.datetime(1970, 1, 1, 0, 0):
                             valid_dates.append(dt)
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             if valid_dates:
