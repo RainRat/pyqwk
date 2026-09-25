@@ -204,8 +204,9 @@ qwk-gui messages.db
 - **Shift + F3**: Find the previous search match.
 - **Enter**: Find the next match when the search bar is focused.
 - **Shift + Enter**: Find the previous match when the search bar is focused.
-- **Esc**: Clear the search on the first press and all filters on the second press.
-- **Ctrl + Shift + X**: Clear all filters instantly.
+- **Ctrl + Enter**: Apply search filters and move focus to the message list.
+- **Esc**: Clear search on the first press and all filters on the second press.
+- **Ctrl + X** or **Ctrl + Shift + X**: Clear all filters instantly.
 
 **Navigation**
 - **j** or **n**: Move to the next message.
