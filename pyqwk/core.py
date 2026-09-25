@@ -28,6 +28,7 @@ import sqlite3
 import binascii
 import base64
 import random
+import urllib.parse
 
 __version__ = "0.1.0"
 
@@ -7268,6 +7269,220 @@ def show_list_phones(
             and sys.stdout.isatty()
         )
         output = render_phones_as_text(phone_list, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
+def extract_domains_from_text(text: str) -> list[str]:
+    """Extract domain names from URLs and email addresses contained in message text."""
+    if not text:
+        return []
+    domains = []
+    # 1. Extract domains from email addresses
+    emails = RE_EMAIL_PATTERN.findall(text)
+    for em in emails:
+        parts = em.split("@")
+        if len(parts) == 2:
+            dom = parts[1].strip().rstrip(".,;:!?)").lower()
+            if dom:
+                domains.append(dom)
+
+    # 2. Extract domains from URLs
+    urls = RE_URL_PATTERN.findall(text)
+    for url in urls:
+        url_clean = url.strip().rstrip(".,;:!?)")
+        if not url_clean.startswith(("http://", "https://", "ftp://", "telnet://", "gopher://")):
+            url_clean = "http://" + url_clean
+        try:
+            parsed = urllib.parse.urlparse(url_clean)
+            host = parsed.hostname
+            if host:
+                host_clean = host.lower()
+                if host_clean:
+                    domains.append(host_clean)
+        except Exception:
+            pass
+
+    return domains
+
+
+def render_domains_as_text(
+    domain_list: list[dict[str, Any]], use_colors: bool = True
+) -> str:
+    """Render a list of domain summary records into a formatted text string."""
+    lines = []
+    header_str = "Extracted Domains"
+    if use_colors:
+        lines.append(_colorize(header_str, "bold", "cyan"))
+    else:
+        lines.append(header_str)
+
+    sep = "-" * 110
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    col_hdr = f"  {'Domain':<30} {'Msgs':<8} {'Authors':<8} {'First Active':<12} {'Last Active':<12} {'BBS Name':<15}"
+    if use_colors:
+        lines.append(_colorize(col_hdr, "bold"))
+    else:
+        lines.append(col_hdr)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    for item in domain_list:
+        dom_display = item["domain"]
+        if len(dom_display) > 28:
+            dom_display = dom_display[:25] + "..."
+
+        bbs_display = item["bbs_name"] or "Unknown"
+        if len(bbs_display) > 13:
+            bbs_display = bbs_display[:10] + "..."
+
+        first_str = item["first_active"] or "N/A"
+        last_str = item["last_active"] or "N/A"
+
+        row_str = (
+            f"  {dom_display:<30} "
+            f"{item['message_count']:<8} "
+            f"{item['authors_count']:<8} "
+            f"{first_str:<12} "
+            f"{last_str:<12} "
+            f"{bbs_display:<15}"
+        )
+        lines.append(row_str)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    lines.append(f"Total Domains: {len(domain_list)}")
+    return "\n".join(lines)
+
+
+def _render_domains_html(domain_list: list[dict[str, Any]], title: str) -> str:
+    return _render_list_report_html(domain_list, title, "Domain", "domain")
+
+
+def _render_domains_markdown(domain_list: list[dict[str, Any]], title: str) -> str:
+    return _render_list_report_markdown(domain_list, title, "Domain", "domain")
+
+
+def _render_domains_csv(domain_list: list[dict[str, Any]]) -> str:
+    return _render_csv_table(
+        domain_list,
+        ["domain", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
+    )
+
+
+def show_list_domains(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives and export a summary list of extracted domain names."""
+    all_messages = []
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
+
+    # 1. Load messages from all input paths and gather filter criteria
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    continue
+                msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            for msg in msgs:
+                msg.confname = msg.confname or board_dict.get(msg.confnum)
+                msg.bbs_name = msg.bbs_name or (bbs_info.name if bbs_info else None)
+                msg.bbs_id = msg.bbs_id or (bbs_info.bbs_id if bbs_info else None)
+                msg.source_file = msg.source_file or os.path.basename(input_path)
+            all_messages.extend(msgs)
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    # 2. Apply settings filters and group by extracted domain
+    domain_stats = defaultdict(lambda: {
+        "count": 0,
+        "authors": set(),
+        "first_dt": None,
+        "last_dt": None,
+        "bbs_names": set(),
+    })
+
+    for msg in all_messages:
+        if matches_filters(msg, settings, allowed_conferences, user_name, allowed_exclude_conferences):
+            extracted_domains = extract_domains_from_text(msg.text or "")
+            for domain_val in extracted_domains:
+                domain_clean = domain_val.strip()
+                if not domain_clean:
+                    continue
+                stats = domain_stats[domain_clean]
+                stats["count"] += 1
+                msgfrom = (msg.header.msgfrom or "").strip()
+                if msgfrom:
+                    stats["authors"].add(msgfrom)
+                msg_dt = getattr(msg, "datetime", None) or _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+                if msg_dt:
+                    if stats["first_dt"] is None or msg_dt < stats["first_dt"]:
+                        stats["first_dt"] = msg_dt
+                    if stats["last_dt"] is None or msg_dt > stats["last_dt"]:
+                        stats["last_dt"] = msg_dt
+                bbs_name = (msg.bbs_name or msg.bbs_id or "").strip()
+                if bbs_name:
+                    stats["bbs_names"].add(bbs_name)
+
+    # 3. Build domain list sorted by count descending, then domain ascending
+    domain_list = []
+    for domain_val, stats in sorted(domain_stats.items(), key=lambda x: (-x[1]["count"], x[0].lower())):
+        first_active_str = stats["first_dt"].strftime("%Y-%m-%d") if stats["first_dt"] else None
+        last_active_str = stats["last_dt"].strftime("%Y-%m-%d") if stats["last_dt"] else None
+        bbs_str = ", ".join(sorted(stats["bbs_names"])) if stats["bbs_names"] else "Unknown"
+
+        domain_list.append({
+            "domain": domain_val,
+            "message_count": stats["count"],
+            "authors_count": len(stats["authors"]),
+            "first_active": first_active_str,
+            "last_active": last_active_str,
+            "bbs_name": bbs_str,
+        })
+
+    if not domain_list:
+        logger.warning("No domain names found across messages.")
+        return
+
+    output = ""
+    title = "Extracted Domains"
+    if settings.format == "json":
+        output = json.dumps(domain_list, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_domains_html(domain_list, title)
+    elif settings.format == "markdown":
+        output = _render_domains_markdown(domain_list, title)
+    elif settings.format == "csv":
+        output = _render_domains_csv(domain_list)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_domains_as_text(domain_list, use_colors=use_colors)
 
     _write_text_output(output, settings.output_path, encoding="utf-8")
 

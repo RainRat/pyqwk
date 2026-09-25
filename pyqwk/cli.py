@@ -26,6 +26,7 @@ from pyqwk.core import (
     show_list_subjects,
     show_list_urls,
     show_list_emails,
+    show_list_domains,
     show_list_phones,
     show_list_keywords,
     show_list_msg_links,
@@ -966,6 +967,11 @@ examples:
         help="List all extracted email addresses across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-domains",
+        action="store_true",
+        help="List all extracted domain names across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "--list-phones",
         action="store_true",
         help="List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
@@ -1135,6 +1141,7 @@ examples:
         or getattr(args, "list_subjects", False)
         or getattr(args, "list_urls", False)
         or getattr(args, "list_emails", False)
+        or getattr(args, "list_domains", False)
         or getattr(args, "list_phones", False)
         or getattr(args, "list_keywords", False)
         or getattr(args, "list_msg_links", False)
@@ -1374,6 +1381,10 @@ examples:
 
     if getattr(args, "list_emails", False):
         show_list_emails(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_domains", False):
+        show_list_domains(input_paths, settings, logger)
         sys.exit(0)
 
     if getattr(args, "list_phones", False):
