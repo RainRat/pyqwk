@@ -3845,7 +3845,7 @@ class QwkGuiApp:
         """
         parts = []
 
-        # 1. Search Progress
+        # 1. Search Match Progress
         if self._search_matches:
             parts.append(
                 f"Match {self._current_match_idx + 1} of {len(self._search_matches)}"
@@ -3859,17 +3859,24 @@ class QwkGuiApp:
         if exclude_term:
             parts.append(f'Excluding: "{exclude_term}"')
 
-        # 3. Message Selection Progress
+        # 3. Message Selection Progress & Archive Summary
         if message_index is not None and len(self.messages) > 0:
-            parts.append(f"Message {message_index + 1} of {len(self.messages)}")
-
-        # 4. Archive Summary
-        summary = f"Showing {len(self.messages)} of {self.total_msg_count} messages"
-        if self._is_any_filter_active():
-            summary += " (Filtered)"
-        if self.source_display_name:
-            summary += f" from {self.source_display_name}"
-        parts.append(summary)
+            msg_part = f"Message {message_index + 1} of {len(self.messages)}"
+            if self.total_msg_count and self.total_msg_count != len(self.messages):
+                msg_part += f" (Total: {self.total_msg_count})"
+            parts.append(msg_part)
+            summary = "Filtered" if self._is_any_filter_active() else ""
+            if self.source_display_name:
+                summary = f"from {self.source_display_name}" + (f" ({summary})" if summary else "")
+            if summary:
+                parts.append(summary)
+        else:
+            summary = f"Showing {len(self.messages)} of {self.total_msg_count} messages"
+            if self._is_any_filter_active():
+                summary += " (Filtered)"
+            if self.source_display_name:
+                summary += f" from {self.source_display_name}"
+            parts.append(summary)
 
         # Build final string
         self.status_label.config(text="  •  ".join(parts))
