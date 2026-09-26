@@ -12,8 +12,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_msg_links,
     render_msg_links_as_text,
-    _render_msg_links_html,
-    _render_msg_links_markdown,
+    _render_list_report_html,
+    _render_list_report_markdown,
     _render_msg_links_csv,
 )
 from pyqwk.cli import main
@@ -78,13 +78,13 @@ def test_render_msg_links_formats():
     assert "Total Message Links: 2" in text_color_out
 
     # HTML format
-    html_out = _render_msg_links_html(msg_link_list, "Test Message Links")
+    html_out = _render_list_report_html(msg_link_list, "Test Message Links", "Message Link", "msg_link")
     assert "<h1>Test Message Links</h1>" in html_out
     assert "<td>msg #100</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_msg_links_markdown(msg_link_list, "Test Message Links")
+    md_out = _render_list_report_markdown(msg_link_list, "Test Message Links", "Message Link", "msg_link")
     assert "# Test Message Links" in md_out
     assert "| Message Link | Messages | Authors | First Active | Last Active | BBS Name |" in md_out
     assert "| msg #100 | 5 | 1 | N/A | N/A | Unknown |" in md_out

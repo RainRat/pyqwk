@@ -6605,14 +6605,6 @@ def _render_entity_report_markdown(
     return "\n".join(md_parts)
 
 
-def _render_msg_links_html(msg_link_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_html(msg_link_list, title, "Message Link", "msg_link")
-
-
-def _render_msg_links_markdown(msg_link_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_markdown(msg_link_list, title, "Message Link", "msg_link")
-
-
 def _render_msg_links_csv(msg_link_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         msg_link_list,
@@ -6711,9 +6703,9 @@ def show_list_msg_links(
     if settings.format == "json":
         output = json.dumps(msg_link_list, indent=4, ensure_ascii=False)
     elif settings.format == "html":
-        output = _render_msg_links_html(msg_link_list, title)
+        output = _render_list_report_html(msg_link_list, title, "Message Link", "msg_link")
     elif settings.format == "markdown":
-        output = _render_msg_links_markdown(msg_link_list, title)
+        output = _render_list_report_markdown(msg_link_list, title, "Message Link", "msg_link")
     elif settings.format == "csv":
         output = _render_msg_links_csv(msg_link_list)
     else:
