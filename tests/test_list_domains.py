@@ -313,3 +313,64 @@ def test_show_list_domains_edge_cases(message_factory):
                 assert out[0]["first_active"] is None
                 assert out[0]["last_active"] is None
                 assert out[0]["bbs_name"] == "Unknown"
+
+
+def test_extract_domains_and_show_list_domains_coverage_gaps(message_factory):
+    # 1. Non-schemed URL domain extraction (line 7295)
+    extracted = extract_domains_from_text("Check www.test-site.org/path for info")
+    assert "www.test-site.org" in extracted
+
+    # 2. Email edge case with empty domain after punctuation strip
+    extracted_email_empty = extract_domains_from_text("Send to user@.")
+    assert "user@." not in extracted_email_empty
+
+    # 3. urlparse exception handling (lines 7303-7304) and empty host checks
+    with patch("urllib.parse.urlparse", side_effect=ValueError("Invalid URL")):
+        assert extract_domains_from_text("Visit http://example.com") == []
+
+    class DummyParsed:
+        hostname = ""
+
+    with patch("urllib.parse.urlparse", return_value=DummyParsed()):
+        assert extract_domains_from_text("Visit http://example.com") == []
+
+    # 4. Empty domain string handling (line 7433) and filter exclusions in show_list_domains
+    m_included = message_factory(1, 0, "Include me")
+    m_included.text = "Include http://valid-domain.com"
+    m_excluded = message_factory(2, 0, "Exclude me")
+    m_excluded.text = "Visit http://filtered-domain.com"
+
+    board = ConferenceMap()
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+        search_term="Include",
+    )
+    logger = logging.getLogger("test_domains_gaps")
+
+    def mock_extract(text):
+        if "Include" in text:
+            return ["valid-domain.com", "  "]
+        return ["filtered-domain.com"]
+
+    with patch("pyqwk.core.load_data", return_value=([m_included, m_excluded], board)):
+        with patch("pyqwk.core.extract_domains_from_text", side_effect=mock_extract):
+            with patch("pyqwk.core._write_text_output") as mock_write:
+                show_list_domains(["dummy.qwk"], settings, logger)
+                mock_write.assert_called_once()
+                out = json.loads(mock_write.call_args[0][0])
+                assert len(out) == 1
+                assert out[0]["domain"] == "valid-domain.com"
