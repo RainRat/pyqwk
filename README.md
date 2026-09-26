@@ -482,6 +482,11 @@ qwk archive.qwk --list-urls
 qwk archive.qwk --list-emails
 ```
 
+**List extracted domain names across archives:**
+```bash
+qwk archive.qwk --list-domains
+```
+
 **List extracted phone numbers across archives:**
 ```bash
 qwk archive.qwk --list-phones
@@ -814,6 +819,7 @@ for msg in messages:
 | `--list-subjects` | List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-urls` | List all extracted URLs across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-emails` | List all extracted email addresses across input archives with message counts, author counts, and active date ranges, then exit. |
+| `--list-domains` | List all extracted domain names across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-phones` | List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-keywords` | List top extracted keywords across input archives with frequency counts, author counts, and active date ranges, then exit. |
 | `--list-msg-links`, `--list-message-links` | List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. |
