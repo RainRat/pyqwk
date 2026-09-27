@@ -255,6 +255,9 @@ examples:
   # Save statistics as a CSV report
   qwk archive.qwk --stats --format csv -o stats.csv
 
+  # Export statistics in JSON Lines format
+  qwk archive.qwk --stats --jsonl -o stats.jsonl
+
   # Save archive info as Markdown
   qwk archive.qwk --info --format markdown -o info.md
 
@@ -408,7 +411,7 @@ examples:
     format_group.add_argument(
         "-F",
         "--format",
-        help="Set the output format. If omitted, the format is chosen based on the file extension.",
+        help="Set the output format. If omitted, the format is chosen based on the file extension. Supports text, json, jsonl, csv, html, markdown, xml, etc. for message exports and reports.",
         default=None,
         choices=[
             "text",

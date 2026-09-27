@@ -443,6 +443,9 @@ qwk archive.qwk --stats
 # Save statistics report as an HTML file with charts
 qwk archive.qwk --stats --format html -o stats.html
 
+# Save statistics report in JSON Lines format
+qwk archive.qwk --stats --jsonl -o stats.jsonl
+
 # View a single merged report when analyzing multiple archives
 qwk archive1.qwk archive2.qwk --stats --merge-stats
 ```
@@ -907,7 +910,7 @@ for msg in messages:
 | `-1, --oneline` | Show a one-line summary (Conf, Date, From, To, Flags, Subject). Use with --verbose to include the message number. |
 | `--oneline-pattern` | Set a custom pattern for one-line summaries. |
 | `-I, --info` | Show a summary of the archive and exit. |
-| `--stats` | Show message statistics and exit. You can save this to a file with -o (supports Text, JSON, HTML, Markdown, and CSV). |
+| `--stats` | Show message statistics and exit. You can save this to a file with -o (supports Text, JSON, JSONL, HTML, Markdown, and CSV). |
 | `--merge-stats` | Show a single merged report for multiple archives. |
 | `--threads`, `--list-threads` | Show a summary of all conversation threads and exit. |
 | `--validate` | Check archive file structure and completeness for errors, then exit. |
