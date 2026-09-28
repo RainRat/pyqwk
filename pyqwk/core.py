@@ -6382,7 +6382,7 @@ def _render_info_csv(all_info: list[dict[str, Any]]) -> str:
 def show_info(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
-    """Show a summary of the QWK packet contents."""
+    """Show a summary of the QWK packet contents (supports Text, JSON, JSONL, HTML, Markdown, and CSV formats)."""
     all_info = []
 
     for input_path in input_paths:
@@ -6445,6 +6445,8 @@ def show_info(
     output = ""
     if settings.format == "json":
         output = json.dumps(all_info, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in all_info)
     elif settings.format == "html":
         title = "Archive Information"
         html_parts = _get_html_header(title)
@@ -6710,6 +6712,8 @@ def show_list_msg_links(
     title = "Extracted Message Links"
     if settings.format == "json":
         output = json.dumps(msg_link_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in msg_link_list)
     elif settings.format == "html":
         output = _render_msg_links_html(msg_link_list, title)
     elif settings.format == "markdown":
@@ -6899,6 +6903,8 @@ def show_list_urls(
     title = "Extracted URLs"
     if settings.format == "json":
         output = json.dumps(url_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in url_list)
     elif settings.format == "html":
         output = _render_urls_html(url_list, title)
     elif settings.format == "markdown":
@@ -7077,6 +7083,8 @@ def show_list_emails(
     title = "Extracted Emails"
     if settings.format == "json":
         output = json.dumps(email_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in email_list)
     elif settings.format == "html":
         output = _render_emails_html(email_list, title)
     elif settings.format == "markdown":
@@ -7256,6 +7264,8 @@ def show_list_phones(
     title = "Extracted Phone Numbers"
     if settings.format == "json":
         output = json.dumps(phone_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in phone_list)
     elif settings.format == "html":
         output = _render_phones_html(phone_list, title)
     elif settings.format == "markdown":
@@ -7470,6 +7480,8 @@ def show_list_domains(
     title = "Extracted Domains"
     if settings.format == "json":
         output = json.dumps(domain_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in domain_list)
     elif settings.format == "html":
         output = _render_domains_html(domain_list, title)
     elif settings.format == "markdown":
@@ -7670,6 +7682,8 @@ def show_list_keywords(
     title = "Extracted Keywords"
     if settings.format == "json":
         output = json.dumps(keyword_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in keyword_list)
     elif settings.format == "html":
         output = _render_keywords_html(keyword_list, title)
     elif settings.format == "markdown":
@@ -7878,6 +7892,8 @@ def show_list_bbs(
     title = "Bulletin Board Systems"
     if settings.format == "json":
         output = json.dumps(bbs_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in bbs_list)
     elif settings.format == "html":
         output = _render_bbs_html(bbs_list, title)
     elif settings.format == "markdown":
@@ -8652,7 +8668,7 @@ def _render_stats_csv(all_stats: list[dict[str, Any]]) -> str:
 def show_stats(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
-    """Show detailed statistics about the messages in the QWK archives."""
+    """Show detailed statistics about the messages in the QWK archives (supports Text, JSON, JSONL, HTML, Markdown, and CSV formats)."""
     all_stats = []
 
     if settings.merge_stats:
@@ -8675,6 +8691,8 @@ def show_stats(
     output = ""
     if settings.format == "json":
         output = json.dumps(all_stats, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in all_stats)
     elif settings.format == "csv":
         output = _render_stats_csv(all_stats)
     elif settings.format == "html":
@@ -9672,7 +9690,7 @@ def show_validation_report(
     logger: logging.Logger,
     validator: Any = None,
 ) -> bool:
-    """Validate archives, format the results, and export/print the validation report.
+    """Validate archives, format the results, and export/print the validation report (supports Text, JSON, JSONL, HTML, Markdown, and CSV formats).
 
     Returns:
         True if all validated archives are structurally valid, False otherwise.
@@ -9709,6 +9727,8 @@ def show_validation_report(
     output = ""
     if settings.format == "json":
         output = json.dumps(all_results, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in all_results)
     elif settings.format == "html":
         title = "Archive Validation Report"
         html_parts = _get_html_header(title)
@@ -9839,7 +9859,7 @@ def _render_threads_csv(thread_metrics: list[dict[str, Any]]) -> str:
 def show_threads(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
-    """Read archives, run thread reconstruction, and export conversation thread-listing metrics."""
+    """Read archives, run thread reconstruction, and export conversation thread-listing metrics (supports Text, JSON, JSONL, HTML, Markdown, and CSV formats)."""
     all_messages = []
     allowed_conferences = set()
     allowed_exclude_conferences = set()
@@ -9930,6 +9950,8 @@ def show_threads(
     title = "Conversation Threads"
     if settings.format == "json":
         output = json.dumps(thread_metrics, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in thread_metrics)
     elif settings.format == "html":
         output = _render_threads_html(thread_metrics, title)
     elif settings.format == "markdown":
@@ -10057,7 +10079,7 @@ def _render_attachments_csv(attachment_records: list[dict[str, Any]]) -> str:
 def show_attachments(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
-    """Read archives, discover attachments across matching messages, and export structured attachment records."""
+    """Read archives, discover attachments across matching messages, and export structured attachment records (supports Text, JSON, JSONL, HTML, Markdown, and CSV formats)."""
     all_messages = []
     allowed_conferences = set()
     allowed_exclude_conferences = set()
@@ -10113,6 +10135,8 @@ def show_attachments(
     title = "Archive Attachments"
     if settings.format == "json":
         output = json.dumps(attachment_records, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in attachment_records)
     elif settings.format == "html":
         output = _render_attachments_html(attachment_records, title)
     elif settings.format == "markdown":
@@ -10266,6 +10290,8 @@ def show_list_conferences(
     title = "Conference Areas"
     if settings.format == "json":
         output = json.dumps(conf_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in conf_list)
     elif settings.format == "html":
         output = _render_conferences_html(conf_list, title)
     elif settings.format == "markdown":
@@ -10433,6 +10459,8 @@ def show_list_authors(
     title = "Message Authors"
     if settings.format == "json":
         output = json.dumps(author_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in author_list)
     elif settings.format == "html":
         output = _render_authors_html(author_list, title)
     elif settings.format == "markdown":
@@ -10600,6 +10628,8 @@ def show_list_recipients(
     title = "Message Recipients"
     if settings.format == "json":
         output = json.dumps(recipient_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in recipient_list)
     elif settings.format == "html":
         output = _render_recipients_html(recipient_list, title)
     elif settings.format == "markdown":
@@ -10774,6 +10804,8 @@ def show_list_subjects(
     title = "Message Subjects"
     if settings.format == "json":
         output = json.dumps(subject_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in subject_list)
     elif settings.format == "html":
         output = _render_subjects_html(subject_list, title)
     elif settings.format == "markdown":
@@ -10977,6 +11009,8 @@ def show_list_sources(
     title = "Source Files"
     if settings.format == "json":
         output = json.dumps(source_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in source_list)
     elif settings.format == "html":
         output = _render_sources_html(source_list, title)
     elif settings.format == "markdown":
@@ -11084,6 +11118,8 @@ def show_list_dates(
     title = "Timeline Summary"
     if settings.format == "json":
         output = json.dumps(date_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in date_list)
     elif settings.format == "html":
         output = _render_dates_html(date_list, title)
     elif settings.format == "markdown":
