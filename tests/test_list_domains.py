@@ -313,3 +313,50 @@ def test_show_list_domains_edge_cases(message_factory):
                 assert out[0]["first_active"] is None
                 assert out[0]["last_active"] is None
                 assert out[0]["bbs_name"] == "Unknown"
+
+
+def test_extract_domains_from_text_schemeless_url_prepending():
+    text = "Check out www.example.org/path/to/resource for details."
+    domains = extract_domains_from_text(text)
+    assert "www.example.org" in domains
+
+
+def test_extract_domains_from_text_urlparse_exception_returns_empty(mocker):
+    mocker.patch("urllib.parse.urlparse", side_effect=ValueError("Invalid URL"))
+    text = "Visit https://example.com"
+    domains = extract_domains_from_text(text)
+    assert domains == []
+
+
+def test_show_list_domains_filters_whitespace_domains(message_factory):
+    m1 = message_factory(1, 0, "Subj")
+    m1.text = "Message text"
+    board = ConferenceMap()
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+    logger = logging.getLogger("test_domains_whitespace")
+
+    with patch("pyqwk.core.load_data", return_value=([m1], board)):
+        with patch("pyqwk.core.extract_domains_from_text", return_value=["   ", "valid.com"]):
+            with patch("pyqwk.core._write_text_output") as mock_write:
+                show_list_domains(["dummy.qwk"], settings, logger)
+                mock_write.assert_called_once()
+                out = json.loads(mock_write.call_args[0][0])
+                assert len(out) == 1
+                assert out[0]["domain"] == "valid.com"
