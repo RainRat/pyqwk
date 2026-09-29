@@ -287,6 +287,9 @@ examples:
     )
     io_group.add_argument(
         "--organize",
+        "--organize-by-conference",
+        "--organize-by-conf",
+        dest="organize",
         help="Organize individual files into subfolders by conference.",
         action="store_true",
     )
