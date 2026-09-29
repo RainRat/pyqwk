@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_phones,
     render_phones_as_text,
-    _render_phones_html,
-    _render_phones_markdown,
+    _render_list_report_html,
+    _render_list_report_markdown,
     _render_phones_csv,
 )
 from pyqwk.cli import main
@@ -77,13 +77,13 @@ def test_render_phones_formats():
     assert "Total Phone Numbers: 2" in text_color_out
 
     # HTML format
-    html_out = _render_phones_html(phone_list, "Test Phones")
+    html_out = _render_list_report_html(phone_list, "Test Phones", "Phone Number", "phone")
     assert "<h1>Test Phones</h1>" in html_out
     assert "<td>555-123-4567</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_phones_markdown(phone_list, "Test Phones")
+    md_out = _render_list_report_markdown(phone_list, "Test Phones", "Phone Number", "phone")
     assert "# Test Phones" in md_out
     assert "| Phone Number | Messages | Authors | First Active | Last Active | BBS Name |" in md_out
     assert "| 555-123-4567 | 5 | 1 | N/A | N/A | Unknown |" in md_out

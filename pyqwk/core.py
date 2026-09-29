@@ -7151,14 +7151,6 @@ def render_phones_as_text(phone_list: list[dict[str, Any]], use_colors: bool = T
     return "\n".join(lines)
 
 
-def _render_phones_html(phone_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_html(phone_list, title, "Phone Number", "phone")
-
-
-def _render_phones_markdown(phone_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_markdown(phone_list, title, "Phone Number", "phone")
-
-
 def _render_phones_csv(phone_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         phone_list,
@@ -7257,9 +7249,9 @@ def show_list_phones(
     if settings.format == "json":
         output = json.dumps(phone_list, indent=4, ensure_ascii=False)
     elif settings.format == "html":
-        output = _render_phones_html(phone_list, title)
+        output = _render_list_report_html(phone_list, title, "Phone Number", "phone")
     elif settings.format == "markdown":
-        output = _render_phones_markdown(phone_list, title)
+        output = _render_list_report_markdown(phone_list, title, "Phone Number", "phone")
     elif settings.format == "csv":
         output = _render_phones_csv(phone_list)
     else:
@@ -7365,14 +7357,6 @@ def render_domains_as_text(
     return "\n".join(lines)
 
 
-def _render_domains_html(domain_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_html(domain_list, title, "Domain", "domain")
-
-
-def _render_domains_markdown(domain_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_markdown(domain_list, title, "Domain", "domain")
-
-
 def _render_domains_csv(domain_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         domain_list,
@@ -7471,9 +7455,9 @@ def show_list_domains(
     if settings.format == "json":
         output = json.dumps(domain_list, indent=4, ensure_ascii=False)
     elif settings.format == "html":
-        output = _render_domains_html(domain_list, title)
+        output = _render_list_report_html(domain_list, title, "Domain", "domain")
     elif settings.format == "markdown":
-        output = _render_domains_markdown(domain_list, title)
+        output = _render_list_report_markdown(domain_list, title, "Domain", "domain")
     elif settings.format == "csv":
         output = _render_domains_csv(domain_list)
     else:
@@ -10673,14 +10657,6 @@ def render_subjects_as_text(subject_list: list[dict[str, Any]], use_colors: bool
     return "\n".join(lines)
 
 
-def _render_subjects_html(subject_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_html(subject_list, title, "Subject", "subject")
-
-
-def _render_subjects_markdown(subject_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_markdown(subject_list, title, "Subject", "subject")
-
-
 def _render_subjects_csv(subject_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         subject_list,
@@ -10775,9 +10751,9 @@ def show_list_subjects(
     if settings.format == "json":
         output = json.dumps(subject_list, indent=4, ensure_ascii=False)
     elif settings.format == "html":
-        output = _render_subjects_html(subject_list, title)
+        output = _render_list_report_html(subject_list, title, "Subject", "subject")
     elif settings.format == "markdown":
-        output = _render_subjects_markdown(subject_list, title)
+        output = _render_list_report_markdown(subject_list, title, "Subject", "subject")
     elif settings.format == "csv":
         output = _render_subjects_csv(subject_list)
     else:

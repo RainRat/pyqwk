@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     extract_domains_from_text,
     render_domains_as_text,
-    _render_domains_html,
-    _render_domains_markdown,
+    _render_list_report_html,
+    _render_list_report_markdown,
     _render_domains_csv,
     show_list_domains,
 )
@@ -95,13 +95,13 @@ def test_render_domains_formats():
     assert "Total Domains: 2" in text_color_out
 
     # HTML format
-    html_out = _render_domains_html(domain_list, "Test Domains")
+    html_out = _render_list_report_html(domain_list, "Test Domains", "Domain", "domain")
     assert "<h1>Test Domains</h1>" in html_out
     assert "<td>bbs.org</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_domains_markdown(domain_list, "Test Domains")
+    md_out = _render_list_report_markdown(domain_list, "Test Domains", "Domain", "domain")
     assert "# Test Domains" in md_out
     assert "| Domain | Messages | Authors | First Active | Last Active | BBS Name |" in md_out
     assert "| bbs.org | 5 | 1 | N/A | N/A | Unknown |" in md_out
