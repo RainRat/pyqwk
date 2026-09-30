@@ -927,7 +927,7 @@ for msg in messages:
 | `--merge-stats` | Show a single merged report for multiple archives. |
 | `--threads`, `--list-threads` | Show a summary of all conversation threads and exit. |
 | `--validate` | Check archive file structure and completeness for errors, then exit. |
-| `--dry-run` | Preview actions without writing files. |
+| `-d`, `--dry-run` | Preview actions without writing files. |
 
 Run `qwk --help` for all options.
 
