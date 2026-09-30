@@ -11161,3 +11161,206 @@ def _render_dates_csv(date_list: list[dict[str, Any]]) -> str:
             "bbs_name",
         ],
     )
+
+
+def show_list_hours(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Read archives and export a summary list of message activity by hour of day (00-23)."""
+    all_messages = []
+    allowed_conferences = set()
+    allowed_exclude_conferences = set()
+    user_name = settings.my_name
+
+    # 1. Load messages from all input paths and gather filter criteria
+    for input_path in input_paths:
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            bbs_info = getattr(board_dict, "bbs_info", None)
+            if not user_name and bbs_info:
+                user_name = bbs_info.user_name
+            allowed_conferences.update(get_allowed_conferences(settings.conferences, board_dict))
+            allowed_exclude_conferences.update(get_allowed_conferences(settings.exclude_conferences, board_dict))
+
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    continue
+                msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            for msg in msgs:
+                msg.confname = msg.confname or board_dict.get(msg.confnum)
+                msg.bbs_name = msg.bbs_name or (bbs_info.name if bbs_info else None)
+                msg.bbs_id = msg.bbs_id or (bbs_info.bbs_id if bbs_info else None)
+                msg.source_file = msg.source_file or os.path.basename(input_path)
+            all_messages.extend(msgs)
+        except Exception as e:
+            logger.error("Failed to load archive %s: %s", input_path, e)
+
+    # 2. Apply settings filters and group by hour (00 to 23)
+    hour_stats = defaultdict(lambda: {
+        "count": 0,
+        "authors": set(),
+        "conferences": set(),
+        "first_dt": None,
+        "last_dt": None,
+        "bbs_names": set(),
+    })
+
+    for msg in all_messages:
+        if matches_filters(msg, settings, allowed_conferences, user_name, allowed_exclude_conferences):
+            msg_dt = getattr(msg, "datetime", None) or _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+            hour_str = f"{msg_dt.hour:02d}:00" if msg_dt else "Unknown"
+            stats = hour_stats[hour_str]
+            stats["count"] += 1
+            msgfrom = (msg.header.msgfrom or "").strip()
+            if msgfrom:
+                stats["authors"].add(msgfrom)
+            if msg.confnum is not None:
+                stats["conferences"].add(msg.confnum)
+            if msg_dt:
+                if stats["first_dt"] is None or msg_dt < stats["first_dt"]:
+                    stats["first_dt"] = msg_dt
+                if stats["last_dt"] is None or msg_dt > stats["last_dt"]:
+                    stats["last_dt"] = msg_dt
+            bbs_name = (msg.bbs_name or msg.bbs_id or "").strip()
+            if bbs_name:
+                stats["bbs_names"].add(bbs_name)
+
+    # 3. Build hour list sorted by hour
+    hour_list = []
+    for hour_str, stats in sorted(hour_stats.items(), key=lambda x: x[0]):
+        first_active_str = stats["first_dt"].strftime("%Y-%m-%d %H:%M") if stats["first_dt"] else None
+        last_active_str = stats["last_dt"].strftime("%Y-%m-%d %H:%M") if stats["last_dt"] else None
+        bbs_str = ", ".join(sorted(stats["bbs_names"])) if stats["bbs_names"] else "Unknown"
+
+        hour_list.append({
+            "hour": hour_str,
+            "message_count": stats["count"],
+            "authors_count": len(stats["authors"]),
+            "conferences_count": len(stats["conferences"]),
+            "first_active": first_active_str,
+            "last_active": last_active_str,
+            "bbs_name": bbs_str,
+        })
+
+    if not hour_list:
+        logger.warning("No message hours found.")
+        return
+
+    output = ""
+    title = "Hourly Activity Summary"
+    if settings.format == "json":
+        output = json.dumps(hour_list, indent=4, ensure_ascii=False)
+    elif settings.format == "html":
+        output = _render_hours_html(hour_list, title)
+    elif settings.format == "markdown":
+        output = _render_hours_markdown(hour_list, title)
+    elif settings.format == "csv":
+        output = _render_hours_csv(hour_list)
+    else:
+        use_colors = (
+            not settings.output_path
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        )
+        output = render_hours_as_text(hour_list, use_colors=use_colors)
+
+    _write_text_output(output, settings.output_path, encoding="utf-8")
+
+
+def render_hours_as_text(hour_list: list[dict[str, Any]], use_colors: bool = True) -> str:
+    """Render an hourly activity list into a human-readable text report."""
+    lines = []
+    title = "Hourly Activity Summary"
+
+    if use_colors:
+        lines.append(_colorize(f"=== {title} ===", "bold", "cyan"))
+    else:
+        lines.append(f"=== {title} ===")
+
+    sep = "-" * 95
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    col_hdr = f"  {'Hour':<15} {'Messages':<10} {'Authors':<9} {'Confs':<7} {'First Active':<18} {'Last Active':<18} {'BBS Name':<15}"
+    if use_colors:
+        lines.append(_colorize(col_hdr, "bold"))
+    else:
+        lines.append(col_hdr)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    for item in hour_list:
+        first_act = item["first_active"] or "N/A"
+        last_act = item["last_active"] or "N/A"
+        bbs = item["bbs_name"] or "Unknown"
+
+        row_str = f"  {item['hour']:<15} {item['message_count']:<10} {item['authors_count']:<9} {item['conferences_count']:<7} {first_act:<18} {last_act:<18} {bbs:<15}"
+        lines.append(row_str)
+
+    if use_colors:
+        lines.append(_colorize(sep, "dim"))
+    else:
+        lines.append(sep)
+
+    summary_str = f"Total Hours: {len(hour_list)}"
+    if use_colors:
+        lines.append(_colorize(summary_str, "bold", "green"))
+    else:
+        lines.append(summary_str)
+
+    return "\n".join(lines)
+
+
+def _render_hours_html(hour_list: list[dict[str, Any]], title: str) -> str:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{title}</h1>")
+    html_parts.append("<table class='stats-table'>")
+    html_parts.append("<thead><tr><th>Hour</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
+    html_parts.append("<tbody>")
+    for item in hour_list:
+        html_parts.append(
+            f"<tr><td>{html.escape(str(item['hour']))}</td>"
+            f"<td>{item['message_count']}</td>"
+            f"<td>{item['authors_count']}</td>"
+            f"<td>{item['conferences_count']}</td>"
+            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
+        )
+    html_parts.append("</tbody></table>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_hours_markdown(hour_list: list[dict[str, Any]], title: str) -> str:
+    md_parts = [f"# {title}\n"]
+    md_parts.append("| Hour | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
+    md_parts.append("|------|----------|---------|-------------|--------------|-------------|----------|")
+    for item in hour_list:
+        md_parts.append(
+            f"| {item['hour']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
+        )
+    return "\n".join(md_parts)
+
+
+def _render_hours_csv(hour_list: list[dict[str, Any]]) -> str:
+    return _render_csv_table(
+        hour_list,
+        [
+            "hour",
+            "message_count",
+            "authors_count",
+            "conferences_count",
+            "first_active",
+            "last_active",
+            "bbs_name",
+        ],
+    )

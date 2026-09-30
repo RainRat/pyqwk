@@ -529,6 +529,11 @@ qwk archive.qwk --list-sources
 qwk archive.qwk --list-dates
 ```
 
+**List message activity summarized by hour of day (00-23) across archives:**
+```bash
+qwk archive.qwk --list-hours
+```
+
 **Show conversation threads summary:**
 ```bash
 # Display a summary of all conversation threads (or use --list-threads)
@@ -842,6 +847,7 @@ for msg in messages:
 | `--list-msg-links`, `--list-message-links` | List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. |
 | `--list-sources`, `--list-files` | List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. |
 | `--list-dates`, `--list-timeline` | List message activity summarized by date across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
+| `--list-hours`, `--list-hourly` | List message activity summarized by hour of day (00-23) across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
 | `-u, --unique` | Remove duplicate messages during a merge. |
