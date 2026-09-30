@@ -65,6 +65,9 @@ python qwk.py my_archives/
 
 # Process a compressed TAR archive
 python qwk.py messages.tar.gz
+
+# Read directly from standard input (piping)
+cat archive.qwk | python qwk.py -
 ```
 
 ## Installation
@@ -278,6 +281,15 @@ qwk --list-presets
 **Read an archive:**
 ```bash
 qwk archive.qwk
+```
+
+**Pipe from standard input:**
+You can pass `-` as the file path to pipe archive data directly into `pyqwk`. The tool automatically detects the archive format (such as QWK, JSON, ZIP, or SQLite):
+```bash
+cat archive.qwk | qwk -
+
+# Download and view an archive directly from a URL
+curl -s https://example.com/messages.qwk | qwk - --oneline
 ```
 
 **Show a quick summary:**
