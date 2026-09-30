@@ -344,6 +344,10 @@ qwk archive.qwk --individual-files --organize-by-conference -o output_folder/
 
 **Organize files by date:**
 ```bash
+# Organize archives directly into YYYY/MM subdirectories
+qwk archive.qwk --organize-by-date
+
+# Save individual files organized into date subdirectories
 qwk archive.qwk --individual-files --organize-by-date -o output_folder/
 ```
 
@@ -850,7 +854,7 @@ for msg in messages:
 | `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize`, `--organize-by-conference`, `--organize-by-conf` | Organize files into folders by conference. |
-| `--organize-by-date` | Organize files into folders by date (YYYY/MM). |
+| `--organize-by-date` | Organize archives into folders by date (YYYY/MM). If used with -o, organizes the export folder instead. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead. |
 | `--organize-by-author` | Organize files into folders by author name. |
 | `--organize-by-to` | Organize files into folders by recipient name. |
