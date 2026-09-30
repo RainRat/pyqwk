@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_subjects,
     render_subjects_as_text,
-    _render_subjects_html,
-    _render_subjects_markdown,
+    _render_list_report_html,
+    _render_list_report_markdown,
     _render_subjects_csv,
 )
 from pyqwk.cli import main
@@ -74,13 +74,13 @@ def test_render_subjects_formats():
     assert "Total Subjects: 2" in text_color_out
 
     # HTML format
-    html_out = _render_subjects_html(subject_list, "Test Subjects")
+    html_out = _render_list_report_html(subject_list, "Test Subjects", "Subject", "subject")
     assert "<h1>Test Subjects</h1>" in html_out
     assert "<td>Short Topic</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_subjects_markdown(subject_list, "Test Subjects")
+    md_out = _render_list_report_markdown(subject_list, "Test Subjects", "Subject", "subject")
     assert "# Test Subjects" in md_out
     assert "| Subject | Messages | Authors | First Active | Last Active | BBS Name |" in md_out
     assert "| Short Topic | 5 | 1 | N/A | N/A | Unknown |" in md_out
