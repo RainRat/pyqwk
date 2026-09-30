@@ -193,3 +193,59 @@ def test_write_text_threaded_oneline():
     assert "General" in output
     assert "Parent" in output
     assert "└ Parent" in output
+
+
+def test_write_text_oneline_with_board_dict():
+    header = MessageHeader(
+        status=" ",
+        msgnum=42,
+        msgdate="01-01-24",
+        msgtime="12:00",
+        msgto="Alice",
+        msgfrom="Bob",
+        msgsubject="Board Dict Test",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag="",
+        confnum=99,
+        lognum=0,
+        nettag="",
+    )
+    msg = ParsedMessage(
+        text="", msgnum=42, refnum=None, confnum=99, header=header, confname=None
+    )
+
+    settings = ProcessingSettings(
+        verbose=True,
+        private=True,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="text",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        oneline=True,
+    )
+
+    board_dict = {99: "CustomConf"}
+
+    old_stdout = sys.stdout
+    sys.stdout = StringIO()
+    try:
+        _write_text([msg], None, settings=settings, board_dict=board_dict)
+        output = sys.stdout.getvalue()
+    finally:
+        sys.stdout = old_stdout
+
+    assert "Num" in output
+    assert "Conference" in output
+    assert "CustomConf" in output
+    assert "42" in output
+    assert "Board Dict Test" in output

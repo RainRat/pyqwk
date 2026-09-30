@@ -5543,7 +5543,7 @@ def _write_text(
                 settings,
                 i + 1,
                 use_colors,
-                {},
+                board_dict or {},
                 user_name_to_pass,
             )
         else:
