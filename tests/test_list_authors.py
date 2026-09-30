@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_authors,
     render_authors_as_text,
-    _render_authors_html,
-    _render_authors_markdown,
+    _render_entity_report_html,
+    _render_entity_report_markdown,
     _render_authors_csv,
 )
 from pyqwk.cli import main
@@ -72,13 +72,13 @@ def test_render_authors_formats():
     assert "Total Authors: 2" in text_color_out
 
     # HTML format
-    html_out = _render_authors_html(author_list, "Test Authors")
+    html_out = _render_entity_report_html(author_list, "Test Authors", "Author", "author")
     assert "<h1>Test Authors</h1>" in html_out
     assert "<td>Bob</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_authors_markdown(author_list, "Test Authors")
+    md_out = _render_entity_report_markdown(author_list, "Test Authors", "Author", "author")
     assert "# Test Authors" in md_out
     assert "| Author | Messages | First Active | Last Active | BBS Name |" in md_out
     assert "| Bob | 5 | N/A | N/A | Unknown |" in md_out

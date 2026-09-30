@@ -10331,14 +10331,6 @@ def render_authors_as_text(author_list: list[dict[str, Any]], use_colors: bool =
     return "\n".join(lines)
 
 
-def _render_authors_html(author_list: list[dict[str, Any]], title: str) -> str:
-    return _render_entity_report_html(author_list, title, "Author", "author")
-
-
-def _render_authors_markdown(author_list: list[dict[str, Any]], title: str) -> str:
-    return _render_entity_report_markdown(author_list, title, "Author", "author")
-
-
 def _render_authors_csv(author_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         author_list,
@@ -10430,9 +10422,9 @@ def show_list_authors(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in author_list)
     elif settings.format == "html":
-        output = _render_authors_html(author_list, title)
+        output = _render_entity_report_html(author_list, title, "Author", "author")
     elif settings.format == "markdown":
-        output = _render_authors_markdown(author_list, title)
+        output = _render_entity_report_markdown(author_list, title, "Author", "author")
     elif settings.format == "csv":
         output = _render_authors_csv(author_list)
     else:
@@ -10498,14 +10490,6 @@ def render_recipients_as_text(recipient_list: list[dict[str, Any]], use_colors: 
         lines.append(summary_str)
 
     return "\n".join(lines)
-
-
-def _render_recipients_html(recipient_list: list[dict[str, Any]], title: str) -> str:
-    return _render_entity_report_html(recipient_list, title, "Recipient", "recipient")
-
-
-def _render_recipients_markdown(recipient_list: list[dict[str, Any]], title: str) -> str:
-    return _render_entity_report_markdown(recipient_list, title, "Recipient", "recipient")
 
 
 def _render_recipients_csv(recipient_list: list[dict[str, Any]]) -> str:
@@ -10599,9 +10583,9 @@ def show_list_recipients(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in recipient_list)
     elif settings.format == "html":
-        output = _render_recipients_html(recipient_list, title)
+        output = _render_entity_report_html(recipient_list, title, "Recipient", "recipient")
     elif settings.format == "markdown":
-        output = _render_recipients_markdown(recipient_list, title)
+        output = _render_entity_report_markdown(recipient_list, title, "Recipient", "recipient")
     elif settings.format == "csv":
         output = _render_recipients_csv(recipient_list)
     else:

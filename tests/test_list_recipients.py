@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_recipients,
     render_recipients_as_text,
-    _render_recipients_html,
-    _render_recipients_markdown,
+    _render_entity_report_html,
+    _render_entity_report_markdown,
     _render_recipients_csv,
 )
 from pyqwk.cli import main
@@ -72,13 +72,13 @@ def test_render_recipients_formats():
     assert "Total Recipients: 2" in text_color_out
 
     # HTML format
-    html_out = _render_recipients_html(recipient_list, "Test Recipients")
+    html_out = _render_entity_report_html(recipient_list, "Test Recipients", "Recipient", "recipient")
     assert "<h1>Test Recipients</h1>" in html_out
     assert "<td>Alice</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_recipients_markdown(recipient_list, "Test Recipients")
+    md_out = _render_entity_report_markdown(recipient_list, "Test Recipients", "Recipient", "recipient")
     assert "# Test Recipients" in md_out
     assert "| Recipient | Messages | First Active | Last Active | BBS Name |" in md_out
     assert "| Alice | 5 | N/A | N/A | Unknown |" in md_out
