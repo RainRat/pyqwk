@@ -112,13 +112,14 @@ Using a virtual environment keeps your Python packages organized. It prevents co
 
 ### Option 2: Install System-Wide
 
-If you prefer not to use a virtual environment, you can install the tool directly to your system's Python environment.
+If you prefer not to use a virtual environment, you can install the tool directly for your user account.
 
 1. Open your terminal in the `pyqwk` folder.
 2. Install the package:
    ```bash
-   python -m pip install .
+   python -m pip install --user .
    ```
+   *Note: Using `--user` installs `pyqwk` into your user directory and prevents system package manager conflicts on modern Linux and macOS environments (PEP 668).*
 3. Run the tool:
    ```bash
    qwk archive.qwk
