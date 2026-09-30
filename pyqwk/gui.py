@@ -2464,8 +2464,13 @@ class QwkGuiApp:
 
     def _handle_search_navigation(self, delta: int) -> None:
         """Handle search navigation for Enter and Shift+Enter."""
-        # If a delayed search is pending, run it immediately and focus the list
+        # If a delayed search is pending, cancel timer, run immediately, and focus the list
         if self._search_timer is not None:
+            try:
+                self.root.after_cancel(self._search_timer)
+            except Exception:
+                pass
+            self._search_timer = None
             self.reload_messages()
             self.message_list.focus_set()
             return
