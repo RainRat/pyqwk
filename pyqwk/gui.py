@@ -763,6 +763,7 @@ class QwkGuiApp:
                 "Search & Filters",
                 [
                     ("Ctrl + F / /", "Search / Find"),
+                    ("Ctrl + E", "Focus Exclude Field"),
                     ("F3", "Find Next Match"),
                     ("Shift + F3", "Find Previous Match"),
                     ("Enter", "Find Next (Search)"),
