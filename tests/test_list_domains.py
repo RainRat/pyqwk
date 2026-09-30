@@ -374,3 +374,53 @@ def test_extract_domains_and_show_list_domains_coverage_gaps(message_factory):
                 out = json.loads(mock_write.call_args[0][0])
                 assert len(out) == 1
                 assert out[0]["domain"] == "valid-domain.com"
+
+
+def test_extract_domains_from_text_empty_domain_and_url_handling():
+    text = "Visit www.example.org or https://bbs.net"
+    domains = extract_domains_from_text(text)
+    assert "www.example.org" in domains
+    assert "bbs.net" in domains
+
+    # Cover line 7295 (if dom:) when split domain strips down to empty string
+    with patch("pyqwk.core.RE_EMAIL_PATTERN") as mock_re:
+        mock_re.findall.return_value = ["user@."]
+        assert extract_domains_from_text("dummy") == []
+
+
+def test_extract_domains_from_text_urlparse_exception_returns_empty():
+    with patch("urllib.parse.urlparse", side_effect=ValueError("Parse failure")):
+        domains = extract_domains_from_text("Visit https://example.com")
+        assert domains == []
+
+
+def test_show_list_domains_filters_whitespace_domains(message_factory):
+    m = message_factory(1, 0, "Subj 1")
+    m.text = "Hello world"
+    board = ConferenceMap()
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+    logger = logging.getLogger("test_domains_whitespace")
+
+    with patch("pyqwk.core.load_data", return_value=([m], board)):
+        with patch("pyqwk.core.extract_domains_from_text", return_value=["   ", "", "  "]):
+            with patch("logging.Logger.warning") as mock_warn:
+                show_list_domains(["dummy.qwk"], settings, logger)
+                mock_warn.assert_called_with("No domain names found across messages.")
+
