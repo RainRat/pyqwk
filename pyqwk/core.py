@@ -6964,14 +6964,6 @@ def render_emails_as_text(email_list: list[dict[str, Any]], use_colors: bool = T
     return "\n".join(lines)
 
 
-def _render_emails_html(email_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_html(email_list, title, "Email", "email")
-
-
-def _render_emails_markdown(email_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_markdown(email_list, title, "Email", "email")
-
-
 def _render_emails_csv(email_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         email_list,
@@ -7070,9 +7062,9 @@ def show_list_emails(
     if settings.format == "json":
         output = json.dumps(email_list, indent=4, ensure_ascii=False)
     elif settings.format == "html":
-        output = _render_emails_html(email_list, title)
+        output = _render_list_report_html(email_list, title, "Email", "email")
     elif settings.format == "markdown":
-        output = _render_emails_markdown(email_list, title)
+        output = _render_list_report_markdown(email_list, title, "Email", "email")
     elif settings.format == "csv":
         output = _render_emails_csv(email_list)
     else:

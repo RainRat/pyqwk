@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_emails,
     render_emails_as_text,
-    _render_emails_html,
-    _render_emails_markdown,
+    _render_list_report_html,
+    _render_list_report_markdown,
     _render_emails_csv,
 )
 from pyqwk.cli import main
@@ -77,13 +77,13 @@ def test_render_emails_formats():
     assert "Total Emails: 2" in text_color_out
 
     # HTML format
-    html_out = _render_emails_html(email_list, "Test Emails")
+    html_out = _render_list_report_html(email_list, "Test Emails", "Email", "email")
     assert "<h1>Test Emails</h1>" in html_out
     assert "<td>user@bbs.org</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_emails_markdown(email_list, "Test Emails")
+    md_out = _render_list_report_markdown(email_list, "Test Emails", "Email", "email")
     assert "# Test Emails" in md_out
     assert "| Email | Messages | Authors | First Active | Last Active | BBS Name |" in md_out
     assert "| user@bbs.org | 5 | 1 | N/A | N/A | Unknown |" in md_out
