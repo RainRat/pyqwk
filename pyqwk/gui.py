@@ -1078,6 +1078,8 @@ class QwkGuiApp:
         self.root.bind("<Control-E>", self._focus_exclude)
         self.root.bind("<Control-s>", self.export_messages)
         self.root.bind("<Control-S>", self.export_messages)
+        self.root.bind("<Control-Shift-S>", self.export_messages)
+        self.root.bind("<Control-Shift-s>", self.export_messages)
         self.root.bind("<Control-i>", self.show_stats_window)
         self.root.bind("<Control-I>", self.show_stats_window)
         self.root.bind("<Control-Shift-V>", self.validate_current_archives)

@@ -135,6 +135,8 @@ def test_new_ui_shortcuts_and_consistency(mock_gui_deps):
     bound_events = [args[0][0] for args in root.bind.call_args_list]
     assert "<Control-O>" in bound_events
     assert "<Control-S>" in bound_events
+    assert "<Control-Shift-S>" in bound_events
+    assert "<Control-Shift-s>" in bound_events
     assert "<Control-I>" in bound_events
     assert "<Control-F>" in bound_events
     assert "<Control-E>" in bound_events
