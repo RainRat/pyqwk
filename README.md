@@ -327,7 +327,7 @@ qwk archive.qwk --individual-files -o output.zip
 
 **Organize files by conference:**
 ```bash
-qwk archive.qwk --individual-files --organize -o output_folder/
+qwk archive.qwk --individual-files --organize-by-conference -o output_folder/
 ```
 
 **Organize files by date:**
@@ -837,7 +837,7 @@ for msg in messages:
 | `--list-attachments` | Show a summary of all attachments found across processed archives and exit. |
 | `--embed-attachments` | Include image attachments directly in HTML files. |
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
-| `--organize` | Organize files into folders by conference. |
+| `--organize`, `--organize-by-conference`, `--organize-by-conf` | Organize files into folders by conference. |
 | `--organize-by-date` | Organize files into folders by date (YYYY/MM). |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead. |
 | `--organize-by-author` | Organize files into folders by author name. |
