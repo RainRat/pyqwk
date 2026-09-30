@@ -256,6 +256,9 @@ examples:
   # Save statistics as a CSV report
   qwk archive.qwk --stats --format csv -o stats.csv
 
+  # Export statistics in JSON Lines format
+  qwk archive.qwk --stats --jsonl -o stats.jsonl
+
   # Save archive info as Markdown
   qwk archive.qwk --info --format markdown -o info.md
 

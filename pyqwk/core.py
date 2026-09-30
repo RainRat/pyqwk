@@ -11202,7 +11202,7 @@ def _render_dates_csv(date_list: list[dict[str, Any]]) -> str:
 def show_list_hours(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
-    """Read archives and export a summary list of message activity by hour of day (00-23)."""
+    """Read archives and export a summary list of message activity by hour of day (00-23) (supports Text, JSON, JSONL, HTML, Markdown, and CSV formats)."""
     all_messages = []
     allowed_conferences = set()
     allowed_exclude_conferences = set()
@@ -11289,6 +11289,8 @@ def show_list_hours(
     title = "Hourly Activity Summary"
     if settings.format == "json":
         output = json.dumps(hour_list, indent=4, ensure_ascii=False)
+    elif settings.format == "jsonl":
+        output = "\n".join(json.dumps(item, ensure_ascii=False) for item in hour_list)
     elif settings.format == "html":
         output = _render_hours_html(hour_list, title)
     elif settings.format == "markdown":

@@ -24,6 +24,7 @@ from pyqwk.core import (
     show_list_msg_links,
     show_list_sources,
     show_list_dates,
+    show_list_hours,
 )
 from pyqwk.cli import main
 
@@ -189,6 +190,7 @@ def test_show_list_reports_jsonl(tmp_path, jsonl_settings, mocker):
         ("msg_links", show_list_msg_links),
         ("sources", show_list_sources),
         ("dates", show_list_dates),
+        ("hours", show_list_hours),
     ]
 
     for name, func in reports:
