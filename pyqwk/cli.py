@@ -32,6 +32,7 @@ from pyqwk.core import (
     show_list_msg_links,
     show_list_sources,
     show_list_dates,
+    show_list_years,
     show_list_hours,
     validate_archive,
     show_validation_report,
@@ -1007,6 +1008,12 @@ examples:
         help="List message activity summarized by date across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-years",
+        "--list-yearly",
+        action="store_true",
+        help="List message activity summarized by year (YYYY) across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "--list-hours",
         "--list-hourly",
         action="store_true",
@@ -1162,6 +1169,8 @@ examples:
         or getattr(args, "list_files", False)
         or getattr(args, "list_dates", False)
         or getattr(args, "list_timeline", False)
+        or getattr(args, "list_years", False)
+        or getattr(args, "list_yearly", False)
         or getattr(args, "list_hours", False)
         or getattr(args, "list_hourly", False)
     ):
@@ -1422,6 +1431,10 @@ examples:
 
     if getattr(args, "list_dates", False) or getattr(args, "list_timeline", False):
         show_list_dates(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "list_years", False) or getattr(args, "list_yearly", False):
+        show_list_years(input_paths, settings, logger)
         sys.exit(0)
 
     if getattr(args, "list_hours", False) or getattr(args, "list_hourly", False):
