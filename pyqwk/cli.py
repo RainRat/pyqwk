@@ -187,18 +187,13 @@ class ListPresetsAction(argparse.Action):
             desc = details["desc"]
             equiv = details["equiv"]
 
-            desc_label = "Description:"
-            equiv_label = "Equivalent: "
-
             if use_colors:
-                preset_name = f"{bold_green}{preset_name}{reset}"
-                desc_label = f"{bold_white}{desc_label}{reset}"
-                equiv_label = f"{bold_white}{equiv_label}{reset}"
-                equiv = f"{dim_gray}{equiv}{reset}"
-
-            print(f"  {preset_name}")
-            print(f"    {desc_label} {desc}")
-            print(f"    {equiv_label} {equiv}\n")
+                styled_name = f"{bold_green}{preset_name:<14}{reset}"
+                styled_desc = f"{desc:<82}"
+                styled_equiv = f"{dim_gray}{equiv}{reset}"
+                print(f"  {styled_name} {styled_desc} {styled_equiv}")
+            else:
+                print(f"  {preset_name:<14} {desc:<82} {equiv}")
 
         parser.exit(0)
 
