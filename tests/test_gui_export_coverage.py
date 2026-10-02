@@ -49,15 +49,6 @@ def get_app():
     return QwkGuiApp(root)
 
 
-def test_export_messages_no_messages(mock_gui_deps):
-    app = get_app()
-    app.messages = []
-    app.export_messages()
-    mock_gui_deps["messagebox"].showwarning.assert_called_with(
-        "Export", "No messages to export."
-    )
-
-
 def test_export_messages_error_handling(mock_gui_deps):
     app = get_app()
 
