@@ -187,11 +187,11 @@ qwk-gui messages.db
 
 **Archive & Stats**
 - **Ctrl + O**: Open an archive.
-- **Ctrl + S**: Export the current filtered view.
+- **Ctrl + S** or **Ctrl + Shift + S**: Export the current filtered view.
 - **Ctrl + I**: View archive statistics and reports.
 - **Ctrl + Shift + V**: Validate archive integrity and completeness.
 - **Ctrl + Q**: Exit the application.
-- **F1**: Display all keyboard shortcuts.
+- **F1** or **Ctrl + H**: Display all keyboard shortcuts.
 
 **View & Display**
 - **Ctrl + Plus** or **Ctrl + Equal**: Increase message font size (zoom in).
@@ -369,6 +369,10 @@ qwk archive.qwk --individual-files --organize-by-subject -o output_folder/
 
 **Organize files by BBS:**
 ```bash
+# Organize archives directly into subdirectories named after the BBS
+qwk archive.qwk --organize-by-bbs
+
+# Save individual files organized into BBS subdirectories
 qwk archive.qwk --individual-files --organize-by-bbs -o output_folder/
 ```
 
