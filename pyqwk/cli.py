@@ -192,9 +192,9 @@ class ListPresetsAction(argparse.Action):
 
             if use_colors:
                 preset_name = f"{bold_green}{preset_name}{reset}"
-                desc_label = f"{bold_white}{desc_label}{reset}"
-                equiv_label = f"{bold_white}{equiv_label}{reset}"
-                equiv = f"{dim_gray}{equiv}{reset}"
+                desc_label = f"\033[1m{desc_label}{reset}"
+                equiv_label = f"\033[1m{equiv_label}{reset}"
+                equiv = f"\033[2;36m{equiv}{reset}"
 
             print(f"  {preset_name}")
             print(f"    {desc_label} {desc}")

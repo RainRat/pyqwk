@@ -53,10 +53,10 @@ def test_cli_list_presets_with_color():
     assert excinfo.value.code == 0
     output = mock_stdout.getvalue()
 
-    # ANSI code for Bold Cyan (header), Bold Green (presets), and Dim (equivalents)
+    # ANSI code for Bold Cyan (header), Bold Green (presets), and Cyan (equivalents)
     assert "\033[1;36m" in output  # Bold Cyan
     assert "\033[1;32m" in output  # Bold Green
-    assert "\033[2m" in output      # Dim
+    assert "\033[2;36m" in output  # Dim Cyan
     assert "\033[0m" in output      # Reset
 
     # Verify content remains present
