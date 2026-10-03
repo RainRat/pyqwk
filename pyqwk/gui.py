@@ -1324,17 +1324,19 @@ class QwkGuiApp:
         except Exception:
             combo.set(default_value)
 
-    def _reset_bbs_filter(self) -> None:
+    def _reset_bbs_filter(self, reload: bool = True) -> None:
         """Reset the BBS selection to the default state."""
         self._reset_combo_selection(self.bbs_combo, "All BBSes")
-        self.reload_messages()
+        if reload:
+            self.reload_messages()
 
-    def _reset_conf_filter(self) -> None:
+    def _reset_conf_filter(self, reload: bool = True) -> None:
         """Reset the conference selection to the default state."""
         self._reset_combo_selection(self.conf_combo, "All Conferences")
-        self.reload_messages()
+        if reload:
+            self.reload_messages()
 
-    def _reset_visibility_filters(self) -> None:
+    def _reset_visibility_filters(self, reload: bool = True) -> None:
         """Reset all nine visibility checkboxes to their default values."""
         self.private_var.set(True)
         self.has_attach_var.set(False)
@@ -1345,9 +1347,10 @@ class QwkGuiApp:
         self.has_phones_var.set(False)
         self.has_ansi_var.set(False)
         self.has_msg_links_var.set(False)
-        self.reload_messages()
+        if reload:
+            self.reload_messages()
 
-    def _reset_display_options(self) -> None:
+    def _reset_display_options(self, reload: bool = True) -> None:
         """Reset all six display checkboxes/options to their default values."""
         self.threaded_var.set(False)
         self.clean_var.set(False)
@@ -1356,13 +1359,15 @@ class QwkGuiApp:
         self.redact_pii_var.set(False)
         self.embed_attach_var.set(False)
         self._update_wrap()
-        self.reload_messages()
+        if reload:
+            self.reload_messages()
 
-    def _reset_word_limits(self) -> None:
+    def _reset_word_limits(self, reload: bool = True) -> None:
         """Reset min/max word count limits to default empty state and reload messages."""
         self.min_words_var.set("")
         self.max_words_var.set("")
-        self.reload_messages()
+        if reload:
+            self.reload_messages()
 
     def _push_current_to_history(self) -> None:
         """Push the currently selected message's conference and number to history."""
@@ -1439,30 +1444,12 @@ class QwkGuiApp:
         """Reset all filters and search to their default state."""
         self.search_var.set("")
         self.exclude_var.set("")
-        self.min_words_var.set("")
-        self.max_words_var.set("")
-        self._reset_combo_selection(self.bbs_combo, "All BBSes")
-        self._reset_combo_selection(self.conf_combo, "All Conferences")
-        self.private_var.set(True)
-        self.has_attach_var.set(False)
-        self.mine_var.set(False)
-        self.on_this_day_var.set(False)
-        self.has_links_var.set(False)
-        self.has_emails_var.set(False)
-        self.has_phones_var.set(False)
-        self.has_ansi_var.set(False)
-        self.has_msg_links_var.set(False)
-
-        # Reset display options
-        self.clean_var.set(False)
-        self.ansi_var.set(False)
-        self.threaded_var.set(False)
-        self.redact_pii_var.set(False)
-        self.embed_attach_var.set(False)
         self.regex_var.set(False)
-
-        self.wrap_var.set(True)
-        self._update_wrap()
+        self._reset_word_limits(reload=False)
+        self._reset_bbs_filter(reload=False)
+        self._reset_conf_filter(reload=False)
+        self._reset_visibility_filters(reload=False)
+        self._reset_display_options(reload=False)
         self.reload_messages()
         self.message_list.focus_set()
 

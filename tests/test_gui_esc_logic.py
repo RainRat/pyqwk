@@ -160,3 +160,36 @@ def test_is_any_filter_active_includes_msg_links(mock_gui_deps):
     # Check has_msg_links_var makes it active
     app.has_msg_links_var.get.return_value = True
     assert app._is_any_filter_active() is True
+
+
+def test_clear_filters_single_reload_and_delegation(mock_gui_deps):
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app.search_var = MagicMock()
+    app.exclude_var = MagicMock()
+    app.regex_var = MagicMock()
+    app.message_list = MagicMock()
+
+    with (
+        patch.object(app, "_reset_word_limits") as mock_words,
+        patch.object(app, "_reset_bbs_filter") as mock_bbs,
+        patch.object(app, "_reset_conf_filter") as mock_conf,
+        patch.object(app, "_reset_visibility_filters") as mock_vis,
+        patch.object(app, "_reset_display_options") as mock_disp,
+        patch.object(app, "reload_messages") as mock_reload,
+    ):
+        app.clear_filters()
+
+        app.search_var.set.assert_called_with("")
+        app.exclude_var.set.assert_called_with("")
+        app.regex_var.set.assert_called_with(False)
+
+        mock_words.assert_called_once_with(reload=False)
+        mock_bbs.assert_called_once_with(reload=False)
+        mock_conf.assert_called_once_with(reload=False)
+        mock_vis.assert_called_once_with(reload=False)
+        mock_disp.assert_called_once_with(reload=False)
+
+        mock_reload.assert_called_once()
+        app.message_list.focus_set.assert_called_once()
