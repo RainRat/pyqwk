@@ -139,6 +139,8 @@ class TestGuiHelp:
 
         # Ensure insert is called to add references to text widget
         assert text_mock.insert.call_count > 0
+        inserted_texts = [str(call[0][1]) for call in text_mock.insert.call_args_list if len(call[0]) > 1]
+        assert any("Ctrl+Shift+V" in t for t in inserted_texts), "Ctrl+Shift+V was not found in shortcuts window text"
         text_mock.config.assert_any_call(state="disabled")
 
         # Verify close button is added and focused

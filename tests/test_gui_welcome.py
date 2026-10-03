@@ -52,6 +52,10 @@ def test_welcome_screen_on_startup():
 
         assert found_welcome, "Welcome screen text was not inserted into detail_text"
 
+        # Check that Ctrl + Shift + V is included in welcome screen shortcuts
+        found_validate = any("Ctrl + Shift + V" in str(call[0][1]) for call in mock_detail_text.insert.call_args_list if len(call[0]) > 1)
+        assert found_validate, "Validation shortcut was not found in welcome screen"
+
 
 def test_no_welcome_screen_with_path():
     """Verify that current_path is set when an initial path is provided."""
