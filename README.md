@@ -187,7 +187,7 @@ qwk-gui messages.db
 
 **Archive & Stats**
 - **Ctrl + O**: Open an archive.
-- **Ctrl + S**: Export the current filtered view.
+- **Ctrl + S** or **Ctrl + Shift + S**: Export the current filtered view.
 - **Ctrl + I**: View archive statistics and reports.
 - **Ctrl + Shift + V**: Validate archive integrity and completeness.
 - **Ctrl + Q**: Exit the application.
