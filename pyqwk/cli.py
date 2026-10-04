@@ -33,6 +33,7 @@ from pyqwk.core import (
     show_list_sources,
     show_list_dates,
     show_list_hours,
+    show_list_weekdays,
     validate_archive,
     show_validation_report,
 )
@@ -1013,6 +1014,13 @@ examples:
         help="List message activity summarized by hour of day (00-23) across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
     )
     parser.add_argument(
+        "--list-weekdays",
+        "--list-days",
+        "--list-dayofweek",
+        action="store_true",
+        help="List message activity summarized by day of the week (Monday-Sunday) across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
@@ -1164,6 +1172,9 @@ examples:
         or getattr(args, "list_timeline", False)
         or getattr(args, "list_hours", False)
         or getattr(args, "list_hourly", False)
+        or getattr(args, "list_weekdays", False)
+        or getattr(args, "list_days", False)
+        or getattr(args, "list_dayofweek", False)
     ):
         output_mode = "stdout" if not output_path else "file"
         resolved_output_path = output_path
@@ -1426,6 +1437,14 @@ examples:
 
     if getattr(args, "list_hours", False) or getattr(args, "list_hourly", False):
         show_list_hours(input_paths, settings, logger)
+        sys.exit(0)
+
+    if (
+        getattr(args, "list_weekdays", False)
+        or getattr(args, "list_days", False)
+        or getattr(args, "list_dayofweek", False)
+    ):
+        show_list_weekdays(input_paths, settings, logger)
         sys.exit(0)
 
     if args.merge or (len(input_paths) == 1 and not has_directory_input):
