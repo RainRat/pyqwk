@@ -488,6 +488,10 @@ class QwkGuiApp:
                         label=f"Search for '{display_text}'",
                         command=self._search_from_selection,
                     )
+                    menu.add_command(
+                        label=f"Exclude '{display_text}'",
+                        command=self._exclude_from_selection,
+                    )
         except tk.TclError:
             pass
 
@@ -501,6 +505,19 @@ class QwkGuiApp:
                 selected_text = self.detail_text.get(*sel_range).strip()
                 if selected_text:
                     self.search_var.set(selected_text)
+                    self.reload_messages()
+                    self.message_list.focus_set()
+        except tk.TclError:
+            pass
+
+    def _exclude_from_selection(self) -> None:
+        """Exclude the currently selected text in the detail viewer from view."""
+        try:
+            sel_range = self.detail_text.tag_ranges("sel")
+            if sel_range:
+                selected_text = self.detail_text.get(*sel_range).strip()
+                if selected_text:
+                    self.exclude_var.set(selected_text)
                     self.reload_messages()
                     self.message_list.focus_set()
         except tk.TclError:
