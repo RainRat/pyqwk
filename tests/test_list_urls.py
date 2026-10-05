@@ -11,8 +11,8 @@ from pyqwk.core import (
     ProcessingSettings,
     show_list_urls,
     render_urls_as_text,
-    _render_urls_html,
-    _render_urls_markdown,
+    _render_list_report_html,
+    _render_list_report_markdown,
     _render_urls_csv,
 )
 from pyqwk.cli import main
@@ -77,13 +77,13 @@ def test_render_urls_formats():
     assert "Total URLs: 2" in text_color_out
 
     # HTML format
-    html_out = _render_urls_html(url_list, "Test URLs")
+    html_out = _render_list_report_html(url_list, "Test URLs", "URL", "url")
     assert "<h1>Test URLs</h1>" in html_out
     assert "<td>http://bbs.org</td>" in html_out
     assert "<td>N/A</td>" in html_out
 
     # Markdown format
-    md_out = _render_urls_markdown(url_list, "Test URLs")
+    md_out = _render_list_report_markdown(url_list, "Test URLs", "URL", "url")
     assert "# Test URLs" in md_out
     assert "| URL | Messages | Authors | First Active | Last Active | BBS Name |" in md_out
     assert "| http://bbs.org | 5 | 1 | N/A | N/A | Unknown |" in md_out
