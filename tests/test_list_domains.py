@@ -424,3 +424,51 @@ def test_show_list_domains_filters_whitespace_domains(message_factory):
                 show_list_domains(["dummy.qwk"], settings, logger)
                 mock_warn.assert_called_with("No domain names found across messages.")
 
+
+def test_show_list_domains_out_of_order_date_tracking(message_factory):
+    m1 = message_factory(1, 0, "Subj 1")
+    m1.text = "Visit http://domain.org"
+    m1.datetime = datetime.datetime(2024, 5, 10)
+
+    m2 = message_factory(2, 0, "Subj 2")
+    m2.text = "Visit http://domain.org"
+    m2.datetime = datetime.datetime(2024, 6, 15)
+
+    m3 = message_factory(3, 0, "Subj 3")
+    m3.text = "Visit http://domain.org"
+    m3.datetime = datetime.datetime(2024, 1, 1)
+
+    board = ConferenceMap()
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="none",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        quiet=True,
+    )
+    logger = logging.getLogger("test_domains_out_of_order")
+
+    with patch("pyqwk.core.load_data", return_value=([m1, m2, m3], board)):
+        with patch("pyqwk.core._write_text_output") as mock_write:
+            show_list_domains(["dummy.qwk"], settings, logger)
+            mock_write.assert_called_once()
+            out = json.loads(mock_write.call_args[0][0])
+            assert len(out) == 1
+            assert out[0]["first_active"] == "2024-01-01"
+            assert out[0]["last_active"] == "2024-06-15"
+
+
+def test_extract_domains_from_text_multiple_at_symbols():
+    with patch("pyqwk.core.RE_EMAIL_PATTERN") as mock_re:
+        mock_re.findall.return_value = ["user@host@domain.com"]
+        assert extract_domains_from_text("dummy text") == []
