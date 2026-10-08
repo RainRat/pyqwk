@@ -44,7 +44,7 @@ Inside these packets, messages are organized into **Conferences**. A Conference 
   - **Fedora:** `sudo dnf install python3-tkinter`
   - **Arch Linux:** `sudo pacman -S tk`
   - **macOS (Homebrew):** `brew install python-tk`
-- **tqdm:** Adds a progress bar. Install with: `python -m pip install tqdm`
+- **tqdm:** Displays an animated progress bar during archive processing. Install with `python -m pip install tqdm`. If not installed, `pyqwk` works normally without progress bars.
 - **unzip:** Helps open older ZIP archives. Install it if `pyqwk` cannot open your file:
   - **Ubuntu/Debian:** `sudo apt install unzip`
   - **Fedora:** `sudo dnf install unzip`
