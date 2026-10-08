@@ -2487,9 +2487,10 @@ class QwkGuiApp:
         self._handle_search_navigation(1)
         return "break"
 
-    def _on_search_shift_enter(self, _event: object) -> None:
+    def _on_search_shift_enter(self, _event: object) -> str:
         """Move back through matches when Shift+Enter is pressed."""
         self._handle_search_navigation(-1)
+        return "break"
 
     def _on_search_control_enter(self, _event: object) -> str:
         """Reload messages and focus the message list treeview."""
