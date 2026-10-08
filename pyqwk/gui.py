@@ -1281,14 +1281,6 @@ class QwkGuiApp:
         if entry:
             entry.focus_set()
 
-    def _clear_search_field(self) -> None:
-        """Clear the search field, immediately reload messages, and restore focus."""
-        self._clear_filter_field("search_var", "search_entry")
-
-    def _clear_exclude_field(self) -> None:
-        """Clear the exclude field, immediately reload messages, and restore focus."""
-        self._clear_filter_field("exclude_var", "exclude_entry")
-
     def clear_search(self, _event: object | None = None) -> None:
         """Clear search fields or reset filters based on focus and content.
 
@@ -1604,7 +1596,7 @@ class QwkGuiApp:
             search_frame,
             text="✕",
             width=2,
-            command=self._clear_search_field,
+            command=lambda: self._clear_filter_field("search_var", "search_entry"),
         )
         btn_clear_search.pack(side=tk.LEFT, padx=(0, 2))
         ToolTip(btn_clear_search, "Clear Search Field")
@@ -1649,7 +1641,7 @@ class QwkGuiApp:
             search_frame,
             text="✕",
             width=2,
-            command=self._clear_exclude_field,
+            command=lambda: self._clear_filter_field("exclude_var", "exclude_entry"),
         )
         btn_clear_exclude.pack(side=tk.LEFT, padx=(0, 2))
         ToolTip(btn_clear_exclude, "Clear Exclude Field")
