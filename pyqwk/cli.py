@@ -910,103 +910,104 @@ examples:
         help="List all available workflow presets, their descriptions, and equivalent command-line options, then exit.",
     )
 
-    parser.add_argument(
+    reports_group = parser.add_argument_group("Archive Reports & Summaries")
+    reports_group.add_argument(
         "-I",
         "--info",
         action="store_true",
         help="Show archive information and exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--stats",
         action="store_true",
         help="Show archive statistics and exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--merge-stats",
         action="store_true",
         help="Show a single merged report when analyzing multiple archives.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--threads",
         "--list-threads",
         action="store_true",
         help="Show a summary of all conversation threads and exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-attachments",
         action="store_true",
         help="Show a list of all attachments found across processed archives and exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-conferences",
         action="store_true",
         help="List all conference areas across input archives and exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-authors",
         action="store_true",
         help="List all message authors across input archives with message counts and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-recipients",
         "--list-to",
         action="store_true",
         help="List all message recipients across input archives with message counts and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-bbs",
         action="store_true",
         help="List all Bulletin Board Systems (BBS) across input archives with conference/message counts and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-subjects",
         action="store_true",
         help="List all message subjects across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-urls",
         action="store_true",
         help="List all extracted URLs across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-emails",
         action="store_true",
         help="List all extracted email addresses across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-domains",
         action="store_true",
         help="List all extracted domain names across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-phones",
         action="store_true",
         help="List all extracted phone numbers across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-keywords",
         action="store_true",
         help="List top extracted keywords across input archives with frequency counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-msg-links",
         "--list-message-links",
         action="store_true",
         help="List all internal message link references across input archives with message counts, author counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-sources",
         "--list-files",
         action="store_true",
         help="List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-dates",
         "--list-timeline",
         action="store_true",
         help="List message activity summarized by date across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
         "--list-hours",
         "--list-hourly",
         action="store_true",
