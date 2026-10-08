@@ -6779,14 +6779,6 @@ def render_urls_as_text(url_list: list[dict[str, Any]], use_colors: bool = True)
     return "\n".join(lines)
 
 
-def _render_urls_html(url_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_html(url_list, title, "URL", "url")
-
-
-def _render_urls_markdown(url_list: list[dict[str, Any]], title: str) -> str:
-    return _render_list_report_markdown(url_list, title, "URL", "url")
-
-
 def _render_csv_table(
     records: list[dict[str, Any]], fieldnames: list[str], **writer_kwargs: Any
 ) -> str:
@@ -6898,9 +6890,9 @@ def show_list_urls(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in url_list)
     elif settings.format == "html":
-        output = _render_urls_html(url_list, title)
+        output = _render_list_report_html(url_list, title, "URL", "url")
     elif settings.format == "markdown":
-        output = _render_urls_markdown(url_list, title)
+        output = _render_list_report_markdown(url_list, title, "URL", "url")
     elif settings.format == "csv":
         output = _render_urls_csv(url_list)
     else:
