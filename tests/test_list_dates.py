@@ -259,6 +259,52 @@ def test_show_list_dates_coverage_gaps(tmp_path, base_settings, mocker):
     assert "2023-10-12" in written_text
 
 
+def test_show_list_dates_with_none_date(tmp_path, base_settings, mocker):
+    logger = logging.getLogger("pyqwk.test")
+
+    hdr = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="",
+        msgtime="",
+        msgto="Bob",
+        msgfrom="Alice",
+        msgsubject="No Date Subject",
+        msgpassword="",
+        refnum=None,
+        numblocks=1,
+        msgflag=" ",
+        confnum=1,
+        lognum=1,
+        nettag="",
+    )
+    msg = ParsedMessage(
+        text="Text with missing date",
+        msgnum=1,
+        refnum=None,
+        confnum=1,
+        header=hdr,
+        source_file="nodate_src.qwk",
+    )
+
+    mocker.patch("pyqwk.core._parse_qwk_date", return_value=None)
+    mocker.patch("pyqwk.core.load_data", return_value=([msg], {}))
+
+    json_path = str(tmp_path / "dates_nodate.json")
+    base_settings.format = "json"
+    base_settings.output_path = json_path
+
+    show_list_dates([str(tmp_path / "nodate_src.qwk")], base_settings, logger)
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert len(data) == 1
+    assert data[0]["date"] == "Unknown"
+    assert data[0]["first_active"] is None
+    assert data[0]["last_active"] is None
+
+
 def test_show_list_dates_filtering_and_edge_branches(tmp_path, base_settings, mocker):
     logger = logging.getLogger("pyqwk.test")
 
