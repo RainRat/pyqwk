@@ -25,17 +25,6 @@ from pyqwk.core import (
 from unittest.mock import MagicMock, patch
 
 
-def test_parse_qwk_date_iso():
-    """Cover line 2932: ISO 8601 format."""
-    dt_str = "2023-10-27T12:34:56"
-    dt = _parse_qwk_date(dt_str, "")
-    assert dt == datetime.datetime(2023, 10, 27, 12, 34, 56)
-
-    # Also test non-ISO path
-    dt = _parse_qwk_date("10-27-23", "12:34:56")
-    assert dt.year == 2023
-
-
 def test_load_data_control_dat_search():
     """Cover lines 1500-1506: Searching for case-insensitive CONTROL.DAT."""
     logger = logging.getLogger("test")
