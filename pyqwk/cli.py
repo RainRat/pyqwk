@@ -33,6 +33,7 @@ from pyqwk.core import (
     show_list_sources,
     show_list_dates,
     show_list_hours,
+    show_list_days,
     show_list_years,
     validate_archive,
     show_validation_report,
@@ -1014,7 +1015,14 @@ examples:
         action="store_true",
         help="List message activity summarized by hour of day (00-23) across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
     )
-    parser.add_argument(
+    reports_group.add_argument(
+        "--list-days",
+        "--list-day-of-week",
+        "--list-weekdays",
+        action="store_true",
+        help="List message activity summarized by day of week (Monday-Sunday) across input archives with message counts, author counts, conference counts, and BBS names, then exit. You can save this to a file with -o.",
+    )
+    reports_group.add_argument(
         "--list-years",
         "--list-yearly",
         action="store_true",
@@ -1172,6 +1180,9 @@ examples:
         or getattr(args, "list_timeline", False)
         or getattr(args, "list_hours", False)
         or getattr(args, "list_hourly", False)
+        or getattr(args, "list_days", False)
+        or getattr(args, "list_day_of_week", False)
+        or getattr(args, "list_weekdays", False)
         or getattr(args, "list_years", False)
         or getattr(args, "list_yearly", False)
     ):
@@ -1436,6 +1447,13 @@ examples:
 
     if getattr(args, "list_hours", False) or getattr(args, "list_hourly", False):
         show_list_hours(input_paths, settings, logger)
+        sys.exit(0)
+    if (
+        getattr(args, "list_days", False)
+        or getattr(args, "list_day_of_week", False)
+        or getattr(args, "list_weekdays", False)
+    ):
+        show_list_days(input_paths, settings, logger)
         sys.exit(0)
 
     if getattr(args, "list_years", False) or getattr(args, "list_yearly", False):

@@ -541,6 +541,11 @@ qwk archive.qwk --list-dates
 qwk archive.qwk --list-hours
 ```
 
+**List message activity summarized by day of week (Monday-Sunday) across archives:**
+```bash
+qwk archive.qwk --list-days
+```
+
 **List message activity summarized by year (YYYY) across archives:**
 ```bash
 qwk archive.qwk --list-years
@@ -860,6 +865,7 @@ for msg in messages:
 | `--list-sources`, `--list-files` | List all source files across input archives with message counts, author counts, conference counts, and active date ranges, then exit. |
 | `--list-dates`, `--list-timeline` | List message activity summarized by date across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
 | `--list-hours`, `--list-hourly` | List message activity summarized by hour of day (00-23) across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
+| `--list-days`, `--list-day-of-week`, `--list-weekdays` | List message activity summarized by day of week (Monday-Sunday) across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
 | `--list-years`, `--list-yearly` | List message activity summarized by year (YYYY) across input archives with message counts, author counts, conference counts, and BBS names, then exit. |
 | `--separator` | Set how to separate messages in the output file (auto, none, dashes, blank). |
 | `-m, --merge` | Combine multiple archives into one file. |
