@@ -721,6 +721,11 @@ class QwkGuiApp:
             self._navigate_bbs(1)
             return "break"
 
+        # Return focus to message list on Return / Enter
+        if event.keysym in ("Return", "KP_Enter"):
+            self.message_list.focus_set()
+            return "break"
+
         # Allow text navigation keys and search controls
         if event.keysym in (
             "Up",
@@ -1315,6 +1320,11 @@ class QwkGuiApp:
                 self._reset_word_limits()
                 self.message_list.focus_set()
                 return
+
+        detail_text = getattr(self, "detail_text", None)
+        if focused_widget == detail_text:
+            self.message_list.focus_set()
+            return
 
         is_search_focused = focused_widget in (search_entry, exclude_entry)
         has_search_content = bool(
