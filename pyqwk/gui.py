@@ -771,7 +771,7 @@ class QwkGuiApp:
                 "Archive & Stats",
                 [
                     ("Ctrl + O", "Open Archive"),
-                    ("Ctrl + S", "Export Current View"),
+                    ("Ctrl + S / Ctrl + Shift + S", "Export Current View"),
                     ("Ctrl + I", "Archive Statistics"),
                     ("Ctrl + Shift + V", "Validate Archive"),
                     ("Ctrl + Q", "Quit Application"),
@@ -3769,7 +3769,7 @@ class QwkGuiApp:
                 "Archive & Stats",
                 [
                     ("Ctrl+O", "Open Archive(s)"),
-                    ("Ctrl+S", "Export Current View"),
+                    ("Ctrl+S / Ctrl+Shift+S", "Export Current View"),
                     ("Ctrl+I", "Archive Statistics"),
                     ("Ctrl+Shift+V", "Validate Archive Integrity"),
                     ("Ctrl+Q", "Quit Application"),
