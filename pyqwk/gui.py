@@ -793,7 +793,7 @@ class QwkGuiApp:
                     ("Shift+Enter", "Find Previous (Search)"),
                     ("Ctrl+Enter", "Apply & Focus List"),
                     ("Esc", "Clear Search / Filters"),
-                    ("Ctrl + Shift + X", "Reset All Filters"),
+                    ("Ctrl + X / Ctrl + Shift + X", "Reset All Filters"),
                 ],
             ),
             (
@@ -3797,7 +3797,7 @@ class QwkGuiApp:
                     ("Shift+Enter", "Find Previous (Search focused)"),
                     ("Ctrl+Enter", "Apply & Focus Message List"),
                     ("Esc", "Clear Search / Filters"),
-                    ("Ctrl+Shift+X", "Reset All Filters"),
+                    ("Ctrl+X / Ctrl+Shift+X", "Reset All Filters"),
                 ],
             ),
             (
