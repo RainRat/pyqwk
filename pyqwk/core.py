@@ -6607,6 +6607,49 @@ def _render_entity_report_markdown(
     return "\n".join(md_parts)
 
 
+def _render_timeline_report_html(
+    items: list[dict[str, Any]], title: str, col1_header: str, key_name: str
+) -> str:
+    html_parts = _get_html_header(title)
+    html_parts.append(f"<h1>{title}</h1>")
+    html_parts.append("<table class='stats-table'>")
+    html_parts.append(
+        f"<thead><tr><th>{col1_header}</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>"
+    )
+    html_parts.append("<tbody>")
+    for item in items:
+        html_parts.append(
+            f"<tr><td>{html.escape(str(item[key_name]))}</td>"
+            f"<td>{item['message_count']}</td>"
+            f"<td>{item['authors_count']}</td>"
+            f"<td>{item['conferences_count']}</td>"
+            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
+            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
+        )
+    html_parts.append("</tbody></table>")
+    html_parts.extend(_get_html_footer())
+    return "\n".join(html_parts)
+
+
+def _render_timeline_report_markdown(
+    items: list[dict[str, Any]], title: str, col1_header: str, key_name: str
+) -> str:
+    sep = "-" * (len(col1_header) + 2)
+    md_parts = [f"# {title}\n"]
+    md_parts.append(
+        f"| {col1_header} | Messages | Authors | Conferences | First Active | Last Active | BBS Name |"
+    )
+    md_parts.append(
+        f"|{sep}|----------|---------|-------------|--------------|-------------|----------|"
+    )
+    for item in items:
+        md_parts.append(
+            f"| {item[key_name]} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
+        )
+    return "\n".join(md_parts)
+
+
 def _render_msg_links_csv(msg_link_list: list[dict[str, Any]]) -> str:
     return _render_csv_table(
         msg_link_list,
@@ -10817,35 +10860,11 @@ def render_sources_as_text(source_list: list[dict[str, Any]], use_colors: bool =
 
 
 def _render_sources_html(source_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Source File</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in source_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['source_file']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{item['conferences_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_timeline_report_html(source_list, title, "Source File", "source_file")
 
 
 def _render_sources_markdown(source_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Source File | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
-    md_parts.append("|-------------|----------|---------|-------------|--------------|-------------|----------|")
-    for item in source_list:
-        md_parts.append(
-            f"| {item['source_file']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_timeline_report_markdown(source_list, title, "Source File", "source_file")
 
 
 def _render_sources_csv(source_list: list[dict[str, Any]]) -> str:
@@ -11129,35 +11148,11 @@ def render_dates_as_text(date_list: list[dict[str, Any]], use_colors: bool = Tru
 
 
 def _render_dates_html(date_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Date</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in date_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['date']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{item['conferences_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_timeline_report_html(date_list, title, "Date", "date")
 
 
 def _render_dates_markdown(date_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Date | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
-    md_parts.append("|------|----------|---------|-------------|--------------|-------------|----------|")
-    for item in date_list:
-        md_parts.append(
-            f"| {item['date']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_timeline_report_markdown(date_list, title, "Date", "date")
 
 
 def _render_dates_csv(date_list: list[dict[str, Any]]) -> str:
@@ -11340,35 +11335,11 @@ def render_months_as_text(month_list: list[dict[str, Any]], use_colors: bool = T
 
 
 def _render_months_html(month_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Month</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in month_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['month']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{item['conferences_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_timeline_report_html(month_list, title, "Month", "month")
 
 
 def _render_months_markdown(month_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Month | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
-    md_parts.append("|-------|----------|---------|-------------|--------------|-------------|----------|")
-    for item in month_list:
-        md_parts.append(
-            f"| {item['month']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_timeline_report_markdown(month_list, title, "Month", "month")
 
 
 def _render_months_csv(month_list: list[dict[str, Any]]) -> str:
@@ -11551,35 +11522,11 @@ def render_days_as_text(day_list: list[dict[str, Any]], use_colors: bool = True)
 
 
 def _render_days_html(day_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Day</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in day_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['day']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{item['conferences_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_timeline_report_html(day_list, title, "Day", "day")
 
 
 def _render_days_markdown(day_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Day | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
-    md_parts.append("|-----|----------|---------|-------------|--------------|-------------|----------|")
-    for item in day_list:
-        md_parts.append(
-            f"| {item['day']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_timeline_report_markdown(day_list, title, "Day", "day")
 
 
 def _render_days_csv(day_list: list[dict[str, Any]]) -> str:
@@ -11756,35 +11703,11 @@ def render_hours_as_text(hour_list: list[dict[str, Any]], use_colors: bool = Tru
 
 
 def _render_hours_html(hour_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Hour</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in hour_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['hour']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{item['conferences_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_timeline_report_html(hour_list, title, "Hour", "hour")
 
 
 def _render_hours_markdown(hour_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Hour | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
-    md_parts.append("|------|----------|---------|-------------|--------------|-------------|----------|")
-    for item in hour_list:
-        md_parts.append(
-            f"| {item['hour']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_timeline_report_markdown(hour_list, title, "Hour", "hour")
 
 
 def _render_hours_csv(hour_list: list[dict[str, Any]]) -> str:
@@ -11967,35 +11890,11 @@ def render_years_as_text(year_list: list[dict[str, Any]], use_colors: bool = Tru
 
 
 def _render_years_html(year_list: list[dict[str, Any]], title: str) -> str:
-    html_parts = _get_html_header(title)
-    html_parts.append(f"<h1>{title}</h1>")
-    html_parts.append("<table class='stats-table'>")
-    html_parts.append("<thead><tr><th>Year</th><th>Messages</th><th>Authors</th><th>Conferences</th><th>First Active</th><th>Last Active</th><th>BBS Name</th></tr></thead>")
-    html_parts.append("<tbody>")
-    for item in year_list:
-        html_parts.append(
-            f"<tr><td>{html.escape(str(item['year']))}</td>"
-            f"<td>{item['message_count']}</td>"
-            f"<td>{item['authors_count']}</td>"
-            f"<td>{item['conferences_count']}</td>"
-            f"<td>{html.escape(str(item['first_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['last_active'] or 'N/A'))}</td>"
-            f"<td>{html.escape(str(item['bbs_name'] or 'Unknown'))}</td></tr>"
-        )
-    html_parts.append("</tbody></table>")
-    html_parts.extend(_get_html_footer())
-    return "\n".join(html_parts)
+    return _render_timeline_report_html(year_list, title, "Year", "year")
 
 
 def _render_years_markdown(year_list: list[dict[str, Any]], title: str) -> str:
-    md_parts = [f"# {title}\n"]
-    md_parts.append("| Year | Messages | Authors | Conferences | First Active | Last Active | BBS Name |")
-    md_parts.append("|------|----------|---------|-------------|--------------|-------------|----------|")
-    for item in year_list:
-        md_parts.append(
-            f"| {item['year']} | {item['message_count']} | {item['authors_count']} | {item['conferences_count']} | {item['first_active'] or 'N/A'} | {item['last_active'] or 'N/A'} | {item['bbs_name'] or 'Unknown'} |"
-        )
-    return "\n".join(md_parts)
+    return _render_timeline_report_markdown(year_list, title, "Year", "year")
 
 
 def _render_years_csv(year_list: list[dict[str, Any]]) -> str:
