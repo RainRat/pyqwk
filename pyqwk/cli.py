@@ -141,7 +141,7 @@ class QwkArgumentParser(argparse.ArgumentParser):
             quick_usage = (
                 f"{message}\n\n"
                 "To process or view an archive, pass one or more archive files or directories:\n"
-                "  qwk archive.qwk --oneline               # Show a quick summary\n"
+                "  qwk archive.qwk -1                      # Show a quick summary\n"
                 "  qwk archive.qwk -P blog -o ./output     # Export using a preset\n"
                 "  qwk archive.qwk --search \"keyword\"     # Search for messages\n"
                 "  qwk --list-presets                      # List available workflow presets\n"
@@ -233,7 +233,7 @@ def main() -> None:
         epilog=f"""
 examples:
   # Show a one-line summary
-  qwk archive.qwk --oneline
+  qwk archive.qwk -1
 
   # Save as an HTML file
   qwk archive.qwk --format html -o messages.html
