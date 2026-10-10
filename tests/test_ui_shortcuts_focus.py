@@ -171,3 +171,44 @@ def test_new_ui_shortcuts_and_consistency(mock_gui_deps):
     text_mock = mock_gui_deps["tk"].Text
     kwargs_list = [args[1] for args in text_mock.call_args_list]
     assert any(kw.get("foreground") == "#000000" for kw in kwargs_list)
+
+
+def test_detail_text_return_focus_to_message_list(mock_gui_deps):
+    """Verify that pressing Return or KP_Enter in detail_text shifts focus to message_list."""
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app.message_list = MagicMock()
+
+    event = MagicMock()
+    event.keysym = "Return"
+    event.state = 0
+
+    res = app._block_text_input(event)
+
+    assert res == "break"
+    app.message_list.focus_set.assert_called_once()
+
+    app.message_list.focus_set.reset_mock()
+    event.keysym = "KP_Enter"
+    res_kp = app._block_text_input(event)
+
+    assert res_kp == "break"
+    app.message_list.focus_set.assert_called_once()
+
+
+def test_detail_text_escape_focus_to_message_list(mock_gui_deps):
+    """Verify that pressing Escape when detail_text has focus shifts focus to message_list."""
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app.message_list = MagicMock()
+    app.detail_text = MagicMock()
+    root.focus_get.return_value = app.detail_text
+
+    with patch.object(app, "clear_filters") as mock_clear_filters:
+        app.clear_search(None)
+        app.message_list.focus_set.assert_called_once()
+        mock_clear_filters.assert_not_called()
