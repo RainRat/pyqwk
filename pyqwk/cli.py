@@ -302,7 +302,7 @@ examples:
     )
     io_group.add_argument(
         "--organize-by-date",
-        help="Organize archives into folders by date (YYYY/MM). If used with -o or --output, organizes the export folder instead.",
+        help="Organize archive files into folders by date (YYYY/MM). If used with -o or --output, organizes exported message files instead.",
         action="store_true",
     )
     io_group.add_argument(
