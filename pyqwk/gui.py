@@ -799,8 +799,8 @@ class QwkGuiApp:
             (
                 "View & Zoom",
                 [
-                    ("Ctrl + + / =", "Zoom In"),
-                    ("Ctrl + -", "Zoom Out"),
+                    ("Ctrl + + / Wheel", "Zoom In"),
+                    ("Ctrl + - / Wheel", "Zoom Out"),
                     ("Ctrl + 0", "Reset Zoom"),
                     ("Ctrl + T", "Toggle Threaded"),
                     ("Ctrl+Shift+C", "Toggle Clean View"),
@@ -1128,6 +1128,9 @@ class QwkGuiApp:
         self.root.bind("<Control-KP_Subtract>", lambda e: self.adjust_zoom(-1))
         self.root.bind("<Control-0>", lambda e: self.reset_zoom())
         self.root.bind("<Control-KP_0>", lambda e: self.reset_zoom())
+        self.root.bind("<Control-MouseWheel>", self._on_mousewheel_zoom)
+        self.root.bind("<Control-Button-4>", self._on_mousewheel_zoom)
+        self.root.bind("<Control-Button-5>", self._on_mousewheel_zoom)
         self.root.bind("<F3>", lambda e: self._navigate_search_matches(1))
         self.root.bind("<Shift-F3>", lambda e: self._navigate_search_matches(-1))
         self.root.bind("j", lambda e: self._select_relative_message(1))
@@ -1493,6 +1496,22 @@ class QwkGuiApp:
                 if self.column_vars[col].get():
                     visible.append(col)
         self.message_list["displaycolumns"] = visible
+
+    def _on_mousewheel_zoom(self, event: tk.Event) -> str | None:
+        """Handle mouse wheel zooming with Ctrl key held down."""
+        if getattr(event, "num", None) == 4:
+            self.adjust_zoom(1)
+            return "break"
+        elif getattr(event, "num", None) == 5:
+            self.adjust_zoom(-1)
+            return "break"
+        elif getattr(event, "delta", 0) != 0:
+            if event.delta > 0:
+                self.adjust_zoom(1)
+            else:
+                self.adjust_zoom(-1)
+            return "break"
+        return None
 
     def adjust_zoom(self, delta: int) -> None:
         """Adjust the font size offset of the detail text view."""
@@ -1986,6 +2005,11 @@ class QwkGuiApp:
         # Intercept key events to allow selection/copy but block editing
         self.detail_text.bind("<Key>", self._block_text_input)
         self.detail_text.bind("<Alt-Left>", self.go_back)
+
+        # Mouse wheel font zooming
+        self.detail_text.bind("<Control-MouseWheel>", self._on_mousewheel_zoom)
+        self.detail_text.bind("<Control-Button-4>", self._on_mousewheel_zoom)
+        self.detail_text.bind("<Control-Button-5>", self._on_mousewheel_zoom)
 
         # Context menu for text
         self.detail_text.bind("<Button-3>", self._show_text_context_menu)
@@ -3806,8 +3830,8 @@ class QwkGuiApp:
                     ("Ctrl+T", "Toggle Conversations (Threaded)"),
                     ("Ctrl+Shift+C", "Toggle Clean View"),
                     ("Ctrl+W", "Toggle Wrap Text"),
-                    ("Ctrl++ / =", "Zoom In"),
-                    ("Ctrl+-", "Zoom Out"),
+                    ("Ctrl++ / Wheel Up", "Zoom In"),
+                    ("Ctrl+- / Wheel Dn", "Zoom Out"),
                     ("Ctrl+0", "Reset Zoom"),
                 ],
             ),
