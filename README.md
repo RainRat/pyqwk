@@ -33,6 +33,11 @@ Inside these packets, messages are organized into **Conferences**. A Conference 
 | **mbox / EML / Maildir** | ✅ | ✅ | Email applications (.mbox, .eml, .maildir) |
 | **Plain Text** | ✅ | ✅ | Simple readable text (.txt) |
 
+To list all supported export formats, file extensions, and storage types directly in your terminal, run:
+```bash
+qwk --list-formats
+```
+
 ## Prerequisites
 
 ### Required
@@ -854,6 +859,7 @@ for msg in messages:
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
 | `-j, --json` | Shortcut for `--format json`. |
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
+| `--list-formats` | List all supported export formats, file extensions, storage types, and descriptions, then exit. |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
