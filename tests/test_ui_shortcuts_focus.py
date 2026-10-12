@@ -100,6 +100,18 @@ def test_shortcuts_prevented_when_entry_focused(mock_gui_deps):
         app._focus_search(event)
         mock_focus_field.assert_not_called()
 
+def test_focus_entry_field_already_focused_selects_all(mock_gui_deps):
+    """Verify that focusing an entry field when it is already focused selects all text."""
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    root.focus_get.return_value = app.search_entry
+    app._focus_entry_field("search_entry", "search_var")
+
+    app.search_entry.selection_range.assert_called_with(0, "end")
+
+
 def test_focus_search_with_slash_and_non_entry(mock_gui_deps):
     from pyqwk.gui import QwkGuiApp
     root = MagicMock()
