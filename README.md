@@ -33,6 +33,8 @@ Inside these packets, messages are organized into **Conferences**. A Conference 
 | **mbox / EML / Maildir** | ✅ | ✅ | Email applications (.mbox, .eml, .maildir) |
 | **Plain Text** | ✅ | ✅ | Simple readable text (.txt) |
 
+*To list all supported export formats, extensions, and storage options directly in your terminal, use `qwk --list-formats`.*
+
 ## Prerequisites
 
 ### Required
@@ -856,6 +858,7 @@ for msg in messages:
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
+| `--list-formats` | List all supported export formats, file extensions, storage types, and descriptions, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
 | `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
 | `--list-recipients`, `--list-to` | List all message recipients with message counts and active date ranges, then exit. |

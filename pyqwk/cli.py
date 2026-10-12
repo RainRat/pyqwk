@@ -125,6 +125,79 @@ PRESETS_INFO = {
     },
 }
 
+FORMATS_INFO = {
+    "text": {
+        "ext": ".txt",
+        "type": "Single File / Folder",
+        "desc": "Plain text format without complex formatting.",
+    },
+    "json": {
+        "ext": ".json",
+        "type": "Single File / Folder",
+        "desc": "Structured JSON data with full message metadata.",
+    },
+    "jsonl": {
+        "ext": ".jsonl",
+        "type": "Single File / Folder",
+        "desc": "JSON Lines format with one JSON object per line.",
+    },
+    "html": {
+        "ext": ".html, .htm",
+        "type": "Single File / Folder",
+        "desc": "Browsable HTML pages with optional TOC, threading, and index.",
+    },
+    "markdown": {
+        "ext": ".md, .markdown",
+        "type": "Single File / Folder",
+        "desc": "Readable Markdown documents with index support.",
+    },
+    "csv": {
+        "ext": ".csv",
+        "type": "Single File / Folder",
+        "desc": "Comma-Separated Values table for spreadsheets and databases.",
+    },
+    "xml": {
+        "ext": ".xml",
+        "type": "Single File / Folder",
+        "desc": "Structured XML document format.",
+    },
+    "rss": {
+        "ext": ".rss, .xml",
+        "type": "Single File",
+        "desc": "RSS 2.0 syndication feed format.",
+    },
+    "sqlite": {
+        "ext": ".db, .sqlite",
+        "type": "Single File Database",
+        "desc": "Relational SQLite database for queries and storage.",
+    },
+    "mbox": {
+        "ext": ".mbox",
+        "type": "Single File Archive",
+        "desc": "Standard Unix mbox mailbox format for email clients.",
+    },
+    "eml": {
+        "ext": ".eml",
+        "type": "Folder / Directory",
+        "desc": "Individual RFC-822 email files in a directory.",
+    },
+    "maildir": {
+        "ext": ".maildir",
+        "type": "Folder / Directory",
+        "desc": "Standard Maildir directory structure with cur/new/tmp folders.",
+    },
+    "qwk": {
+        "ext": ".qwk, .zip",
+        "type": "Archive File",
+        "desc": "Classic BBS QWK mail packet archive.",
+    },
+    "rep": {
+        "ext": ".rep, .zip",
+        "type": "Archive File",
+        "desc": "Classic BBS reply packet archive.",
+    },
+}
+
 
 class QwkArgumentParser(argparse.ArgumentParser):
     """Custom ArgumentParser providing rich error context for options like --preset."""
@@ -145,6 +218,7 @@ class QwkArgumentParser(argparse.ArgumentParser):
                 "  qwk archive.qwk -P blog -o ./output     # Export using a preset\n"
                 "  qwk archive.qwk --search \"keyword\"     # Search for messages\n"
                 "  qwk --list-presets                      # List available workflow presets\n"
+                "  qwk --list-formats                      # List supported export formats\n"
                 "  qwk --help                              # Display full help and options"
             )
             super().error(quick_usage)
@@ -202,6 +276,61 @@ class ListPresetsAction(argparse.Action):
             print(f"  {preset_name}")
             print(f"    {desc_label} {desc}")
             print(f"    {equiv_label} {equiv}\n")
+
+        parser.exit(0)
+
+
+class ListFormatsAction(argparse.Action):
+    """Custom argparse Action to display supported export formats and exit.
+
+    We inherit from argparse.Action and use nargs=0 so that '--list-formats' can be
+    called directly by the user as a flag. By printing format specifications and
+    calling parser.exit(0) immediately inside __call__, we bypass argparse's validation
+    checks for required positional arguments (like 'input_paths').
+    """
+    def __init__(self, option_strings, dest, default=None, required=False, help=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            default=default,
+            required=required,
+            help=help,
+        )
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+        bold_cyan = "\033[1;36m"
+        bold_green = "\033[1;32m"
+        reset = "\033[0m"
+
+        header = "Supported Export Formats:"
+        if use_colors:
+            header = f"{bold_cyan}{header}{reset}"
+
+        print(header + "\n")
+        for fmt, details in FORMATS_INFO.items():
+            fmt_name = fmt
+            ext = details["ext"]
+            fmt_type = details["type"]
+            desc = details["desc"]
+
+            ext_label = "Extensions:"
+            type_label = "Storage:   "
+            desc_label = "Description:"
+
+            if use_colors:
+                fmt_name = f"{bold_green}{fmt_name}{reset}"
+                ext_label = f"\033[1m{ext_label}{reset}"
+                type_label = f"\033[1m{type_label}{reset}"
+                desc_label = f"\033[1m{desc_label}{reset}"
+                ext = f"\033[2;36m{ext}{reset}"
+
+            print(f"  {fmt_name}")
+            print(f"    {ext_label} {ext}")
+            print(f"    {type_label} {fmt_type}")
+            print(f"    {desc_label} {desc}\n")
 
         parser.exit(0)
 
@@ -452,6 +581,11 @@ examples:
         const="jsonl",
         dest="format",
         help="A shortcut for --format jsonl.",
+    )
+    format_group.add_argument(
+        "--list-formats",
+        action=ListFormatsAction,
+        help="List all supported export formats, file extensions, storage types, and descriptions, then exit.",
     )
     format_group.add_argument(
         "--separator",
