@@ -9,7 +9,7 @@ from pyqwk.core import (
     render_hours_as_text,
     _render_hours_html,
     _render_hours_markdown,
-    _render_hours_csv,
+    _render_csv_table,
     show_list_hours,
 )
 from pyqwk.cli import main
@@ -111,7 +111,7 @@ def test_render_hours_functions():
     assert "# Hourly Activity Summary" in md_out
     assert "| 08:00 | 10 | 3 | 2 | 2023-10-12 08:05 | 2023-10-12 08:50 | Digital Horizon BBS |" in md_out
 
-    csv_out = _render_hours_csv(hours)
+    csv_out = _render_csv_table(hours, ['hour', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     assert "hour,message_count,authors_count,conferences_count,first_active,last_active,bbs_name" in csv_out
     assert "08:00,10,3,2,2023-10-12 08:05,2023-10-12 08:50,Digital Horizon BBS" in csv_out
 

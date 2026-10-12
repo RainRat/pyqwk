@@ -15,7 +15,7 @@ from pyqwk.core import (
     render_conferences_as_text,
     _render_conferences_html,
     _render_conferences_markdown,
-    _render_conferences_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -73,7 +73,7 @@ def test_render_conferences_formats():
     assert "| 1 | General Discussion | 10 | Vintage BBS |" in md_out
 
     # CSV format
-    csv_out = _render_conferences_csv(conf_list)
+    csv_out = _render_csv_table(conf_list, ['number', 'name', 'message_count', 'bbs_name'])
     assert "number,name,message_count,bbs_name" in csv_out
     assert "1,General Discussion,10,Vintage BBS" in csv_out
 

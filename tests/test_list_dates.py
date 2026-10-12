@@ -9,7 +9,7 @@ from pyqwk.core import (
     render_dates_as_text,
     _render_dates_html,
     _render_dates_markdown,
-    _render_dates_csv,
+    _render_csv_table,
     show_list_dates,
 )
 from pyqwk.cli import main
@@ -111,7 +111,7 @@ def test_render_dates_functions():
     assert "# Timeline Summary" in md_out
     assert "| 2023-10-12 | 10 | 3 | 2 | 2023-10-12 10:00 | 2023-10-12 18:30 | Digital Horizon BBS |" in md_out
 
-    csv_out = _render_dates_csv(dates)
+    csv_out = _render_csv_table(dates, ['date', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     assert "date,message_count,authors_count,conferences_count,first_active,last_active,bbs_name" in csv_out
     assert "2023-10-12,10,3,2,2023-10-12 10:00,2023-10-12 18:30,Digital Horizon BBS" in csv_out
 

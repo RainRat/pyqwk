@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_keywords_as_text,
     _render_keywords_html,
     _render_keywords_markdown,
-    _render_keywords_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -89,7 +89,7 @@ def test_render_keywords_formats():
     assert "| vintage | 5 | 2 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_keywords_csv(keyword_list)
+    csv_out = _render_csv_table(keyword_list, ['keyword', 'frequency', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     assert "keyword,frequency,authors_count,first_active,last_active,bbs_name" in csv_out
     assert "vintage,5,2,,," in csv_out
 

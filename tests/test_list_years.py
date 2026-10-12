@@ -9,7 +9,7 @@ from pyqwk.core import (
     render_years_as_text,
     _render_years_html,
     _render_years_markdown,
-    _render_years_csv,
+    _render_csv_table,
     show_list_years,
 )
 from pyqwk.cli import main
@@ -131,7 +131,7 @@ def test_render_years_helpers():
     assert "# Yearly Activity Summary" in md_out
     assert "| 2023 | 5 | 2 | 1 | 2023-05-10 12:00 | 2023-05-10 12:00 | Test BBS |" in md_out
 
-    csv_out = _render_years_csv(year_list)
+    csv_out = _render_csv_table(year_list, ['year', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     assert "year,message_count,authors_count,conferences_count,first_active,last_active,bbs_name" in csv_out
     assert "2023,5,2,1,2023-05-10 12:00,2023-05-10 12:00,Test BBS" in csv_out
 
