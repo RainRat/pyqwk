@@ -232,3 +232,19 @@ def test_invalid_preset_error_message(capsys):
     assert "Available workflow presets:" in captured.err
     assert "blog" in captured.err
     assert "Save messages as clean, threaded individual Markdown files." in captured.err
+
+
+def test_invalid_format_error_message(capsys):
+    """Verify that specifying an invalid format choice prints detailed available format descriptions."""
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "-F", "invalid_fmt"]):
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+        assert excinfo.value.code == 2
+
+    captured = capsys.readouterr()
+    assert "invalid choice: 'invalid_fmt'" in captured.err
+    assert "Available export formats:" in captured.err
+    assert "text" in captured.err
+    assert "Plain text format (.txt)" in captured.err
+    assert "html" in captured.err
+    assert "HTML webpage format (.html)" in captured.err

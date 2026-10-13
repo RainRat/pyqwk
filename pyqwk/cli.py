@@ -125,9 +125,26 @@ PRESETS_INFO = {
     },
 }
 
+FORMATS_INFO = {
+    "text": "Plain text format (.txt)",
+    "html": "HTML webpage format (.html)",
+    "markdown": "Markdown document format (.md)",
+    "json": "JSON object array format (.json)",
+    "jsonl": "JSON Lines format (.jsonl)",
+    "xml": "XML document format (.xml)",
+    "rss": "RSS feed format (.rss)",
+    "csv": "CSV spreadsheet format (.csv)",
+    "mbox": "Unix mbox mailbox format (.mbox)",
+    "eml": "EML email message files (.eml)",
+    "maildir": "Maildir folder format (.maildir)",
+    "sqlite": "SQLite database format (.db, .sqlite)",
+    "qwk": "QWK packet archive (.qwk)",
+    "rep": "REP reply packet archive (.rep)",
+}
+
 
 class QwkArgumentParser(argparse.ArgumentParser):
-    """Custom ArgumentParser providing rich error context for options like --preset."""
+    """Custom ArgumentParser providing rich error context for options like --preset and --format."""
 
     def error(self, message: str) -> None:
         if "invalid choice" in message and "preset" in message.lower():
@@ -136,6 +153,13 @@ class QwkArgumentParser(argparse.ArgumentParser):
                 for name, info in PRESETS_INFO.items()
             )
             extra_msg = f"{message}\n\nAvailable workflow presets:\n{preset_details}"
+            super().error(extra_msg)
+        elif "invalid choice" in message and ("format" in message.lower() or "-f" in message.lower()):
+            format_details = "\n".join(
+                f"  {name:<14} {desc}"
+                for name, desc in FORMATS_INFO.items()
+            )
+            extra_msg = f"{message}\n\nAvailable export formats:\n{format_details}"
             super().error(extra_msg)
         elif "the following arguments are required: input_paths" in message:
             quick_usage = (
