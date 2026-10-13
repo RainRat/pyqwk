@@ -90,6 +90,65 @@ def _parse_cli_date(
     return dt
 
 
+FORMATS_INFO = {
+    "text": {
+        "ext": ".txt",
+        "desc": "Plain text output with header formatting and separators.",
+    },
+    "json": {
+        "ext": ".json",
+        "desc": "Structured JSON array containing message objects and metadata.",
+    },
+    "jsonl": {
+        "ext": ".jsonl",
+        "desc": "Line-delimited JSON with one message JSON object per line.",
+    },
+    "html": {
+        "ext": ".html, .htm",
+        "desc": "Formatted web pages with conversation grouping, styling, and table of contents.",
+    },
+    "markdown": {
+        "ext": ".md, .markdown",
+        "desc": "Human-readable Markdown document formatted for note apps and blogs.",
+    },
+    "csv": {
+        "ext": ".csv",
+        "desc": "Comma-separated values spreadsheet format.",
+    },
+    "xml": {
+        "ext": ".xml",
+        "desc": "Generic structured XML format.",
+    },
+    "rss": {
+        "ext": ".rss, .xml",
+        "desc": "RSS 2.0 syndication feed format.",
+    },
+    "sqlite": {
+        "ext": ".db, .sqlite",
+        "desc": "Relational SQLite database with indexed tables.",
+    },
+    "mbox": {
+        "ext": ".mbox",
+        "desc": "Standard Unix mbox mailbox archive file.",
+    },
+    "eml": {
+        "ext": ".eml",
+        "desc": "Individual MIME RFC-822 email files.",
+    },
+    "maildir": {
+        "ext": "directory",
+        "desc": "Maildir directory structure with tmp/new/cur folders.",
+    },
+    "qwk": {
+        "ext": ".qwk, .zip",
+        "desc": "Classic BBS QWK offline mail packet archive.",
+    },
+    "rep": {
+        "ext": ".rep",
+        "desc": "Classic BBS reply packet format.",
+    },
+}
+
 PRESETS_INFO = {
     "blog": {
         "desc": "Save messages as clean, threaded individual Markdown files.",
@@ -127,7 +186,7 @@ PRESETS_INFO = {
 
 
 class QwkArgumentParser(argparse.ArgumentParser):
-    """Custom ArgumentParser providing rich error context for options like --preset."""
+    """Custom ArgumentParser providing rich error context for options like --preset and --format."""
 
     def error(self, message: str) -> None:
         if "invalid choice" in message and "preset" in message.lower():
@@ -137,6 +196,13 @@ class QwkArgumentParser(argparse.ArgumentParser):
             )
             extra_msg = f"{message}\n\nAvailable workflow presets:\n{preset_details}"
             super().error(extra_msg)
+        elif "invalid choice" in message and ("format" in message.lower() or "-F" in message):
+            format_details = "\n".join(
+                f"  {name:<10} ({info['ext']:<15}) {info['desc']}"
+                for name, info in FORMATS_INFO.items()
+            )
+            extra_msg = f"{message}\n\nSupported export formats:\n{format_details}"
+            super().error(extra_msg)
         elif "the following arguments are required: input_paths" in message:
             quick_usage = (
                 f"{message}\n\n"
@@ -145,10 +211,66 @@ class QwkArgumentParser(argparse.ArgumentParser):
                 "  qwk archive.qwk -P blog -o ./output     # Export using a preset\n"
                 "  qwk archive.qwk --search \"keyword\"     # Search for messages\n"
                 "  qwk --list-presets                      # List available workflow presets\n"
+                "  qwk --list-formats                      # List supported export formats\n"
                 "  qwk --help                              # Display full help and options"
             )
             super().error(quick_usage)
         super().error(message)
+
+
+class ListFormatsAction(argparse.Action):
+    """Custom argparse Action to display supported export formats and exit.
+
+    We inherit from argparse.Action and use nargs=0 so that '--list-formats' can be
+    called directly by the user as a flag. By printing format definitions and
+    calling parser.exit(0) immediately inside __call__, we successfully bypass
+    argparse's validation checks for required positional arguments (like 'input_paths').
+    This ensures users can run 'qwk --list-formats' alone without needing to supply
+    dummy archive files.
+    """
+    def __init__(self, option_strings, dest, default=None, required=False, help=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            default=default,
+            required=required,
+            help=help,
+        )
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+        bold_cyan = "\033[1;36m"
+        bold_green = "\033[1;32m"
+        bold_white = "\033[1;37m"
+        dim_gray = "\033[2m"
+        reset = "\033[0m"
+
+        header = "Supported Export Formats:"
+        if use_colors:
+            header = f"{bold_cyan}{header}{reset}"
+
+        print(header + "\n")
+        for name, details in FORMATS_INFO.items():
+            fmt_name = name
+            ext = details["ext"]
+            desc = details["desc"]
+
+            ext_label = "Extensions: "
+            desc_label = "Description:"
+
+            if use_colors:
+                fmt_name = f"{bold_green}{fmt_name}{reset}"
+                ext_label = f"\033[1m{ext_label}{reset}"
+                desc_label = f"\033[1m{desc_label}{reset}"
+                ext = f"\033[2;36m{ext}{reset}"
+
+            print(f"  {fmt_name}")
+            print(f"    {ext_label} {ext}")
+            print(f"    {desc_label} {desc}\n")
+
+        parser.exit(0)
 
 
 class ListPresetsAction(argparse.Action):
@@ -436,6 +558,11 @@ examples:
             "qwk",
             "rep",
         ],
+    )
+    format_group.add_argument(
+        "--list-formats",
+        action=ListFormatsAction,
+        help="List supported export formats, extensions, and descriptions, then exit.",
     )
     format_group.add_argument(
         "-j",

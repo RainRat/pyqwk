@@ -852,6 +852,7 @@ for msg in messages:
 | `-V, --version` | Show the version number and exit. |
 | `-i`, `--individual-files` | Save each message as a separate file. This also creates a browsable index for HTML and Markdown. |
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
+| `--list-formats` | List all supported export formats, file extensions, storage types, and descriptions, then exit. |
 | `-j, --json` | Shortcut for `--format json`. |
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive). |
