@@ -14,7 +14,7 @@ from pyqwk.core import (
     render_msg_links_as_text,
     _render_list_report_html,
     _render_list_report_markdown,
-    _render_msg_links_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -90,7 +90,7 @@ def test_render_msg_links_formats():
     assert "| msg #100 | 5 | 1 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_msg_links_csv(msg_link_list)
+    csv_out = _render_csv_table(msg_link_list, ["msg_link", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
     assert "msg_link,message_count,authors_count,first_active,last_active,bbs_name" in csv_out
     assert "msg #100,5,1,,," in csv_out
 

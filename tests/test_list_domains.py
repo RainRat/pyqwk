@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_domains_as_text,
     _render_list_report_html,
     _render_list_report_markdown,
-    _render_domains_csv,
+    _render_csv_table,
     show_list_domains,
 )
 from pyqwk.cli import main
@@ -107,7 +107,7 @@ def test_render_domains_formats():
     assert "| bbs.org | 5 | 1 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_domains_csv(domain_list)
+    csv_out = _render_csv_table(domain_list, ["domain", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
     assert "domain,message_count,authors_count,first_active,last_active,bbs_name" in csv_out
     assert "bbs.org,5,1,,," in csv_out
 

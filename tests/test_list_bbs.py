@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_bbs_as_text,
     _render_bbs_html,
     _render_bbs_markdown,
-    _render_bbs_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -98,7 +98,7 @@ def test_render_bbs_formats():
     assert "| Telegard | N/A | N/A | N/A | 1 | 2 | N/A | N/A |" in md_out
 
     # CSV format
-    csv_out = _render_bbs_csv(bbs_list)
+    csv_out = _render_csv_table(bbs_list, ["bbs_name", "bbs_id", "sysop", "location", "conference_count", "message_count", "first_active", "last_active"])
     assert "bbs_name,bbs_id,sysop,location,conference_count,message_count,first_active,last_active" in csv_out
     assert "Telegard,,,,1,2,," in csv_out
 

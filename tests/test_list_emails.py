@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_emails_as_text,
     _render_list_report_html,
     _render_list_report_markdown,
-    _render_emails_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -89,7 +89,7 @@ def test_render_emails_formats():
     assert "| user@bbs.org | 5 | 1 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_emails_csv(email_list)
+    csv_out = _render_csv_table(email_list, ["email", "message_count", "authors_count", "first_active", "last_active", "bbs_name"])
     assert "email,message_count,authors_count,first_active,last_active,bbs_name" in csv_out
     assert "user@bbs.org,5,1,,," in csv_out
 
