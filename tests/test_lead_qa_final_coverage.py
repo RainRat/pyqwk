@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from pyqwk.core import (
+    MessageHeader,
     ProcessingSettings,
+    show_list_months,
     show_list_years,
 )
 from pyqwk.gui import QwkGuiApp
@@ -50,7 +52,32 @@ def test_show_list_years_user_name_fallback_and_short_file(mocker, tmp_path):
         "pyqwk.core.load_data",
         return_value=(b"short_data", MockBoardDict()),
     )
+    show_list_months(["short.qwk"], settings, logger)
     show_list_years(["short.qwk"], settings, logger)
+
+    header = MessageHeader(
+        status=" ",
+        msgnum=1,
+        msgdate="01-01-24",
+        msgtime="12:00",
+        msgto="All",
+        msgfrom="Alice",
+        msgsubject="Test",
+        msgpassword="",
+        refnum=None,
+        numblocks=2,
+        msgflag=" ",
+        confnum=1,
+        lognum=0,
+        nettag=" ",
+    )
+    qwk_bytes = bytearray(header.to_bytes("cp437") + b"Body".ljust(128))
+    mocker.patch(
+        "pyqwk.core.load_data",
+        return_value=(qwk_bytes, MockBoardDict()),
+    )
+    show_list_months(["archive.qwk"], settings, logger)
+    show_list_years(["archive.qwk"], settings, logger)
 
 
 def test_gui_exclude_selection_tcl_error():
