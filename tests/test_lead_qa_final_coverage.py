@@ -5,9 +5,68 @@ import pytest
 
 from pyqwk.core import (
     ProcessingSettings,
+    show_list_months,
     show_list_years,
 )
 from pyqwk.gui import QwkGuiApp
+
+
+def test_show_list_months_raw_archive_bytes(mocker):
+    logger = logging.getLogger("test_months_raw_bytes")
+
+    class MockBBSInfo:
+        user_name = "Raw Bytes User"
+        name = "Raw Bytes BBS"
+        bbs_id = "RAWBYTES"
+
+    class MockBoardDict(dict):
+        bbs_info = MockBBSInfo()
+
+    mock_msg = MagicMock()
+    mock_msg.confnum = 1
+    mock_msg.confname = None
+    mock_msg.bbs_name = None
+    mock_msg.bbs_id = None
+    mock_msg.source_file = None
+    mock_msg.msgnum = 100
+    mock_msg.date = "2023-05-15"
+    mock_msg.time = "12:00:00"
+    mock_msg.author = "Alice"
+    mock_msg.recipient = "Bob"
+    mock_msg.subject = "Test raw bytes"
+
+    dummy_bytes = b"X" * 256
+
+    mocker.patch(
+        "pyqwk.core.load_data",
+        return_value=(dummy_bytes, MockBoardDict({1: "General"})),
+    )
+    mocker.patch(
+        "pyqwk.core.parse_messages",
+        return_value=[mock_msg],
+    )
+
+    settings = ProcessingSettings(
+        verbose=False,
+        private=False,
+        no_header=False,
+        truncate_signatures=False,
+        cut_quoting=False,
+        individual_files=False,
+        threaded=False,
+        binaries_removal=False,
+        redact_pii=False,
+        format="json",
+        separator="auto",
+        output_mode="stdout",
+        output_path=None,
+        encoding="cp437",
+        my_name=None,
+    )
+
+    show_list_months(["archive.qwk"], settings, logger)
+    assert mock_msg.confname == "General"
+    assert mock_msg.bbs_name == "Raw Bytes BBS"
 
 
 def test_show_list_years_user_name_fallback_and_short_file(mocker, tmp_path):
