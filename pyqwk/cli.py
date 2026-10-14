@@ -90,6 +90,80 @@ def _parse_cli_date(
     return dt
 
 
+FORMATS_INFO = {
+    "text": {
+        "ext": ".txt",
+        "type": "Plain Text File",
+        "desc": "Simple human-readable plain text output.",
+    },
+    "json": {
+        "ext": ".json",
+        "type": "JSON Structured File",
+        "desc": "Standard formatted JSON array or object containing message details.",
+    },
+    "jsonl": {
+        "ext": ".jsonl",
+        "type": "JSON Lines File",
+        "desc": "Line-delimited JSON messages for efficient stream processing and logs.",
+    },
+    "html": {
+        "ext": ".html, .htm",
+        "type": "HTML Web Page",
+        "desc": "Formatted web document with optional message threading and interactive charts.",
+    },
+    "markdown": {
+        "ext": ".md, .markdown",
+        "type": "Markdown Document",
+        "desc": "Formatted Markdown text for documentation, notes, and static blogs.",
+    },
+    "csv": {
+        "ext": ".csv",
+        "type": "CSV Spreadsheet File",
+        "desc": "Comma-separated tabular data suitable for spreadsheet analysis.",
+    },
+    "xml": {
+        "ext": ".xml",
+        "type": "XML Structured File",
+        "desc": "Structured XML message export for automated data integration.",
+    },
+    "rss": {
+        "ext": ".rss, .xml",
+        "type": "RSS Feed File",
+        "desc": "XML feed format for feed readers, news aggregators, and podcatchers.",
+    },
+    "mbox": {
+        "ext": ".mbox",
+        "type": "Standard MBOX Archive",
+        "desc": "Concatenated email collection compatible with Thunderbird and Apple Mail.",
+    },
+    "eml": {
+        "ext": ".eml",
+        "type": "Individual EML Files",
+        "desc": "Standard RFC-822 email files saved into individual directories.",
+    },
+    "maildir": {
+        "ext": ".maildir",
+        "type": "Maildir Directory Structure",
+        "desc": "Standard Maildir folder structure with individual message files.",
+    },
+    "sqlite": {
+        "ext": ".db, .sqlite",
+        "type": "SQLite Database",
+        "desc": "Relational database tables with full indexing and query support.",
+    },
+    "qwk": {
+        "ext": ".qwk, .zip",
+        "type": "QWK Packet Archive",
+        "desc": "Classic offline BBS message packet archive containing MESSAGES.DAT.",
+    },
+    "rep": {
+        "ext": ".rep",
+        "type": "REP Packet Reply Archive",
+        "desc": "Classic offline BBS reply packet archive containing REPLY.DAT.",
+    },
+}
+
+
 PRESETS_INFO = {
     "blog": {
         "desc": "Save messages as clean, threaded individual Markdown files.",
@@ -127,7 +201,7 @@ PRESETS_INFO = {
 
 
 class QwkArgumentParser(argparse.ArgumentParser):
-    """Custom ArgumentParser providing rich error context for options like --preset."""
+    """Custom ArgumentParser providing rich error context for options like --preset and --format."""
 
     def error(self, message: str) -> None:
         if "invalid choice" in message and "preset" in message.lower():
@@ -136,6 +210,13 @@ class QwkArgumentParser(argparse.ArgumentParser):
                 for name, info in PRESETS_INFO.items()
             )
             extra_msg = f"{message}\n\nAvailable workflow presets:\n{preset_details}"
+            super().error(extra_msg)
+        elif "invalid choice" in message and ("format" in message.lower() or "-F" in message):
+            format_details = "\n".join(
+                f"  {fmt:<12} ({info['ext']}) - {info['desc']}"
+                for fmt, info in FORMATS_INFO.items()
+            )
+            extra_msg = f"{message}\n\nSupported export formats:\n{format_details}"
             super().error(extra_msg)
         elif "the following arguments are required: input_paths" in message:
             quick_usage = (
@@ -149,6 +230,58 @@ class QwkArgumentParser(argparse.ArgumentParser):
             )
             super().error(quick_usage)
         super().error(message)
+
+
+class ListFormatsAction(argparse.Action):
+    """Custom argparse Action to display supported export formats and exit.
+
+    We inherit from argparse.Action and use nargs=0 so that '--list-formats' can be
+    called directly by the user as a flag without requiring positional inputs.
+    """
+    def __init__(self, option_strings, dest, default=None, required=False, help=None):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            default=default,
+            required=required,
+            help=help,
+        )
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+        bold_cyan = "\033[1;36m"
+        bold_green = "\033[1;32m"
+        dim_gray = "\033[2m"
+        reset = "\033[0m"
+
+        header = "Supported Export Formats:"
+        if use_colors:
+            header = f"{bold_cyan}{header}{reset}"
+
+        print(header + "\n")
+        for fmt_name, details in FORMATS_INFO.items():
+            ext = details["ext"]
+            type_label = details["type"]
+            desc = details["desc"]
+
+            fmt_str = fmt_name
+            ext_str = f"({ext})"
+            type_str = type_label
+            desc_label = "Description:"
+
+            if use_colors:
+                fmt_str = f"{bold_green}{fmt_str}{reset}"
+                ext_str = f"{dim_gray}{ext_str}{reset}"
+                type_str = f"\033[1m{type_str}{reset}"
+                desc_label = f"\033[1m{desc_label}{reset}"
+
+            print(f"  {fmt_str:<22} {ext_str}")
+            print(f"    Type:        {type_str}")
+            print(f"    {desc_label} {desc}\n")
+
+        parser.exit(0)
 
 
 class ListPresetsAction(argparse.Action):
@@ -452,6 +585,11 @@ examples:
         const="jsonl",
         dest="format",
         help="A shortcut for --format jsonl.",
+    )
+    format_group.add_argument(
+        "--list-formats",
+        action=ListFormatsAction,
+        help="List all supported export formats, extensions, storage types, and descriptions, then exit.",
     )
     format_group.add_argument(
         "--separator",
