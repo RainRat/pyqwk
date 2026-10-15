@@ -9,7 +9,7 @@ from pyqwk.core import (
     render_sources_as_text,
     _render_sources_html,
     _render_sources_markdown,
-    _render_sources_csv,
+    _render_csv_table,
     show_list_sources,
 )
 from pyqwk.cli import main
@@ -111,7 +111,7 @@ def test_render_sources_functions():
     assert "# Source Files" in md_out
     assert "| archive1.qwk | 10 | 3 | 2 | 2023-10-12 | 2023-10-15 | Digital Horizon BBS |" in md_out
 
-    csv_out = _render_sources_csv(sources)
+    csv_out = _render_csv_table(sources, ['source_file', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     assert "source_file,message_count,authors_count,conferences_count,first_active,last_active,bbs_name" in csv_out
     assert "archive1.qwk,10,3,2,2023-10-12,2023-10-15,Digital Horizon BBS" in csv_out
 

@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_recipients_as_text,
     _render_entity_report_html,
     _render_entity_report_markdown,
-    _render_recipients_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -84,7 +84,7 @@ def test_render_recipients_formats():
     assert "| Alice | 5 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_recipients_csv(recipient_list)
+    csv_out = _render_csv_table(recipient_list, ['recipient', 'message_count', 'first_active', 'last_active', 'bbs_name'])
     assert "recipient,message_count,first_active,last_active,bbs_name" in csv_out
     assert "Alice,5,,," in csv_out
 

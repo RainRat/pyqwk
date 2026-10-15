@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_subjects_as_text,
     _render_list_report_html,
     _render_list_report_markdown,
-    _render_subjects_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -86,7 +86,7 @@ def test_render_subjects_formats():
     assert "| Short Topic | 5 | 1 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_subjects_csv(subject_list)
+    csv_out = _render_csv_table(subject_list, ['subject', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     assert "subject,message_count,authors_count,first_active,last_active,bbs_name" in csv_out
     assert "Short Topic,5,1,,," in csv_out
 

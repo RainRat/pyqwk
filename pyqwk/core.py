@@ -6650,13 +6650,6 @@ def _render_timeline_report_markdown(
     return "\n".join(md_parts)
 
 
-def _render_msg_links_csv(msg_link_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        msg_link_list,
-        ["msg_link", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
-
-
 def show_list_msg_links(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
 ) -> None:
@@ -6754,7 +6747,7 @@ def show_list_msg_links(
     elif settings.format == "markdown":
         output = _render_list_report_markdown(msg_link_list, title, "Message Link", "msg_link")
     elif settings.format == "csv":
-        output = _render_msg_links_csv(msg_link_list)
+        output = _render_csv_table(msg_link_list, ['msg_link', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -6832,12 +6825,6 @@ def _render_csv_table(
     writer.writerows(records)
     return output.getvalue()
 
-
-def _render_urls_csv(url_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        url_list,
-        ["url", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_urls(
@@ -6937,7 +6924,7 @@ def show_list_urls(
     elif settings.format == "markdown":
         output = _render_list_report_markdown(url_list, title, "URL", "url")
     elif settings.format == "csv":
-        output = _render_urls_csv(url_list)
+        output = _render_csv_table(url_list, ['url', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -7004,12 +6991,6 @@ def render_emails_as_text(email_list: list[dict[str, Any]], use_colors: bool = T
 
     return "\n".join(lines)
 
-
-def _render_emails_csv(email_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        email_list,
-        ["email", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_emails(
@@ -7109,7 +7090,7 @@ def show_list_emails(
     elif settings.format == "markdown":
         output = _render_list_report_markdown(email_list, title, "Email", "email")
     elif settings.format == "csv":
-        output = _render_emails_csv(email_list)
+        output = _render_csv_table(email_list, ['email', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -7177,12 +7158,6 @@ def render_phones_as_text(phone_list: list[dict[str, Any]], use_colors: bool = T
     lines.append(f"Total Phone Numbers: {len(phone_list)}")
     return "\n".join(lines)
 
-
-def _render_phones_csv(phone_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        phone_list,
-        ["phone", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_phones(
@@ -7282,7 +7257,7 @@ def show_list_phones(
     elif settings.format == "markdown":
         output = _render_list_report_markdown(phone_list, title, "Phone Number", "phone")
     elif settings.format == "csv":
-        output = _render_phones_csv(phone_list)
+        output = _render_csv_table(phone_list, ['phone', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -7386,12 +7361,6 @@ def render_domains_as_text(
     return "\n".join(lines)
 
 
-def _render_domains_csv(domain_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        domain_list,
-        ["domain", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
-
 
 def show_list_domains(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
@@ -7490,7 +7459,7 @@ def show_list_domains(
     elif settings.format == "markdown":
         output = _render_list_report_markdown(domain_list, title, "Domain", "domain")
     elif settings.format == "csv":
-        output = _render_domains_csv(domain_list)
+        output = _render_csv_table(domain_list, ['domain', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -7590,12 +7559,6 @@ def _render_keywords_markdown(keyword_list: list[dict[str, Any]], title: str) ->
     return "\n".join(md_parts)
 
 
-def _render_keywords_csv(keyword_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        keyword_list,
-        ["keyword", "frequency", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
-
 
 def show_list_keywords(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
@@ -7692,7 +7655,7 @@ def show_list_keywords(
     elif settings.format == "markdown":
         output = _render_keywords_markdown(keyword_list, title)
     elif settings.format == "csv":
-        output = _render_keywords_csv(keyword_list)
+        output = _render_csv_table(keyword_list, ['keyword', 'frequency', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -7795,21 +7758,6 @@ def _render_bbs_markdown(bbs_list: list[dict[str, Any]], title: str) -> str:
     return "\n".join(md_parts)
 
 
-def _render_bbs_csv(bbs_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        bbs_list,
-        [
-            "bbs_name",
-            "bbs_id",
-            "sysop",
-            "location",
-            "conference_count",
-            "message_count",
-            "first_active",
-            "last_active",
-        ],
-    )
-
 
 def show_list_bbs(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
@@ -7902,7 +7850,7 @@ def show_list_bbs(
     elif settings.format == "markdown":
         output = _render_bbs_markdown(bbs_list, title)
     elif settings.format == "csv":
-        output = _render_bbs_csv(bbs_list)
+        output = _render_csv_table(bbs_list, ['bbs_name', 'bbs_id', 'sysop', 'location', 'conference_count', 'message_count', 'first_active', 'last_active'])
     else:
         use_colors = (
             not settings.output_path
@@ -10236,12 +10184,6 @@ def _render_conferences_markdown(conf_list: list[dict[str, Any]], title: str) ->
     return "\n".join(md_parts)
 
 
-def _render_conferences_csv(conf_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        conf_list,
-        ["number", "name", "message_count", "bbs_name"],
-    )
-
 
 def show_list_conferences(
     input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
@@ -10300,7 +10242,7 @@ def show_list_conferences(
     elif settings.format == "markdown":
         output = _render_conferences_markdown(conf_list, title)
     elif settings.format == "csv":
-        output = _render_conferences_csv(conf_list)
+        output = _render_csv_table(conf_list, ['number', 'name', 'message_count', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -10365,12 +10307,6 @@ def render_authors_as_text(author_list: list[dict[str, Any]], use_colors: bool =
 
     return "\n".join(lines)
 
-
-def _render_authors_csv(author_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        author_list,
-        ["author", "message_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_authors(
@@ -10461,7 +10397,7 @@ def show_list_authors(
     elif settings.format == "markdown":
         output = _render_entity_report_markdown(author_list, title, "Author", "author")
     elif settings.format == "csv":
-        output = _render_authors_csv(author_list)
+        output = _render_csv_table(author_list, ['author', 'message_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -10526,12 +10462,6 @@ def render_recipients_as_text(recipient_list: list[dict[str, Any]], use_colors: 
 
     return "\n".join(lines)
 
-
-def _render_recipients_csv(recipient_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        recipient_list,
-        ["recipient", "message_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_recipients(
@@ -10622,7 +10552,7 @@ def show_list_recipients(
     elif settings.format == "markdown":
         output = _render_entity_report_markdown(recipient_list, title, "Recipient", "recipient")
     elif settings.format == "csv":
-        output = _render_recipients_csv(recipient_list)
+        output = _render_csv_table(recipient_list, ['recipient', 'message_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -10689,12 +10619,6 @@ def render_subjects_as_text(subject_list: list[dict[str, Any]], use_colors: bool
 
     return "\n".join(lines)
 
-
-def _render_subjects_csv(subject_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        subject_list,
-        ["subject", "message_count", "authors_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_subjects(
@@ -10790,7 +10714,7 @@ def show_list_subjects(
     elif settings.format == "markdown":
         output = _render_list_report_markdown(subject_list, title, "Subject", "subject")
     elif settings.format == "csv":
-        output = _render_subjects_csv(subject_list)
+        output = _render_csv_table(subject_list, ['subject', 'message_count', 'authors_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -10866,12 +10790,6 @@ def _render_sources_html(source_list: list[dict[str, Any]], title: str) -> str:
 def _render_sources_markdown(source_list: list[dict[str, Any]], title: str) -> str:
     return _render_timeline_report_markdown(source_list, title, "Source File", "source_file")
 
-
-def _render_sources_csv(source_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        source_list,
-        ["source_file", "message_count", "authors_count", "conferences_count", "first_active", "last_active", "bbs_name"],
-    )
 
 
 def show_list_sources(
@@ -10971,7 +10889,7 @@ def show_list_sources(
     elif settings.format == "markdown":
         output = _render_sources_markdown(source_list, title)
     elif settings.format == "csv":
-        output = _render_sources_csv(source_list)
+        output = _render_csv_table(source_list, ['source_file', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -11080,7 +10998,7 @@ def show_list_dates(
     elif settings.format == "markdown":
         output = _render_dates_markdown(date_list, title)
     elif settings.format == "csv":
-        output = _render_dates_csv(date_list)
+        output = _render_csv_table(date_list, ['date', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -11154,20 +11072,6 @@ def _render_dates_html(date_list: list[dict[str, Any]], title: str) -> str:
 def _render_dates_markdown(date_list: list[dict[str, Any]], title: str) -> str:
     return _render_timeline_report_markdown(date_list, title, "Date", "date")
 
-
-def _render_dates_csv(date_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        date_list,
-        [
-            "date",
-            "message_count",
-            "authors_count",
-            "conferences_count",
-            "first_active",
-            "last_active",
-            "bbs_name",
-        ],
-    )
 
 
 def show_list_months(
@@ -11267,7 +11171,7 @@ def show_list_months(
     elif settings.format == "markdown":
         output = _render_months_markdown(month_list, title)
     elif settings.format == "csv":
-        output = _render_months_csv(month_list)
+        output = _render_csv_table(month_list, ['month', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -11341,20 +11245,6 @@ def _render_months_html(month_list: list[dict[str, Any]], title: str) -> str:
 def _render_months_markdown(month_list: list[dict[str, Any]], title: str) -> str:
     return _render_timeline_report_markdown(month_list, title, "Month", "month")
 
-
-def _render_months_csv(month_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        month_list,
-        [
-            "month",
-            "message_count",
-            "authors_count",
-            "conferences_count",
-            "first_active",
-            "last_active",
-            "bbs_name",
-        ],
-    )
 
 
 def show_list_days(
@@ -11460,7 +11350,7 @@ def show_list_days(
     elif settings.format == "markdown":
         output = _render_days_markdown(day_list, title)
     elif settings.format == "csv":
-        output = _render_days_csv(day_list)
+        output = _render_csv_table(day_list, ['day', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -11528,20 +11418,6 @@ def _render_days_html(day_list: list[dict[str, Any]], title: str) -> str:
 def _render_days_markdown(day_list: list[dict[str, Any]], title: str) -> str:
     return _render_timeline_report_markdown(day_list, title, "Day", "day")
 
-
-def _render_days_csv(day_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        day_list,
-        [
-            "day",
-            "message_count",
-            "authors_count",
-            "conferences_count",
-            "first_active",
-            "last_active",
-            "bbs_name",
-        ],
-    )
 
 
 def show_list_hours(
@@ -11641,7 +11517,7 @@ def show_list_hours(
     elif settings.format == "markdown":
         output = _render_hours_markdown(hour_list, title)
     elif settings.format == "csv":
-        output = _render_hours_csv(hour_list)
+        output = _render_csv_table(hour_list, ['hour', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -11709,20 +11585,6 @@ def _render_hours_html(hour_list: list[dict[str, Any]], title: str) -> str:
 def _render_hours_markdown(hour_list: list[dict[str, Any]], title: str) -> str:
     return _render_timeline_report_markdown(hour_list, title, "Hour", "hour")
 
-
-def _render_hours_csv(hour_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        hour_list,
-        [
-            "hour",
-            "message_count",
-            "authors_count",
-            "conferences_count",
-            "first_active",
-            "last_active",
-            "bbs_name",
-        ],
-    )
 
 
 def show_list_years(
@@ -11822,7 +11684,7 @@ def show_list_years(
     elif settings.format == "markdown":
         output = _render_years_markdown(year_list, title)
     elif settings.format == "csv":
-        output = _render_years_csv(year_list)
+        output = _render_csv_table(year_list, ['year', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
         use_colors = (
             not settings.output_path
@@ -11895,20 +11757,5 @@ def _render_years_html(year_list: list[dict[str, Any]], title: str) -> str:
 
 def _render_years_markdown(year_list: list[dict[str, Any]], title: str) -> str:
     return _render_timeline_report_markdown(year_list, title, "Year", "year")
-
-
-def _render_years_csv(year_list: list[dict[str, Any]]) -> str:
-    return _render_csv_table(
-        year_list,
-        [
-            "year",
-            "message_count",
-            "authors_count",
-            "conferences_count",
-            "first_active",
-            "last_active",
-            "bbs_name",
-        ],
-    )
 
 

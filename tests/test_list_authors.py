@@ -13,7 +13,7 @@ from pyqwk.core import (
     render_authors_as_text,
     _render_entity_report_html,
     _render_entity_report_markdown,
-    _render_authors_csv,
+    _render_csv_table,
 )
 from pyqwk.cli import main
 
@@ -84,7 +84,7 @@ def test_render_authors_formats():
     assert "| Bob | 5 | N/A | N/A | Unknown |" in md_out
 
     # CSV format
-    csv_out = _render_authors_csv(author_list)
+    csv_out = _render_csv_table(author_list, ['author', 'message_count', 'first_active', 'last_active', 'bbs_name'])
     assert "author,message_count,first_active,last_active,bbs_name" in csv_out
     assert "Bob,5,,," in csv_out
 
