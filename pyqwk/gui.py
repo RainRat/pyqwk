@@ -1438,6 +1438,7 @@ class QwkGuiApp:
             return
 
         if self.root.focus_get() == entry:
+            entry.selection_range(0, tk.END)
             return
 
         try:

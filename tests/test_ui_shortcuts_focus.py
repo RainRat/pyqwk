@@ -212,3 +212,16 @@ def test_detail_text_escape_focus_to_message_list(mock_gui_deps):
         app.clear_search(None)
         app.message_list.focus_set.assert_called_once()
         mock_clear_filters.assert_not_called()
+
+
+def test_focus_entry_field_when_already_focused(mock_gui_deps):
+    """Verify that _focus_entry_field selects all text when entry widget already has focus."""
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    root.focus_get.return_value = app.search_entry
+
+    app._focus_entry_field("search_entry", "search_var")
+
+    app.search_entry.selection_range.assert_called_once_with(0, "end")
