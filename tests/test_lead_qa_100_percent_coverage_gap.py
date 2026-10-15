@@ -201,9 +201,13 @@ def test_gui_branch_coverage_gaps():
 
     try:
         root = tk.Tk()
-        root.withdraw()
-    except tk.TclError:
+    except (tk.TclError, TypeError, AttributeError):
         pytest.skip("Tkinter display unavailable")
+    if type(root) is not tk.Tk:
+        # tkinter has been replaced by mocks by another test module's sys.modules patch.
+        pytest.skip("Tkinter is mocked in this test session")
+
+    root.withdraw()
 
     app = QwkGuiApp(root)
     app.messages = [create_msg(msgnum=1), create_msg(msgnum=2)]
