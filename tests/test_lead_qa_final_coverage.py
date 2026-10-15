@@ -1,17 +1,18 @@
 import logging
-import tkinter as tk
 from unittest.mock import MagicMock, patch
 import pytest
 
+import pyqwk.gui as gui
 from pyqwk.core import (
     ProcessingSettings,
+    show_list_months,
     show_list_years,
 )
 from pyqwk.gui import QwkGuiApp
 
 
-def test_show_list_years_user_name_fallback_and_short_file(mocker, tmp_path):
-    logger = logging.getLogger("test_years_gaps")
+def test_show_list_years_and_months_raw_archive_bytes(mocker, tmp_path):
+    logger = logging.getLogger("test_years_months_gaps")
 
     class MockBBSInfo:
         user_name = "BBS Fallback User"
@@ -20,11 +21,6 @@ def test_show_list_years_user_name_fallback_and_short_file(mocker, tmp_path):
 
     class MockBoardDict(dict):
         bbs_info = MockBBSInfo()
-
-    mocker.patch(
-        "pyqwk.core.load_data",
-        return_value=([], MockBoardDict()),
-    )
 
     settings = ProcessingSettings(
         verbose=False,
@@ -44,13 +40,31 @@ def test_show_list_years_user_name_fallback_and_short_file(mocker, tmp_path):
         my_name=None,
     )
 
+    # Test empty list return
+    mocker.patch(
+        "pyqwk.core.load_data",
+        return_value=([], MockBoardDict()),
+    )
     show_list_years(["archive.qwk"], settings, logger)
+    show_list_months(["archive.qwk"], settings, logger)
 
+    # Test short raw archive bytes (< BLOCK_SIZE)
     mocker.patch(
         "pyqwk.core.load_data",
         return_value=(b"short_data", MockBoardDict()),
     )
     show_list_years(["short.qwk"], settings, logger)
+    show_list_months(["short.qwk"], settings, logger)
+
+    # Test valid raw archive bytes (>= BLOCK_SIZE) calling parse_messages
+    dummy_block = b" " * 128
+    mocker.patch(
+        "pyqwk.core.load_data",
+        return_value=(dummy_block, MockBoardDict()),
+    )
+    mocker.patch("pyqwk.core.parse_messages", return_value=[])
+    show_list_years(["valid.qwk"], settings, logger)
+    show_list_months(["valid.qwk"], settings, logger)
 
 
 def test_gui_exclude_selection_tcl_error():
@@ -65,7 +79,7 @@ def test_gui_exclude_selection_tcl_error():
             app.reload_messages = MagicMock()
             app._search_timer = None
 
-            app.detail_text.tag_ranges.side_effect = tk.TclError("No selection")
+            app.detail_text.tag_ranges.side_effect = gui.tk.TclError("No selection")
 
             app._exclude_from_selection()
             app.detail_text.tag_ranges.assert_called_with("sel")
