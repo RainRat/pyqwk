@@ -290,7 +290,7 @@ class QwkGuiApp:
             command=lambda a=orig_from: self._pivot_filter(author=a),
         )
         menu.add_command(
-            label="Exclude Author",
+            label=f"Exclude Author: {author_label}",
             command=lambda a=orig_from: self._pivot_filter(exclude_author=a),
         )
 
@@ -300,7 +300,7 @@ class QwkGuiApp:
             command=lambda t=orig_to: self._pivot_filter(recipient=t),
         )
         menu.add_command(
-            label="Exclude Recipient",
+            label=f"Exclude Recipient: {to_label}",
             command=lambda t=orig_to: self._pivot_filter(exclude_recipient=t),
         )
 
@@ -312,7 +312,7 @@ class QwkGuiApp:
             command=lambda s=orig_subject: self._pivot_filter(subject=s),
         )
         menu.add_command(
-            label="Exclude Subject",
+            label=f"Exclude Subject: {subj_label}",
             command=lambda s=orig_subject: self._pivot_filter(exclude_subject=s),
         )
 
@@ -323,7 +323,7 @@ class QwkGuiApp:
             command=lambda c=msg.confnum: self._pivot_filter(conf_num=c),
         )
         menu.add_command(
-            label="Exclude Conference",
+            label=f"Exclude Conference: {conf_label}",
             command=lambda c=msg.confnum: self._pivot_filter(exclude_conf_num=c),
         )
 
@@ -337,7 +337,7 @@ class QwkGuiApp:
                 command=lambda b=bbs_display: self._pivot_filter(bbs_name=b),
             )
             menu.add_command(
-                label="Exclude BBS",
+                label=f"Exclude BBS: {bbs_label}",
                 command=lambda b=bbs_display: self._pivot_filter(exclude_bbs_name=b),
             )
 
@@ -412,7 +412,7 @@ class QwkGuiApp:
                     command=lambda a=author_text: self._pivot_filter(author=a),
                 )
                 menu.add_command(
-                    label="Exclude Author",
+                    label=f"Exclude Author: {author_label}",
                     command=lambda a=author_text: self._pivot_filter(exclude_author=a),
                 )
 
@@ -425,7 +425,7 @@ class QwkGuiApp:
                     command=lambda t=to_text: self._pivot_filter(recipient=t),
                 )
                 menu.add_command(
-                    label="Exclude Recipient",
+                    label=f"Exclude Recipient: {to_label}",
                     command=lambda t=to_text: self._pivot_filter(exclude_recipient=t),
                 )
 
@@ -438,7 +438,7 @@ class QwkGuiApp:
                     command=lambda s=subj_text: self._pivot_filter(subject=s),
                 )
                 menu.add_command(
-                    label="Exclude Subject",
+                    label=f"Exclude Subject: {subj_label}",
                     command=lambda s=subj_text: self._pivot_filter(exclude_subject=s),
                 )
 
@@ -451,7 +451,7 @@ class QwkGuiApp:
                     command=lambda c=msg.confnum: self._pivot_filter(conf_num=c),
                 )
                 menu.add_command(
-                    label="Exclude Conference",
+                    label=f"Exclude Conference: {conf_label}",
                     command=lambda c=msg.confnum: self._pivot_filter(exclude_conf_num=c),
                 )
 
@@ -467,7 +467,7 @@ class QwkGuiApp:
                         command=lambda b=bbs_display: self._pivot_filter(bbs_name=b),
                     )
                     menu.add_command(
-                        label="Exclude BBS",
+                        label=f"Exclude BBS: {bbs_label}",
                         command=lambda b=bbs_display: self._pivot_filter(exclude_bbs_name=b),
                     )
             except (ValueError, IndexError):

@@ -190,8 +190,17 @@ def test_context_menus_have_subject_pivot(mock_gui_deps):
         recip_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Recipient" in c.kwargs.get("label", "")]
         assert len(recip_call) == 1
 
-        excl_recip_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Recipient" in c.kwargs.get("label", "")]
+        excl_recip_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Recipient: Recipient" in c.kwargs.get("label", "")]
         assert len(excl_recip_call) == 1
+
+        excl_author_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Author: Author" in c.kwargs.get("label", "")]
+        assert len(excl_author_call) == 1
+
+        excl_subj_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Subject: Subject To Pivot" in c.kwargs.get("label", "")]
+        assert len(excl_subj_call) == 1
+
+        excl_conf_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Conference: 1" in c.kwargs.get("label", "")]
+        assert len(excl_conf_call) == 1
 
         # Test Text Context Menu
         mock_menu.add_command.reset_mock()
@@ -204,8 +213,17 @@ def test_context_menus_have_subject_pivot(mock_gui_deps):
         recip_call = [c for c in mock_menu.add_command.call_args_list if "Filter by Recipient" in c.kwargs.get("label", "")]
         assert len(recip_call) == 1
 
-        excl_recip_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Recipient" in c.kwargs.get("label", "")]
+        excl_recip_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Recipient: Recipient" in c.kwargs.get("label", "")]
         assert len(excl_recip_call) == 1
+
+        excl_author_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Author: Author" in c.kwargs.get("label", "")]
+        assert len(excl_author_call) == 1
+
+        excl_subj_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Subject: Subject To Pivot" in c.kwargs.get("label", "")]
+        assert len(excl_subj_call) == 1
+
+        excl_conf_call = [c for c in mock_menu.add_command.call_args_list if "Exclude Conference: 1" in c.kwargs.get("label", "")]
+        assert len(excl_conf_call) == 1
 
         # Verify Copy commands also present in Text Context Menu
         copy_labels = [c.kwargs.get("label", "") for c in mock_menu.add_command.call_args_list if "Copy " in c.kwargs.get("label", "")]
