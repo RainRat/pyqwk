@@ -201,6 +201,26 @@ def test_preset_forum(mock_expand_paths, mock_process_merged_files):
 
 @patch("pyqwk.cli.process_merged_files")
 @patch("pyqwk.cli.expand_paths")
+def test_preset_sanitize(mock_expand_paths, mock_process_merged_files):
+    """Verify the 'sanitize' preset defaults."""
+    mock_expand_paths.return_value = ["dummy.qwk"]
+
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "-P", "sanitize", "-o", "safe.txt"]):
+        main()
+
+    mock_process_merged_files.assert_called_once()
+    settings = mock_process_merged_files.call_args[0][1]
+
+    assert settings.format == "text"
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is True
+    assert settings.binaries_removal is True
+    assert settings.strip_ansi is True
+    assert settings.redact_pii is True
+
+
+@patch("pyqwk.cli.process_merged_files")
+@patch("pyqwk.cli.expand_paths")
 def test_preset_feed(mock_expand_paths, mock_process_merged_files):
     """Verify the 'feed' preset defaults."""
     mock_expand_paths.return_value = ["dummy.qwk"]
