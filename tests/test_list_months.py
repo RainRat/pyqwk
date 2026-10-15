@@ -9,7 +9,7 @@ from pyqwk.core import (
     render_months_as_text,
     _render_months_html,
     _render_months_markdown,
-    _render_months_csv,
+    _render_csv_table,
     show_list_months,
 )
 from pyqwk.cli import main
@@ -131,7 +131,7 @@ def test_render_months_helpers():
     assert "# Monthly Activity Summary" in md_out
     assert "| 2023-10 | 5 | 2 | 1 | 2023-10-12 12:00 | 2023-10-12 12:00 | Test BBS |" in md_out
 
-    csv_out = _render_months_csv(month_list)
+    csv_out = _render_csv_table(month_list, ['month', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     assert "month,message_count,authors_count,conferences_count,first_active,last_active,bbs_name" in csv_out
     assert "2023-10,5,2,1,2023-10-12 12:00,2023-10-12 12:00,Test BBS" in csv_out
 

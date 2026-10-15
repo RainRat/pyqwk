@@ -58,17 +58,19 @@ Run the tool on any supported archive:
 
 ```bash
 # Process a single archive
-python qwk.py archive.qwk
+qwk archive.qwk
 
 # Process an entire folder
-python qwk.py my_archives/
+qwk my_archives/
 
 # Process a compressed TAR archive
-python qwk.py messages.tar.gz
+qwk messages.tar.gz
 
 # Read directly from standard input (piping)
-cat archive.qwk | python qwk.py -
+cat archive.qwk | qwk -
 ```
+
+*Note: If you are running directly from the source repository folder without installing the package, use `python qwk.py` or `python -m pyqwk.cli` instead of `qwk`.*
 
 ## Installation
 
@@ -194,6 +196,7 @@ qwk-gui messages.db
 - **F1**: Display all keyboard shortcuts.
 
 **View & Display**
+- **Ctrl + MouseWheel**: Scroll up or down to adjust text size (zoom in/out).
 - **Ctrl + Plus** or **Ctrl + Equal**: Increase message font size (zoom in).
 - **Ctrl + Minus**: Decrease message font size (zoom out).
 - **Ctrl + 0**: Reset message font size to default.
@@ -854,6 +857,7 @@ for msg in messages:
 | `-F, --format` | Set the output format (html, json, markdown, etc.). |
 | `-j, --json` | Shortcut for `--format json`. |
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
+| `--list-formats` | List all supported export formats, file extensions, storage types, and descriptions, then exit. |
 | `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |

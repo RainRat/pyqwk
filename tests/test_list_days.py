@@ -9,7 +9,7 @@ from pyqwk.core import (
     render_days_as_text,
     _render_days_html,
     _render_days_markdown,
-    _render_days_csv,
+    _render_csv_table,
     show_list_days,
 )
 from pyqwk.cli import main
@@ -111,7 +111,7 @@ def test_render_days_functions():
     assert "# Day of Week Activity Summary" in md_out
     assert "| Monday | 10 | 3 | 2 | 2023-10-09 08:05 | 2023-10-09 18:50 | Digital Horizon BBS |" in md_out
 
-    csv_out = _render_days_csv(days)
+    csv_out = _render_csv_table(days, ['day', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     assert "day,message_count,authors_count,conferences_count,first_active,last_active,bbs_name" in csv_out
     assert "Monday,10,3,2,2023-10-09 08:05,2023-10-09 18:50,Digital Horizon BBS" in csv_out
 

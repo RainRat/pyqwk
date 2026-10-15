@@ -125,3 +125,50 @@ def test_zoom_bindings_and_menu(mock_gui_deps):
     assert "<Control-KP_Subtract>" in bound_events
     assert "<Control-0>" in bound_events
     assert "<Control-KP_0>" in bound_events
+    assert "<Control-MouseWheel>" in bound_events
+    assert "<Control-Button-4>" in bound_events
+    assert "<Control-Button-5>" in bound_events
+
+
+def test_mousewheel_zoom_handler(mock_gui_deps):
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+    assert app.font_size_offset == 0
+
+    # Test Linux X11 Button 4 (zoom in)
+    event_b4 = MagicMock()
+    event_b4.num = 4
+    res = app._on_mousewheel_zoom(event_b4)
+    assert res == "break"
+    assert app.font_size_offset == 1
+
+    # Test Linux X11 Button 5 (zoom out)
+    event_b5 = MagicMock()
+    event_b5.num = 5
+    res = app._on_mousewheel_zoom(event_b5)
+    assert res == "break"
+    assert app.font_size_offset == 0
+
+    # Test Windows/macOS MouseWheel positive delta (zoom in)
+    event_delta_pos = MagicMock()
+    event_delta_pos.num = None
+    event_delta_pos.delta = 120
+    res = app._on_mousewheel_zoom(event_delta_pos)
+    assert res == "break"
+    assert app.font_size_offset == 1
+
+    # Test Windows/macOS MouseWheel negative delta (zoom out)
+    event_delta_neg = MagicMock()
+    event_delta_neg.num = None
+    event_delta_neg.delta = -120
+    res = app._on_mousewheel_zoom(event_delta_neg)
+    assert res == "break"
+    assert app.font_size_offset == 0
+
+    # Test zero delta event returns None
+    event_zero = MagicMock()
+    event_zero.num = None
+    event_zero.delta = 0
+    res = app._on_mousewheel_zoom(event_zero)
+    assert res is None
