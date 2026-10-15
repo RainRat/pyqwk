@@ -195,7 +195,7 @@ def test_show_threads_none_thread_id(tmp_path):
     assert os.path.exists(out_file)
 
 
-def test_gui_branch_coverage_gaps():
+def test_gui_branch_coverage_gaps(real_tkinter_modules):
     from pyqwk.gui import QwkGuiApp
     import tkinter as tk
 
@@ -203,10 +203,6 @@ def test_gui_branch_coverage_gaps():
         root = tk.Tk()
     except (tk.TclError, TypeError, AttributeError):
         pytest.skip("Tkinter display unavailable")
-    if type(root) is not tk.Tk:
-        # tkinter has been replaced by mocks by another test module's sys.modules patch.
-        pytest.skip("Tkinter is mocked in this test session")
-
     root.withdraw()
 
     app = QwkGuiApp(root)
