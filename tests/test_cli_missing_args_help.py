@@ -14,6 +14,6 @@ def test_missing_input_paths_error_message(capsys):
     captured = capsys.readouterr()
     assert "the following arguments are required: input_paths" in captured.err
     assert "To process or view an archive, pass one or more archive files or directories:" in captured.err
-    assert "qwk archive.qwk --oneline" in captured.err
+    assert "qwk archive.qwk -1" in captured.err
     assert "qwk --list-presets" in captured.err
     assert "qwk --help" in captured.err
