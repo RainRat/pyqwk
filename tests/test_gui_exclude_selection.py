@@ -88,3 +88,13 @@ def test_show_text_context_menu_with_selection(mock_gui_deps):
 
     assert "Search for 'Sample text'" in labels
     assert "Exclude 'Sample text'" in labels
+
+def test_exclude_from_selection_tcl_error(mock_gui_deps):
+    from pyqwk.gui import QwkGuiApp
+
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app.detail_text.tag_ranges.side_effect = mock_gui_deps["tk"].TclError("No selection")
+    app._exclude_from_selection()
+    app.detail_text.tag_ranges.assert_called_with("sel")
