@@ -197,6 +197,10 @@ PRESETS_INFO = {
         "desc": "Save clean text without headers.",
         "equiv": "--format text --clean --noheader",
     },
+    "sanitize": {
+        "desc": "Save clean messages with personal information (emails and phone numbers) redacted.",
+        "equiv": "--format text --clean --redact-pii",
+    },
 }
 
 
@@ -1033,7 +1037,7 @@ examples:
     preset_group.add_argument(
         "-P",
         "--preset",
-        choices=["blog", "email", "backup", "digest", "digest-text", "forum", "feed", "text-archive"],
+        choices=["blog", "email", "backup", "digest", "digest-text", "forum", "feed", "text-archive", "sanitize"],
         help=(
             "Apply predefined parameter combinations for common workflows:\n"
             "  blog           Save messages as clean, threaded individual Markdown files.\n"
@@ -1043,7 +1047,8 @@ examples:
             "  digest-text    Save a single clean, threaded plain text file with a table of contents.\n"
             "  forum          Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
             "  feed           Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
-            "  text-archive   Save clean text without headers."
+            "  text-archive   Save clean text without headers.\n"
+            "  sanitize       Save clean messages with personal information (emails and phone numbers) redacted."
         ),
     )
     preset_group.add_argument(
@@ -1230,6 +1235,11 @@ examples:
                 "format": "text",
                 "clean": True,
                 "noheader": True,
+            },
+            "sanitize": {
+                "format": "text",
+                "clean": True,
+                "redactpii": True,
             },
         }
 
