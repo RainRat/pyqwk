@@ -226,6 +226,7 @@ class QwkArgumentParser(argparse.ArgumentParser):
                 "  qwk archive.qwk -P blog -o ./output     # Export using a preset\n"
                 "  qwk archive.qwk --search \"keyword\"     # Search for messages\n"
                 "  qwk --list-presets                      # List available workflow presets\n"
+                "  qwk --list-formats                      # List supported export formats\n"
                 "  qwk --help                              # Display full help and options"
             )
             super().error(quick_usage)

@@ -1,6 +1,7 @@
 import pytest
 import sys
-from pyqwk.cli import QwkArgumentParser, FORMATS_INFO
+from unittest.mock import patch
+from pyqwk.cli import QwkArgumentParser, main, FORMATS_INFO
 
 
 def test_list_formats_flag(capsys, monkeypatch):
@@ -55,7 +56,32 @@ def test_invalid_format_error_message(capsys):
     assert exc.value.code != 0
     captured = capsys.readouterr()
     err = captured.err
+    assert "invalid choice: 'invalid_format'" in err
     assert "Supported export formats:" in err
     assert "html" in err
     assert "markdown" in err
     assert "sqlite" in err
+    assert "(.html, .htm)" in err
+    assert "Relational database tables with full indexing and query support." in err
+
+
+def test_cli_help_includes_list_formats(capsys):
+    """Verify that qwk --help includes --list-formats in the formatting group."""
+    with patch.object(sys, "argv", ["qwk", "--help"]):
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert "--list-formats" in captured.out
+
+
+def test_missing_args_help_includes_list_formats(capsys):
+    """Verify that qwk without arguments mentions --list-formats in the usage error."""
+    with patch.object(sys, "argv", ["qwk"]):
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert "--list-formats" in captured.err
