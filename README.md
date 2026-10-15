@@ -58,17 +58,19 @@ Run the tool on any supported archive:
 
 ```bash
 # Process a single archive
-python qwk.py archive.qwk
+qwk archive.qwk
 
 # Process an entire folder
-python qwk.py my_archives/
+qwk my_archives/
 
 # Process a compressed TAR archive
-python qwk.py messages.tar.gz
+qwk messages.tar.gz
 
 # Read directly from standard input (piping)
-cat archive.qwk | python qwk.py -
+cat archive.qwk | qwk -
 ```
+
+*Note: If you are executing directly from an uninstalled source repository, you can use `python qwk.py` or `python -m pyqwk.cli` instead of `qwk`.*
 
 ## Installation
 
