@@ -194,6 +194,7 @@ qwk-gui messages.db
 - **F1**: Display all keyboard shortcuts.
 
 **View & Display**
+- **Ctrl + MouseWheel**: Scroll up or down to adjust text size (zoom in/out).
 - **Ctrl + Plus** or **Ctrl + Equal**: Increase message font size (zoom in).
 - **Ctrl + Minus**: Decrease message font size (zoom out).
 - **Ctrl + 0**: Reset message font size to default.
