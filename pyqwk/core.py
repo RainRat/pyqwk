@@ -7278,7 +7278,7 @@ def extract_domains_from_text(text: str) -> list[str]:
                 host_clean = host.lower()
                 if host_clean:
                     domains.append(host_clean)
-        except Exception:
+        except (ValueError, AttributeError):
             pass
 
     return domains
