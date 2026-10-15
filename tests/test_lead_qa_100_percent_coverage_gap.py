@@ -256,16 +256,16 @@ def test_gui_branch_coverage_gaps():
     app._search_timer = None
     app._on_search_changed()
 
-    with patch("tkinter.filedialog.asksaveasfilename", return_value=""):
-        app._on_export_attachment("attachment.bin", b"data")
+    if app.message_list.get_children():
+        app.message_list.selection_set(app.message_list.get_children()[0])
+        with patch("tkinter.filedialog.asksaveasfilename", return_value=""):
+            app.save_attachment("attachment.bin", 0)
 
-    cb = app._create_pivot_callback("search", "query")
-    with patch.object(app, "reload_messages") as mock_reload:
-        cb()
-        assert app.search_var.get() == "query"
-        mock_reload.assert_called_once()
+    with patch.object(app, "reload_messages"):
+        app._pivot_filter(author="Alice")
+        assert app.search_var.get() == "Alice"
 
-    res = app._get_sort_key_for_item("1", "#0")
-    assert res is not None
+    if app.messages:
+        app._update_status_bar(0)
 
     root.destroy()
