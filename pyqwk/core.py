@@ -8680,6 +8680,17 @@ def process_multiple_files(
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> bool:
+    """Process multiple message archive files individually and save outputs to a directory.
+
+    Args:
+        input_paths: List of file paths to message archives.
+        output_dir: Target directory path where converted files will be written.
+        settings: Processing configuration and output options.
+        logger: Logger instance for recording progress and errors.
+
+    Returns:
+        True if any archive encountered a processing error, False if all succeeded.
+    """
     if not settings.dry_run:
         os.makedirs(output_dir, exist_ok=True)
     had_errors = False
