@@ -243,6 +243,9 @@ qwk archive.qwk --preset email -o ./emails/
 # Back up your archive into a single SQLite database with duplicates removed
 qwk archive.qwk --preset backup -o backup.db
 
+# Save clean messages as a CSV dataset (for spreadsheet and data tools)
+qwk archive.qwk --preset dataset -o dataset.csv
+
 # Create a single threaded HTML digest with a table of contents
 qwk archive.qwk --preset digest -o digest.html
 
@@ -275,6 +278,7 @@ qwk --list-presets
 | `blog` | Saves clean, threaded Markdown files. | `--format markdown --clean --threaded --individual-files` |
 | `email` | Saves messages as individual EML files. | `--format eml --individual-files` |
 | `backup` | Creates a SQLite backup with private and unique messages. | `--format sqlite --private --unique` |
+| `dataset` | Saves clean messages as a CSV dataset. | `--format csv --clean` |
 | `digest` | Saves a single clean, threaded HTML file with a table of contents. | `--format html --threaded --clean --toc` |
 | `digest-text` | Saves a single clean, threaded plain text file with a table of contents. | `--format text --threaded --clean --toc` |
 | `forum` | Saves clean, threaded individual HTML files with an index. | `--format html --clean --threaded --individual-files --toc` |
@@ -862,7 +866,7 @@ for msg in messages:
 | `-j, --json` | Shortcut for `--format json`. |
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
 | `--list-formats` | List all supported export formats, file extensions, storage types, and descriptions, then exit. |
-| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive, sanitize). |
+| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, dataset, digest, digest-text, forum, feed, text-archive, sanitize). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
 | `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
