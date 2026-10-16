@@ -689,10 +689,9 @@ class QwkGuiApp:
         if event.keysym in ("space", "BackSpace", "Prior", "Next"):
             return self._on_space_pressed(event)
 
-        # Allow common Control key shortcuts to propagate to root bindings
-        if event.state & 0x4:  # Control mask
-            if event.keysym.lower() in ("c", "a", "f", "g", "o", "s", "i", "q"):
-                return None
+        # Allow Control key shortcuts to propagate to root bindings
+        if isinstance(event.state, int) and (event.state & 0x4):  # Control mask
+            return None
 
         # Handle message navigation shortcuts
         key = event.keysym.lower()

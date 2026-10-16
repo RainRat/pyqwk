@@ -131,7 +131,7 @@ def test_find_message_index_no_tree_selection(mock_gui, message_factory):
     assert idx == 0
 
 def test_block_text_input_control_keys(mock_gui):
-    """Test _block_text_input with control keys (Branch 421->425)."""
+    """Test _block_text_input with control keys."""
     event = MagicMock()
     event.state = 0x4 # Control mask
     event.keysym = "c"
@@ -141,8 +141,7 @@ def test_block_text_input_control_keys(mock_gui):
     assert mock_gui._block_text_input(event) is None
 
     event.keysym = "v"
-    # Should not be None (it returns "break" by default at the end of function)
-    assert mock_gui._block_text_input(event) == "break"
+    assert mock_gui._block_text_input(event) is None
 
 def test_on_space_pressed_unhandled_key(mock_gui):
     """Test _on_space_pressed with an unhandled keysym (Line 725)."""
