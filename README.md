@@ -329,6 +329,11 @@ qwk archive.qwk --format html -o messages.html
 qwk archive.qwk --embed-attachments -o messages.html
 ```
 
+**List supported export formats:**
+```bash
+qwk --list-formats
+```
+
 **Convert to an mbox file (for email apps):**
 ```bash
 qwk archive.qwk --format mbox -o messages.mbox
