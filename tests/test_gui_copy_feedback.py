@@ -70,3 +70,25 @@ def test_restore_status_bar_invalid_selection_index():
         app.message_list.selection.return_value = ("not_an_int",)
         app._restore_status_bar()
         app._update_status_bar.assert_called_once_with(None)
+
+
+def test_show_status_message_schedules_restoration():
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
+    ):
+        root = MagicMock()
+        app = QwkGuiApp(root)
+
+        app.status_label = MagicMock()
+
+        app._show_status_message("Test Status Message", timeout_ms=3000)
+        app.status_label.config.assert_called_with(text="Test Status Message")
+        app.root.after.assert_called_with(3000, app._restore_status_bar)
+
+        # Verify go_back when empty history calls _show_status_message
+        app._history_stack = []
+        app.go_back()
+        app.status_label.config.assert_called_with(text="No previous message in history")
