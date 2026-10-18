@@ -1217,7 +1217,7 @@ class QwkGuiApp:
         if not force and self._is_entry_widget(self.root.focus_get()):
             return False
 
-        all_items = self._get_all_tree_items()
+        all_items = self._get_all_tree_items() if hasattr(self, "message_list") else []
         if not all_items:
             return False
 
@@ -2385,32 +2385,52 @@ class QwkGuiApp:
         self, delta: int, _event: object | None = None
     ) -> None:
         """Cycle through search matches in the detail view, navigating across messages if needed."""
-        if not self._search_matches:
-            # If no matches in current message, but search is active, try to find in other messages
-            if self.search_var.get().strip():
-                if self._select_relative_message(delta, force=True):
-                    self._pending_match_idx = 0 if delta > 0 else -1
-                    return
+        current_idx = getattr(self, "_current_match_idx", -1)
+        new_idx = current_idx + delta
+
+        # Single-message navigation if within current matches
+        if self._search_matches and 0 <= new_idx < len(self._search_matches):
+            self.detail_text.tag_remove("current_search_highlight", "1.0", tk.END)
+            self._current_match_idx = new_idx
+            start_pos, end_pos = self._search_matches[self._current_match_idx]
+            self.detail_text.tag_add("current_search_highlight", start_pos, end_pos)
+            self.detail_text.tag_raise("current_search_highlight")
+            self.detail_text.see(start_pos)
+
+            self.search_count_label.config(
+                text=f"{self._current_match_idx + 1} / {len(self._search_matches)}"
+            )
+            current_selection = self.message_list.selection()
+            current_index = None
+            if current_selection:
+                try:
+                    current_index = int(current_selection[0])
+                except (ValueError, IndexError):
+                    pass
+            self._update_status_bar(current_index)
             return
 
-        new_idx = self._current_match_idx + delta
-
         # Cross-message navigation
-        if new_idx < 0 or new_idx >= len(self._search_matches):
-            if self._select_relative_message(delta, force=True):
+        if not self.search_var.get().strip() and not self._search_matches:
+            return
+
+        all_items = self._get_all_tree_items() if hasattr(self, "message_list") else []
+        max_steps = max(len(all_items), 1)
+
+        for _ in range(max_steps):
+            moved = self._select_relative_message(delta, force=True)
+            if moved:
                 self._pending_match_idx = 0 if delta > 0 else -1
-                return
+                if self._search_matches:
+                    return
             else:
                 # Boundary reached, implement archive-wide wrap-around
-                all_items = self._get_all_tree_items()
                 if not all_items:
                     return
                 target_iid = all_items[0] if delta > 0 else all_items[-1]
 
-                # Handle case where the wrap-around target is the current message
                 current_sel = self.message_list.selection()
                 if current_sel and current_sel[0] == target_iid:
-                    # Manually trigger render since selection_set won't trigger event
                     self._pending_match_idx = 0 if delta > 0 else -1
                     try:
                         self._render_message(int(target_iid))
@@ -2421,28 +2441,9 @@ class QwkGuiApp:
                     self.message_list.see(target_iid)
                     self.message_list.focus(target_iid)
                     self._pending_match_idx = 0 if delta > 0 else -1
-                return
 
-        # Single-message navigation
-        self.detail_text.tag_remove("current_search_highlight", "1.0", tk.END)
-        self._current_match_idx = new_idx
-        start_pos, end_pos = self._search_matches[self._current_match_idx]
-        self.detail_text.tag_add("current_search_highlight", start_pos, end_pos)
-        self.detail_text.tag_raise("current_search_highlight")
-        self.detail_text.see(start_pos)
-
-        # Update counters and status
-        self.search_count_label.config(
-            text=f"{self._current_match_idx + 1} / {len(self._search_matches)}"
-        )
-        current_selection = self.message_list.selection()
-        current_index = None
-        if current_selection:
-            try:
-                current_index = int(current_selection[0])
-            except (ValueError, IndexError):
-                pass
-        self._update_status_bar(current_index)
+                if self._search_matches or not moved:
+                    return
 
     def open_file(self, _event: object | None = None) -> None:
         filetypes = [
