@@ -1,27 +1,35 @@
-import sys
-import os
 from unittest.mock import MagicMock, patch, ANY
-
-mock_tk = MagicMock()
-mock_ttk = MagicMock()
-sys.modules["tkinter"] = mock_tk
-sys.modules["tkinter.filedialog"] = MagicMock()
-sys.modules["tkinter.messagebox"] = MagicMock()
-sys.modules["tkinter.simpledialog"] = MagicMock()
-sys.modules["tkinter.ttk"] = mock_ttk
-
 import pytest
 from pyqwk.gui import QwkGuiApp
 
+
 @pytest.fixture
-def app():
+def mock_gui_deps():
     root = MagicMock()
     root.after = MagicMock()
-    app = QwkGuiApp(root)
-    app.status_label = MagicMock()
-    return app
 
-def test_save_report_success(app):
+    def make_var(value=None):
+        m = MagicMock()
+        m.get.return_value = value
+        return m
+
+    with (
+        patch("pyqwk.gui.tk") as mock_tk,
+        patch("pyqwk.gui.ttk") as mock_ttk,
+        patch("pyqwk.gui.filedialog") as mock_fd,
+        patch("pyqwk.gui.messagebox") as mock_mb,
+    ):
+        mock_tk.BooleanVar.side_effect = lambda value=False, **kw: make_var(value)
+        mock_tk.StringVar.side_effect = lambda value="", **kw: make_var(value)
+        mock_tk.IntVar.side_effect = lambda value=0, **kw: make_var(value)
+
+        app = QwkGuiApp(root)
+        app.status_label = MagicMock()
+        yield app
+
+
+def test_save_report_success(mock_gui_deps):
+    app = mock_gui_deps
     app.current_paths = ["test.qwk"]
     app.logger = MagicMock()
 
@@ -31,9 +39,10 @@ def test_save_report_success(app):
         patch("pyqwk.gui.filedialog.asksaveasfilename", return_value="report.html") as mock_ask,
         patch("pyqwk.gui.messagebox.showinfo") as mock_info,
         patch("pyqwk.gui.calculate_archive_stats", return_value={"file": "test.qwk"}),
-        patch("pyqwk.core.show_stats") as mock_show_stats
+        patch("pyqwk.core.show_stats") as mock_show_stats,
     ):
         buttons = []
+
         def mock_button(parent, **kwargs):
             btn = MagicMock()
             btn.kwargs = kwargs
@@ -57,7 +66,9 @@ def test_save_report_success(app):
         assert args[1].output_path == "report.html"
         mock_info.assert_called_once_with("Report Saved", ANY)
 
-def test_save_report_cancelled(app):
+
+def test_save_report_cancelled(mock_gui_deps):
+    app = mock_gui_deps
     app.current_paths = ["test.qwk"]
 
     with (
@@ -65,9 +76,10 @@ def test_save_report_cancelled(app):
         patch("pyqwk.gui.tk.Text"),
         patch("pyqwk.gui.filedialog.asksaveasfilename", return_value="") as mock_ask,
         patch("pyqwk.core.show_stats") as mock_show_stats,
-        patch("pyqwk.gui.calculate_archive_stats", return_value={"file": "test.qwk"})
+        patch("pyqwk.gui.calculate_archive_stats", return_value={"file": "test.qwk"}),
     ):
         buttons = []
+
         def mock_button(parent, **kwargs):
             btn = MagicMock()
             btn.kwargs = kwargs
@@ -85,7 +97,9 @@ def test_save_report_cancelled(app):
         mock_ask.assert_called_once()
         mock_show_stats.assert_not_called()
 
-def test_save_report_error(app):
+
+def test_save_report_error(mock_gui_deps):
+    app = mock_gui_deps
     app.current_paths = ["test.qwk"]
     app.logger = MagicMock()
 
@@ -95,9 +109,10 @@ def test_save_report_error(app):
         patch("pyqwk.gui.filedialog.asksaveasfilename", return_value="report.json") as mock_ask,
         patch("pyqwk.gui.messagebox.showerror") as mock_error,
         patch("pyqwk.gui.calculate_archive_stats", return_value={"file": "test.qwk"}),
-        patch("pyqwk.core.show_stats", side_effect=Exception("Disk full")) as mock_show_stats
+        patch("pyqwk.core.show_stats", side_effect=Exception("Disk full")) as mock_show_stats,
     ):
         buttons = []
+
         def mock_button(parent, **kwargs):
             btn = MagicMock()
             btn.kwargs = kwargs
