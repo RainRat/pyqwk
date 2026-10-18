@@ -291,6 +291,11 @@ qwk --list-presets
 qwk archive.qwk
 ```
 
+**List supported export formats:**
+```bash
+qwk --list-formats
+```
+
 **Pipe from standard input:**
 You can pass `-` as the file path to pipe archive data directly into `pyqwk`. The tool automatically detects the archive format (such as QWK, JSON, ZIP, or SQLite):
 ```bash
@@ -1044,6 +1049,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 ## Troubleshooting
 
 - **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **If the graphical reader fails to open on Linux:** If `qwk-gui` shows a display error (such as `no display name`), ensure you are running in a desktop environment or pass X11 forwarding (`ssh -X`). If you are working on a server without a display, use the `qwk` command-line tool instead.
 - **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
 - **If options do not work together:** Some options cannot be used together:
   - You cannot use `--oneline` and `--individual-files` at the same time.
