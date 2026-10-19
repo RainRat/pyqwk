@@ -260,6 +260,9 @@ qwk archive.qwk --preset text-archive -o archive.txt
 
 # Save clean messages with personal information (emails and phone numbers) redacted
 qwk archive.qwk --preset sanitize -o safe.txt
+
+# Save clean messages as a CSV dataset suitable for analysis
+qwk archive.qwk --preset dataset -o dataset.csv
 ```
 
 To list all available presets and their equivalent options directly in your terminal, use:
@@ -281,6 +284,7 @@ qwk --list-presets
 | `feed` | Saves a clean chronological RSS feed. | `--format rss --clean --sort date --reverse` |
 | `text-archive` | Saves clean text without headers. | `--format text --clean --noheader` |
 | `sanitize` | Saves clean messages with personal information (emails and phone numbers) redacted. | `--format text --clean --redact-pii` |
+| `dataset` | Saves clean messages as a CSV dataset suitable for analysis. | `--format csv --clean` |
 
 *Note: You can override any preset setting by adding its command-line option.*
 
@@ -862,7 +866,7 @@ for msg in messages:
 | `-j, --json` | Shortcut for `--format json`. |
 | `-J, --jsonl` | Shortcut for `--format jsonl`. |
 | `--list-formats` | List all supported export formats, file extensions, storage types, and descriptions, then exit. |
-| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive, sanitize). |
+| `-P, --preset` | Apply predefined parameter combinations for common workflows (blog, email, backup, digest, digest-text, forum, feed, text-archive, sanitize, dataset). |
 | `--list-presets` | List all available presets, their descriptions, and equivalent command-line options, then exit. |
 | `--list-conferences` | List all conference areas across input archives and exit. |
 | `--list-authors` | List all message authors with message counts and active date ranges, then exit. |
