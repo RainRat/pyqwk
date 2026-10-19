@@ -10783,12 +10783,7 @@ def render_sources_as_text(source_list: list[dict[str, Any]], use_colors: bool =
     return "\n".join(lines)
 
 
-def _render_sources_html(source_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_html(source_list, title, "Source File", "source_file")
 
-
-def _render_sources_markdown(source_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_markdown(source_list, title, "Source File", "source_file")
 
 
 
@@ -10885,9 +10880,9 @@ def show_list_sources(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in source_list)
     elif settings.format == "html":
-        output = _render_sources_html(source_list, title)
+        output = _render_timeline_report_html(source_list, title, "Source File", "source_file")
     elif settings.format == "markdown":
-        output = _render_sources_markdown(source_list, title)
+        output = _render_timeline_report_markdown(source_list, title, "Source File", "source_file")
     elif settings.format == "csv":
         output = _render_csv_table(source_list, ['source_file', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
@@ -10994,9 +10989,9 @@ def show_list_dates(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in date_list)
     elif settings.format == "html":
-        output = _render_dates_html(date_list, title)
+        output = _render_timeline_report_html(date_list, title, "Date", "date")
     elif settings.format == "markdown":
-        output = _render_dates_markdown(date_list, title)
+        output = _render_timeline_report_markdown(date_list, title, "Date", "date")
     elif settings.format == "csv":
         output = _render_csv_table(date_list, ['date', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
@@ -11065,12 +11060,7 @@ def render_dates_as_text(date_list: list[dict[str, Any]], use_colors: bool = Tru
     return "\n".join(lines)
 
 
-def _render_dates_html(date_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_html(date_list, title, "Date", "date")
 
-
-def _render_dates_markdown(date_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_markdown(date_list, title, "Date", "date")
 
 
 
@@ -11167,9 +11157,9 @@ def show_list_months(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in month_list)
     elif settings.format == "html":
-        output = _render_months_html(month_list, title)
+        output = _render_timeline_report_html(month_list, title, "Month", "month")
     elif settings.format == "markdown":
-        output = _render_months_markdown(month_list, title)
+        output = _render_timeline_report_markdown(month_list, title, "Month", "month")
     elif settings.format == "csv":
         output = _render_csv_table(month_list, ['month', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
@@ -11238,12 +11228,7 @@ def render_months_as_text(month_list: list[dict[str, Any]], use_colors: bool = T
     return "\n".join(lines)
 
 
-def _render_months_html(month_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_html(month_list, title, "Month", "month")
 
-
-def _render_months_markdown(month_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_markdown(month_list, title, "Month", "month")
 
 
 
@@ -11346,9 +11331,9 @@ def show_list_days(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in day_list)
     elif settings.format == "html":
-        output = _render_days_html(day_list, title)
+        output = _render_timeline_report_html(day_list, title, "Day", "day")
     elif settings.format == "markdown":
-        output = _render_days_markdown(day_list, title)
+        output = _render_timeline_report_markdown(day_list, title, "Day", "day")
     elif settings.format == "csv":
         output = _render_csv_table(day_list, ['day', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
@@ -11411,12 +11396,7 @@ def render_days_as_text(day_list: list[dict[str, Any]], use_colors: bool = True)
     return "\n".join(lines)
 
 
-def _render_days_html(day_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_html(day_list, title, "Day", "day")
 
-
-def _render_days_markdown(day_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_markdown(day_list, title, "Day", "day")
 
 
 
@@ -11513,9 +11493,9 @@ def show_list_hours(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in hour_list)
     elif settings.format == "html":
-        output = _render_hours_html(hour_list, title)
+        output = _render_timeline_report_html(hour_list, title, "Hour", "hour")
     elif settings.format == "markdown":
-        output = _render_hours_markdown(hour_list, title)
+        output = _render_timeline_report_markdown(hour_list, title, "Hour", "hour")
     elif settings.format == "csv":
         output = _render_csv_table(hour_list, ['hour', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
@@ -11578,12 +11558,7 @@ def render_hours_as_text(hour_list: list[dict[str, Any]], use_colors: bool = Tru
     return "\n".join(lines)
 
 
-def _render_hours_html(hour_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_html(hour_list, title, "Hour", "hour")
 
-
-def _render_hours_markdown(hour_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_markdown(hour_list, title, "Hour", "hour")
 
 
 
@@ -11680,9 +11655,9 @@ def show_list_years(
     elif settings.format == "jsonl":
         output = "\n".join(json.dumps(item, ensure_ascii=False) for item in year_list)
     elif settings.format == "html":
-        output = _render_years_html(year_list, title)
+        output = _render_timeline_report_html(year_list, title, "Year", "year")
     elif settings.format == "markdown":
-        output = _render_years_markdown(year_list, title)
+        output = _render_timeline_report_markdown(year_list, title, "Year", "year")
     elif settings.format == "csv":
         output = _render_csv_table(year_list, ['year', 'message_count', 'authors_count', 'conferences_count', 'first_active', 'last_active', 'bbs_name'])
     else:
@@ -11751,11 +11726,5 @@ def render_years_as_text(year_list: list[dict[str, Any]], use_colors: bool = Tru
     return "\n".join(lines)
 
 
-def _render_years_html(year_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_html(year_list, title, "Year", "year")
-
-
-def _render_years_markdown(year_list: list[dict[str, Any]], title: str) -> str:
-    return _render_timeline_report_markdown(year_list, title, "Year", "year")
 
 
