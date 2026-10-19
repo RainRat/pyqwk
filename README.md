@@ -1043,6 +1043,10 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 ## Troubleshooting
 
+- **If you get a "command not found" error after installation:** When installed with `python -m pip install --user .`, executable scripts (`qwk` and `qwk-gui`) are saved to your user script directory. If this folder is not in your system PATH, add it to your PATH or run the tools using `python -m pyqwk.cli` or `python -m pyqwk.gui`.
+  - **Linux:** Add `export PATH="$HOME/.local/bin:$PATH"` to `~/.bashrc` or `~/.zshrc`.
+  - **macOS:** Add `export PATH="$HOME/Library/Python/3.10/bin:$PATH"` (replace `3.10` with your Python version) to `~/.zshrc`.
+  - **Windows:** Add `%APPDATA%\Python\Scripts` to your User Environment Variables.
 - **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
 - **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
 - **If options do not work together:** Some options cannot be used together:
