@@ -1051,6 +1051,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
   - You cannot use `--individual-files` with `qwk` or `rep` formats.
   - You must provide an output path (`-o` or `--output`) when exporting to `sqlite`, `qwk`, or `rep` formats.
 - **If you get folder errors:** When you save messages as individual files, or when you use the `eml` or `maildir` formats, the output path (`-o` or `--output`) must be a folder or a compressed archive (such as `.zip`, `.tar.gz`, `.tar.bz2`, or `.tgz`). If you provide a regular file path (like `.txt` or `.html`) for these multi-file formats, the tool will show an error.
+- **If the graphical reader shows a display error on Linux:** If `qwk-gui` fails on a remote Linux server with an error like `no display name` or `could not open display`, your system does not have an active graphical desktop. Use the `qwk` command-line tool instead, enable SSH display forwarding (`ssh -X`), or run `qwk-gui` with `xvfb-run` for virtual displays.
 
 ## Contributing
 
