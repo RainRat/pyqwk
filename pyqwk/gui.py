@@ -91,6 +91,7 @@ class ToolTip:
 
 
 from pyqwk.core import (
+    ParsedMessage,
     ProcessingSettings,
     _order_messages_by_thread,
     format_size,
@@ -252,24 +253,8 @@ class QwkGuiApp:
         orig_subject = msg.header.msgsubject.strip()
         orig_from = msg.header.msgfrom.strip()
         orig_to = msg.header.msgto.strip()
-        orig_num = str(msg.header.msgnum or "")
 
-        menu.add_command(
-            label="Copy Subject",
-            command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
-        )
-        menu.add_command(
-            label="Copy From",
-            command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
-        )
-        menu.add_command(
-            label="Copy To",
-            command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
-        )
-        menu.add_command(
-            label="Copy Num",
-            command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
-        )
+        self._add_message_copy_commands(menu, msg)
         menu.add_command(
             label="Copy Full Message",
             command=lambda: self._copy_to_clipboard(
@@ -365,27 +350,7 @@ class QwkGuiApp:
                 pass
 
         if msg:
-            orig_subject = msg.header.msgsubject.strip()
-            orig_from = msg.header.msgfrom.strip()
-            orig_to = msg.header.msgto.strip()
-            orig_num = str(msg.header.msgnum or "")
-
-            menu.add_command(
-                label="Copy Subject",
-                command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
-            )
-            menu.add_command(
-                label="Copy From",
-                command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
-            )
-            menu.add_command(
-                label="Copy To",
-                command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
-            )
-            menu.add_command(
-                label="Copy Num",
-                command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
-            )
+            self._add_message_copy_commands(menu, msg)
 
         menu.add_command(
             label="Copy Full Message",
@@ -522,6 +487,30 @@ class QwkGuiApp:
                     self.message_list.focus_set()
         except tk.TclError:
             pass
+
+    def _add_message_copy_commands(self, menu: tk.Menu, msg: ParsedMessage) -> None:
+        """Add standard message field copy commands to a context menu."""
+        orig_subject = msg.header.msgsubject.strip()
+        orig_from = msg.header.msgfrom.strip()
+        orig_to = msg.header.msgto.strip()
+        orig_num = str(msg.header.msgnum or "")
+
+        menu.add_command(
+            label="Copy Subject",
+            command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
+        )
+        menu.add_command(
+            label="Copy From",
+            command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
+        )
+        menu.add_command(
+            label="Copy To",
+            command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
+        )
+        menu.add_command(
+            label="Copy Num",
+            command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
+        )
 
     def _copy_to_clipboard(self, text: str, label: str | None = None) -> None:
         """Copy the given text to the system clipboard and display status feedback."""
