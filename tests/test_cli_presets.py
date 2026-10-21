@@ -1,3 +1,4 @@
+import json
 import sys
 import pytest
 from unittest.mock import patch
@@ -217,6 +218,52 @@ def test_preset_sanitize(mock_expand_paths, mock_process_merged_files):
     assert settings.binaries_removal is True
     assert settings.strip_ansi is True
     assert settings.redact_pii is True
+
+
+def test_preset_sanitize_cli_writes_clean_redacted_text(tmp_path, monkeypatch):
+    """Exercise the sanitize preset through input loading and output writing."""
+    source = tmp_path / "messages.json"
+    output = tmp_path / "safe.txt"
+    source.write_text(
+        json.dumps(
+            [
+                {
+                    "header": {
+                        "status": " ",
+                        "msgnum": 1,
+                        "msgfrom": "Writer",
+                        "msgsubject": "Contact",
+                    },
+                    "text": (
+                        "Keep this useful sentence.\n"
+                        "Contact me at writer@example.com or 555-123-4567.\n"
+                        "> quoted private@example.com text\n"
+                        "--- signature\n"
+                        "Signature details\n"
+                    ),
+                    "conference": "General",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["qwk", str(source), "--preset", "sanitize", "-o", str(output)],
+    )
+
+    main()
+
+    rendered = output.read_text(encoding="utf-8")
+    assert "Keep this useful sentence." in rendered
+    assert "[EMAIL]" in rendered
+    assert "[PHONE]" in rendered
+    assert "writer@example.com" not in rendered
+    assert "555-123-4567" not in rendered
+    assert "quoted" not in rendered
+    assert "private@example.com" not in rendered
+    assert "Signature details" not in rendered
 
 
 @patch("pyqwk.cli.process_merged_files")
