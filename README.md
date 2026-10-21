@@ -291,6 +291,11 @@ qwk --list-presets
 qwk archive.qwk
 ```
 
+**List supported export formats:**
+```bash
+qwk --list-formats
+```
+
 **Pipe from standard input:**
 You can pass `-` as the file path to pipe archive data directly into `pyqwk`. The tool automatically detects the archive format (such as QWK, JSON, ZIP, or SQLite):
 ```bash
@@ -1051,6 +1056,8 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
   - You cannot use `--individual-files` with `qwk` or `rep` formats.
   - You must provide an output path (`-o` or `--output`) when exporting to `sqlite`, `qwk`, or `rep` formats.
 - **If you get folder errors:** When you save messages as individual files, or when you use the `eml` or `maildir` formats, the output path (`-o` or `--output`) must be a folder or a compressed archive (such as `.zip`, `.tar.gz`, `.tar.bz2`, or `.tgz`). If you provide a regular file path (like `.txt` or `.html`) for these multi-file formats, the tool will show an error.
+- **If you get a "command not found" error after installation:** Make sure your Python scripts directory (such as `~/.local/bin` on Linux/macOS or `%APPDATA%\Python\Scripts` on Windows) is included in your system `PATH` environment variable. Alternatively, run the tool directly with `python -m pyqwk.cli` or `python -m pyqwk.gui`.
+- **If you see display errors with the graphical reader:** On Linux servers without a desktop environment, running `qwk-gui` directly will show a display error (like `no display name`). Use a computer with a desktop interface, or use SSH X11 forwarding (`ssh -X`).
 
 ## Contributing
 
