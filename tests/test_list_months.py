@@ -261,3 +261,21 @@ def test_cli_list_months_flags(mocker):
 
     assert exc_info.value.code == 0
     assert mock_show_monthly.called
+
+
+def test_show_list_months_confnum_none(mocker, tmp_path, base_settings):
+    msg_no_conf = create_sample_message(msgnum=1, msgdate="01-15-95", confnum=None)
+    mocker.patch("pyqwk.core.load_data", return_value=([msg_no_conf], {}))
+
+    logger = logging.getLogger("test")
+    out_json = tmp_path / "months_no_conf.json"
+    base_settings.format = "json"
+    base_settings.output_path = str(out_json)
+
+    show_list_months(["dummy.qwk"], base_settings, logger)
+
+    assert out_json.exists()
+    data = json.loads(out_json.read_text(encoding="utf-8"))
+    assert len(data) == 1
+    assert data[0]["month"] == "1995-01"
+    assert data[0]["conferences_count"] == 0
