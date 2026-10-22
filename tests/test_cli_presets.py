@@ -220,6 +220,58 @@ def test_preset_sanitize(mock_expand_paths, mock_process_merged_files):
     assert settings.redact_pii is True
 
 
+def test_preset_sanitize_redacts_sender_subject_and_attachment_metadata(
+    tmp_path, monkeypatch
+):
+    """The sanitize preset redacts PII in rendered headers, including attachments."""
+    source = tmp_path / "messages.json"
+    output = tmp_path / "safe.txt"
+    source.write_text(
+        json.dumps(
+            [
+                {
+                    "header": {
+                        "status": " ",
+                        "msgnum": 1,
+                        "msgfrom": "Alice <alice@example.com>",
+                        "msgto": "Bob <bob@example.com>",
+                        "msgsubject": "Call 555-123-4567 about bob@example.com",
+                        "confnum": 1,
+                    },
+                    "conference": "General",
+                    "text": "The useful body survives.\n",
+                    "attachments": [
+                        "owner@example.com.txt",
+                        "555-999-8888.doc",
+                    ],
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["qwk", str(source), "--preset", "sanitize", "--verbose", "-o", str(output)],
+    )
+
+    main()
+
+    rendered = output.read_text(encoding="utf-8")
+    assert "The useful body survives." in rendered
+    assert "Attachments:" in rendered
+    assert "[EMAIL]" in rendered
+    assert "[PHONE]" in rendered
+    for leaked in (
+        "alice@example.com",
+        "bob@example.com",
+        "555-123-4567",
+        "owner@example.com",
+        "555-999-8888",
+    ):
+        assert leaked not in rendered
+
+
 def test_preset_sanitize_cli_writes_clean_redacted_text(tmp_path, monkeypatch):
     """Exercise the sanitize preset through input loading and output writing."""
     source = tmp_path / "messages.json"

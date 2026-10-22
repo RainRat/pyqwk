@@ -198,7 +198,7 @@ PRESETS_INFO = {
         "equiv": "--format text --clean --noheader",
     },
     "sanitize": {
-        "desc": "Save clean messages with personal information (emails and phone numbers) redacted.",
+        "desc": "Save clean text with email addresses and phone numbers in rendered headers and body redacted.",
         "equiv": "--format text --clean --redact-pii",
     },
 }
@@ -529,7 +529,7 @@ examples:
         "-r",
         "--redact-pii",
         dest="redactpii",
-        help="Hide personal info like email addresses and phone numbers.",
+        help="Redact email addresses and phone numbers in message bodies and text-format headers.",
         action="store_true",
     )
     content_group.add_argument(
@@ -1048,7 +1048,7 @@ examples:
             "  forum          Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
             "  feed           Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
             "  text-archive   Save clean text without headers.\n"
-            "  sanitize       Save clean messages with personal information (emails and phone numbers) redacted."
+            "  sanitize       Save clean text with email addresses and phone numbers in rendered headers and body redacted."
         ),
     )
     preset_group.add_argument(

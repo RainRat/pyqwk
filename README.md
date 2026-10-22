@@ -258,7 +258,7 @@ qwk archive.qwk --preset feed -o feed.xml
 # Save a simple clean text archive with no headers
 qwk archive.qwk --preset text-archive -o archive.txt
 
-# Save clean messages with personal information (emails and phone numbers) redacted
+# Save clean text with email addresses and phone numbers in headers and body redacted
 qwk archive.qwk --preset sanitize -o safe.txt
 ```
 
@@ -280,9 +280,11 @@ qwk --list-presets
 | `forum` | Saves clean, threaded individual HTML files with an index. | `--format html --clean --threaded --individual-files --toc` |
 | `feed` | Saves a clean chronological RSS feed. | `--format rss --clean --sort date --reverse` |
 | `text-archive` | Saves clean text without headers. | `--format text --clean --noheader` |
-| `sanitize` | Saves clean messages with personal information (emails and phone numbers) redacted. | `--format text --clean --redact-pii` |
+| `sanitize` | Saves clean text with email addresses and phone numbers in rendered headers and body redacted. | `--format text --clean --redact-pii` |
 
 *Note: You can override any preset setting by adding its command-line option.*
+
+**Sanitize preset privacy contract:** `sanitize` is exactly `--format text --clean --redact-pii`. The tested text output replaces email-address and phone-number patterns in From, To, Subject, the verbose Attachments list, and body lines (after clean filters run). It does not remove names or other personal details, inspect attachment contents, sanitize attachment filenames written to disk, or redact metadata in JSON, JSONL, CSV, SQLite, XML, RSS, HTML, Markdown, mbox, or EML exports. Treat extracted attachments as unsanitized. If you override the preset (for example with `--format`, `--individual-files`, or `--toc`), only the normal `--redact-pii` text handling applies; other rendered metadata may not be redacted.
 
 ## Usage Examples
 
@@ -418,7 +420,7 @@ qwk archive.qwk --extract-attachments --organize-attachments -o output/
 qwk archive.qwk --list-attachments
 ```
 
-**Hide personal information (emails and phones):**
+**Redact emails and phone numbers in text output:**
 ```bash
 qwk archive.qwk --redact-pii -o safe.txt
 ```
@@ -437,6 +439,8 @@ qwk messages.csv -o updated.html
 ```bash
 qwk archive.qwk --format jsonl -o messages.jsonl
 ```
+
+**JSONL round-trip fidelity:** Each JSONL message record stores the QWK header fields together with `conference`, `bbs_name`, `bbs_id`, `source_file`, `text`, `depth`, `thread_id`, `parent_msgnum`, `attachments`, `reply_count`, and `thread_size`. With `--verbose` or `--toc`, a metadata record also preserves the BBS details and conference map. On a QWK → JSONL → QWK round trip, header fields (including sender, recipient, subject, date/time, status, flags, references, password field, conference, and log number) and body text are preserved. Known lossy points: `numblocks` is recalculated from the body on QWK export; trailing whitespace and block padding are not retained; QWK `0xE3` line breaks are parsed as CRLF and emitted as `0xE3` on QWK export; attachment binary bytes are not stored separately (UUE text remains in the body); `original_text` is not persisted; and without a metadata record, BBS fields beyond the per-message name/id and conference names are reconstructed or left blank. `source_file` survives JSONL but is not stored in QWK headers.
 
 **Create an RSS feed:**
 ```bash
@@ -902,7 +906,7 @@ for msg in messages:
 | `--organize-pattern` | Set a custom folder structure for individual files. |
 | `--filename-pattern` | Set a custom filename pattern for individual files (e.g., `{date}_{author}_{subject}`). |
 | `-O, --sort` | Sort results by field (date, author, to, subject, num, conference, bbs, length, size, random, words, attachments, replies, or thread_size). |
-| `-r, --redact-pii` | Hide personal info like emails and phone numbers. |
+| `-r, --redact-pii` | Redact email addresses and phone numbers in message bodies and text-format headers. |
 | `-p, --private` | Include private messages. |
 | `--mine` | Show messages sent to or from your user name. |
 | `--my-name`, `--user` | Set your name for the `--mine` filter and QWK exports. |

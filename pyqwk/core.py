@@ -2679,6 +2679,34 @@ def parse_messages(
         )
 
 
+def _parse_messages_best_effort(
+    file_data: bytearray,
+    progress_bar: ProgressBar | None,
+    encoding: str,
+    headers_only: bool,
+    logger: logging.Logger,
+) -> Iterator[ParsedMessage]:
+    """Yield complete messages, retaining them when the archive tail is truncated.
+
+    Writers should prefer this over :func:`parse_messages` when a damaged packet
+    can still provide useful earlier records. Validation deliberately remains
+    strict and reports the truncation as an error.
+    """
+    recovered = 0
+    try:
+        for message in parse_messages(file_data, progress_bar, encoding, headers_only):
+            recovered += 1
+            yield message
+    except MessagesDatFormatError as exc:
+        if recovered == 0:
+            raise
+        logger.warning(
+            "Archive is truncated or malformed; keeping %d complete message(s): %s",
+            recovered,
+            exc,
+        )
+
+
 def _redact_pii(text: str) -> str:
     """Hide email addresses and phone numbers in text."""
     if not text:
@@ -3937,11 +3965,12 @@ def process_merged_files(
                     progress_bar.unit = "msg"
                     progress_bar.unit_scale = False
             else:
-                messages_to_process = parse_messages(
+                messages_to_process = _parse_messages_best_effort(
                     file_data,
                     progress_bar,
                     settings.encoding,
                     settings.headers_only,
+                    logger,
                 )
 
             for parsed_message in messages_to_process:
@@ -5448,10 +5477,12 @@ def _serialize_control_dat(
 
 
 def _text_to_qwk_blocks(text: str, encoding: str = "cp437") -> bytes:
-    """Convert message text into 128-byte QWK blocks with \xe3 newlines."""
-    # QWK uses \xe3 (227) as a newline character
-    qwk_text = text.replace("\r\n", "\xe3").replace("\n", "\xe3")
-    encoded = qwk_text.encode(encoding, errors="replace")
+    """Convert message text into 128-byte QWK blocks with 0xE3 newlines."""
+    # QWK uses byte 0xE3 as a newline. Replace the encoded newline byte rather
+    # than a Unicode character, which may not exist in the target code page.
+    normalized = text.replace("\r\n", "\n")
+    encoded = normalized.encode(encoding, errors="replace")
+    encoded = encoded.replace(b"\n", b"\xe3")
 
     # Pad to 128-byte boundary
     padding_len = (BLOCK_SIZE - (len(encoded) % BLOCK_SIZE)) % BLOCK_SIZE
