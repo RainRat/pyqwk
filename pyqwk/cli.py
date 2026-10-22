@@ -14,6 +14,7 @@ from pyqwk.core import (
     process_multiple_files,
     organize_by_bbs,
     organize_by_date,
+    organize_by_year,
     resolve_output_format,
     show_info,
     show_stats,
@@ -441,6 +442,11 @@ examples:
     io_group.add_argument(
         "--organize-by-date",
         help="Organize archive files into folders by date (YYYY/MM). If used with -o or --output, organizes exported message files instead.",
+        action="store_true",
+    )
+    io_group.add_argument(
+        "--organize-by-year",
+        help="Organize archive files into folders by year (YYYY). If used with -o or --output, organizes exported message files instead.",
         action="store_true",
     )
     io_group.add_argument(
@@ -1309,7 +1315,7 @@ examples:
     if output_path:
         is_archive_out = output_path.lower().endswith((".zip", ".tar", ".tar.gz", ".tar.bz2", ".tgz"))
 
-    if (args.organize_by_bbs or getattr(args, "organize_by_date", False)) and not output_path:
+    if (args.organize_by_bbs or getattr(args, "organize_by_date", False) or getattr(args, "organize_by_year", False)) and not output_path:
         output_mode = "file"
         resolved_output_path = None
     elif args.info or args.stats:
@@ -1449,6 +1455,7 @@ examples:
         unique=args.unique,
         organize=args.organize,
         organize_by_date=getattr(args, "organize_by_date", False),
+        organize_by_year=getattr(args, "organize_by_year", False),
         organize_by_bbs=args.organize_by_bbs,
         organize_by_author=getattr(args, "organize_by_author", False),
         organize_by_to=getattr(args, "organize_by_to", False),
@@ -1540,6 +1547,10 @@ examples:
 
     if getattr(args, "organize_by_date", False) and not args.output_path:
         organize_by_date(input_paths, settings, logger)
+        sys.exit(0)
+
+    if getattr(args, "organize_by_year", False) and not args.output_path:
+        organize_by_year(input_paths, settings, logger)
         sys.exit(0)
 
     if args.info:
