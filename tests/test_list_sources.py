@@ -7,8 +7,8 @@ from pyqwk.core import (
     ParsedMessage,
     ProcessingSettings,
     render_sources_as_text,
-    _render_sources_html,
-    _render_sources_markdown,
+    _render_timeline_report_html,
+    _render_timeline_report_markdown,
     _render_csv_table,
     show_list_sources,
 )
@@ -103,11 +103,11 @@ def test_render_sources_functions():
     text_plain = render_sources_as_text(sources, use_colors=False)
     assert "=== Source Files ===" in text_plain
 
-    html_out = _render_sources_html(sources, "Source Files")
+    html_out = _render_timeline_report_html(sources, "Source Files", "Source File", "source_file")
     assert "<h1>Source Files</h1>" in html_out
     assert "<td>archive1.qwk</td>" in html_out
 
-    md_out = _render_sources_markdown(sources, "Source Files")
+    md_out = _render_timeline_report_markdown(sources, "Source Files", "Source File", "source_file")
     assert "# Source Files" in md_out
     assert "| archive1.qwk | 10 | 3 | 2 | 2023-10-12 | 2023-10-15 | Digital Horizon BBS |" in md_out
 
