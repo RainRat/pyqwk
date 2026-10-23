@@ -218,6 +218,31 @@ class QwkGuiApp:
         else:
             self.root.after(100, self._render_welcome_screen)
 
+    def _add_attachment_context_commands(self, menu: tk.Menu, msg) -> None:
+        """Add context menu items or submenus for saving message attachments."""
+        if not getattr(msg, "attachments", None):
+            return
+
+        attachments = msg.attachments
+        menu.add_separator()
+        if len(attachments) == 1:
+            filename = attachments[0]
+            menu.add_command(
+                label=f"Save Attachment: {filename}",
+                command=lambda f=filename: self.save_attachment(f, 0),
+            )
+        else:
+            attach_menu = tk.Menu(menu, tearoff=0)
+            for i, filename in enumerate(attachments):
+                attach_menu.add_command(
+                    label=filename,
+                    command=lambda f=filename, idx=i: self.save_attachment(f, idx),
+                )
+            menu.add_cascade(
+                label=f"Save Attachment ({len(attachments)} files)",
+                menu=attach_menu,
+            )
+
     def _show_list_context_menu(self, event: tk.Event) -> None:
         """Display a context menu for the message list."""
         region = self.message_list.identify_region(event.x, event.y)
@@ -340,6 +365,8 @@ class QwkGuiApp:
                 label=f"Exclude BBS: {bbs_label}",
                 command=lambda b=bbs_display: self._pivot_filter(exclude_bbs_name=b),
             )
+
+        self._add_attachment_context_commands(menu, msg)
 
         menu.post(event.x_root, event.y_root)
 
@@ -472,6 +499,9 @@ class QwkGuiApp:
                     )
             except (ValueError, IndexError):
                 pass
+
+        if msg:
+            self._add_attachment_context_commands(menu, msg)
 
         try:
             sel_range = self.detail_text.tag_ranges("sel")
