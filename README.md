@@ -1044,6 +1044,7 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 ## Troubleshooting
 
 - **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
+- **If the graphical reader fails to start on Linux:** If `qwk-gui` fails with a display error (such as `no display name` or `could not open display`), you are running on a server without a graphical desktop. Either launch the reader over an SSH session with X11 forwarding enabled (`ssh -X`), set your `DISPLAY` environment variable, or run it inside a virtual display buffer using `xvfb-run qwk-gui`.
 - **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
 - **If options do not work together:** Some options cannot be used together:
   - You cannot use `--oneline` and `--individual-files` at the same time.
