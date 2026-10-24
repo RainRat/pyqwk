@@ -6,6 +6,25 @@ from pyqwk.cli import main
 
 @patch("pyqwk.cli.process_merged_files")
 @patch("pyqwk.cli.expand_paths")
+def test_preset_dataset(mock_expand_paths, mock_process_merged_files):
+    """Verify the 'dataset' preset defaults."""
+    mock_expand_paths.return_value = ["dummy.qwk"]
+
+    with patch.object(sys, "argv", ["qwk", "dummy.qwk", "-P", "dataset", "-o", "out.csv"]):
+        main()
+
+    mock_process_merged_files.assert_called_once()
+    settings = mock_process_merged_files.call_args[0][1]
+
+    assert settings.format == "csv"
+    assert settings.truncate_signatures is True
+    assert settings.cut_quoting is True
+    assert settings.binaries_removal is True
+    assert settings.strip_ansi is True
+
+
+@patch("pyqwk.cli.process_merged_files")
+@patch("pyqwk.cli.expand_paths")
 def test_preset_blog(mock_expand_paths, mock_process_merged_files):
     """Verify the 'blog' preset defaults."""
     mock_expand_paths.return_value = ["dummy.qwk"]
