@@ -177,6 +177,10 @@ PRESETS_INFO = {
         "desc": "Create a complete SQLite backup with private and unique messages.",
         "equiv": "--format sqlite --private --unique",
     },
+    "dataset": {
+        "desc": "Save clean messages as a CSV tabular dataset suitable for data analysis.",
+        "equiv": "--format csv --clean",
+    },
     "digest": {
         "desc": "Save a single clean, threaded HTML file with a table of contents.",
         "equiv": "--format html --threaded --clean --toc",
@@ -1037,12 +1041,13 @@ examples:
     preset_group.add_argument(
         "-P",
         "--preset",
-        choices=["blog", "email", "backup", "digest", "digest-text", "forum", "feed", "text-archive", "sanitize"],
+        choices=["blog", "email", "backup", "dataset", "digest", "digest-text", "forum", "feed", "text-archive", "sanitize"],
         help=(
             "Apply predefined parameter combinations for common workflows:\n"
             "  blog           Save messages as clean, threaded individual Markdown files.\n"
             "  email          Save messages as individual EML files.\n"
             "  backup         Create a complete SQLite backup with private and unique messages.\n"
+            "  dataset        Save clean messages as a CSV tabular dataset suitable for data analysis.\n"
             "  digest         Save a single clean, threaded HTML file with a table of contents.\n"
             "  digest-text    Save a single clean, threaded plain text file with a table of contents.\n"
             "  forum          Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
@@ -1205,6 +1210,10 @@ examples:
                 "format": "sqlite",
                 "private": True,
                 "unique": True,
+            },
+            "dataset": {
+                "format": "csv",
+                "clean": True,
             },
             "digest": {
                 "format": "html",
