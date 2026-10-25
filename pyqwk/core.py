@@ -704,6 +704,7 @@ class ProcessingSettings:
     unique: bool = False
     organize: bool = False
     organize_by_date: bool = False
+    organize_by_year: bool = False
     organize_by_bbs: bool = False
     organize_by_author: bool = False
     organize_by_to: bool = False
@@ -3149,6 +3150,10 @@ def _get_organization_subpath(
         msg_dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
         sub_parts.append(msg_dt.strftime("%Y"))
         sub_parts.append(msg_dt.strftime("%m"))
+
+    if settings.organize_by_year:
+        msg_dt = _parse_qwk_date(message.header.msgdate, message.header.msgtime)
+        sub_parts.append(msg_dt.strftime("%Y"))
 
     return os.path.join(*sub_parts) if sub_parts else ""
 
@@ -9030,6 +9035,81 @@ def organize_by_date(
                 target_folder = os.path.join(
                     earliest_dt.strftime("%Y"), earliest_dt.strftime("%m")
                 )
+            else:
+                target_folder = "Unknown_Date"
+
+            if settings.dry_run:
+                logger.info(
+                    "Dry run: Would move %s to %s/", input_path, target_folder
+                )
+                continue
+
+            if not os.path.exists(target_folder):
+                os.makedirs(target_folder)
+
+            shutil.move(
+                input_path,
+                os.path.join(target_folder, os.path.basename(input_path)),
+            )
+            logger.info("Moved %s to %s/", input_path, target_folder)
+        except Exception as e:
+            logger.error("Error organizing %s: %s", input_path, e)
+
+
+def organize_by_year(
+    input_paths: list[str], settings: ProcessingSettings, logger: logging.Logger
+) -> None:
+    """Organize archive files into directories based on their primary message year (YYYY)."""
+    supported_extensions = (
+        ".qwk",
+        ".rep",
+        ".json",
+        ".csv",
+        ".xml",
+        ".db",
+        ".sqlite",
+        ".mbox",
+        ".eml",
+        ".tar",
+        ".tar.gz",
+        ".tar.bz2",
+        ".tgz",
+        ".zip",
+    )
+
+    for input_path in input_paths:
+        if not os.path.isfile(input_path):
+            continue
+
+        if (
+            not input_path.lower().endswith(supported_extensions)
+            and os.path.basename(input_path).lower() != "messages.dat"
+        ):
+            continue
+
+        try:
+            file_data, board_dict = load_data(input_path, logger, settings.encoding)
+            if isinstance(file_data, list):
+                msgs = file_data
+            else:
+                if len(file_data) < BLOCK_SIZE:
+                    msgs = []
+                else:
+                    msgs = list(parse_messages(file_data, None, settings.encoding))
+
+            valid_dates = []
+            for msg in msgs:
+                try:
+                    if msg.header.msgdate and msg.header.msgdate.strip():
+                        dt = _parse_qwk_date(msg.header.msgdate, msg.header.msgtime)
+                        if dt and dt != datetime.datetime(1970, 1, 1, 0, 0):
+                            valid_dates.append(dt)
+                except (ValueError, TypeError):
+                    pass
+
+            if valid_dates:
+                earliest_dt = min(valid_dates)
+                target_folder = earliest_dt.strftime("%Y")
             else:
                 target_folder = "Unknown_Date"
 
