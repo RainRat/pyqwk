@@ -281,6 +281,7 @@ class QwkGuiApp:
                 label=f"Go to Referenced Message #{msg.refnum}",
                 command=self.jump_to_referenced_message,
             )
+        self._add_attachment_context_commands(menu, msg)
         menu.add_separator()
 
         # Filter pivoting
@@ -401,6 +402,7 @@ class QwkGuiApp:
             )
 
         if msg:
+            self._add_attachment_context_commands(menu, msg)
             try:
                 menu.add_separator()
                 author_text = msg.header.msgfrom.strip()
@@ -496,6 +498,29 @@ class QwkGuiApp:
             pass
 
         menu.post(event.x_root, event.y_root)
+
+    def _add_attachment_context_commands(self, menu: tk.Menu, msg: object) -> None:
+        """Add dynamic attachment save options to context menus if message contains attachments."""
+        attachments = getattr(msg, "attachments", None)
+        if not attachments:
+            return
+
+        if len(attachments) == 1:
+            fn = attachments[0]
+            display_fn = (fn[:20] + "...") if len(fn) > 20 else fn
+            menu.add_command(
+                label=f"Save Attachment ({display_fn})",
+                command=lambda f=fn: self.save_attachment(f, 0),
+            )
+        else:
+            attach_menu = tk.Menu(menu, tearoff=0)
+            for idx, fn in enumerate(attachments):
+                display_fn = (fn[:20] + "...") if len(fn) > 20 else fn
+                attach_menu.add_command(
+                    label=display_fn,
+                    command=lambda f=fn, i=idx: self.save_attachment(f, i),
+                )
+            menu.add_cascade(label="Save Attachment...", menu=attach_menu)
 
     def _search_from_selection(self) -> None:
         """Search for the currently selected text in the detail viewer."""
