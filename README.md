@@ -1051,6 +1051,11 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
   - You cannot use `--individual-files` with `qwk` or `rep` formats.
   - You must provide an output path (`-o` or `--output`) when exporting to `sqlite`, `qwk`, or `rep` formats.
 - **If you get folder errors:** When you save messages as individual files, or when you use the `eml` or `maildir` formats, the output path (`-o` or `--output`) must be a folder or a compressed archive (such as `.zip`, `.tar.gz`, `.tar.bz2`, or `.tgz`). If you provide a regular file path (like `.txt` or `.html`) for these multi-file formats, the tool will show an error.
+- **If you see "command not found":** When installing with `pip install --user .`, your terminal might not find `qwk` or `qwk-gui` if the Python user script directory is not in your system PATH.
+  - You can run the tools directly using Python: `python -m pyqwk.cli archive.qwk` or `python -m pyqwk.gui`.
+  - Or add your Python user script directory to your PATH:
+    - **Linux/macOS:** Add `export PATH="$HOME/.local/bin:$PATH"` to your shell profile (`~/.bashrc` or `~/.zshrc`).
+    - **Windows:** Add `%APPDATA%\Python\Python3xx\Scripts` (replace `3xx` with your Python version, e.g., `310`) to your User Environment Variables.
 
 ## Contributing
 
