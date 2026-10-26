@@ -1,6 +1,7 @@
 import logging
 import os
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 import pytest
 from pyqwk.core import (
     load_data,
@@ -8,6 +9,7 @@ from pyqwk.core import (
     ProcessingSettings,
     ParsedMessage,
     expand_paths,
+    _write_maildir,
 )
 
 
@@ -87,8 +89,6 @@ def test_maildir_export_reimport_symmetry(tmp_path, baseline_path, logger):
     settings_text = _make_settings(
         format="text", output_mode="stdout"
     )
-    # We can't easily capture stdout here without more complex setup,
-    # but we can verify process_merged_files runs without error.
     process_merged_files([str(maildir_path)], settings_text, logger)
 
 
@@ -106,3 +106,35 @@ def test_maildir_auto_detection_by_extension(tmp_path, baseline_path, logger):
     settings_export.format = fmt
     process_merged_files([str(baseline_path)], settings_export, logger)
     assert (maildir_path / "cur").is_dir()
+
+
+def test_expand_paths_direct_maildir(tmp_path):
+    """Test expand_paths with a direct Maildir path."""
+    maildir_path = tmp_path / "test.maildir"
+    maildir_path.mkdir()
+    (maildir_path / "cur").mkdir()
+    (maildir_path / "new").mkdir()
+    (maildir_path / "tmp").mkdir()
+
+    expanded = expand_paths([str(maildir_path)])
+    assert str(maildir_path) in expanded
+    assert len(expanded) == 1
+
+
+def test_load_data_maildir_failure(tmp_path):
+    """Test load_data error handling when Maildir loading fails."""
+    maildir_path = tmp_path / "invalid.maildir"
+    maildir_path.mkdir()
+    (maildir_path / "cur").mkdir()
+    (maildir_path / "new").mkdir()
+    (maildir_path / "tmp").mkdir()
+
+    with patch("mailbox.Maildir", side_effect=Exception("Mocked failure")):
+        with pytest.raises(ValueError, match="Failed to load Maildir: Mocked failure"):
+            load_data(str(maildir_path), MagicMock())
+
+
+def test_write_maildir_no_output_path():
+    """Test _write_maildir validation when output_path is None."""
+    with pytest.raises(ValueError, match="Output path is required for Maildir export."):
+        _write_maildir([], None)
