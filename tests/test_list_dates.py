@@ -7,8 +7,8 @@ from pyqwk.core import (
     ParsedMessage,
     ProcessingSettings,
     render_dates_as_text,
-    _render_dates_html,
-    _render_dates_markdown,
+    _render_timeline_report_html,
+    _render_timeline_report_markdown,
     _render_csv_table,
     show_list_dates,
 )
@@ -103,11 +103,11 @@ def test_render_dates_functions():
     text_plain = render_dates_as_text(dates, use_colors=False)
     assert "=== Timeline Summary ===" in text_plain
 
-    html_out = _render_dates_html(dates, "Timeline Summary")
+    html_out = _render_timeline_report_html(dates, "Timeline Summary", "Date", "date")
     assert "<h1>Timeline Summary</h1>" in html_out
     assert "<td>2023-10-12</td>" in html_out
 
-    md_out = _render_dates_markdown(dates, "Timeline Summary")
+    md_out = _render_timeline_report_markdown(dates, "Timeline Summary", "Date", "date")
     assert "# Timeline Summary" in md_out
     assert "| 2023-10-12 | 10 | 3 | 2 | 2023-10-12 10:00 | 2023-10-12 18:30 | Digital Horizon BBS |" in md_out
 
