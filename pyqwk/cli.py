@@ -444,6 +444,12 @@ examples:
         action="store_true",
     )
     io_group.add_argument(
+        "--organize-by-year",
+        dest="organize_by_year",
+        help="Organize archive files into folders by year (YYYY). If used with -o or --output, organizes exported message files instead.",
+        action="store_true",
+    )
+    io_group.add_argument(
         "--organize-by-bbs",
         dest="organize_by_bbs",
         help="Organize archives into folders named after the BBS. If used with -o or --output, organizes the export folder instead.",
