@@ -1045,6 +1045,11 @@ You can use custom patterns with `--oneline-pattern` (for summaries on the scree
 
 - **If a file will not open:** If `pyqwk` cannot open an archive, install `unzip`. If it still fails, unzip the file manually and run `qwk` on the `messages.dat` file inside.
 - **If characters look wrong:** If you see incorrect characters, use the `--encoding` flag (for example, `--encoding cp850`).
+- **If you get "command not found" errors:** If terminal commands like `qwk` or `qwk-gui` are not recognized after installing with `--user`, your user executable directory is not in your system `PATH`.
+  - **Linux/macOS:** Add `export PATH="$HOME/.local/bin:$PATH"` to your shell profile (`~/.bashrc` or `~/.zshrc`).
+  - **Windows:** Add `%APPDATA%\Python\Python3x\Scripts` to your user `Path` environment variable.
+  - **Alternative:** You can always run `python -m pyqwk.cli` or `python -m pyqwk.gui` directly without changing your `PATH`.
+- **If the graphical reader fails on headless Linux servers:** Starting `qwk-gui` on a Linux server without an active display throws a `no display name` error. Use X11 forwarding (`ssh -X user@host`) or run with a virtual display buffer like `xvfb-run qwk-gui`.
 - **If options do not work together:** Some options cannot be used together:
   - You cannot use `--oneline` and `--individual-files` at the same time.
   - You cannot use `--threaded` with `eml` or `maildir` formats.
@@ -1085,14 +1090,14 @@ You can set up your development environment and run tests using standard Python 
 
 If you are running the test suite on a headless Linux system (such as in a CI/CD environment or a remote server without an active display), you must run tests using `xvfb-run`.
 
-This requires the `xvfb` (X virtual framebuffer) system package to be installed on your operating system.
+This requires the `xvfb` (X virtual framebuffer) and `tk` system packages to be installed on your operating system so Tkinter GUI unit tests can run.
 
 **Prerequisites:**
 
-Install the system package based on your Linux distribution:
-- **Ubuntu/Debian:** `sudo apt install xvfb`
-- **Fedora/RHEL:** `sudo dnf install xorg-x11-server-Xvfb`
-- **Arch Linux:** `sudo pacman -S xorg-server-xvfb`
+Install the system packages based on your Linux distribution:
+- **Ubuntu/Debian:** `sudo apt install xvfb python3-tk`
+- **Fedora/RHEL:** `sudo dnf install xorg-x11-server-Xvfb python3-tkinter`
+- **Arch Linux:** `sudo pacman -S xorg-server-xvfb tk`
 
 **Run tests using `xvfb-run`:**
 
