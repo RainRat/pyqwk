@@ -300,6 +300,11 @@ cat archive.qwk | qwk -
 curl -s https://example.com/messages.qwk | qwk - --oneline
 ```
 
+**List supported export formats:**
+```bash
+qwk --list-formats
+```
+
 **Show a quick summary:**
 ```bash
 # Standard one-line summary
