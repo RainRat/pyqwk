@@ -108,16 +108,28 @@ def test_gui_mine_highlighting():
             calls = app.message_list.insert.call_args_list
 
             # Message 1: From me (tags should include 'mine')
-            args1 = calls[0].kwargs
-            assert "mine" in args1["tags"]
+            call_kwargs1 = calls[0].kwargs if calls[0].kwargs else calls[0][1]
+            if not call_kwargs1 and len(calls[0][0]) > 6:
+                tags1 = calls[0][0][6]
+            else:
+                tags1 = call_kwargs1.get("tags", ())
+            assert "mine" in tags1
 
             # Message 2: To me (tags should include 'mine')
-            args2 = calls[1].kwargs
-            assert "mine" in args2["tags"]
+            call_kwargs2 = calls[1].kwargs if calls[1].kwargs else calls[1][1]
+            if not call_kwargs2 and len(calls[1][0]) > 6:
+                tags2 = calls[1][0][6]
+            else:
+                tags2 = call_kwargs2.get("tags", ())
+            assert "mine" in tags2
 
             # Message 3: Others (tags should NOT include 'mine')
-            args3 = calls[2].kwargs
-            assert "mine" not in args3["tags"]
+            call_kwargs3 = calls[2].kwargs if calls[2].kwargs else calls[2][1]
+            if not call_kwargs3 and len(calls[2][0]) > 6:
+                tags3 = calls[2][0][6]
+            else:
+                tags3 = call_kwargs3.get("tags", ())
+            assert "mine" not in tags3
 
 
 if __name__ == "__main__":

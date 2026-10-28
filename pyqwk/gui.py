@@ -218,6 +218,35 @@ class QwkGuiApp:
         else:
             self.root.after(100, self._render_welcome_screen)
 
+    def _add_attachment_context_commands(self, menu: tk.Menu, msg: object) -> None:
+        """Add attachment save/extraction context commands for a message."""
+        attachments = getattr(msg, "attachments", None)
+        if not attachments:
+            return
+
+        menu.add_separator()
+        if len(attachments) == 1:
+            filename = attachments[0]
+            display_name = (filename[:25] + "...") if len(filename) > 25 else filename
+            menu.add_command(
+                label=f"Save Attachment ({display_name})",
+                command=lambda f=filename: self.save_attachment(f, 0),
+            )
+        else:
+            attach_menu = tk.Menu(menu, tearoff=0)
+            for i, filename in enumerate(attachments):
+                display_name = (filename[:25] + "...") if len(filename) > 25 else filename
+                attach_menu.add_command(
+                    label=f"Save {display_name}",
+                    command=lambda f=filename, idx=i: self.save_attachment(f, idx),
+                )
+            attach_menu.add_separator()
+            attach_menu.add_command(
+                label=f"Save All ({len(attachments)} files)...",
+                command=self.extract_all_attachments,
+            )
+            menu.add_cascade(label=f"Save Attachment ({len(attachments)})", menu=attach_menu)
+
     def _show_list_context_menu(self, event: tk.Event) -> None:
         """Display a context menu for the message list."""
         region = self.message_list.identify_region(event.x, event.y)
@@ -281,6 +310,8 @@ class QwkGuiApp:
                 label=f"Go to Referenced Message #{msg.refnum}",
                 command=self.jump_to_referenced_message,
             )
+
+        self._add_attachment_context_commands(menu, msg)
         menu.add_separator()
 
         # Filter pivoting
@@ -401,6 +432,7 @@ class QwkGuiApp:
             )
 
         if msg:
+            self._add_attachment_context_commands(menu, msg)
             try:
                 menu.add_separator()
                 author_text = msg.header.msgfrom.strip()
