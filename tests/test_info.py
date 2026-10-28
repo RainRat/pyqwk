@@ -2,7 +2,7 @@ import logging
 from dataclasses import replace
 from unittest.mock import MagicMock, patch
 import pytest
-from pyqwk.core import show_info, ProcessingSettings
+from pyqwk.core import show_info, ProcessingSettings, BBSInfo
 
 
 @pytest.fixture
@@ -232,3 +232,57 @@ def test_show_info_csv_format_multiple_files_and_errors(capsys, mock_logger, def
 
     assert rows[1]["file"] == "testdata/test2_qwk.zip"
     assert rows[1]["error"] == "Invalid or empty file."
+
+
+def test_show_info_html_error_and_location(capsys, mock_logger, default_settings):
+    html_settings = replace(default_settings, format="html")
+
+    mock_bbs = BBSInfo(name="Test BBS", location="Mars")
+    mock_board = MagicMock()
+    mock_board.bbs_info = mock_bbs
+    mock_board.get.side_effect = lambda n, d: d
+
+    with patch("pyqwk.core.load_data", return_value=([], mock_board)):
+        show_info(["test.qwk"], html_settings, mock_logger)
+        out = capsys.readouterr().out
+        assert "<strong>Location:</strong> Mars" in out
+
+        with patch("pyqwk.core.load_data", return_value=(bytearray(b"short"), mock_board)):
+            show_info(["short.qwk"], html_settings, mock_logger)
+            out = capsys.readouterr().out
+            assert "Invalid or empty file." in out
+            assert "short.qwk" in out
+
+
+def test_show_info_markdown_error_and_location(capsys, mock_logger, default_settings):
+    md_settings = replace(default_settings, format="markdown")
+
+    mock_bbs = BBSInfo(name="Test BBS", location="Mars")
+    mock_board = MagicMock()
+    mock_board.bbs_info = mock_bbs
+    mock_board.get.side_effect = lambda n, d: d
+
+    with patch("pyqwk.core.load_data", return_value=([], mock_board)):
+        show_info(["test.qwk"], md_settings, mock_logger)
+        out = capsys.readouterr().out
+        assert "**Location:** Mars" in out
+
+        with patch("pyqwk.core.load_data", return_value=(bytearray(b"short"), mock_board)):
+            show_info(["short.qwk"], md_settings, mock_logger)
+            out = capsys.readouterr().out
+            assert "Invalid or empty file." in out
+
+
+def test_show_info_my_name_propagation(capsys, mock_logger, default_settings):
+    settings = replace(default_settings, my_name="Jules Verne", format="json")
+
+    mock_bbs = BBSInfo(name="Test BBS")
+    mock_board = MagicMock()
+    mock_board.bbs_info = mock_bbs
+
+    with patch("pyqwk.core.load_data", return_value=([], mock_board)):
+        show_info(["test.qwk"], settings, mock_logger)
+        out = capsys.readouterr().out
+        import json
+        data = json.loads(out)
+        assert data[0]["bbs_info"]["user_name"] == "Jules Verne"
