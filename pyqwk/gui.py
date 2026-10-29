@@ -281,6 +281,8 @@ class QwkGuiApp:
                 label=f"Go to Referenced Message #{msg.refnum}",
                 command=self.jump_to_referenced_message,
             )
+
+        self._add_attachment_context_commands(menu, msg)
         menu.add_separator()
 
         # Filter pivoting
@@ -401,6 +403,9 @@ class QwkGuiApp:
             )
 
         if msg:
+            self._add_attachment_context_commands(menu, msg)
+
+        if msg:
             try:
                 menu.add_separator()
                 author_text = msg.header.msgfrom.strip()
@@ -496,6 +501,39 @@ class QwkGuiApp:
             pass
 
         menu.post(event.x_root, event.y_root)
+
+    def _add_attachment_context_commands(self, menu: tk.Menu, msg: object) -> None:
+        """Add attachment save actions or submenus to a context menu if message has attachments."""
+        if not getattr(msg, "attachments", None):
+            return
+
+        attachments = msg.attachments
+        if len(attachments) == 1:
+            fn = attachments[0]
+            base_fn = os.path.basename(fn)
+            label_text = f"Save Attachment '{base_fn}'..." if len(base_fn) <= 25 else f"Save Attachment '{base_fn[:22]}...'..."
+            menu.add_command(
+                label=label_text,
+                command=lambda: self.save_attachment(fn, 0),
+            )
+        elif len(attachments) > 1:
+            attach_menu = tk.Menu(menu, tearoff=0)
+            for idx, fn in enumerate(attachments):
+                base_fn = os.path.basename(fn)
+                label_text = f"Save '{base_fn}'..." if len(base_fn) <= 25 else f"Save '{base_fn[:22]}...'..."
+                attach_menu.add_command(
+                    label=label_text,
+                    command=lambda f=fn, i=idx: self.save_attachment(f, i),
+                )
+            attach_menu.add_separator()
+            attach_menu.add_command(
+                label="Extract All Attachments...",
+                command=self.extract_all_attachments,
+            )
+            menu.add_cascade(
+                label=f"Save Attachment ({len(attachments)} files)",
+                menu=attach_menu,
+            )
 
     def _search_from_selection(self) -> None:
         """Search for the currently selected text in the detail viewer."""
