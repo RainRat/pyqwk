@@ -8680,6 +8680,17 @@ def process_multiple_files(
     settings: ProcessingSettings,
     logger: logging.Logger,
 ) -> bool:
+    """Process multiple archive files individually and save outputs to a directory.
+
+    Args:
+        input_paths: List of file paths to process.
+        output_dir: Directory where processed output files will be saved.
+        settings: Processing configuration and filter options.
+        logger: Logger instance for recording progress and errors.
+
+    Returns:
+        True if processing any file encountered an error, False otherwise.
+    """
     if not settings.dry_run:
         os.makedirs(output_dir, exist_ok=True)
     had_errors = False
