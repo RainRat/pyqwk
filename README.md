@@ -359,6 +359,15 @@ qwk archive.qwk --organize-by-date
 qwk archive.qwk --individual-files --organize-by-date -o output_folder/
 ```
 
+**Organize files by year:**
+```bash
+# Organize archives directly into YYYY subdirectories
+qwk archive.qwk --organize-by-year
+
+# Save individual files organized into year subdirectories
+qwk archive.qwk --individual-files --organize-by-year -o output_folder/
+```
+
 **Organize files by author:**
 ```bash
 qwk archive.qwk --individual-files --organize-by-author -o output_folder/
@@ -895,6 +904,7 @@ for msg in messages:
 | `--organize-attachments` | Organize extracted attachments into subfolders. |
 | `--organize`, `--organize-by-conference`, `--organize-by-conf` | Organize files into folders by conference. |
 | `--organize-by-date` | Organize archives into folders by date (YYYY/MM). If used with -o, organizes the export folder instead. |
+| `--organize-by-year` | Organize archives into folders by year (YYYY). If used with -o, organizes the export folder instead. |
 | `--organize-by-bbs` | Organize archives into folders named after the BBS. If used with -o, organizes the export folder instead. |
 | `--organize-by-author` | Organize files into folders by author name. |
 | `--organize-by-to` | Organize files into folders by recipient name. |
