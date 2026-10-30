@@ -1085,14 +1085,14 @@ You can set up your development environment and run tests using standard Python 
 
 If you are running the test suite on a headless Linux system (such as in a CI/CD environment or a remote server without an active display), you must run tests using `xvfb-run`.
 
-This requires the `xvfb` (X virtual framebuffer) system package to be installed on your operating system.
+This requires Tkinter and the `xvfb` (X virtual framebuffer) system package on your operating system.
 
 **Prerequisites:**
 
-Install the system package based on your Linux distribution:
-- **Ubuntu/Debian:** `sudo apt install xvfb`
-- **Fedora/RHEL:** `sudo dnf install xorg-x11-server-Xvfb`
-- **Arch Linux:** `sudo pacman -S xorg-server-xvfb`
+Install the required system packages based on your Linux distribution:
+- **Ubuntu/Debian:** `sudo apt install python3-tk xvfb`
+- **Fedora/RHEL:** `sudo dnf install python3-tkinter xorg-x11-server-Xvfb`
+- **Arch Linux:** `sudo pacman -S tk xorg-server-xvfb`
 
 **Run tests using `xvfb-run`:**
 
