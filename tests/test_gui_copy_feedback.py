@@ -70,3 +70,41 @@ def test_restore_status_bar_invalid_selection_index():
         app.message_list.selection.return_value = ("not_an_int",)
         app._restore_status_bar()
         app._update_status_bar.assert_called_once_with(None)
+
+
+def test_show_status_message_helper():
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
+    ):
+        root = MagicMock()
+        app = QwkGuiApp(root)
+        app.status_label = MagicMock()
+
+        timer_id = "timer456"
+        app._status_timer = timer_id
+        app._show_status_message("Temporary Feedback", timeout_ms=5000)
+
+        app.root.after_cancel.assert_called_with(timer_id)
+        app.status_label.config.assert_called_with(text="Temporary Feedback")
+        app.root.after.assert_called_with(5000, app._restore_status_bar)
+
+
+def test_go_back_shows_status_message_when_empty():
+    with (
+        patch("pyqwk.gui.tk"),
+        patch("pyqwk.gui.ttk"),
+        patch("pyqwk.gui.filedialog"),
+        patch("pyqwk.gui.messagebox"),
+    ):
+        root = MagicMock()
+        app = QwkGuiApp(root)
+        app._show_status_message = MagicMock()
+        app._history_stack = []
+
+        res = app.go_back()
+
+        assert res == "break"
+        app._show_status_message.assert_called_once_with("No previous message in history")
