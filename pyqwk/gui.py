@@ -523,11 +523,8 @@ class QwkGuiApp:
         except tk.TclError:
             pass
 
-    def _copy_to_clipboard(self, text: str, label: str | None = None) -> None:
-        """Copy the given text to the system clipboard and display status feedback."""
-        self.root.clipboard_clear()
-        self.root.clipboard_append(text)
-
+    def _show_status_message(self, message: str, timeout_ms: int = 3000) -> None:
+        """Display a temporary status bar message and schedule restoration after timeout_ms."""
         if getattr(self, "_status_timer", None):
             try:
                 self.root.after_cancel(self._status_timer)
@@ -535,12 +532,16 @@ class QwkGuiApp:
                 pass
             self._status_timer = None
 
-        if label:
-            self.status_label.config(text=f"Copied {label} to clipboard")
-        else:
-            self.status_label.config(text="Copied text to clipboard")
+        self.status_label.config(text=message)
+        self._status_timer = self.root.after(timeout_ms, self._restore_status_bar)
 
-        self._status_timer = self.root.after(3000, self._restore_status_bar)
+    def _copy_to_clipboard(self, text: str, label: str | None = None) -> None:
+        """Copy the given text to the system clipboard and display status feedback."""
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+        msg = f"Copied {label} to clipboard" if label else "Copied text to clipboard"
+        self._show_status_message(msg)
 
     def _restore_status_bar(self) -> None:
         """Restore the standard status bar summary after temporary feedback displays."""
@@ -1426,7 +1427,7 @@ class QwkGuiApp:
     def go_back(self, _event: object | None = None) -> str | None:
         """Go back to the previously viewed message in the navigation history."""
         if not self._history_stack:
-            self.status_label.config(text="No previous message in history")
+            self._show_status_message("No previous message in history")
             return "break"
 
         confnum, msgnum = self._history_stack.pop()
@@ -2962,8 +2963,8 @@ class QwkGuiApp:
             if path:
                 with open(path, "wb") as f:
                     f.write(data)
-                self.status_label.config(
-                    text=f"Saved attachment to {os.path.basename(path)}"
+                self._show_status_message(
+                    f"Saved attachment to {os.path.basename(path)}"
                 )
         except Exception as e:
             messagebox.showerror("Save Attachment", f"Failed to save attachment: {e}")
@@ -3024,7 +3025,7 @@ class QwkGuiApp:
                 "Extraction Successful",
                 f"Successfully extracted {count} attachments to {folder}",
             )
-            self.status_label.config(text=f"Extracted {count} attachments")
+            self._show_status_message(f"Extracted {count} attachments")
             self.progress.pack_forget()
         except Exception as e:
             self.progress.pack_forget()
