@@ -341,6 +341,8 @@ class QwkGuiApp:
                 command=lambda b=bbs_display: self._pivot_filter(exclude_bbs_name=b),
             )
 
+        self._add_attachment_context_commands(menu, msg)
+
         menu.post(event.x_root, event.y_root)
 
     def _show_text_context_menu(self, event: tk.Event) -> None:
@@ -473,6 +475,9 @@ class QwkGuiApp:
             except (ValueError, IndexError):
                 pass
 
+        if msg:
+            self._add_attachment_context_commands(menu, msg)
+
         try:
             sel_range = self.detail_text.tag_ranges("sel")
             if sel_range:
@@ -496,6 +501,33 @@ class QwkGuiApp:
             pass
 
         menu.post(event.x_root, event.y_root)
+
+    def _add_attachment_context_commands(self, menu: tk.Menu, msg: object) -> None:
+        """Add attachment save commands or submenus to context menu if message has attachments."""
+        attachments = getattr(msg, "attachments", None)
+        if not attachments:
+            return
+
+        menu.add_separator()
+        if len(attachments) == 1:
+            filename = attachments[0]
+            menu.add_command(
+                label=f"Save Attachment ({filename})",
+                command=lambda f=filename: self.save_attachment(f, 0),
+            )
+        else:
+            attach_menu = tk.Menu(menu, tearoff=0)
+            for i, filename in enumerate(attachments):
+                attach_menu.add_command(
+                    label=f"Save {filename}",
+                    command=lambda f=filename, idx=i: self.save_attachment(f, idx),
+                )
+            attach_menu.add_separator()
+            attach_menu.add_command(
+                label="Extract All Attachments...",
+                command=self.extract_all_attachments,
+            )
+            menu.add_cascade(label=f"Save Attachments ({len(attachments)})...", menu=attach_menu)
 
     def _search_from_selection(self) -> None:
         """Search for the currently selected text in the detail viewer."""
