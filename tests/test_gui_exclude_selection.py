@@ -98,3 +98,28 @@ def test_exclude_from_selection_tcl_error(mock_gui_deps):
     app.detail_text.tag_ranges.side_effect = mock_gui_deps["tk"].TclError("No selection")
     app._exclude_from_selection()
     app.detail_text.tag_ranges.assert_called_with("sel")
+
+def test_exclude_from_selection_empty(mock_gui_deps):
+    from pyqwk.gui import QwkGuiApp
+
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app.detail_text.tag_ranges.return_value = ()
+    with patch.object(app, "reload_messages") as mock_reload:
+        app._exclude_from_selection()
+        app.exclude_var.set.assert_not_called()
+        mock_reload.assert_not_called()
+
+def test_exclude_from_selection_whitespace(mock_gui_deps):
+    from pyqwk.gui import QwkGuiApp
+
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    app.detail_text.tag_ranges.return_value = ("1.0", "1.5")
+    app.detail_text.get.return_value = "   \n\t  "
+    with patch.object(app, "reload_messages") as mock_reload:
+        app._exclude_from_selection()
+        app.exclude_var.set.assert_not_called()
+        mock_reload.assert_not_called()
