@@ -117,6 +117,15 @@ from pyqwk.core import (
 )
 
 
+def _normalize_display_text(text: str) -> str:
+    """Normalise line endings for Tk.
+
+    QWK bodies are stored with CRLF (and 0xE3 is parsed to CRLF), but Tk renders
+    a bare carriage return as a placeholder box on Linux and WSL.
+    """
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 class QwkGuiApp:
     @property
     def current_path(self) -> str | None:
@@ -2164,6 +2173,15 @@ class QwkGuiApp:
             embed_attachments=self.embed_attach_var.get(),
         )
 
+    def _show_source_metadata(self) -> bool:
+        """Return whether per-message BBS/source lines add information.
+
+        The title bar already names a single loaded archive and its BBS, so
+        repeating them in every message is noise. With several archives loaded
+        the title only reports the count, so per-message origin stays useful.
+        """
+        return len(getattr(self, "current_paths", []) or []) > 1
+
     def _render_message(self, message_index: int) -> None:
         """Render a message with rich formatting in the detail view."""
         msg = self.messages[message_index]
@@ -2243,7 +2261,7 @@ class QwkGuiApp:
             ),
         ]
 
-        if msg.bbs_name:
+        if msg.bbs_name and self._show_source_metadata():
             metadata.append(
                 (
                     "BBS:",
@@ -2266,7 +2284,7 @@ class QwkGuiApp:
                 )
             )
 
-        if msg.source_file:
+        if msg.source_file and self._show_source_metadata():
             metadata.append(
                 (
                     "Source:",
@@ -2309,8 +2327,9 @@ class QwkGuiApp:
         # Visual separator
         self.detail_text.insert(tk.END, "\n")
 
-        # Insert body with quote highlighting
-        for line in msg.text.splitlines(keepends=True):
+        # Insert body with quote highlighting. Normalise line endings first:
+        # Tk draws a bare CR as a placeholder box.
+        for line in _normalize_display_text(msg.text).splitlines(keepends=True):
             tags = ["body"]
             if RE_QUOTE_PATTERN.match(line):
                 tags.append("quote")

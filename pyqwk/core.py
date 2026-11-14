@@ -322,19 +322,58 @@ RE_URL_PATTERN = re.compile(
 )
 # Match phone numbers while avoiding false positives from dates (like 2023-10-12).
 # It requires at least 7 digits to ensure the match is likely a phone number.
-RE_PHONE_PATTERN = re.compile(
-    r"(?<!\w)"
-    r"(?!(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}\b)"
-    r"(?=(?:\D*\d){7,})"
-    r"(?:"
-    r"(?:\+\d{1,3}[-\.\s]?)?"
-    r"(?:\(\d{1,4}\)|\d{1,4})"
-    r"[-\.\s]?\d{3,4}(?:[-\.\s]?\d{3,4}){1,3}"
-    r"|"
-    r"\d{3}[-\.\s]?\d{4}"
-    r")"
-    r"\b"
+#
+# The matcher is a small object rather than one compiled expression: the previous
+# regex used a nested lookahead, "(?=(?:\D*\d){7,})", which backtracked
+# quadratically on long digit/letter runs (24 KB took over a second). Candidates
+# are now found by a bounded pattern and validated by counting digits, which is
+# linear and keeps the same accepted formats.
+_RE_PHONE_CANDIDATE = re.compile(
+    r"(?<![\w-])"
+    r"(?:\+\d{1,3}[ .-]?)?"
+    r"(?:\(\d{1,4}\)[ .-]?|\d{1,4}[ .-]?)"
+    r"\d{3,4}(?:[ .-]?\d{3,4}){0,3}"
+    r"(?![\w-])"
 )
+_RE_PHONE_DATE = re.compile(r"(?:19|20)\d{2}[-./]\d{2}[-./]\d{2}")
+
+
+class _PhoneNumberPattern:
+    """Linear-time phone number matcher with the ``re.Pattern`` search interface."""
+
+    @staticmethod
+    def _is_phone(match: re.Match) -> bool:
+        value = match.group(0)
+        if _RE_PHONE_DATE.fullmatch(value):
+            return False
+        return sum(char.isdigit() for char in value) >= 7
+
+    def search(self, text: str) -> re.Match | None:
+        for match in _RE_PHONE_CANDIDATE.finditer(text):
+            if self._is_phone(match):
+                return match
+        return None
+
+    def finditer(self, text: str):
+        for match in _RE_PHONE_CANDIDATE.finditer(text):
+            if self._is_phone(match):
+                yield match
+
+    def findall(self, text: str) -> list[str]:
+        return [match.group(0) for match in self.finditer(text)]
+
+    def sub(self, repl: str, text: str) -> str:
+        parts: list[str] = []
+        last_end = 0
+        for match in self.finditer(text):
+            parts.append(text[last_end:match.start()])
+            parts.append(repl)
+            last_end = match.end()
+        parts.append(text[last_end:])
+        return "".join(parts)
+
+
+RE_PHONE_PATTERN = _PhoneNumberPattern()
 
 RE_SUBJECT_PREFIX_PATTERN = re.compile(
     r"^\s*(?:re|fw|fwd)(?:\[\d+\])?[:\s-]+\s*", re.IGNORECASE
