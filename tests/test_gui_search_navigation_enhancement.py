@@ -135,3 +135,39 @@ def test_welcome_screen_updated_shortcuts(mock_gui_deps):
 
     assert found_enter
     assert found_shift_enter
+
+
+def test_navigate_search_matches_skips_zero_match_messages(mock_gui_deps):
+    """Verify that navigating search matches skips intermediate messages containing 0 matches."""
+    root = MagicMock()
+    app = QwkGuiApp(root)
+    app.search_var.get.return_value = "target"
+    app._search_matches = [("1.0", "1.6")]
+    app._current_match_idx = 0
+    app._get_all_tree_items = MagicMock(return_value=["0", "1", "2"])
+
+    app.message_list = MagicMock()
+    app.message_list.selection.return_value = ("0",)
+
+    # Mock _select_relative_message to simulate moving to item "1" (0 matches) then item "2" (1 match)
+    call_count = 0
+
+    def mock_select_rel(delta, force=False):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            app._search_matches = []
+            return True
+        elif call_count == 2:
+            app._search_matches = [("2.0", "2.6")]
+            return True
+        return False
+
+    app._select_relative_message = mock_select_rel
+
+    # Navigate forward
+    app._navigate_search_matches(1)
+
+    assert call_count == 2
+    assert app._search_matches == [("2.0", "2.6")]
+    assert app._pending_match_idx == 0
