@@ -218,6 +218,37 @@ class QwkGuiApp:
         else:
             self.root.after(100, self._render_welcome_screen)
 
+    def _add_message_copy_commands(
+        self,
+        menu: tk.Menu,
+        subject: str,
+        author: str,
+        recipient: str,
+        msgnum: str | int | None,
+    ) -> None:
+        """Add standard message copy commands (Subject, From, To, Num) to a context menu."""
+        orig_subject = str(subject or "").strip()
+        orig_from = str(author or "").strip()
+        orig_to = str(recipient or "").strip()
+        orig_num = str(msgnum or "")
+
+        menu.add_command(
+            label="Copy Subject",
+            command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
+        )
+        menu.add_command(
+            label="Copy From",
+            command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
+        )
+        menu.add_command(
+            label="Copy To",
+            command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
+        )
+        menu.add_command(
+            label="Copy Num",
+            command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
+        )
+
     def _show_list_context_menu(self, event: tk.Event) -> None:
         """Display a context menu for the message list."""
         region = self.message_list.identify_region(event.x, event.y)
@@ -254,21 +285,8 @@ class QwkGuiApp:
         orig_to = msg.header.msgto.strip()
         orig_num = str(msg.header.msgnum or "")
 
-        menu.add_command(
-            label="Copy Subject",
-            command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
-        )
-        menu.add_command(
-            label="Copy From",
-            command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
-        )
-        menu.add_command(
-            label="Copy To",
-            command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
-        )
-        menu.add_command(
-            label="Copy Num",
-            command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
+        self._add_message_copy_commands(
+            menu, orig_subject, orig_from, orig_to, orig_num
         )
         menu.add_command(
             label="Copy Full Message",
@@ -370,21 +388,8 @@ class QwkGuiApp:
             orig_to = msg.header.msgto.strip()
             orig_num = str(msg.header.msgnum or "")
 
-            menu.add_command(
-                label="Copy Subject",
-                command=lambda s=orig_subject: self._copy_to_clipboard(s, "Subject"),
-            )
-            menu.add_command(
-                label="Copy From",
-                command=lambda f=orig_from: self._copy_to_clipboard(f, "From"),
-            )
-            menu.add_command(
-                label="Copy To",
-                command=lambda t=orig_to: self._copy_to_clipboard(t, "To"),
-            )
-            menu.add_command(
-                label="Copy Num",
-                command=lambda n=orig_num: self._copy_to_clipboard(n, "Message Number"),
+            self._add_message_copy_commands(
+                menu, orig_subject, orig_from, orig_to, orig_num
             )
 
         menu.add_command(
