@@ -7,8 +7,8 @@ from pyqwk.core import (
     ParsedMessage,
     ProcessingSettings,
     render_months_as_text,
-    _render_months_html,
-    _render_months_markdown,
+    _render_timeline_report_html,
+    _render_timeline_report_markdown,
     _render_csv_table,
     show_list_months,
 )
@@ -122,12 +122,12 @@ def test_render_months_helpers():
         }
     ]
 
-    html_out = _render_months_html(month_list, "Monthly Activity Summary")
+    html_out = _render_timeline_report_html(month_list, "Monthly Activity Summary", "Month", "month")
     assert "<h1>Monthly Activity Summary</h1>" in html_out
     assert "<td>2023-10</td>" in html_out
     assert "<td>5</td>" in html_out
 
-    md_out = _render_months_markdown(month_list, "Monthly Activity Summary")
+    md_out = _render_timeline_report_markdown(month_list, "Monthly Activity Summary", "Month", "month")
     assert "# Monthly Activity Summary" in md_out
     assert "| 2023-10 | 5 | 2 | 1 | 2023-10-12 12:00 | 2023-10-12 12:00 | Test BBS |" in md_out
 

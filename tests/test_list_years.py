@@ -7,8 +7,8 @@ from pyqwk.core import (
     ParsedMessage,
     ProcessingSettings,
     render_years_as_text,
-    _render_years_html,
-    _render_years_markdown,
+    _render_timeline_report_html,
+    _render_timeline_report_markdown,
     _render_csv_table,
     show_list_years,
 )
@@ -122,12 +122,12 @@ def test_render_years_helpers():
         }
     ]
 
-    html_out = _render_years_html(year_list, "Yearly Activity Summary")
+    html_out = _render_timeline_report_html(year_list, "Yearly Activity Summary", "Year", "year")
     assert "<h1>Yearly Activity Summary</h1>" in html_out
     assert "<td>2023</td>" in html_out
     assert "<td>5</td>" in html_out
 
-    md_out = _render_years_markdown(year_list, "Yearly Activity Summary")
+    md_out = _render_timeline_report_markdown(year_list, "Yearly Activity Summary", "Year", "year")
     assert "# Yearly Activity Summary" in md_out
     assert "| 2023 | 5 | 2 | 1 | 2023-05-10 12:00 | 2023-05-10 12:00 | Test BBS |" in md_out
 

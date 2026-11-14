@@ -7,8 +7,8 @@ from pyqwk.core import (
     ParsedMessage,
     ProcessingSettings,
     render_hours_as_text,
-    _render_hours_html,
-    _render_hours_markdown,
+    _render_timeline_report_html,
+    _render_timeline_report_markdown,
     _render_csv_table,
     show_list_hours,
 )
@@ -103,11 +103,11 @@ def test_render_hours_functions():
     text_plain = render_hours_as_text(hours, use_colors=False)
     assert "=== Hourly Activity Summary ===" in text_plain
 
-    html_out = _render_hours_html(hours, "Hourly Activity Summary")
+    html_out = _render_timeline_report_html(hours, "Hourly Activity Summary", "Hour", "hour")
     assert "<h1>Hourly Activity Summary</h1>" in html_out
     assert "<td>08:00</td>" in html_out
 
-    md_out = _render_hours_markdown(hours, "Hourly Activity Summary")
+    md_out = _render_timeline_report_markdown(hours, "Hourly Activity Summary", "Hour", "hour")
     assert "# Hourly Activity Summary" in md_out
     assert "| 08:00 | 10 | 3 | 2 | 2023-10-12 08:05 | 2023-10-12 08:50 | Digital Horizon BBS |" in md_out
 

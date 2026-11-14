@@ -7,8 +7,8 @@ from pyqwk.core import (
     ParsedMessage,
     ProcessingSettings,
     render_days_as_text,
-    _render_days_html,
-    _render_days_markdown,
+    _render_timeline_report_html,
+    _render_timeline_report_markdown,
     _render_csv_table,
     show_list_days,
 )
@@ -103,11 +103,11 @@ def test_render_days_functions():
     text_plain = render_days_as_text(days, use_colors=False)
     assert "=== Day of Week Activity Summary ===" in text_plain
 
-    html_out = _render_days_html(days, "Day of Week Activity Summary")
+    html_out = _render_timeline_report_html(days, "Day of Week Activity Summary", "Day", "day")
     assert "<h1>Day of Week Activity Summary</h1>" in html_out
     assert "<td>Monday</td>" in html_out
 
-    md_out = _render_days_markdown(days, "Day of Week Activity Summary")
+    md_out = _render_timeline_report_markdown(days, "Day of Week Activity Summary", "Day", "day")
     assert "# Day of Week Activity Summary" in md_out
     assert "| Monday | 10 | 3 | 2 | 2023-10-09 08:05 | 2023-10-09 18:50 | Digital Horizon BBS |" in md_out
 
