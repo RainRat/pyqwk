@@ -135,7 +135,20 @@ def test_word_limits_clear_button():
 
     with patch('pyqwk.gui.tk'), \
          patch('pyqwk.gui.ttk') as mock_ttk, \
-         patch('pyqwk.gui.font'):
+         patch('pyqwk.gui.font'), \
+         patch('pyqwk.gui.filedialog') as mock_filedialog, \
+         patch('pyqwk.gui.messagebox') as mock_messagebox, \
+         patch('pyqwk.gui.simpledialog') as mock_simpledialog:
+
+        # Every toolbar command is invoked below, so dialog-opening buttons must
+        # return without entering a modal Tcl loop ("Open Archive(s)" did).
+        mock_filedialog.askopenfilenames.return_value = ()
+        mock_filedialog.askdirectory.return_value = ""
+        mock_filedialog.asksaveasfilename.return_value = ""
+        mock_messagebox.askyesno.return_value = False
+        mock_messagebox.askokcancel.return_value = False
+        mock_simpledialog.askinteger.return_value = None
+        mock_simpledialog.askstring.return_value = None
 
         # Capture button commands
         button_commands = []
