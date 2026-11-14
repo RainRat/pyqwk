@@ -232,6 +232,48 @@ def test_show_list_years_filtering_and_edge_cases(mocker, base_settings):
     error_mock.assert_called()
 
 
+def test_show_list_years_out_of_order_and_none_dates(mocker, base_settings):
+    # msg1: 2023-06-15 (sets first_dt and last_dt)
+    msg1 = create_sample_message(msgnum=1, msgdate="06-15-23", msgtime="12:00", author="Alice")
+    # msg2: 2023-01-05 (earlier than first_dt -> tests msg_dt < stats['first_dt'])
+    msg2 = create_sample_message(msgnum=2, msgdate="01-05-23", msgtime="10:00", author="Bob")
+    # msg3: 2023-11-25 (later than last_dt -> tests msg_dt > stats['last_dt'])
+    msg3 = create_sample_message(msgnum=3, msgdate="11-25-23", msgtime="16:00", author="Charlie")
+    # msg4: 2023-08-10 (intermediate date -> tests neither < first_dt nor > last_dt)
+    msg4 = create_sample_message(msgnum=4, msgdate="08-10-23", msgtime="11:00", author="David")
+    # msg5: message with datetime evaluated as None -> evaluates yr_str as "Unknown"
+    msg5 = create_sample_message(msgnum=5, msgdate="", author="Eve")
+
+    def mock_parse_date(msgdate, msgtime):
+        if not msgdate:
+            return None
+        import datetime
+        dt = datetime.datetime.strptime(f"{msgdate} {msgtime}", "%m-%d-%y %H:%M")
+        return dt
+
+    mocker.patch("pyqwk.core._parse_qwk_date", side_effect=mock_parse_date)
+    mocker.patch("pyqwk.core.load_data", return_value=([msg1, msg2, msg3, msg4, msg5], {101: "General"}))
+    logger = logging.getLogger("test")
+
+    base_settings.format = "json"
+    base_settings.output_path = None
+
+    mock_write_text = mocker.patch("pyqwk.core._write_text_output")
+    show_list_years(["dummy.qwk"], base_settings, logger)
+
+    printed_arg = mock_write_text.call_args[0][0]
+    data = json.loads(printed_arg)
+    year_2023 = next(d for d in data if d["year"] == "2023")
+    assert year_2023["message_count"] == 4
+    assert year_2023["first_active"] == "2023-01-05 10:00"
+    assert year_2023["last_active"] == "2023-11-25 16:00"
+
+    unknown_year = next(d for d in data if d["year"] == "Unknown")
+    assert unknown_year["message_count"] == 1
+    assert unknown_year["first_active"] is None
+    assert unknown_year["last_active"] is None
+
+
 def test_cli_list_years_flags(mocker, tmp_path):
     mocker.patch("sys.argv", ["qwk", "test.qwk", "--list-years"])
     mock_show = mocker.patch("pyqwk.cli.show_list_years")
