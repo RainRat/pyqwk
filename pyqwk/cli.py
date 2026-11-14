@@ -202,6 +202,10 @@ PRESETS_INFO = {
         "desc": "Save clean text with email addresses and phone numbers in rendered headers and body redacted.",
         "equiv": "--format text --clean --redact-pii",
     },
+    "dataset": {
+        "desc": "Save clean messages as a CSV dataset suitable for data analysis.",
+        "equiv": "--format csv --clean",
+    },
 }
 
 
@@ -1038,7 +1042,7 @@ examples:
     preset_group.add_argument(
         "-P",
         "--preset",
-        choices=["blog", "email", "backup", "digest", "digest-text", "forum", "feed", "text-archive", "sanitize"],
+        choices=["blog", "email", "backup", "digest", "digest-text", "forum", "feed", "text-archive", "sanitize", "dataset"],
         help=(
             "Apply predefined parameter combinations for common workflows:\n"
             "  blog           Save messages as clean, threaded individual Markdown files.\n"
@@ -1049,7 +1053,8 @@ examples:
             "  forum          Save messages as clean, threaded individual HTML files with an index (static discussion board).\n"
             "  feed           Save messages as a clean, chronological RSS feed sorted from newest to oldest.\n"
             "  text-archive   Save clean text without headers.\n"
-            "  sanitize       Save clean text with email addresses and phone numbers in rendered headers and body redacted."
+            "  sanitize       Save clean text with email addresses and phone numbers in rendered headers and body redacted.\n"
+            "  dataset        Save clean messages as a CSV dataset suitable for data analysis."
         ),
     )
     preset_group.add_argument(
@@ -1241,6 +1246,10 @@ examples:
                 "format": "text",
                 "clean": True,
                 "redactpii": True,
+            },
+            "dataset": {
+                "format": "csv",
+                "clean": True,
             },
         }
 

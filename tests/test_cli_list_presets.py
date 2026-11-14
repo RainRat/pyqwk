@@ -34,6 +34,9 @@ def test_cli_list_presets_no_color():
     assert "text-archive" in output
     assert "Save clean text without headers." in output
     assert "--format text --clean --noheader" in output
+    assert "dataset" in output
+    assert "Save clean messages as a CSV dataset suitable for data analysis." in output
+    assert "--format csv --clean" in output
 
     # Ensure no ANSI escape codes are present in non-tty output
     assert "\033[" not in output
@@ -66,3 +69,4 @@ def test_cli_list_presets_with_color():
     assert "backup" in output
     assert "digest" in output
     assert "text-archive" in output
+    assert "dataset" in output
