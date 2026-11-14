@@ -225,3 +225,16 @@ def test_focus_entry_field_when_already_focused(mock_gui_deps):
     app._focus_entry_field("search_entry", "search_var")
 
     app.search_entry.selection_range.assert_called_once_with(0, "end")
+
+
+def test_detail_text_control_shortcuts_propagate(mock_gui_deps):
+    """Verify that Control key combinations in detail_text return None to propagate to root bindings."""
+    from pyqwk.gui import QwkGuiApp
+    root = MagicMock()
+    app = QwkGuiApp(root)
+
+    for keysym in ("e", "u", "t", "w", "x", "c", "v", "o", "s", "i", "q", "f", "g"):
+        event = MagicMock()
+        event.keysym = keysym
+        event.state = 0x4  # Control mask active
+        assert app._block_text_input(event) is None
